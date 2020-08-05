@@ -1,1 +1,4 @@
-FROM hub.furycloud.io/mercadolibre/java:1.11-runtime-mini
+FROM hub.furycloud.io/mercadolibre/java-standalone:openjre11
+
+####### NEW RELIC ########
+ENV NEWRELIC_IGNORE_STATUS_CODES=404
