@@ -1,0 +1,158 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'distribution'
+    id 'org.springframework.boot' version '2.3.1.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'jacoco'
+    id 'checkstyle'
+    id 'pmd'
+    id 'com.github.spotbugs' version '2.0.1'
+    id 'io.freefair.lombok' version '5.1.0'
+}
+
+group = 'com.mercadolibre'
+version = '0.0.1-SNAPSHOT'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+mainClassName = 'com.mercadolibre.planning.model.me.PlanningModelMiddleendApplication'
+
+repositories {
+    maven { url "http://maven.artifacts.furycloud.io/repository/all" }
+    mavenCentral()
+    jcenter()
+}
+
+bootJar {
+    archiveFileName = 'application.jar'
+}
+
+configurations {
+    providedRuntime
+}
+
+dependencies {
+    // Spring
+    implementation('org.springframework.boot:spring-boot-starter-web'){
+        exclude module: 'spring-boot-starter-tomcat'
+    }
+    implementation('org.springframework.boot:spring-boot-starter-jetty')
+
+    // Meli Libs
+    implementation('com.fury:furyutils:0.0.2')
+    implementation('com.mercadolibre.json:json-core:0.0.13')
+    implementation('com.mercadolibre.json_jackson:json-jackson:0.0.13')
+    implementation('com.mercadolibre.resilience:resilience-core:1.1.0')
+    implementation('com.mercadolibre.metrics:metrics-core:0.0.13')
+    implementation('com.mercadolibre.metrics:datadog-metric-wrapper:0.0.13')
+    implementation('com.mercadolibre:threading:0.1.2')
+    implementation('com.mercadolibre:routing:2.1.0')
+    implementation('com.mercadolibre.fbm.wms.outbound:commons:1.1.0')
+    implementation('com.mercadolibre.restclient:restclient-default:0.3.46')
+    implementation('com.mercadolibre:java-meli-spreadsheet:1.0.0')
+
+    // Others
+    implementation('com.newrelic.agent.java:newrelic-api:5.13.0')
+    implementation('io.springfox:springfox-swagger-ui:2.9.2')
+    implementation('io.springfox:springfox-swagger2:2.9.2')
+
+    // Tests
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.6.2')
+    testImplementation('org.junit.jupiter:junit-jupiter-engine:5.6.2')
+    testImplementation('org.junit.platform:junit-platform-engine:1.6.2')
+    testImplementation('org.junit.platform:junit-platform-launcher:1.6.2')
+    testImplementation('org.junit.platform:junit-platform-runner:1.6.2')
+    testImplementation('com.mercadolibre.restclient:restclient-core:0.3.44')
+    testImplementation('com.mercadolibre.restclient:restclient-core:0.3.44:tests')
+
+    // Spotbugs
+    spotbugsPlugins('com.h3xstream.findsecbugs:findsecbugs-plugin:1.8.0')
+    spotbugsPlugins('com.mebigfatguy.fb-contrib:fb-contrib:7.4.3.sb')
+}
+
+
+test {
+    // Enable JUnit 5 (Gradle 4.6+).
+    useJUnitPlatform()
+
+    // Always run tests, even when nothing changed.
+    dependsOn 'cleanTest'
+
+    // Show test results.
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.5"
+    reportsDir = file("$buildDir/reports/jacoco")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/PlanningModelMiddleendApplication**',
+                    '**/config/**'
+            ])
+        }))
+    }
+}
+
+checkstyle {
+    toolVersion "8.16"
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.enabled true
+        html.enabled true
+        html.stylesheet resources.text.fromFile('config/checkstyle/checkstyle-style.xsl')
+    }
+}
+
+spotbugs {
+    toolVersion = '3.1.12'
+    excludeFilter = file("config/spotbugs/excludeFilter.xml")
+}
+
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+
+pmd {
+    toolVersion = '6.17.0'
+    ruleSetFiles = files("config/pmd/pmd_rules.xml")
+    ruleSets = []
+    incrementalAnalysis = true
+}
+
+tasks.withType(Pmd) {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+task installGitHooks(type: Copy) {
+    from new File(rootProject.rootDir, "git_hooks/pre-push")
+    into { new File(rootProject.rootDir, ".git/hooks") }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+check.dependsOn jacocoTestReport
+check.dependsOn installGitHooks
+
+generateLombokConfig.enabled = false
