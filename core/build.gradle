@@ -1,0 +1,13 @@
+plugins {
+    id "io.freefair.lombok" version "5.1.0"
+}
+
+group 'com.mercadolibre'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 11
+
+dependencies {
+}
+
+generateLombokConfig.enabled = false
