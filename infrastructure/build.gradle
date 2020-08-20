@@ -17,16 +17,12 @@ bootJar {
     archiveFileName = 'application.jar'
 }
 
-mainClassName = 'com.mercadolibre.planning.model.api.PlanningModelApplication'
+mainClassName = 'com.mercadolibre.planning.model.api.PlanningModelMiddleendApplication'
 
 dependencies {
     compile project(':application')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'com.fury:furyutils:0.0.2'
-    implementation 'com.mercadolibre.fbm.wms.outbound:commons:1.1.0'
-    implementation 'com.mercadolibre.restclient:restclient-default:0.3.46'
-    implementation 'com.mercadolibre.fbm.wms.outbound:rest:0.0.3-release'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'com.mercadolibre:lockclient:2.1.0'
     implementation 'com.mercadolibre.metrics:datadog-metric-wrapper:0.0.13'
