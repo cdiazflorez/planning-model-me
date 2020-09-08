@@ -1,0 +1,5 @@
+package com.mercadolibre.planning.model.me.clients.rest.config;
+
+public enum RestPool {
+    PLANNING_MODEL;
+}
