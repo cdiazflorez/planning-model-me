@@ -1,17 +1,22 @@
 package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
+import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
+import com.mercadolibre.restclient.exception.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -29,17 +34,20 @@ import static java.util.stream.Collectors.toList;
 @Component
 public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway {
 
-    private static final String URL = "/planning/model/workflows/%s/entities/%s";
+    private static final String URL = "/planning/model/workflows/%s";
+    private final ObjectMapper objectMapper;
 
-    public PlanningModelApiClient(RestClient client) {
+
+    public PlanningModelApiClient(RestClient client, ObjectMapper objectMapper) {
         super(client, PLANNING_MODEL.name());
+        this.objectMapper = objectMapper;
     }
 
     @Override
     public List<Entity> getEntities(final EntityRequest entityRequest) {
 
         final HttpRequest request = HttpRequest.builder()
-                .url(format(URL,
+                .url(format(URL + "/entities/%s",
                         entityRequest.getWorkflow().getName(),
                         entityRequest.getEntityType().getName()))
                 .GET()
@@ -73,5 +81,26 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
             params.put("source", request.getSource().getName());
         }
         return params;
+    }
+
+    @Override
+    public void postForecast(final Workflow workflow, final Forecast forecastDto) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(URL, workflow) + "/forecasts")
+                .POST(requestSupplier(forecastDto))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK, HttpStatus.CREATED))
+                .build();
+
+        send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    private <T> RequestBodyHandler requestSupplier(final T requestBody) {
+        return () -> {
+            try {
+                return objectMapper.writeValueAsBytes(requestBody);
+            } catch (JsonProcessingException e) {
+                throw new ParseException(e);
+            }
+        };
     }
 }
