@@ -14,6 +14,7 @@ import static com.mercadolibre.restclient.http.HttpMethod.POST;
 
 public class TestUtils {
     public static final String WAREHOUSE_ID = "ARTW01";
+    public static final Long USER_ID = 1234L;
 
     public static ObjectMapper objectMapper() {
         return ((JsonJackson) JsonUtils.INSTANCE.getEngine())

@@ -4,6 +4,7 @@ public enum EntityType {
     ORDER_UNITS,
     PRODUCTIVITY,
     HEADCOUNT,
+    THROUGHPUT,
     BACKLOG,
     ORDER_DISTRIBUTION;
 

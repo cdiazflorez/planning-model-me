@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
 
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AUTHORIZATION;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 
@@ -20,12 +22,15 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PL
 @Configuration
 @EnableConfigurationProperties({
         RestClientConfig.PlanningModelClientProperties.class,
-        RestClientConfig.OutboundUnitRestClientProperties.class
+        RestClientConfig.OutboundUnitRestClientProperties.class,
+        RestClientConfig.LogisticCenterClientProperties.class,
+        RestClientConfig.AuthorizationClientProperties.class
 })
 public class RestClientConfig {
-
     private PlanningModelClientProperties planningModelClientProperties;
     private OutboundUnitRestClientProperties outboundUnitProperties;
+    private LogisticCenterClientProperties logisticCenterClientProperties;
+    private AuthorizationClientProperties authorizationClientProperties;
 
     @Bean
     public RestClient restClient() throws IOException {
@@ -33,7 +38,14 @@ public class RestClientConfig {
                 .builder()
                 .withPool(
                         restPool(PLANNING_MODEL.name(), planningModelClientProperties),
-                        restPool(OUTBOUND_UNIT.name(), outboundUnitProperties)
+                        restPool(OUTBOUND_UNIT.name(), outboundUnitProperties),
+                        restPool(PLANNING_MODEL.name(), planningModelClientProperties),
+                        restPool(LOGISTIC_CENTER.name(),
+                                logisticCenterClientProperties, localCache(
+                                        "logistic_center", 30)),
+                        restPool(AUTHORIZATION.name(),
+                                authorizationClientProperties, localCache(
+                                        "authorizations", 200))
                 )
                 .build();
     }
@@ -74,4 +86,12 @@ public class RestClientConfig {
 
     @ConfigurationProperties("restclient.pool.outbound-unit")
     public static class OutboundUnitRestClientProperties extends RestClientProperties {}
+
+    @ConfigurationProperties("restclient.pool.logistic-center")
+    public static class LogisticCenterClientProperties extends RestClientProperties {
+    }
+
+    @ConfigurationProperties("restclient.pool.authorization")
+    public static class AuthorizationClientProperties extends RestClientProperties {
+    }
 }

@@ -64,7 +64,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         return Entity.builder()
                 .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
                 .processName(ProcessName.from(response.getProcessName()))
-                .workflow(Workflow.from(response.getWorkflow()))
+                .workflow(Workflow.from(response.getWorkflow()).orElseThrow())
                 .value(response.getValue())
                 .source(Source.from(response.getSource()))
                 .metricUnit(MetricUnit.from(response.getMetricUnit()))

@@ -1,6 +1,9 @@
 package com.mercadolibre.planning.model.me.clients.rest;
 
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig;
+import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.AuthorizationClientProperties;
+import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.LogisticCenterClientProperties;
+import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.PlanningModelClientProperties;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
 
@@ -12,16 +15,27 @@ public class BaseClientTest {
 
     protected RestClient getRestTestClient() throws IOException {
 
-        final RestClientConfig.PlanningModelClientProperties planningModelClientProperties =
-                new RestClientConfig.PlanningModelClientProperties();
+        final PlanningModelClientProperties planningModelClientProperties =
+                new PlanningModelClientProperties();
         planningModelClientProperties.setBaseUrl(BASE_URL);
 
         final RestClientConfig.OutboundUnitRestClientProperties outboundUnitRestClientProperties =
                 new RestClientConfig.OutboundUnitRestClientProperties();
         outboundUnitRestClientProperties.setBaseUrl(BASE_URL);
 
+        final LogisticCenterClientProperties logisticCenterClientProperties =
+                new LogisticCenterClientProperties();
+        logisticCenterClientProperties.setBaseUrl(BASE_URL);
+
+        final AuthorizationClientProperties authorizationClientProperties =
+                new AuthorizationClientProperties();
+        authorizationClientProperties.setBaseUrl(BASE_URL);
+
         return new RestClientConfig(
-                planningModelClientProperties, outboundUnitRestClientProperties
+                planningModelClientProperties,
+                outboundUnitRestClientProperties,
+                logisticCenterClientProperties,
+                authorizationClientProperties
         ).restClient();
     }
 

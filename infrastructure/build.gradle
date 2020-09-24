@@ -17,7 +17,7 @@ bootJar {
     archiveFileName = 'application.jar'
 }
 
-mainClassName = 'com.mercadolibre.planning.model.api.PlanningModelMiddleendApplication'
+mainClassName = 'com.mercadolibre.planning.model.me.PlanningModelMiddleendApplication'
 
 dependencies {
     compile project(':application')

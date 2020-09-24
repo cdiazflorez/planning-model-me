@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 import lombok.Builder;
 import lombok.Value;
 
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 
 @Value
@@ -20,4 +21,13 @@ public class Entity {
     private Source source;
 
     private MetricUnit metricUnit;
+
+    public int getHour() {
+        return date.getHour();
+    }
+
+    public LocalTime getTime() {
+        return date.toLocalTime();
+    }
+
 }
