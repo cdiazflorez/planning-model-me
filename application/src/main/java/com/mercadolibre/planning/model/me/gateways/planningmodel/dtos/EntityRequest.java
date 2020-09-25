@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Value
 @Builder
@@ -20,5 +21,7 @@ public class EntityRequest {
     private ZonedDateTime dateTo;
 
     private Source source;
+
+    private List<ProcessName> processName;
 
 }

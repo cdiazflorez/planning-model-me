@@ -25,6 +25,8 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.mockPostUrlSuccess;
@@ -69,6 +71,7 @@ public class PlanningModelApiClientTest extends BaseClientTest {
                 .dateFrom(ZonedDateTime.now())
                 .dateTo(ZonedDateTime.now().plusDays(1))
                 .source(Source.FORECAST)
+                .processName(List.of(PICKING, PACKING))
                 .build();
 
         final JSONArray apiResponse = new JSONArray()
@@ -99,14 +102,14 @@ public class PlanningModelApiClientTest extends BaseClientTest {
         final Entity headcount0 = headcounts.get(0);
         assertTrue(request.getDateFrom().isEqual(headcount0.getDate()));
         assertEquals(FBM_WMS_OUTBOUND, headcount0.getWorkflow());
-        assertEquals(ProcessName.PICKING, headcount0.getProcessName());
+        assertEquals(PICKING, headcount0.getProcessName());
         assertEquals(30, headcount0.getValue());
         assertEquals(Source.FORECAST, headcount0.getSource());
 
         final Entity headcount1 = headcounts.get(1);
         assertTrue(request.getDateTo().isEqual(headcount1.getDate()));
         assertEquals(FBM_WMS_OUTBOUND, headcount1.getWorkflow());
-        assertEquals(ProcessName.PACKING, headcount1.getProcessName());
+        assertEquals(PACKING, headcount1.getProcessName());
         assertEquals(20, headcount1.getValue());
         assertEquals(Source.SIMULATION, headcount1.getSource());
     }

@@ -31,6 +31,8 @@ import java.util.stream.IntStream;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.now;
@@ -127,6 +129,7 @@ public class GetProjectionTest {
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .entityType(entityType)
+                .processName(List.of(PICKING, PACKING))
                 .dateFrom(now().withMinute(0).withSecond(0).withNano(0))
                 .dateTo(now().withMinute(0).withSecond(0).withNano(0).withMinute(0).plusDays(1))
                 .build();
@@ -136,19 +139,19 @@ public class GetProjectionTest {
         return List.of(
                 Entity.builder()
                         .date(now(TIME_ZONE.toZoneId()))
-                        .processName(ProcessName.PICKING)
+                        .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(10)
                         .build(),
                 Entity.builder()
                         .date(now(TIME_ZONE.toZoneId()))
-                        .processName(ProcessName.PICKING)
+                        .processName(PICKING)
                         .source(Source.SIMULATION)
                         .value(20)
                         .build(),
                 Entity.builder()
                         .date(now(TIME_ZONE.toZoneId()).plusHours(2))
-                        .processName(ProcessName.PACKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(15)
                         .build()
@@ -159,13 +162,13 @@ public class GetProjectionTest {
         return List.of(
                 Entity.builder()
                         .date(now(TIME_ZONE.toZoneId()).plusHours(1))
-                        .processName(ProcessName.PICKING)
+                        .processName(PICKING)
                         .source(Source.SIMULATION)
                         .value(30)
                         .build(),
                 Entity.builder()
                         .date(now(TIME_ZONE.toZoneId()).plusHours(2))
-                        .processName(ProcessName.PICKING)
+                        .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(50)
                         .build()

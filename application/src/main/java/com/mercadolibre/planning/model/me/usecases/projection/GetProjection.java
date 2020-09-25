@@ -33,6 +33,8 @@ import java.util.stream.IntStream;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
 import static java.lang.String.format;
@@ -48,7 +50,7 @@ import static java.util.stream.Collectors.toMap;
 public class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
 
     private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
-
+    private static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
     private static final int HOURS_TO_SHOW = 24;
 
     private PlanningModelGateway planningModelGateway;
@@ -80,6 +82,7 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 .warehouseId(warehouseId)
                 .entityType(entityType)
                 .dateFrom(createNowDate())
+                .processName(PROJECTION_PROCESS_NAMES)
                 .dateTo(createNowDate().plusDays(1))
                 .build();
     }

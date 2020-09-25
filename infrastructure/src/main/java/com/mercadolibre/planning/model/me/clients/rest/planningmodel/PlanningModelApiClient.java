@@ -17,6 +17,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +30,7 @@ import java.util.Set;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 @Component
@@ -45,7 +47,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
     @Override
     public List<Entity> getEntities(final EntityRequest entityRequest) {
-
         final HttpRequest request = HttpRequest.builder()
                 .url(format(URL + "/entities/%s",
                         entityRequest.getWorkflow().getName(),
@@ -54,6 +55,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .queryParams(createEntityParams(entityRequest))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
+
         final List<EntityResponse> apiResponse = send(request, response ->
                 response.getData(new TypeReference<>() {}));
 
@@ -76,6 +78,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         params.put("warehouse_id", request.getWarehouseId());
         params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
         params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
+        params.put("process_name", getProcessNamesAsString(request.getProcessName()));
 
         if (request.getSource() != null) {
             params.put("source", request.getSource().getName());
@@ -102,5 +105,9 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 throw new ParseException(e);
             }
         };
+    }
+
+    private String getProcessNamesAsString(final List<ProcessName> processNames) {
+        return processNames.stream().map(ProcessName::getName).collect(joining(","));
     }
 }
