@@ -1,10 +1,7 @@
 package com.mercadolibre.planning.model.me.exception;
 
-import lombok.Data;
-
 import static java.lang.String.format;
 
-@Data
 public class EnumNotFoundException extends RuntimeException {
 
     public static final String MESSAGE_PATTERN = "Enum not found for value: %s";

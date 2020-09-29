@@ -11,6 +11,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
@@ -87,14 +88,14 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public void postForecast(final Workflow workflow, final Forecast forecastDto) {
+    public ForecastResponse postForecast(final Workflow workflow, final Forecast forecastDto) {
         final HttpRequest request = HttpRequest.builder()
                 .url(format(URL, workflow) + "/forecasts")
                 .POST(requestSupplier(forecastDto))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK, HttpStatus.CREATED))
                 .build();
 
-        send(request, response -> response.getData(new TypeReference<>() {}));
+        return send(request, response -> response.getData(new TypeReference<>() {}));
     }
 
     private <T> RequestBodyHandler requestSupplier(final T requestBody) {

@@ -31,4 +31,16 @@ public class ApiExceptionHandler {
         return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }
 
+    @ExceptionHandler(ForecastParsingException.class)
+    public ResponseEntity<ErrorResponse> handleException(Exception exception,
+                                                         HttpServletRequest request) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST)
+                .message(exception.getMessage())
+                .error("bad_request")
+                .build();
+
+        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+    }
 }

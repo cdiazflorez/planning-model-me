@@ -33,6 +33,10 @@ dependencies {
     testImplementation 'com.mercadolibre.restclient:restclient-core:0.3.46:tests'
 }
 
+configurations {
+    all*.exclude module : 'spring-boot-starter-logging'
+}
+
 test {
     useJUnitPlatform()
 

@@ -24,7 +24,7 @@ subprojects {
     apply plugin: 'java'
 
     test {
-        reports.html.enabled = false
+        reports.html.enabled = true
     }
 
     dependencies {
