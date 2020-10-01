@@ -20,7 +20,7 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
 
     private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
     private static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
-    private static final int HOURS_TO_SHOW = 24;
+    private static final int HOURS_TO_SHOW = 25;
 
     private PlanningModelGateway planningModelGateway;
 
@@ -105,7 +105,7 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
     }
 
     private List<ColumnHeader> createColumnHeaders(final LogisticCenterConfiguration config) {
-        final LocalTime actualTime = LocalTime.now(config.getTimeZone().toZoneId());
+        final LocalDateTime actualTime = LocalDateTime.now(config.getTimeZone().toZoneId());
 
         final List<ColumnHeader> columns = new ArrayList<>(25);
         columns.add(new ColumnHeader("column_1", "Hora de operacion", null));
@@ -114,7 +114,9 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 .mapToObj(index -> new ColumnHeader(
                         format("column_%s", 2 + index),
                         actualTime.plusHours(index).format(HOUR_FORMAT),
-                        actualTime.plusHours(index).getHour()))
+                        actualTime.plusHours(index).getHour()
+                                + "-"
+                                + actualTime.plusHours(index).getDayOfMonth()))
                 .collect(toList()));
 
         return columns;
@@ -144,8 +146,8 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                                                final List<ColumnHeader> headers,
                                                final List<Entity> entities) {
 
-        final Map<Integer, Map<Source, Entity>> entitiesByHour = entities.stream()
-                .collect(groupingBy(Entity::getHour, toMap(Entity::getSource, identity())));
+        final Map<String, Map<Source, Entity>> entitiesByHour = entities.stream()
+                .collect(groupingBy(Entity::getHourAndDay, toMap(Entity::getSource, identity())));
 
         final Map<String, Content> content = new LinkedHashMap<>();
 

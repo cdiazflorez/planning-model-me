@@ -9,9 +9,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
@@ -21,8 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.TimeZone;
@@ -99,8 +95,8 @@ public class GetProjectionTest {
 
         assertEquals(HEADCOUNT.getName(), headcount.getId());
         assertTrue(headcount.isOpen());
-        assertEquals(25, headcount.getContent().get(0).size());
-        assertEquals(25, headcount.getContent().get(1).size());
+        assertEquals(26, headcount.getContent().get(0).size());
+        assertEquals(26, headcount.getContent().get(1).size());
         assertEquals("20", headcount.getContent().get(0).get("column_2").getTitle());
         assertEquals(time.atZone(TIME_ZONE.toZoneId()).withNano(0),
                 headcount.getContent().get(0).get("column_2").getDate().withNano(0));
@@ -112,7 +108,7 @@ public class GetProjectionTest {
 
         assertEquals(PRODUCTIVITY.getName(), productivity.getId());
         assertTrue(productivity.isOpen());
-        assertEquals(25, productivity.getContent().get(0).size());
+        assertEquals(26, productivity.getContent().get(0).size());
         assertEquals("30", productivity.getContent().get(0).get("column_3").getTitle());
         assertEquals("Productividad polivalente", productivity.getContent().get(0).get("column_3")
                 .getTooltip().get("title_1"));
@@ -154,12 +150,24 @@ public class GetProjectionTest {
                         .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(15)
+                        .build(),
+                Entity.builder()
+                        .date(now(TIME_ZONE.toZoneId()).plusDays(1))
+                        .processName(PICKING)
+                        .source(Source.FORECAST)
+                        .value(30)
                         .build()
         );
     }
 
     private List<Entity> mockProductivityEntities() {
         return List.of(
+                Entity.builder()
+                        .date(now(TIME_ZONE.toZoneId()))
+                        .processName(PICKING)
+                        .source(Source.FORECAST)
+                        .value(60)
+                        .build(),
                 Entity.builder()
                         .date(now(TIME_ZONE.toZoneId()).plusHours(1))
                         .processName(PICKING)
@@ -171,6 +179,12 @@ public class GetProjectionTest {
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(50)
+                        .build(),
+                Entity.builder()
+                        .date(now(TIME_ZONE.toZoneId()).plusDays(1))
+                        .processName(PICKING)
+                        .source(Source.FORECAST)
+                        .value(75)
                         .build()
         );
     }

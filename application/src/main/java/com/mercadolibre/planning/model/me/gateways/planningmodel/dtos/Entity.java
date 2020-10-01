@@ -22,8 +22,8 @@ public class Entity {
 
     private MetricUnit metricUnit;
 
-    public int getHour() {
-        return date.getHour();
+    public String getHourAndDay() {
+        return date.getHour() + "-" + date.getDayOfMonth();
     }
 
     public LocalTime getTime() {

@@ -9,5 +9,5 @@ public class ColumnHeader {
 
     private String title;
 
-    private Integer value;
+    private String value;
 }
