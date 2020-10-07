@@ -8,6 +8,8 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
@@ -38,7 +40,8 @@ import static java.util.stream.Collectors.toList;
 @Component
 public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway {
 
-    private static final String URL = "/planning/model/workflows/%s";
+    private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
+    private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private final ObjectMapper objectMapper;
 
 
@@ -50,7 +53,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     @Override
     public List<Entity> getEntities(final EntityRequest entityRequest) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(URL + "/entities/%s",
+                .url(format(WORKFLOWS_URL + "/entities/%s",
                         entityRequest.getWorkflow().getName(),
                         entityRequest.getEntityType().getName()))
                 .GET()
@@ -91,7 +94,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     @Override
     public ForecastResponse postForecast(final Workflow workflow, final Forecast forecastDto) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(URL, workflow) + "/forecasts")
+                .url(format(WORKFLOWS_URL, workflow) + "/forecasts")
                 .POST(requestSupplier(forecastDto))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK, HttpStatus.CREATED))
                 .build();
@@ -102,8 +105,24 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     @Override
     public List<ProjectionResponse> runProjection(final ProjectionRequest projectionRequest) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(URL, projectionRequest.getWorkflow()) + "/projections")
+                .url(format(WORKFLOWS_URL, projectionRequest.getWorkflow()) + "/projections")
                 .POST(requestSupplier(projectionRequest))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public ConfigurationResponse getConfiguration(final ConfigurationRequest configurationRequest) {
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put("warehouse_id", configurationRequest.getWarehouseId());
+        params.put("key", configurationRequest.getKey());
+
+        final HttpRequest request = HttpRequest.builder()
+                .url(CONFIGURATION_URL)
+                .GET()
+                .queryParams(params)
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Backlog;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
@@ -28,6 +30,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
@@ -42,6 +45,7 @@ import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -52,6 +56,7 @@ public class PlanningModelApiClientTest extends BaseClientTest {
     private static final String ENTITIES_URL =
             "/planning/model/workflows/fbm-wms-outbound/entities/%s";
     private static final String POST_FORECAST_URL = "/planning/model/workflows/%s/forecasts";
+    private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String RUN_PROJECTIONS_URL = "/planning/model/workflows/%s/projections";
 
     private PlanningModelApiClient client;
@@ -246,5 +251,34 @@ public class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(ZonedDateTime.parse("2020-09-29T14:00:00Z", ISO_OFFSET_DATE_TIME),
                 cpt3.getProjectedEndDate());
         assertEquals(70, cpt3.getRemainingQuantity());
+    }
+
+    @Test
+    public void testGetConfigurationOk() throws JSONException {
+        // GIVEN
+        final ConfigurationRequest request = ConfigurationRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .key("estimated_delivery_time")
+                .build();
+
+        final JSONObject response = new JSONObject()
+                .put("value", "60")
+                .put("metric_unit", "minutes");
+
+        MockResponse.builder()
+                .withMethod(GET)
+                .withURL(BASE_URL + CONFIGURATION_URL)
+                .withStatusCode(HttpStatus.OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(response.toString())
+                .build();
+
+        // WHEN
+        final ConfigurationResponse configurationResponse = client.getConfiguration(request);
+
+        // THEN
+        assertNotNull(configurationResponse);
+        assertEquals(60, configurationResponse.getValue());
+        assertEquals(MINUTES, configurationResponse.getMetricUnit());
     }
 }

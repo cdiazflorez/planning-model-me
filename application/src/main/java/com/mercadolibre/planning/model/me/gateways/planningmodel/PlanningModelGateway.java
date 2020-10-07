@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel;
 
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
@@ -17,4 +19,6 @@ public interface PlanningModelGateway {
     ForecastResponse postForecast(final Workflow workflow, final Forecast forecastDto);
 
     List<ProjectionResponse> runProjection(final ProjectionRequest request);
+
+    ConfigurationResponse getConfiguration(final ConfigurationRequest request);
 }
