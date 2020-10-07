@@ -14,11 +14,12 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -93,6 +94,17 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .url(format(URL, workflow) + "/forecasts")
                 .POST(requestSupplier(forecastDto))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK, HttpStatus.CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public List<ProjectionResponse> runProjection(final ProjectionRequest projectionRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(URL, projectionRequest.getWorkflow()) + "/projections")
+                .POST(requestSupplier(projectionRequest))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {}));
