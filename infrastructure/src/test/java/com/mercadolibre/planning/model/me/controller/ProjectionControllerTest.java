@@ -171,7 +171,7 @@ public class ProjectionControllerTest {
     private String complexTableJsonResponse() {
         return "{\n"
                 + "   \"title\":\"Test\",\n"
-                + "   \"complex_table1\":{\n"
+                + "   \"complex_table_1\":{\n"
                 + "      \"columns\":[\n"
                 + "         {\n"
                 + "            \"id\":\"column_1\",\n"

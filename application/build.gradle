@@ -11,8 +11,6 @@ dependencies {
     compile project(':core')
     compile 'javax.inject:javax.inject:1'
     compile 'com.mercadolibre:java-meli-spreadsheet:1.0.0'
-
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
 }
 
 test {

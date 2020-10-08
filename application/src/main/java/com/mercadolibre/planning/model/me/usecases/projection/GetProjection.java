@@ -44,6 +44,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang.StringUtils.capitalize;
 
 @Named
 @AllArgsConstructor
@@ -53,9 +54,8 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
     private static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
     private static final int HOURS_TO_SHOW = 25;
 
-    private PlanningModelGateway planningModelGateway;
-
-    private LogisticCenterGateway logisticCenterGateway;
+    private final PlanningModelGateway planningModelGateway;
+    private final LogisticCenterGateway logisticCenterGateway;
 
     @Override
     public Projection execute(final GetProjectionInputDto input) {
@@ -77,13 +77,14 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
     private EntityRequest createRequest(final Workflow workflow,
                                         final String warehouseId,
                                         final EntityType entityType) {
+        final ZonedDateTime currentTime = getCurrentTime();
         return EntityRequest.builder()
                 .workflow(workflow)
                 .warehouseId(warehouseId)
                 .entityType(entityType)
-                .dateFrom(createNowDate())
+                .dateFrom(currentTime)
                 .processName(PROJECTION_PROCESS_NAMES)
-                .dateTo(createNowDate().plusDays(1))
+                .dateTo(currentTime.plusDays(1))
                 .build();
     }
 
@@ -97,9 +98,9 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 "Proyecciones",
                 new ComplexTable(
                         headers,
-                        List.of(createData(HEADCOUNT, headcount, headers),
-                                createData(PRODUCTIVITY, productivity, headers),
-                                createData(THROUGHPUT, throughput, headers))
+                        List.of(createData(config, HEADCOUNT, headcount, headers),
+                                createData(config, PRODUCTIVITY, productivity, headers),
+                                createData(config, THROUGHPUT, throughput, headers))
                 )
         );
     }
@@ -122,38 +123,45 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
         return columns;
     }
 
-    private Data createData(final EntityType entityType,
+    private Data createData(final LogisticCenterConfiguration config,
+                            final EntityType entityType,
                             final List<Entity> entities,
                             final List<ColumnHeader> headers) {
 
         final Map<ProcessName, List<Entity>> entitiesByProcess = entities.stream()
                 .collect(groupingBy(Entity::getProcessName));
 
+        final boolean shouldOpenTab = entityType == HEADCOUNT;
+
         return new Data(
                 entityType.getName(),
-                entityType.getName(),
-                true,
+                capitalize(entityType.getName()),
+                shouldOpenTab,
                 entitiesByProcess.entrySet().stream()
                         .sorted(Comparator.comparing(entry -> entry.getKey().getIndex()))
                         .map(entry -> createContent(
+                                config,
                                 entityType, entry.getKey(),
                                 headers, entry.getValue()))
                         .collect(toList()));
     }
 
-    private Map<String, Content> createContent(final EntityType entityType,
+    private Map<String, Content> createContent(final LogisticCenterConfiguration config,
+                                               final EntityType entityType,
                                                final ProcessName processName,
                                                final List<ColumnHeader> headers,
                                                final List<Entity> entities) {
 
         final Map<String, Map<Source, Entity>> entitiesByHour = entities.stream()
-                .collect(groupingBy(Entity::getHourAndDay, toMap(Entity::getSource, identity())));
+                .collect(groupingBy(entity -> entity.getHourAndDay(config.getTimeZone()),
+                        toMap(Entity::getSource, identity())));
 
         final Map<String, Content> content = new LinkedHashMap<>();
 
         headers.forEach(header -> {
             if ("column_1".equals(header.getId())) {
-                content.put(header.getId(), new Content(processName.getName(), null, null));
+                content.put(header.getId(),
+                        new Content(capitalize(processName.getName()), null, null));
             } else {
                 final Map<Source, Entity> entityBySource = entitiesByHour.get(header.getValue());
 
@@ -195,7 +203,7 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
         }
     }
 
-    private ZonedDateTime createNowDate() {
+    private ZonedDateTime getCurrentTime() {
         return ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
     }
 }

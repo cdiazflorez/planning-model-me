@@ -5,6 +5,7 @@ import lombok.Value;
 
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.util.TimeZone;
 
 @Value
 @Builder
@@ -22,8 +23,9 @@ public class Entity {
 
     private MetricUnit metricUnit;
 
-    public String getHourAndDay() {
-        return date.getHour() + "-" + date.getDayOfMonth();
+    public String getHourAndDay(final TimeZone timeZone) {
+        final ZonedDateTime dateWithTimeZone = date.withZoneSameInstant(timeZone.toZoneId());
+        return dateWithTimeZone.getHour() + "-" + dateWithTimeZone.getDayOfMonth();
     }
 
     public LocalTime getTime() {

@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.TimeZone;
@@ -36,6 +37,7 @@ import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getTimeZone;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -107,7 +109,7 @@ public class GetProjectionTest {
         assertEquals("15", headcount.getContent().get(1).get("column_4").getTitle());
 
         assertEquals(PRODUCTIVITY.getName(), productivity.getId());
-        assertTrue(productivity.isOpen());
+        assertFalse(productivity.isOpen());
         assertEquals(26, productivity.getContent().get(0).size());
         assertEquals("30", productivity.getContent().get(0).get("column_3").getTitle());
         assertEquals("Productividad polivalente", productivity.getContent().get(0).get("column_3")
@@ -116,18 +118,20 @@ public class GetProjectionTest {
                 .getTooltip().get("subtitle_1"));
 
         assertEquals(THROUGHPUT.getName(), throughput.getId());
-        assertTrue(throughput.isOpen());
+        assertFalse(throughput.isOpen());
         assertTrue(throughput.getContent().isEmpty());
     }
 
     private EntityRequest createRequest(final EntityType entityType) {
+        final ZonedDateTime currentTime = now().withMinute(0).withSecond(0).withNano(0);
+
         return EntityRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .entityType(entityType)
                 .processName(List.of(PICKING, PACKING))
-                .dateFrom(now().withMinute(0).withSecond(0).withNano(0))
-                .dateTo(now().withMinute(0).withSecond(0).withNano(0).withMinute(0).plusDays(1))
+                .dateFrom(currentTime)
+                .dateTo(currentTime.plusDays(1))
                 .build();
     }
 
