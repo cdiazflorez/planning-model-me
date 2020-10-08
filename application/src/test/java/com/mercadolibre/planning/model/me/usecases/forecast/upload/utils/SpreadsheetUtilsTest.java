@@ -60,7 +60,7 @@ public class SpreadsheetUtilsTest {
     }
 
     @Test
-    void testGetLongValueAtOnEmpty() {
+    void testGetLongValueAtOnEmptyRowAndColumn() {
         // GIVEN
         final MeliRow row = createMeliDocument(List.of("Test"))
                 .getSheetByName("Test")
@@ -73,14 +73,14 @@ public class SpreadsheetUtilsTest {
     }
 
     @Test
-    void testGetDoubleValueAtOnEmpty() {
+    void testGetLongValueAtOnEmptySheetRowAndColumn() {
         // GIVEN
         final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
         sheet.addRow().addCell();
 
         // WHEN
-        final double result = SpreadsheetUtils.getDoubleValueAt(sheet, 0, 0);
+        final long result = SpreadsheetUtils.getLongValueAt(sheet, 0, 0);
 
-        assertEquals(Double.NaN, result);
+        assertEquals(0L, result);
     }
 }

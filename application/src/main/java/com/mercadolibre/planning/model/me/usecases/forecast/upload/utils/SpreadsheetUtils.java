@@ -81,13 +81,13 @@ public class SpreadsheetUtils {
         }
     }
 
-    public static double getDoubleValueAt(final MeliSheet sheet, final int row, final int column) {
+    public static long getLongValueAt(final MeliSheet sheet, final int row, final int column) {
         try {
             final String value = getValueAt(sheet, row, column);
 
             return value == null || value.isEmpty()
-                    ? Double.NaN
-                    : numberFormatter.parse(value).doubleValue();
+                    ? 0L
+                    : numberFormatter.parse(value).longValue();
         } catch (ParseException | NullPointerException e) {
             throw new ForecastParsingException(
                     format("Error while trying to parse cell in row:%d and column:%d",

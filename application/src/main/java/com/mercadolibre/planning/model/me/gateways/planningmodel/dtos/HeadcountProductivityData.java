@@ -9,5 +9,5 @@ import java.time.OffsetTime;
 @Builder
 public class HeadcountProductivityData {
     private OffsetTime dayTime;
-    private double productivity;
+    private long productivity;
 }

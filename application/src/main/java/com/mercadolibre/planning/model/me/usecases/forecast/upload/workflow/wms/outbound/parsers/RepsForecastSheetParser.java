@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.formatter;
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.timeFormatter;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
@@ -68,8 +68,8 @@ public class RepsForecastSheetParser implements SheetParser {
                 sheet.getSheetName(),
                 Map.of(
                         WEEK, getValueAt(sheet, 2, 2),
-                        MONO_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 5),
-                        MULTI_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 6),
+                        MONO_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 5),
+                        MULTI_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 6),
                         PROCESSING_DISTRIBUTION, getProcessingDistribution(warehouseId, sheet),
                         HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet),
                         POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet),
@@ -142,7 +142,7 @@ public class RepsForecastSheetParser implements SheetParser {
         return headcountProcessName.getAreas().stream()
                 .map(area -> AreaDistribution.builder()
                         .areaId(area.getName())
-                        .quantity(getDoubleValueAt(
+                        .quantity(getLongValueAt(
                                 sheet,
                                 headcountProcessName.getRowIndex(),
                                 area.getColumnIndex())
@@ -158,7 +158,7 @@ public class RepsForecastSheetParser implements SheetParser {
                         .abilityLevel(POLYVALENT_ABILITY_LEVEL)
                         .processName(productivityProcess.getName())
                         .productivityMetricUnit(MetricUnit.PERCENTAGE.getName())
-                        .productivity(getDoubleValueAt(
+                        .productivity(getLongValueAt(
                                 sheet,
                                 POLYVALENT_PRODUCTIVITY_STARTING_ROW,
                                 productivityProcess.getColumnIndex())
@@ -196,7 +196,7 @@ public class RepsForecastSheetParser implements SheetParser {
                                     ZoneOffset.UTC
                                     )
                             )
-                            .productivity(getDoubleValueAt(
+                            .productivity(getLongValueAt(
                                     sheet,
                                     row,
                                     productivityProcessName.getColumnIndex())
