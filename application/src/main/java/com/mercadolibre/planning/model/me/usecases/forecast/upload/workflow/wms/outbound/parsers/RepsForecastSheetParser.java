@@ -21,8 +21,10 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
+import java.time.Instant;
 import java.time.LocalTime;
 import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -64,24 +66,27 @@ public class RepsForecastSheetParser implements SheetParser {
 
     @Override
     public ForecastSheetDto parse(final String warehouseId, final MeliSheet sheet) {
+        final LogisticCenterConfiguration config =
+                logisticCenterGateway.getConfiguration(warehouseId);
+
         return new ForecastSheetDto(
                 sheet.getSheetName(),
                 Map.of(
                         WEEK, getValueAt(sheet, 2, 2),
                         MONO_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 5),
                         MULTI_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 6),
-                        PROCESSING_DISTRIBUTION, getProcessingDistribution(warehouseId, sheet),
+                        PROCESSING_DISTRIBUTION, getProcessingDistribution(config, sheet),
                         HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet),
                         POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet),
-                        HEADCOUNT_PRODUCTIVITY, getHeadcountProductivity(sheet)
+                        HEADCOUNT_PRODUCTIVITY, getHeadcountProductivity(config, sheet)
                 )
         );
     }
 
-    private List<ProcessingDistribution> getProcessingDistribution(final String warehouseId,
-                                                                   final MeliSheet sheet) {
-        final LogisticCenterConfiguration configuration =
-                logisticCenterGateway.getConfiguration(warehouseId);
+    private List<ProcessingDistribution> getProcessingDistribution(
+            final LogisticCenterConfiguration config,
+            final MeliSheet sheet) {
+
         final List<ProcessingDistribution> processingDistributions = new ArrayList<>();
 
         ForecastProcessName.stream().forEach(forecastProcessName -> {
@@ -107,7 +112,7 @@ public class RepsForecastSheetParser implements SheetParser {
                                 .date(ZonedDateTime
                                         .parse(getValueAt(sheet, rowIndex, 1),
                                                 formatter.withZone(
-                                                        configuration.getTimeZone().toZoneId()
+                                                        config.getTimeZone().toZoneId()
                                                 )
                                         )
                                 )
@@ -168,34 +173,36 @@ public class RepsForecastSheetParser implements SheetParser {
                 .collect(Collectors.toList());
     }
 
-    private List<HeadcountProductivity> getHeadcountProductivity(final MeliSheet sheet) {
+    private List<HeadcountProductivity> getHeadcountProductivity(
+            final LogisticCenterConfiguration config,
+            final MeliSheet sheet) {
+
         return  Arrays.stream(ForecastProductivityProcessName.values())
                 .map(headcountProcessName -> HeadcountProductivity.builder()
                         .processName(headcountProcessName.getName())
                         .abilityLevel(DEFAULT_ABILITY_LEVEL)
                         .productivityMetricUnit(MetricUnit.UNITS_PER_HOUR.getName())
-                        .data(createHeadcountProductivityFrom(sheet, headcountProcessName))
+                        .data(createHeadcountProductivityFrom(config, sheet, headcountProcessName))
                         .build()
                 )
                 .collect(Collectors.toList());
     }
 
     private List<HeadcountProductivityData> createHeadcountProductivityFrom(
+            final LogisticCenterConfiguration config,
             final MeliSheet sheet,
             final ForecastProductivityProcessName productivityProcessName) {
-        // TODO: Get TimeZone from LogisticCenters API
-        final List<HeadcountProductivityData> headcountProductivityData =
-                new ArrayList<>();
+
+        final List<HeadcountProductivityData> headcountProductivityData = new ArrayList<>();
+        final ZoneId zoneId = config.getTimeZone().toZoneId();
 
         for (int hour = 0; hour < 24; hour++) {
             final int row = HEADCOUNT_PRODUCTIVITY_STARTING_ROW + hour;
             headcountProductivityData.add(
                     HeadcountProductivityData.builder()
-                            .dayTime(OffsetTime.of(
+                            .dayTime(getUtcOffset(OffsetTime.of(
                                     LocalTime.parse(getValueAt(sheet, row, 1), timeFormatter),
-                                    ZoneOffset.UTC
-                                    )
-                            )
+                                    zoneId.getRules().getOffset(Instant.now()))))
                             .productivity(getLongValueAt(
                                     sheet,
                                     row,
@@ -208,4 +215,7 @@ public class RepsForecastSheetParser implements SheetParser {
         return headcountProductivityData;
     }
 
+    public static OffsetTime getUtcOffset(final OffsetTime offsetTime) {
+        return offsetTime.withOffsetSameInstant(ZoneOffset.UTC);
+    }
 }
