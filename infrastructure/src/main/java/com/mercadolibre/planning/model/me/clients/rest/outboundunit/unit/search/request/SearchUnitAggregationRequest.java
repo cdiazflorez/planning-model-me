@@ -14,5 +14,6 @@ import java.util.List;
 public class SearchUnitAggregationRequest {
 
     private String name;
+    private List<String> keys;
     private List<SearchUnitAggregationRequestTotal> totals;
 }

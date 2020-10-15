@@ -8,8 +8,17 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.UnitGroup;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequest;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotal;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequest;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitRequest;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.AggregationResponse;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.AggregationResponseBucket;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.OutboundUnitSearchResponse;
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import com.newrelic.api.agent.Trace;
@@ -17,24 +26,82 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
 import static java.lang.String.format;
 
 @Slf4j
 @Component
-public class OutboundUnitClient extends HttpClient {
+public class OutboundUnitClient extends HttpClient implements BacklogGateway {
 
     private static final String SEARCH_GROUPS_URL = "/wms/outbound/groups/%s/search";
     public static final String CLIENT_ID = "9999";
+    private static final String AGGREGATION_BY_ETD = "by_etd";
 
     private final ObjectMapper objectMapper;
 
     protected OutboundUnitClient(final RestClient client, final ObjectMapper mapper) {
         super(client, RestPool.OUTBOUND_UNIT.name());
         this.objectMapper = mapper;
+    }
+
+    @Override
+    public boolean supportsWorkflow(final Workflow workflow) {
+        return Workflow.FBM_WMS_OUTBOUND == workflow;
+    }
+
+    @Override
+    public List<Backlog> getBacklog(final String warehouseId) {
+        final SearchUnitRequest request = SearchUnitRequest.builder()
+                .limit(0)
+                .offset(0)
+                .filter(SearchUnitFilterRequest.and(
+                        SearchUnitFilterRequest.string(WAREHOUSE_ID, warehouseId),
+                        SearchUnitFilterRequest.string(
+                                SearchUnitFilterRequestStringValue.GROUP_TYPE,
+                                "order"
+                        ),
+                        SearchUnitFilterRequest.string(STATUS, "pending")
+                ))
+                .aggregations(List.of(
+                        SearchUnitAggregationRequest.builder()
+                                .name(AGGREGATION_BY_ETD)
+                                .keys(List.of("etd"))
+                                .totals(List.of(
+                                        SearchUnitAggregationRequestTotal.builder()
+                                                .alias("total_units")
+                                                .operand("$quantity")
+                                                .operation(SUM)
+                                                .build()
+                                ))
+                                .build()
+                ))
+                .build();
+
+        final OutboundUnitSearchResponse<UnitGroup> response = searchGroups("order", request);
+
+        return response.getAggregations().stream()
+                .filter(aggregationResponse ->
+                        aggregationResponse.getName().equalsIgnoreCase(AGGREGATION_BY_ETD))
+                .map(AggregationResponse::getBuckets)
+                .flatMap(aggregationResponseBuckets -> aggregationResponseBuckets.stream())
+                .map(this::toBacklog)
+                .collect(Collectors.toList());
+    }
+
+    private Backlog toBacklog(final AggregationResponseBucket bucket) {
+        return Backlog.builder()
+                .date(ZonedDateTime.parse(bucket.getKeys().get(0)))
+                .quantity(Math.toIntExact(bucket.getTotals().get(0).getResult()))
+                .build();
     }
 
     @Trace(metricName = "API/outboundUnit/searchGroups")

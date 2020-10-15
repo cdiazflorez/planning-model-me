@@ -14,6 +14,8 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitSorter;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.OutboundUnitSearchResponse;
 import com.mercadolibre.planning.model.me.config.JsonUtilsConfiguration;
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.utils.TestUtils;
 import com.mercadolibre.restclient.MockResponse;
 import com.mercadolibre.restclient.http.HttpMethod;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
@@ -31,6 +33,7 @@ import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +42,6 @@ import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.CARDINALITY;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.CARRIER_NAME;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
-import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitOrdering.ASC;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitProperty.ESTIMATED_TIME_DEPARTURE;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
@@ -137,7 +139,6 @@ public class OutboundUnitClientTest extends BaseClientTest {
             assertThrows(ClientException.class, executable);
         }
 
-
         @Test
         @DisplayName("Units API returns a collection of units")
         public void sunnyCase() throws JSONException, JsonProcessingException {
@@ -147,7 +148,10 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .offset(0)
                     .filter(
                             SearchUnitFilterRequest.and(
-                                    SearchUnitFilterRequest.string(WAREHOUSE_ID, "BRSP01"),
+                                    SearchUnitFilterRequest.string(
+                                            SearchUnitFilterRequestStringValue.WAREHOUSE_ID,
+                                            "BRSP01"
+                                    ),
                                     SearchUnitFilterRequest.string(
                                             SearchUnitFilterRequestStringValue.GROUP_TYPE,
                                             GROUP_TYPE
@@ -224,7 +228,6 @@ public class OutboundUnitClientTest extends BaseClientTest {
             );
         }
 
-
         @Test
         @DisplayName("Units API returns an aggregation response")
         public void sunnyAggregationCase() throws JSONException, JsonProcessingException {
@@ -234,7 +237,10 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .offset(0)
                     .filter(
                             SearchUnitFilterRequest.and(
-                                    SearchUnitFilterRequest.string(WAREHOUSE_ID, "BRSP01"),
+                                    SearchUnitFilterRequest.string(
+                                            SearchUnitFilterRequestStringValue.WAREHOUSE_ID,
+                                            "BRSP01"
+                                    ),
                                     SearchUnitFilterRequest.string(
                                             SearchUnitFilterRequestStringValue.GROUP_TYPE,
                                             GROUP_TYPE
@@ -263,6 +269,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .aggregations(singletonList(
                             new SearchUnitAggregationRequest(
                                     "total_units",
+                                    singletonList("etd"),
                                     singletonList(
                                             SearchUnitAggregationRequestTotal.builder()
                                                     .alias("total_units")
@@ -341,6 +348,101 @@ public class OutboundUnitClientTest extends BaseClientTest {
                             .getBuckets().get(0)
                             .toSummaryBucket("total_units").getTotal()
             );
+        }
+
+        @Test
+        @DisplayName("OU API returns OK")
+        public void testGetBacklog() throws JsonProcessingException, JSONException {
+            // GIVEN
+            final Map<String, Object> requestBody = ImmutableMap.<String, Object>builder()
+                    .put("limit", 0)
+                    .put("offset", 0)
+                    .put("filter", singletonMap("and", asList(
+                            singletonMap("warehouse_id", "ARTW01"),
+                            singletonMap("group_type", GROUP_TYPE),
+                            singletonMap("status", "pending")
+                    )))
+                    .put("aggregations", singletonList(
+                            ImmutableMap.<String, Object>builder()
+                                    .put("name", "by_etd")
+                                    .put("keys", singletonList("etd"))
+                                    .put("totals", singletonList(
+                                            ImmutableMap.<String, String>builder()
+                                                    .put("operation", "sum")
+                                                    .put("operand", "$quantity")
+                                                    .put("alias", "total_units")
+                                                    .build()
+                                    ))
+                                    .build()
+                    ))
+                    .build();
+
+            final JSONObject responseBody = new JSONObject()
+                    .put("paging", new JSONObject().put("totals", "10"))
+                    .put("results", new JSONArray())
+                    .put("aggregations", new JSONArray().put(new JSONObject()
+                            .put("name", "by_etd")
+                            .put("buckets", new JSONArray()
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put("2020-10-07T13:00Z[UTC]")
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 114)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put("2020-10-07T09:00Z[UTC]")
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 754)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put("2020-10-07T06:00Z[UTC]")
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 200)
+                                                    )
+                                            )
+                                    )
+                            )
+                    ));
+
+            successfulResponse(
+                    POST,
+                    searchGroupUrl(GROUP_TYPE),
+                    objectMapper.writeValueAsString(requestBody),
+                    responseBody.toString()
+            );
+
+            // WHEN
+            final List<Backlog> backlogs = outboundUnitClient.getBacklog(TestUtils.WAREHOUSE_ID);
+
+            // THEN
+            assertEquals(3, backlogs.size());
+
+            final Backlog backlogCpt1 = backlogs.get(0);
+            assertEquals(ZonedDateTime.parse("2020-10-07T13:00Z[UTC]"), backlogCpt1.getDate());
+            assertEquals(114, backlogCpt1.getQuantity());
+
+            final Backlog backlogCpt2 = backlogs.get(1);
+            assertEquals(ZonedDateTime.parse("2020-10-07T09:00Z[UTC]"), backlogCpt2.getDate());
+            assertEquals(754, backlogCpt2.getQuantity());
+
+            final Backlog backlogCpt3 = backlogs.get(2);
+            assertEquals(ZonedDateTime.parse("2020-10-07T06:00Z[UTC]"), backlogCpt3.getDate());
+            assertEquals(200, backlogCpt3.getQuantity());
         }
 
         private String searchGroupUrl(final String groupType) {
