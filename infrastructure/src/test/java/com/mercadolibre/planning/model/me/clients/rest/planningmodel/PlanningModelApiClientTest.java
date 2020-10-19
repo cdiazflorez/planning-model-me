@@ -4,7 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
@@ -13,7 +14,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.restclient.MockResponse;
@@ -232,22 +232,22 @@ public class PlanningModelApiClientTest extends BaseClientTest {
                 .build();
 
         // When
-        final List<ProjectionResponse> projections = client.runProjection(request);
+        final List<ProjectionResult> projections = client.runProjection(request);
 
         // Then
         assertEquals(3, projections.size());
 
-        final ProjectionResponse cpt1 = projections.get(0);
+        final ProjectionResult cpt1 = projections.get(0);
         assertEquals(ZonedDateTime.parse("2020-09-29T08:00:00Z", ISO_OFFSET_DATE_TIME),
                 cpt1.getProjectedEndDate());
         assertEquals(0, cpt1.getRemainingQuantity());
 
-        final ProjectionResponse cpt2 = projections.get(1);
+        final ProjectionResult cpt2 = projections.get(1);
         assertEquals(ZonedDateTime.parse("2020-09-29T10:00:00Z", ISO_OFFSET_DATE_TIME),
                 cpt2.getProjectedEndDate());
         assertEquals(0, cpt2.getRemainingQuantity());
 
-        final ProjectionResponse cpt3 = projections.get(2);
+        final ProjectionResult cpt3 = projections.get(2);
         assertEquals(ZonedDateTime.parse("2020-09-29T14:00:00Z", ISO_OFFSET_DATE_TIME),
                 cpt3.getProjectedEndDate());
         assertEquals(70, cpt3.getRemainingQuantity());

@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import lombok.Builder;
 import lombok.Value;
 

@@ -7,6 +7,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
+import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
@@ -17,7 +18,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastRe
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
@@ -103,7 +103,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<ProjectionResponse> runProjection(final ProjectionRequest projectionRequest) {
+    public List<ProjectionResult> runProjection(final ProjectionRequest projectionRequest) {
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL, projectionRequest.getWorkflow()) + "/projections")
                 .POST(requestSupplier(projectionRequest))

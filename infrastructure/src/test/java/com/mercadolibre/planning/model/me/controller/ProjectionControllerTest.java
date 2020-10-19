@@ -5,6 +5,9 @@ import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
@@ -27,6 +30,7 @@ import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.Use
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -63,7 +67,7 @@ public class ProjectionControllerTest {
         );
 
         when(getProjection.execute(any(GetProjectionInputDto.class)))
-                .thenReturn(new Projection("Test", mockComplexTable()));
+                .thenReturn(new Projection("Test", mockComplexTable(), mockProjectionChart()));
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -163,6 +167,29 @@ public class ProjectionControllerTest {
                                                 "column_2", new Content("1600", null, null)
                                         )
                                 )
+                        )
+                )
+        );
+    }
+
+    private Chart mockProjectionChart() {
+        return new Chart(
+                new ProcessingTime(60, MINUTES.getName()),
+                List.of(
+                        new ChartData(
+                                "10:00",
+                                "2020-07-27T10:00:00Z",
+                                ZonedDateTime.parse("2020-07-27T09:00:00Z")
+                        ),
+                        new ChartData(
+                                "11:00",
+                                "2020-07-27T11:00:00Z",
+                                ZonedDateTime.parse("2020-07-27T09:45:00Z")
+                        ),
+                        new ChartData(
+                                "12:00",
+                                "2020-07-27T12:00:00Z",
+                                ZonedDateTime.parse("2020-07-27T13:10:00Z")
                         )
                 )
         );
