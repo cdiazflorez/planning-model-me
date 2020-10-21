@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class RepsForecastSheetParserTest {
+class RepsForecastSheetParserTest {
 
     @InjectMocks
     private RepsForecastSheetParser repsForecastSheetParser;
@@ -46,8 +46,6 @@ public class RepsForecastSheetParserTest {
                 repsForecastSheetParser.parse(WAREHOUSE_ID, repsSheet);
 
         final Map<ForecastColumnName, Object> forecastSheetDtoMap = forecastSheetDto.getValues();
-
-
 
         // THEN
         assertEquals((long)58,forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
