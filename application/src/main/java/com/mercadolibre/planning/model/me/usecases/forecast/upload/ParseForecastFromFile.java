@@ -26,6 +26,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workfl
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MULTI_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.PLANNING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
@@ -89,6 +90,10 @@ public class ParseForecastFromFile implements UseCase<FileUploadDto, Forecast> {
                 Metadata.builder()
                         .key(MULTI_ORDER_DISTRIBUTION.getName())
                         .value(String.valueOf(parsedValues.get(MULTI_ORDER_DISTRIBUTION)))
+                        .build(),
+                Metadata.builder()
+                        .key(MULTI_BATCH_DISTRIBUTION.getName())
+                        .value(String.valueOf(parsedValues.get(MULTI_BATCH_DISTRIBUTION)))
                         .build()
         );
     }

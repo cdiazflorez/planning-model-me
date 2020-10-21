@@ -42,6 +42,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workfl
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MULTI_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.WEEK;
@@ -74,7 +75,8 @@ public class RepsForecastSheetParser implements SheetParser {
                 Map.of(
                         WEEK, getValueAt(sheet, 2, 2),
                         MONO_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 5),
-                        MULTI_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 6),
+                        MULTI_BATCH_DISTRIBUTION, getLongValueAt(sheet, 3, 6),
+                        MULTI_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 7),
                         PROCESSING_DISTRIBUTION, getProcessingDistribution(config, sheet),
                         HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet),
                         POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet),
