@@ -96,7 +96,9 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 new Chart(
                         new ProcessingTime(60, "minutes"),
                         projections.stream()
-                                .map(ChartData::fromProjectionResponse)
+                                .map(projectionResult -> ChartData.fromProjectionResponse(
+                                        projectionResult, config.getTimeZone().toZoneId())
+                                )
                                 .collect(toList())
                 )
         );
@@ -106,17 +108,19 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                                         final String warehouseId,
                                         final EntityType entityType) {
         final ZonedDateTime currentTime = getCurrentTime();
+
         return EntityRequest.builder()
                 .workflow(workflow)
                 .warehouseId(warehouseId)
                 .entityType(entityType)
                 .dateFrom(currentTime)
-                .processName(PROJECTION_PROCESS_NAMES)
                 .dateTo(currentTime.plusDays(1))
+                .processName(PROJECTION_PROCESS_NAMES)
                 .build();
     }
 
     private List<ProjectionResult> getProjections(final GetProjectionInputDto input) {
+        final ZonedDateTime currentTime = getCurrentTime();
         final List<Backlog> backlogs = getBacklog.execute(
                 new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
         );
@@ -126,19 +130,11 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 .workflow(input.getWorkflow())
                 .processName(List.of(PICKING, PACKING))
                 .type(CPT)
-                .dateFrom(getCurrentTime())
-                .dateTo(getCurrentTime().plusHours(HOURS_TO_SHOW))
+                .dateFrom(currentTime)
+                .dateTo(currentTime.plusHours(HOURS_TO_SHOW))
                 .backlog(backlogs)
                 .build());
 
-    }
-
-    private ChartData toChartData(final ProjectionResult projectionResult) {
-        return new ChartData(
-                String.valueOf(projectionResult.getDate().getHour()),
-                projectionResult.getDate().toString(),
-                projectionResult.getProjectedEndDate()
-        );
     }
 
     private List<ColumnHeader> createColumnHeaders(final LogisticCenterConfiguration config) {

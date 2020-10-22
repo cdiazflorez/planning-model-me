@@ -179,17 +179,17 @@ public class ProjectionControllerTest {
                         new ChartData(
                                 "10:00",
                                 "2020-07-27T10:00:00Z",
-                                ZonedDateTime.parse("2020-07-27T09:00:00Z")
+                                "2020-07-27T09:00:00Z"
                         ),
                         new ChartData(
                                 "11:00",
                                 "2020-07-27T11:00:00Z",
-                                ZonedDateTime.parse("2020-07-27T09:45:00Z")
+                                "2020-07-27T09:45:00Z"
                         ),
                         new ChartData(
                                 "12:00",
                                 "2020-07-27T12:00:00Z",
-                                ZonedDateTime.parse("2020-07-27T13:10:00Z")
+                                "2020-07-27T13:10:00Z"
                         )
                 )
         );

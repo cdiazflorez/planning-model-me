@@ -52,6 +52,8 @@ import static org.mockito.Mockito.when;
 public class GetProjectionTest {
 
     private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
+    private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
+    private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private static final TimeZone TIME_ZONE = getDefault();
 
     @InjectMocks
@@ -142,27 +144,39 @@ public class GetProjectionTest {
         final ChartData chartData1 = chartData.get(0);
         final ChartData chartData2 = chartData.get(1);
         final ChartData chartData3 = chartData.get(2);
-
+        final ChartData chartData4 = chartData.get(3);
 
         assertEquals(60, chart.getProcessingTime().getValue());
-        assertEquals(3, chartData.size());
+        assertEquals(4, chartData.size());
 
-        assertEquals(String.valueOf(getCurrentTime().plusHours(4).getHour()),
+        assertEquals(getCurrentTime().plusHours(4).toLocalTime().format(HOUR_MINUTES_FORMAT),
                 chartData1.getTitle());
-        assertEquals(String.valueOf(getCurrentTime().plusHours(4)), chartData1.getCpt());
-        assertEquals(getCurrentTime().plusHours(2).plusMinutes(30),
+        assertEquals(getCurrentTime().plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
+        assertEquals(getCurrentTime().plusHours(2).plusMinutes(30).format(DATE_FORMATTER),
                 chartData1.getProjectedEndTime());
 
-        assertEquals(String.valueOf(getCurrentTime().plusHours(5).getHour()),
+        assertEquals(getCurrentTime().plusHours(5).toLocalTime().format(HOUR_MINUTES_FORMAT),
                 chartData2.getTitle());
-        assertEquals(String.valueOf(getCurrentTime().plusHours(5)), chartData2.getCpt());
-        assertEquals(getCurrentTime().plusHours(3), chartData2.getProjectedEndTime());
+        assertEquals(getCurrentTime().plusHours(5).format(DATE_FORMATTER), chartData2.getCpt());
+        assertEquals(getCurrentTime().plusHours(3).format(DATE_FORMATTER),
+                chartData2.getProjectedEndTime());
 
-        assertEquals(String.valueOf(getCurrentTime().plusHours(6).getHour()),
-                chartData3.getTitle());
-        assertEquals(String.valueOf(getCurrentTime().plusHours(6)), chartData3.getCpt());
-        assertEquals(getCurrentTime().plusHours(8).plusMinutes(10),
+        assertEquals(
+                getCurrentTime().plusHours(5).plusMinutes(30)
+                        .toLocalTime().format(HOUR_MINUTES_FORMAT),
+                chartData3.getTitle()
+        );
+        assertEquals(getCurrentTime().plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
+                chartData3.getCpt());
+        assertEquals(getCurrentTime().plusHours(3).plusMinutes(25).format(DATE_FORMATTER),
                 chartData3.getProjectedEndTime());
+
+        assertEquals(getCurrentTime().plusHours(6).toLocalTime().format(HOUR_MINUTES_FORMAT),
+                chartData4.getTitle()
+        );
+        assertEquals(getCurrentTime().plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
+        assertEquals(getCurrentTime().plusHours(8).plusMinutes(10).format(DATE_FORMATTER),
+                chartData4.getProjectedEndTime());
     }
 
     private List<ProjectionResult> mockProjections() {
@@ -175,6 +189,11 @@ public class GetProjectionTest {
                 ProjectionResult.builder()
                         .date(getCurrentTime().plusHours(5))
                         .projectedEndDate(getCurrentTime().plusHours(3))
+                        .remainingQuantity(0)
+                        .build(),
+                ProjectionResult.builder()
+                        .date(getCurrentTime().plusHours(5).plusMinutes(30))
+                        .projectedEndDate(getCurrentTime().plusHours(3).plusMinutes(25))
                         .remainingQuantity(0)
                         .build(),
                 ProjectionResult.builder()
