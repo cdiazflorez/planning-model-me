@@ -351,9 +351,10 @@ public class OutboundUnitClientTest extends BaseClientTest {
         }
 
         @Test
-        @DisplayName("OU API returns OK")
+        @DisplayName("Units API returns OK")
         public void testGetBacklog() throws JsonProcessingException, JSONException {
             // GIVEN
+            final ZonedDateTime currentTime = ZonedDateTime.now().withMinute(0).withSecond(0);
             final Map<String, Object> requestBody = ImmutableMap.<String, Object>builder()
                     .put("limit", 0)
                     .put("offset", 0)
@@ -385,7 +386,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                             .put("buckets", new JSONArray()
                                     .put(new JSONObject()
                                             .put("keys", new JSONArray()
-                                                    .put("2020-10-07T13:00Z[UTC]")
+                                                    .put(currentTime.plusHours(1).toString())
                                             )
                                             .put("totals", new JSONArray()
                                                     .put(new JSONObject()
@@ -396,7 +397,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                                     )
                                     .put(new JSONObject()
                                             .put("keys", new JSONArray()
-                                                    .put("2020-10-07T09:00Z[UTC]")
+                                                    .put(currentTime.plusHours(2).toString())
                                             )
                                             .put("totals", new JSONArray()
                                                     .put(new JSONObject()
@@ -407,12 +408,34 @@ public class OutboundUnitClientTest extends BaseClientTest {
                                     )
                                     .put(new JSONObject()
                                             .put("keys", new JSONArray()
-                                                    .put("2020-10-07T06:00Z[UTC]")
+                                                    .put(currentTime.plusHours(3).toString())
                                             )
                                             .put("totals", new JSONArray()
                                                     .put(new JSONObject()
                                                             .put("alias", "total_units")
                                                             .put("result", 200)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put(currentTime.minusDays(1).toString())
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 37)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put("undefined")
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 37)
                                                     )
                                             )
                                     )
@@ -433,15 +456,15 @@ public class OutboundUnitClientTest extends BaseClientTest {
             assertEquals(3, backlogs.size());
 
             final Backlog backlogCpt1 = backlogs.get(0);
-            assertEquals(ZonedDateTime.parse("2020-10-07T13:00Z[UTC]"), backlogCpt1.getDate());
+            assertEquals(currentTime.plusHours(1), backlogCpt1.getDate());
             assertEquals(114, backlogCpt1.getQuantity());
 
             final Backlog backlogCpt2 = backlogs.get(1);
-            assertEquals(ZonedDateTime.parse("2020-10-07T09:00Z[UTC]"), backlogCpt2.getDate());
+            assertEquals(currentTime.plusHours(2), backlogCpt2.getDate());
             assertEquals(754, backlogCpt2.getQuantity());
 
             final Backlog backlogCpt3 = backlogs.get(2);
-            assertEquals(ZonedDateTime.parse("2020-10-07T06:00Z[UTC]"), backlogCpt3.getDate());
+            assertEquals(currentTime.plusHours(3), backlogCpt3.getDate());
             assertEquals(200, backlogCpt3.getQuantity());
         }
 

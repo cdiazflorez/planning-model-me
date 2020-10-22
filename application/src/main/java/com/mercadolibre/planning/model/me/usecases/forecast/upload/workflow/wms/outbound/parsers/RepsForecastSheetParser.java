@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.parsers;
 
+import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.AreaDistribution;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.formatter;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
@@ -58,7 +60,7 @@ public class RepsForecastSheetParser implements SheetParser {
     private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 181;
     private static final int HEADCOUNT_PRODUCTIVITY_STARTING_ROW = 184;
 
-    private LogisticCenterGateway logisticCenterGateway;
+    private final LogisticCenterGateway logisticCenterGateway;
 
     @Override
     public String name() {
@@ -67,6 +69,8 @@ public class RepsForecastSheetParser implements SheetParser {
 
     @Override
     public ForecastSheetDto parse(final String warehouseId, final MeliSheet sheet) {
+        validateIfWarehouseIdIsCorrect(warehouseId, sheet);
+
         final LogisticCenterConfiguration config =
                 logisticCenterGateway.getConfiguration(warehouseId);
 
@@ -85,28 +89,33 @@ public class RepsForecastSheetParser implements SheetParser {
         );
     }
 
+    private void validateIfWarehouseIdIsCorrect(String warehouseId, MeliSheet sheet) {
+        final String warehouseIdFromSheet = getValueAt(sheet, 3, 2);
+        boolean warehouseIdsAreDifferent = !warehouseIdFromSheet.equalsIgnoreCase(warehouseId);
+        if (isNullOrEmpty(warehouseIdFromSheet) || warehouseIdsAreDifferent) {
+            throw new UnmatchedWarehouseException(warehouseId, warehouseIdFromSheet);
+        }
+    }
+
     private List<ProcessingDistribution> getProcessingDistribution(
-            final LogisticCenterConfiguration config,
-            final MeliSheet sheet) {
+            final LogisticCenterConfiguration config, final MeliSheet sheet) {
 
         final List<ProcessingDistribution> processingDistributions = new ArrayList<>();
 
-        ForecastProcessName.stream().forEach(forecastProcessName -> {
-            forecastProcessName.getProcessTypes().forEach(forecastProcessType -> {
-                processingDistributions.add(ProcessingDistribution.builder()
+        ForecastProcessName.stream().forEach(forecastProcessName
+                -> forecastProcessName.getProcessTypes().forEach(forecastProcessType
+                        -> processingDistributions.add(ProcessingDistribution.builder()
                         .processName(forecastProcessName.toString())
                         .type(forecastProcessType.toString())
                         .quantityMetricUnit(forecastProcessType.getMetricUnit().getName())
                         .data(new ArrayList<>())
                         .build()
-                );
-            });
-        });
+        )));
 
         for (int i = 0; i < HOURS_PER_FORECAST_PERIOD; i++) {
             final int rowIndex = PROCESSING_DISTRIBUTION_STARTING_ROW + i;
 
-            processingDistributions.stream()
+            processingDistributions
                     .forEach(processingDistribution -> {
                         final int columnIndex = getColumnIndex(processingDistribution);
 

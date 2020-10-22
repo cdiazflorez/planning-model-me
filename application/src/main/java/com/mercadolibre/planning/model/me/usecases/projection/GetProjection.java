@@ -1,10 +1,15 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
+import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -12,9 +17,12 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import lombok.AllArgsConstructor;
 
@@ -35,6 +43,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
 import static java.lang.String.format;
@@ -56,6 +65,7 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
 
     private final PlanningModelGateway planningModelGateway;
     private final LogisticCenterGateway logisticCenterGateway;
+    private final GetBacklog getBacklog;
 
     @Override
     public Projection execute(final GetProjectionInputDto input) {
@@ -71,7 +81,25 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
         final List<Entity> throughput =  planningModelGateway.getEntities(
                 createRequest(workflow, warehouseId, THROUGHPUT));
 
-        return createProjection(headcount, productivity, throughput, config);
+        final List<ProjectionResult> projections = getProjections(input);
+        final List<ColumnHeader> headers = createColumnHeaders(config);
+
+        return new Projection(
+                "Proyecciones",
+                new ComplexTable(
+                        headers,
+                        List.of(createData(config, HEADCOUNT, headcount, headers),
+                                createData(config, PRODUCTIVITY, productivity, headers),
+                                createData(config, THROUGHPUT, throughput, headers))
+                ),
+                // TODO: Get processing time from /configuration endpoint in PlanningModelApiClient
+                new Chart(
+                        new ProcessingTime(60, "minutes"),
+                        projections.stream()
+                                .map(ChartData::fromProjectionResponse)
+                                .collect(toList())
+                )
+        );
     }
 
     private EntityRequest createRequest(final Workflow workflow,
@@ -88,25 +116,33 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 .build();
     }
 
-    private Projection createProjection(final List<Entity> headcount,
-                                        final List<Entity> productivity,
-                                        final List<Entity> throughput,
-                                        final LogisticCenterConfiguration config) {
-        final List<ColumnHeader> headers = createColumnHeaders(config);
+    private List<ProjectionResult> getProjections(final GetProjectionInputDto input) {
+        final List<Backlog> backlogs = getBacklog.execute(
+                new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
+        );
 
-        return new Projection(
-                "Proyecciones",
-                new ComplexTable(
-                        headers,
-                        List.of(createData(config, HEADCOUNT, headcount, headers),
-                                createData(config, PRODUCTIVITY, productivity, headers),
-                                createData(config, THROUGHPUT, throughput, headers))
-                )
+        return planningModelGateway.runProjection(ProjectionRequest.builder()
+                .warehouseId(input.getWarehouseId())
+                .workflow(input.getWorkflow())
+                .processName(List.of(PICKING, PACKING))
+                .type(CPT)
+                .dateFrom(getCurrentTime())
+                .dateTo(getCurrentTime().plusHours(HOURS_TO_SHOW))
+                .backlog(backlogs)
+                .build());
+
+    }
+
+    private ChartData toChartData(final ProjectionResult projectionResult) {
+        return new ChartData(
+                String.valueOf(projectionResult.getDate().getHour()),
+                projectionResult.getDate().toString(),
+                projectionResult.getProjectedEndDate()
         );
     }
 
     private List<ColumnHeader> createColumnHeaders(final LogisticCenterConfiguration config) {
-        final LocalDateTime actualTime = LocalDateTime.now(config.getTimeZone().toZoneId());
+        final LocalDateTime actualTime = config.getLocalDateTime();
 
         final List<ColumnHeader> columns = new ArrayList<>(25);
         columns.add(new ColumnHeader("column_1", "Hora de operacion", null));
@@ -206,4 +242,5 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
     private ZonedDateTime getCurrentTime() {
         return ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
     }
+
 }

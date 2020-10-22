@@ -93,8 +93,18 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                         aggregationResponse.getName().equalsIgnoreCase(AGGREGATION_BY_ETD))
                 .map(AggregationResponse::getBuckets)
                 .flatMap(aggregationResponseBuckets -> aggregationResponseBuckets.stream())
+                .filter(this::validCptKeys)
                 .map(this::toBacklog)
+                .filter(this::workingCpts)
                 .collect(Collectors.toList());
+    }
+
+    private boolean workingCpts(final Backlog backlog) {
+        return backlog.getDate().isAfter(ZonedDateTime.now().withHour(0));
+    }
+
+    private boolean validCptKeys(final AggregationResponseBucket bucket) {
+        return !bucket.getKeys().contains("undefined");
     }
 
     private Backlog toBacklog(final AggregationResponseBucket bucket) {

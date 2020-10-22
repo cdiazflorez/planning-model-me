@@ -32,8 +32,22 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(ForecastParsingException.class)
-    public ResponseEntity<ErrorResponse> handleException(Exception exception,
-                                                         HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleException(
+            Exception exception,
+            HttpServletRequest request) {
+        return getBadRequestResponseEntity(exception, request);
+    }
+
+    @ExceptionHandler(UnmatchedWarehouseException.class)
+    public ResponseEntity<ErrorResponse> handleUnmatchedWarehouseException(
+            Exception exception,
+            HttpServletRequest request) {
+        return getBadRequestResponseEntity(exception, request);
+    }
+
+    private ResponseEntity<ErrorResponse> getBadRequestResponseEntity(
+            Exception exception,
+            HttpServletRequest request) {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST)
                 .message(exception.getMessage())
