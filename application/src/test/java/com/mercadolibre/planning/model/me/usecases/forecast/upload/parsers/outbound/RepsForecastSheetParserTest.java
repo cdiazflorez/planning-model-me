@@ -48,14 +48,16 @@ class RepsForecastSheetParserTest {
         final ForecastSheetDto forecastSheetDto =
                 repsForecastSheetParser.parse(WAREHOUSE_ID, repsSheet);
 
-        final Map<ForecastColumnName, Object> forecastSheetDtoMap = forecastSheetDto.getValues();
+
 
         // THEN
-        assertEquals((long)58,forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
-        assertEquals((long)22,forecastSheetDtoMap.get(MULTI_BATCH_DISTRIBUTION));
-        assertEquals((long)20,forecastSheetDtoMap.get(MULTI_ORDER_DISTRIBUTION));
-
         assertNotNull(forecastSheetDto);
+        final Map<ForecastColumnName, Object> forecastSheetDtoMap = forecastSheetDto.getValues();
+        assertEquals(58L, forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
+        assertEquals(22L, forecastSheetDtoMap.get(MULTI_BATCH_DISTRIBUTION));
+        assertEquals(20L, forecastSheetDtoMap.get(MULTI_ORDER_DISTRIBUTION));
+
+
     }
 
 }
