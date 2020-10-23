@@ -18,6 +18,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastRe
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
@@ -107,6 +108,17 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL, projectionRequest.getWorkflow()) + "/projections")
                 .POST(requestSupplier(projectionRequest))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public List<ProjectionResult> runSimulation(final SimulationRequest simulationRequestRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, simulationRequestRequest.getWorkflow()) + "/simulations/run")
+                .POST(requestSupplier(simulationRequestRequest))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
