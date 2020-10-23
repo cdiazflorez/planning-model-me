@@ -15,6 +15,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntityValues;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.restclient.MockResponse;
 import org.json.JSONArray;
@@ -30,6 +34,8 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -58,6 +64,7 @@ public class PlanningModelApiClientTest extends BaseClientTest {
     private static final String POST_FORECAST_URL = "/planning/model/workflows/%s/forecasts";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String RUN_PROJECTIONS_URL = "/planning/model/workflows/%s/projections";
+    private static final String RUN_SIMULATIONS_URL = "/planning/model/workflows/%s/projections";
 
     private PlanningModelApiClient client;
 
@@ -75,7 +82,7 @@ public class PlanningModelApiClientTest extends BaseClientTest {
     void testGetEntities() throws JSONException {
         // Given
         final EntityRequest request = EntityRequest.builder()
-                .entityType(EntityType.HEADCOUNT)
+                .entityType(HEADCOUNT)
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId("ARTW01")
                 .dateFrom(ZonedDateTime.now())
@@ -251,6 +258,146 @@ public class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(ZonedDateTime.parse("2020-09-29T14:00:00Z", ISO_OFFSET_DATE_TIME),
                 cpt3.getProjectedEndDate());
         assertEquals(70, cpt3.getRemainingQuantity());
+    }
+
+    @Test
+    void runSimulation() throws JSONException {
+        // GIVEN
+
+        final SimulationRequest request = SimulationRequest
+                .builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .simulations(List.of(
+                        Simulation
+                                .builder()
+                                .processName(PICKING)
+                                .entities(List.of(
+                                        SimulationEntity
+                                                .builder()
+                                                .type(HEADCOUNT)
+                                                .values(List.of(
+                                                        SimulationEntityValues
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse("2020-07-27T10:00:00Z"))
+                                                                .quantity(32)
+                                                                .build(),
+                                                        SimulationEntityValues
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse("2020-07-27T14:00:00Z"))
+                                                                .quantity(32)
+                                                                .build()
+                                                )).build(),
+
+                                        SimulationEntity
+                                                .builder()
+                                                .type(PRODUCTIVITY)
+                                                .values(List.of(
+                                                        SimulationEntityValues
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse("2020-07-27T10:00:00Z"))
+                                                                .quantity(40)
+                                                                .build(),
+                                                        SimulationEntityValues
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse("2020-07-27T14:00:00Z"))
+                                                                .quantity(60)
+                                                                .build()
+                                                )).build()
+                                )).build(),
+                        Simulation
+                                .builder()
+                                .processName(PACKING)
+                                .entities(List.of(
+                                        SimulationEntity
+                                                .builder()
+                                                .type(HEADCOUNT)
+                                                .values(List.of(
+                                                        SimulationEntityValues
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse("2020-07-27T10:00:00Z"))
+                                                                .quantity(32)
+                                                                .build(),
+                                                        SimulationEntityValues
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse("2020-07-27T14:00:00Z"))
+                                                                .quantity(32)
+                                                                .build()
+                                                )).build(),
+
+                                        SimulationEntity
+                                                .builder()
+                                                .type(PRODUCTIVITY)
+                                                .values(List.of(
+                                                        SimulationEntityValues
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse("2020-07-27T10:00:00Z"))
+                                                                .quantity(40)
+                                                                .build(),
+                                                        SimulationEntityValues
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse("2020-07-27T14:00:00Z"))
+                                                                .quantity(60)
+                                                                .build()
+                                                )).build()
+                                )).build()
+                )).build();
+
+        final JSONArray apiResponse = new JSONArray()
+                .put(new JSONObject()
+                        .put("date", "2020-07-27T11:00:00Z")
+                        .put("projected_end_date", "2020-07-27T10:00:00Z")
+                        .put("simulated_end_date", "2020-07-27T09:00:00Z")
+                        .put("remaining_quantity", "1000")
+                )
+                .put(new JSONObject()
+                        .put("date", "2020-07-27T12:00:00Z")
+                        .put("projected_end_date", "2020-07-27T10:40:00Z")
+                        .put("simulated_end_date", "2020-07-27T09:30:00Z")
+                        .put("remaining_quantity", "5000")
+                )
+                .put(new JSONObject()
+                        .put("date", "2020-07-27T03:00:00Z")
+                        .put("projected_end_date", "2020-07-27T02:15:00Z")
+                        .put("simulated_end_date", "2020-07-27T01:40:00Z")
+                        .put("remaining_quantity", "2100")
+                )
+                .put(new JSONObject()
+                        .put("date", "2020-07-27T05:00:00Z")
+                        .put("projected_end_date", "2020-07-27T06:00:00Z")
+                        .put("simulated_end_date", "2020-07-27T05:10:00Z")
+                        .put("remaining_quantity", "1700")
+                );
+
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(format(BASE_URL + RUN_SIMULATIONS_URL, FBM_WMS_OUTBOUND))
+                .withStatusCode(HttpStatus.OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(apiResponse.toString())
+                .build();
+
+        /*
+        // When
+        final List<ProjectionResult> projections = client.runProjection(request);
+
+        // Then
+        assertEquals(3, projections.size());
+
+        final ProjectionResult cpt1 = projections.get(0);
+        assertEquals(ZonedDateTime.parse("2020-09-29T08:00:00Z", ISO_OFFSET_DATE_TIME),
+                cpt1.getProjectedEndDate());
+        assertEquals(0, cpt1.getRemainingQuantity());
+
+        final ProjectionResult cpt2 = projections.get(1);
+        assertEquals(ZonedDateTime.parse("2020-09-29T10:00:00Z", ISO_OFFSET_DATE_TIME),
+                cpt2.getProjectedEndDate());
+        assertEquals(0, cpt2.getRemainingQuantity());
+
+        final ProjectionResult cpt3 = projections.get(2);
+        assertEquals(ZonedDateTime.parse("2020-09-29T14:00:00Z", ISO_OFFSET_DATE_TIME),
+                cpt3.getProjectedEndDate());
+        assertEquals(70, cpt3.getRemainingQuantity());*/
     }
 
     @Test
