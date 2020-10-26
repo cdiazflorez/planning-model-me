@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel;
 
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
+import com.mercadolibre.planning.model.me.entities.simulation.SimulationResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
@@ -21,7 +22,7 @@ public interface PlanningModelGateway {
 
     List<ProjectionResult> runProjection(final ProjectionRequest request);
 
-    List<ProjectionResult> runSimulation(final SimulationRequest request);
+    List<SimulationResult> runSimulation(final SimulationRequest request);
 
     ConfigurationResponse getConfiguration(final ConfigurationRequest request);
 }

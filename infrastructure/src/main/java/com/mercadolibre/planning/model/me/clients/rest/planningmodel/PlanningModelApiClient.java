@@ -8,6 +8,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
+import com.mercadolibre.planning.model.me.entities.simulation.SimulationResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
@@ -115,7 +116,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<ProjectionResult> runSimulation(final SimulationRequest simulationRequestRequest) {
+    public List<SimulationResult> runSimulation(final SimulationRequest simulationRequestRequest) {
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL, simulationRequestRequest.getWorkflow())
                         + "/simulations/run")
