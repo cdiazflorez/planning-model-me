@@ -64,7 +64,8 @@ public class PlanningModelApiClientTest extends BaseClientTest {
     private static final String POST_FORECAST_URL = "/planning/model/workflows/%s/forecasts";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String RUN_PROJECTIONS_URL = "/planning/model/workflows/%s/projections";
-    private static final String RUN_SIMULATIONS_URL = "/planning/model/workflows/%s/simulations/run";
+    private static final String RUN_SIMULATIONS_URL = "/planning/model/"
+            + "workflows/%s/simulations/run";
 
     private PlanningModelApiClient client;
 
@@ -267,6 +268,24 @@ public class PlanningModelApiClientTest extends BaseClientTest {
                 .builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
+                .processName(List.of(
+                        PACKING,
+                        PICKING
+                ))
+                .dateFrom(ZonedDateTime.parse("2020-07-27T09:00:00Z"))
+                .dateTo(ZonedDateTime.parse("2020-07-28T09:00:00Z"))
+                .backlog(List.of(
+                        SimulationEntityValues
+                                .builder()
+                                .date(ZonedDateTime.parse("2020-07-27T11:00:00Z"))
+                                .quantity(15002)
+                                .build(),
+                        SimulationEntityValues
+                                .builder()
+                                .date(ZonedDateTime.parse("2020-07-27T12:00:00Z"))
+                                .quantity(1500)
+                                .build()
+                ))
                 .simulations(List.of(
                         Simulation
                                 .builder()
@@ -278,12 +297,14 @@ public class PlanningModelApiClientTest extends BaseClientTest {
                                                 .values(List.of(
                                                         SimulationEntityValues
                                                                 .builder()
-                                                                .date(ZonedDateTime.parse("2020-07-27T10:00:00Z"))
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T10:00:00Z"))
                                                                 .quantity(32)
                                                                 .build(),
                                                         SimulationEntityValues
                                                                 .builder()
-                                                                .date(ZonedDateTime.parse("2020-07-27T14:00:00Z"))
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T14:00:00Z"))
                                                                 .quantity(32)
                                                                 .build()
                                                 )).build(),
@@ -294,12 +315,14 @@ public class PlanningModelApiClientTest extends BaseClientTest {
                                                 .values(List.of(
                                                         SimulationEntityValues
                                                                 .builder()
-                                                                .date(ZonedDateTime.parse("2020-07-27T10:00:00Z"))
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T10:00:00Z"))
                                                                 .quantity(40)
                                                                 .build(),
                                                         SimulationEntityValues
                                                                 .builder()
-                                                                .date(ZonedDateTime.parse("2020-07-27T14:00:00Z"))
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T14:00:00Z"))
                                                                 .quantity(60)
                                                                 .build()
                                                 )).build()
@@ -314,12 +337,14 @@ public class PlanningModelApiClientTest extends BaseClientTest {
                                                 .values(List.of(
                                                         SimulationEntityValues
                                                                 .builder()
-                                                                .date(ZonedDateTime.parse("2020-07-27T10:00:00Z"))
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T10:00:00Z"))
                                                                 .quantity(32)
                                                                 .build(),
                                                         SimulationEntityValues
                                                                 .builder()
-                                                                .date(ZonedDateTime.parse("2020-07-27T14:00:00Z"))
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T14:00:00Z"))
                                                                 .quantity(32)
                                                                 .build()
                                                 )).build(),
@@ -330,12 +355,14 @@ public class PlanningModelApiClientTest extends BaseClientTest {
                                                 .values(List.of(
                                                         SimulationEntityValues
                                                                 .builder()
-                                                                .date(ZonedDateTime.parse("2020-07-27T10:00:00Z"))
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T10:00:00Z"))
                                                                 .quantity(40)
                                                                 .build(),
                                                         SimulationEntityValues
                                                                 .builder()
-                                                                .date(ZonedDateTime.parse("2020-07-27T14:00:00Z"))
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T14:00:00Z"))
                                                                 .quantity(60)
                                                                 .build()
                                                 )).build()
