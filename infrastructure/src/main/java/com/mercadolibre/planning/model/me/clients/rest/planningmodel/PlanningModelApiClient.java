@@ -44,6 +44,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
     private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
+    private static final String SIMULATIONS_PREFIX_URL = "/simulations";
     private final ObjectMapper objectMapper;
 
 
@@ -116,11 +117,23 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<SimulationResult> runSimulation(final SimulationRequest simulationRequestRequest) {
+    public List<SimulationResult> runSimulation(final SimulationRequest simulationRequest) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, simulationRequestRequest.getWorkflow())
-                        + "/simulations/run")
-                .POST(requestSupplier(simulationRequestRequest))
+                .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
+                        + SIMULATIONS_PREFIX_URL + "/run")
+                .POST(requestSupplier(simulationRequest))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public List<SimulationResult> saveSimulation(final SimulationRequest simulationRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
+                        + SIMULATIONS_PREFIX_URL + "/save")
+                .POST(requestSupplier(simulationRequest))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 

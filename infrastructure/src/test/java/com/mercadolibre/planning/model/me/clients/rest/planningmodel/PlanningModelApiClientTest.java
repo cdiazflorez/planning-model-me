@@ -66,6 +66,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
     private static final String RUN_PROJECTIONS_URL = "/planning/model/workflows/%s/projections";
     private static final String RUN_SIMULATIONS_URL = "/planning/model/"
             + "workflows/%s/simulations/run";
+    private static final String SAVE_SIMULATIONS_URL = "/planning/model/"
+            + "workflows/%s/simulations/save";
 
     private PlanningModelApiClient client;
 
@@ -308,6 +310,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(4, simulations.size());
 
         final SimulationResult sim1 = simulations.get(0);
+        assertEquals(ZonedDateTime.parse("2020-07-27T11:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim1.getDate());
         assertEquals(ZonedDateTime.parse("2020-07-27T10:00:00Z", ISO_OFFSET_DATE_TIME),
                 sim1.getProjectedEndDate());
         assertEquals(ZonedDateTime.parse("2020-07-27T09:00:00Z", ISO_OFFSET_DATE_TIME),
@@ -315,6 +319,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(1000, sim1.getRemainingQuantity());
 
         final SimulationResult sim2 = simulations.get(1);
+        assertEquals(ZonedDateTime.parse("2020-07-27T12:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim2.getDate());
         assertEquals(ZonedDateTime.parse("2020-07-27T10:40:00Z", ISO_OFFSET_DATE_TIME),
                 sim2.getProjectedEndDate());
         assertEquals(ZonedDateTime.parse("2020-07-27T09:30:00Z", ISO_OFFSET_DATE_TIME),
@@ -322,6 +328,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(5000, sim2.getRemainingQuantity());
 
         final SimulationResult sim3 = simulations.get(2);
+        assertEquals(ZonedDateTime.parse("2020-07-27T03:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim3.getDate());
         assertEquals(ZonedDateTime.parse("2020-07-27T02:15:00Z", ISO_OFFSET_DATE_TIME),
                 sim3.getProjectedEndDate());
         assertEquals(ZonedDateTime.parse("2020-07-27T01:40:00Z", ISO_OFFSET_DATE_TIME),
@@ -329,10 +337,90 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(2100, sim3.getRemainingQuantity());
 
         final SimulationResult sim4 = simulations.get(3);
+        assertEquals(ZonedDateTime.parse("2020-07-27T05:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim4.getDate());
         assertEquals(ZonedDateTime.parse("2020-07-27T06:00:00Z", ISO_OFFSET_DATE_TIME),
                 sim4.getProjectedEndDate());
         assertEquals(ZonedDateTime.parse("2020-07-27T05:10:00Z", ISO_OFFSET_DATE_TIME),
                 sim4.getSimulatedEndDate());
+        assertEquals(1700, sim4.getRemainingQuantity());
+    }
+
+    @Test
+    void testSaveSimulation() throws JSONException {
+        // GIVEN
+        final SimulationRequest request = mockSimulationRequest();
+
+        final JSONArray apiResponse = new JSONArray()
+                .put(new JSONObject()
+                        .put("date", "2020-07-27T11:00:00Z")
+                        .put("projected_end_date", "2020-07-27T10:00:00Z")
+                        .put("remaining_quantity", "1000")
+                )
+                .put(new JSONObject()
+                        .put("date", "2020-07-27T12:00:00Z")
+                        .put("projected_end_date", "2020-07-27T10:40:00Z")
+                        .put("remaining_quantity", "5000")
+                )
+                .put(new JSONObject()
+                        .put("date", "2020-07-27T03:00:00Z")
+                        .put("projected_end_date", "2020-07-27T02:15:00Z")
+                        .put("remaining_quantity", "2100")
+                )
+                .put(new JSONObject()
+                        .put("date", "2020-07-27T05:00:00Z")
+                        .put("projected_end_date", "2020-07-27T06:00:00Z")
+                        .put("remaining_quantity", "1700")
+                );
+
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(format(BASE_URL + SAVE_SIMULATIONS_URL, FBM_WMS_OUTBOUND))
+                .withStatusCode(HttpStatus.OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(apiResponse.toString())
+                .build();
+
+        // When
+        final List<SimulationResult> simulations = client.saveSimulation(request);
+
+        // Then
+        assertEquals(4, simulations.size());
+
+        final SimulationResult sim1 = simulations.get(0);
+        assertEquals(null,
+                sim1.getSimulatedEndDate());
+        assertEquals(ZonedDateTime.parse("2020-07-27T11:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim1.getDate());
+        assertEquals(ZonedDateTime.parse("2020-07-27T10:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim1.getProjectedEndDate());
+        assertEquals(1000, sim1.getRemainingQuantity());
+
+        final SimulationResult sim2 = simulations.get(1);
+        assertEquals(null,
+                sim2.getSimulatedEndDate());
+        assertEquals(ZonedDateTime.parse("2020-07-27T12:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim2.getDate());
+        assertEquals(ZonedDateTime.parse("2020-07-27T10:40:00Z", ISO_OFFSET_DATE_TIME),
+                sim2.getProjectedEndDate());
+        assertEquals(5000, sim2.getRemainingQuantity());
+
+        final SimulationResult sim3 = simulations.get(2);
+        assertEquals(null,
+                sim3.getSimulatedEndDate());
+        assertEquals(ZonedDateTime.parse("2020-07-27T03:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim3.getDate());
+        assertEquals(ZonedDateTime.parse("2020-07-27T02:15:00Z", ISO_OFFSET_DATE_TIME),
+                sim3.getProjectedEndDate());
+        assertEquals(2100, sim3.getRemainingQuantity());
+
+        final SimulationResult sim4 = simulations.get(3);
+        assertEquals(null,
+                sim4.getSimulatedEndDate());
+        assertEquals(ZonedDateTime.parse("2020-07-27T05:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim4.getDate());
+        assertEquals(ZonedDateTime.parse("2020-07-27T06:00:00Z", ISO_OFFSET_DATE_TIME),
+                sim4.getProjectedEndDate());
         assertEquals(1700, sim4.getRemainingQuantity());
     }
 
