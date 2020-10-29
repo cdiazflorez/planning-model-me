@@ -14,6 +14,6 @@ public class SimulationRequest {
     private List<ProcessName> processName;
     private ZonedDateTime dateFrom;
     private ZonedDateTime dateTo;
-    private List<SimulationEntityValues> backlog;
+    private List<QuantityByDate> backlog;
     private List<Simulation> simulations;
 }

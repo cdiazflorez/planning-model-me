@@ -9,5 +9,5 @@ import java.util.List;
 @Builder
 public class SimulationEntity {
     private EntityType type;
-    private List<SimulationEntityValues> values;
+    private List<QuantityByDate> values;
 }

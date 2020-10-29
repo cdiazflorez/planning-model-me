@@ -7,7 +7,7 @@ import java.time.ZonedDateTime;
 
 @Value
 @Builder
-public class SimulationEntityValues {
+public class QuantityByDate {
     private ZonedDateTime date;
     private int quantity;
 }

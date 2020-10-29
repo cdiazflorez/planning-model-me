@@ -15,9 +15,9 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntityValues;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.restclient.MockResponse;
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PlanningModelApiClientTest extends BaseClientTest {
+class PlanningModelApiClientTest extends BaseClientTest {
 
     private static final String ENTITIES_URL =
             "/planning/model/workflows/fbm-wms-outbound/entities/%s";
@@ -143,7 +143,7 @@ public class PlanningModelApiClientTest extends BaseClientTest {
     }
 
     @Test
-    public void testPostForecastOk() throws JSONException {
+    void testPostForecastOk() throws JSONException {
         // GIVEN
         final String date = new Date().toString();
         final Forecast forecast = Forecast.builder()
@@ -168,7 +168,7 @@ public class PlanningModelApiClientTest extends BaseClientTest {
     }
 
     @Test
-    public void testPostForecastError() throws IOException {
+    void testPostForecastError() throws IOException {
         // GIVEN
         final ObjectMapper mockedObjectMapper = mock(ObjectMapper.class);
         this.client = new PlanningModelApiClient(getRestTestClient(), mockedObjectMapper);
@@ -189,7 +189,7 @@ public class PlanningModelApiClientTest extends BaseClientTest {
     }
 
     @Test
-    public void testRunProjection() throws JSONException {
+    void testRunProjection() throws JSONException {
         // GIVEN
         final ProjectionRequest request = ProjectionRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
@@ -264,110 +264,7 @@ public class PlanningModelApiClientTest extends BaseClientTest {
     @Test
     void testRunSimulation() throws JSONException {
         // GIVEN
-        final SimulationRequest request = SimulationRequest
-                .builder()
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId(WAREHOUSE_ID)
-                .processName(List.of(
-                        PACKING,
-                        PICKING
-                ))
-                .dateFrom(ZonedDateTime.parse("2020-07-27T09:00:00Z"))
-                .dateTo(ZonedDateTime.parse("2020-07-28T09:00:00Z"))
-                .backlog(List.of(
-                        SimulationEntityValues
-                                .builder()
-                                .date(ZonedDateTime.parse("2020-07-27T11:00:00Z"))
-                                .quantity(15002)
-                                .build(),
-                        SimulationEntityValues
-                                .builder()
-                                .date(ZonedDateTime.parse("2020-07-27T12:00:00Z"))
-                                .quantity(1500)
-                                .build()
-                ))
-                .simulations(List.of(
-                        Simulation
-                                .builder()
-                                .processName(PICKING)
-                                .entities(List.of(
-                                        SimulationEntity
-                                                .builder()
-                                                .type(HEADCOUNT)
-                                                .values(List.of(
-                                                        SimulationEntityValues
-                                                                .builder()
-                                                                .date(ZonedDateTime.parse(
-                                                                        "2020-07-27T10:00:00Z"))
-                                                                .quantity(32)
-                                                                .build(),
-                                                        SimulationEntityValues
-                                                                .builder()
-                                                                .date(ZonedDateTime.parse(
-                                                                        "2020-07-27T14:00:00Z"))
-                                                                .quantity(32)
-                                                                .build()
-                                                )).build(),
-
-                                        SimulationEntity
-                                                .builder()
-                                                .type(PRODUCTIVITY)
-                                                .values(List.of(
-                                                        SimulationEntityValues
-                                                                .builder()
-                                                                .date(ZonedDateTime.parse(
-                                                                        "2020-07-27T10:00:00Z"))
-                                                                .quantity(40)
-                                                                .build(),
-                                                        SimulationEntityValues
-                                                                .builder()
-                                                                .date(ZonedDateTime.parse(
-                                                                        "2020-07-27T14:00:00Z"))
-                                                                .quantity(60)
-                                                                .build()
-                                                )).build()
-                                )).build(),
-                        Simulation
-                                .builder()
-                                .processName(PACKING)
-                                .entities(List.of(
-                                        SimulationEntity
-                                                .builder()
-                                                .type(HEADCOUNT)
-                                                .values(List.of(
-                                                        SimulationEntityValues
-                                                                .builder()
-                                                                .date(ZonedDateTime.parse(
-                                                                        "2020-07-27T10:00:00Z"))
-                                                                .quantity(32)
-                                                                .build(),
-                                                        SimulationEntityValues
-                                                                .builder()
-                                                                .date(ZonedDateTime.parse(
-                                                                        "2020-07-27T14:00:00Z"))
-                                                                .quantity(32)
-                                                                .build()
-                                                )).build(),
-
-                                        SimulationEntity
-                                                .builder()
-                                                .type(PRODUCTIVITY)
-                                                .values(List.of(
-                                                        SimulationEntityValues
-                                                                .builder()
-                                                                .date(ZonedDateTime.parse(
-                                                                        "2020-07-27T10:00:00Z"))
-                                                                .quantity(40)
-                                                                .build(),
-                                                        SimulationEntityValues
-                                                                .builder()
-                                                                .date(ZonedDateTime.parse(
-                                                                        "2020-07-27T14:00:00Z"))
-                                                                .quantity(60)
-                                                                .build()
-                                                )).build()
-                                )).build()
-                )).build();
+        final SimulationRequest request = mockSimulationRequest();
 
         final JSONArray apiResponse = new JSONArray()
                 .put(new JSONObject()
@@ -439,8 +336,115 @@ public class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(1700, sim4.getRemainingQuantity());
     }
 
+    private SimulationRequest mockSimulationRequest() {
+        return SimulationRequest
+                .builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .processName(List.of(
+                        PACKING,
+                        PICKING
+                ))
+                .dateFrom(ZonedDateTime.parse("2020-07-27T09:00:00Z"))
+                .dateTo(ZonedDateTime.parse("2020-07-28T09:00:00Z"))
+                .backlog(List.of(
+                        QuantityByDate
+                                .builder()
+                                .date(ZonedDateTime.parse("2020-07-27T11:00:00Z"))
+                                .quantity(15002)
+                                .build(),
+                        QuantityByDate
+                                .builder()
+                                .date(ZonedDateTime.parse("2020-07-27T12:00:00Z"))
+                                .quantity(1500)
+                                .build()
+                ))
+                .simulations(List.of(
+                        Simulation
+                                .builder()
+                                .processName(PICKING)
+                                .entities(List.of(
+                                        SimulationEntity
+                                                .builder()
+                                                .type(HEADCOUNT)
+                                                .values(List.of(
+                                                        QuantityByDate
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T10:00:00Z"))
+                                                                .quantity(32)
+                                                                .build(),
+                                                        QuantityByDate
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T14:00:00Z"))
+                                                                .quantity(32)
+                                                                .build()
+                                                )).build(),
+
+                                        SimulationEntity
+                                                .builder()
+                                                .type(PRODUCTIVITY)
+                                                .values(List.of(
+                                                        QuantityByDate
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T10:00:00Z"))
+                                                                .quantity(40)
+                                                                .build(),
+                                                        QuantityByDate
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T14:00:00Z"))
+                                                                .quantity(60)
+                                                                .build()
+                                                )).build()
+                                )).build(),
+                        Simulation
+                                .builder()
+                                .processName(PACKING)
+                                .entities(List.of(
+                                        SimulationEntity
+                                                .builder()
+                                                .type(HEADCOUNT)
+                                                .values(List.of(
+                                                        QuantityByDate
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T10:00:00Z"))
+                                                                .quantity(32)
+                                                                .build(),
+                                                        QuantityByDate
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T14:00:00Z"))
+                                                                .quantity(32)
+                                                                .build()
+                                                )).build(),
+
+                                        SimulationEntity
+                                                .builder()
+                                                .type(PRODUCTIVITY)
+                                                .values(List.of(
+                                                        QuantityByDate
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T10:00:00Z"))
+                                                                .quantity(40)
+                                                                .build(),
+                                                        QuantityByDate
+                                                                .builder()
+                                                                .date(ZonedDateTime.parse(
+                                                                        "2020-07-27T14:00:00Z"))
+                                                                .quantity(60)
+                                                                .build()
+                                                )).build()
+                                )).build()
+                )).build();
+    }
+
     @Test
-    public void testGetConfigurationOk() throws JSONException {
+    void testGetConfigurationOk() throws JSONException {
         // GIVEN
         final ConfigurationRequest request = ConfigurationRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
