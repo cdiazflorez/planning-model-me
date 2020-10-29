@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.upload.dto;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.Builder;
 import lombok.Data;
 

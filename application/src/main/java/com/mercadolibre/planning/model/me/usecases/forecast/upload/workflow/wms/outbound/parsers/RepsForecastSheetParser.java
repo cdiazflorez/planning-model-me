@@ -122,9 +122,7 @@ public class RepsForecastSheetParser implements SheetParser {
                         processingDistribution.getData().add(ProcessingDistributionData.builder()
                                 .date(ZonedDateTime
                                         .parse(getValueAt(sheet, rowIndex, 1),
-                                                formatter.withZone(
-                                                        config.getTimeZone().toZoneId()
-                                                )
+                                                formatter.withZone(config.getZoneId())
                                         )
                                 )
                                 .quantity(getIntValueAt(sheet, rowIndex, columnIndex))
