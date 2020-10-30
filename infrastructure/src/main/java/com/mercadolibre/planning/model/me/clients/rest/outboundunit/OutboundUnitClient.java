@@ -8,6 +8,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.UnitGroup;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationFilterRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotal;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequest;
@@ -34,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
 import static java.lang.String.format;
@@ -63,14 +65,11 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         final SearchUnitRequest request = SearchUnitRequest.builder()
                 .limit(0)
                 .offset(0)
-                .filter(SearchUnitFilterRequest.and(
-                        SearchUnitFilterRequest.string(WAREHOUSE_ID, warehouseId),
-                        SearchUnitFilterRequest.string(
-                                SearchUnitFilterRequestStringValue.GROUP_TYPE,
-                                "order"
-                        ),
-                        SearchUnitFilterRequest.string(STATUS, "pending")
-                ))
+                .filter(new SearchUnitAggregationFilterRequest(List.of(
+                        Map.of(WAREHOUSE_ID.toJson(), warehouseId),
+                        Map.of(GROUP_TYPE.toJson(), "order"),
+                        Map.of(STATUS.toJson(), "pending")
+                )))
                 .aggregations(List.of(
                         SearchUnitAggregationRequest.builder()
                                 .name(AGGREGATION_BY_ETD)

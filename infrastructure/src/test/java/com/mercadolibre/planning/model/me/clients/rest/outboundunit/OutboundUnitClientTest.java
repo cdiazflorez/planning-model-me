@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.UnitGroup;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationFilterRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotal;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequest;
@@ -41,7 +42,9 @@ import java.util.Map;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.CARDINALITY;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.CARRIER_NAME;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitOrdering.ASC;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitProperty.ESTIMATED_TIME_DEPARTURE;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
@@ -146,36 +149,10 @@ public class OutboundUnitClientTest extends BaseClientTest {
             final SearchUnitRequest searchUnitRequest = SearchUnitRequest.builder()
                     .limit(10)
                     .offset(0)
-                    .filter(
-                            SearchUnitFilterRequest.and(
-                                    SearchUnitFilterRequest.string(
-                                            SearchUnitFilterRequestStringValue.WAREHOUSE_ID,
-                                            "BRSP01"
-                                    ),
-                                    SearchUnitFilterRequest.string(
-                                            SearchUnitFilterRequestStringValue.GROUP_TYPE,
-                                            GROUP_TYPE
-                                    ),
-                                    SearchUnitFilterRequest.string(STATUS, "pending"),
-                                    SearchUnitFilterRequest.or(
-                                            SearchUnitFilterRequest.and(
-                                                    SearchUnitFilterRequest.string(
-                                                            CARDINALITY,
-                                                            "multi"
-                                                    ),
-                                                    SearchUnitFilterRequest.string(
-                                                            CARRIER_NAME,
-                                                            "correios"
-                                                    )
-                                            ),
-                                            SearchUnitFilterRequest.and(
-                                                    SearchUnitFilterRequest
-                                                            .string(CARDINALITY, "multi"),
-                                                    SearchUnitFilterRequest
-                                                            .string(CARRIER_NAME, "fedex")
-                                            )
-                                    )
-                            )
+                    .filter(new SearchUnitAggregationFilterRequest(List.of(
+                            Map.of(WAREHOUSE_ID.toJson(), "BRSP01"),
+                            Map.of(SearchUnitFilterRequestStringValue.GROUP_TYPE.toJson(), "order"),
+                            Map.of(STATUS.toJson(), "pending")))
                     )
                     .sorters(List.of(
                             new SearchUnitSorter(ESTIMATED_TIME_DEPARTURE, ASC)
@@ -235,36 +212,10 @@ public class OutboundUnitClientTest extends BaseClientTest {
             final SearchUnitRequest searchUnitRequest = SearchUnitRequest.builder()
                     .limit(10)
                     .offset(0)
-                    .filter(
-                            SearchUnitFilterRequest.and(
-                                    SearchUnitFilterRequest.string(
-                                            SearchUnitFilterRequestStringValue.WAREHOUSE_ID,
-                                            "BRSP01"
-                                    ),
-                                    SearchUnitFilterRequest.string(
-                                            SearchUnitFilterRequestStringValue.GROUP_TYPE,
-                                            GROUP_TYPE
-                                    ),
-                                    SearchUnitFilterRequest.string(STATUS, "pending"),
-                                    SearchUnitFilterRequest.or(
-                                            SearchUnitFilterRequest.and(
-                                                    SearchUnitFilterRequest.string(
-                                                            CARDINALITY,
-                                                            "multi"
-                                                    ),
-                                                    SearchUnitFilterRequest.string(
-                                                            CARRIER_NAME,
-                                                            "correios"
-                                                    )
-                                            ),
-                                            SearchUnitFilterRequest.and(
-                                                    SearchUnitFilterRequest
-                                                            .string(CARDINALITY, "multi"),
-                                                    SearchUnitFilterRequest
-                                                            .string(CARRIER_NAME, "fedex")
-                                            )
-                                    )
-                            )
+                    .filter(new SearchUnitAggregationFilterRequest(List.of(
+                            Map.of(WAREHOUSE_ID.toJson(), "BRSP01"),
+                            Map.of(SearchUnitFilterRequestStringValue.GROUP_TYPE.toJson(), "order"),
+                            Map.of(STATUS.toJson(), "pending")))
                     )
                     .aggregations(singletonList(
                             new SearchUnitAggregationRequest(

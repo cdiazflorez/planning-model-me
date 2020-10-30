@@ -15,7 +15,7 @@ public class SearchUnitRequest {
 
     private int limit;
     private long offset;
-    private SearchUnitFilterRequest filter;
+    private SearchUnitAggregationFilterRequest filter;
     private List<SearchUnitAggregationRequest> aggregations;
     private List<SearchUnitSorter> sorters;
 }
