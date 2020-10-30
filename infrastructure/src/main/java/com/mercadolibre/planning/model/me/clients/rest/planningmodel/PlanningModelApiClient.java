@@ -118,11 +118,11 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<SimulationResult> runSimulation(final SimulationRequest simulationRequestRequest) {
+    public List<SimulationResult> runSimulation(final SimulationRequest simulationRequest) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, simulationRequestRequest.getWorkflow())
+                .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
                         + "/simulations/run")
-                .POST(requestSupplier(simulationRequestRequest))
+                .POST(requestSupplier(simulationRequest))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
