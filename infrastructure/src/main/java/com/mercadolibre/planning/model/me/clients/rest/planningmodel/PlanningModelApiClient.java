@@ -8,6 +8,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
+import com.mercadolibre.planning.model.me.entities.simulation.SimulationResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
@@ -20,6 +21,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
@@ -109,6 +111,18 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL, projectionRequest.getWorkflow()) + "/projections")
                 .POST(requestSupplier(projectionRequest))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public List<SimulationResult> runSimulation(final SimulationRequest simulationRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
+                        + "/simulations/run")
+                .POST(requestSupplier(simulationRequest))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
