@@ -8,6 +8,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -27,4 +29,7 @@ public interface PlanningModelGateway {
     List<SimulationResult> saveSimulation(final SimulationRequest request);
 
     ConfigurationResponse getConfiguration(final ConfigurationRequest request);
+
+    List<PlanningDistributionResponse> getPlanningDistribution(
+            final PlanningDistributionRequest request);
 }

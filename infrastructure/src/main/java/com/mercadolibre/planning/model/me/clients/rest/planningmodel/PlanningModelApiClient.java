@@ -17,6 +17,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequ
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
@@ -154,6 +156,30 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public List<PlanningDistributionResponse> getPlanningDistribution(
+            final PlanningDistributionRequest planningDistributionRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL + "/planning_distribution",
+                        planningDistributionRequest.getWorkflow().getName()))
+                .GET()
+                .queryParams(createPlanningDistributionParams(planningDistributionRequest))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    private Map<String, String> createPlanningDistributionParams(
+            final PlanningDistributionRequest request) {
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put("warehouse_id", request.getWarehouseId());
+        params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
+        params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
+
+        return params;
     }
 
     private <T> RequestBodyHandler requestSupplier(final T requestBody) {

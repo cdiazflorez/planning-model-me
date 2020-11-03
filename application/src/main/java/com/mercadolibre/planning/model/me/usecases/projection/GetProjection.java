@@ -28,7 +28,6 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -46,6 +45,9 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -69,88 +71,95 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
 
     @Override
     public Projection execute(final GetProjectionInputDto input) {
-        final String warehouseId = input.getWarehouseId();
-        final Workflow workflow = input.getWorkflow();
-        final LogisticCenterConfiguration config =
-                logisticCenterGateway.getConfiguration(warehouseId);
+        final ZonedDateTime utcDateFrom = getCurrentUtcDate();
+        final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
         final List<Entity> headcount = planningModelGateway.getEntities(
-                createRequest(workflow, warehouseId, HEADCOUNT));
-        final List<Entity> productivity = planningModelGateway.getEntities(
-                createRequest(workflow, warehouseId, PRODUCTIVITY));
-        final List<Entity> throughput =  planningModelGateway.getEntities(
-                createRequest(workflow, warehouseId, THROUGHPUT));
+                createRequest(input, HEADCOUNT, utcDateFrom, utcDateTo));
 
-        final List<ProjectionResult> projections = getProjections(input);
-        final List<ColumnHeader> headers = createColumnHeaders(config);
+        final List<Entity> productivities = planningModelGateway.getEntities(
+                createRequest(input, PRODUCTIVITY, utcDateFrom, utcDateTo));
+
+        final List<Entity> throughputs = planningModelGateway.getEntities(
+                createRequest(input, THROUGHPUT, utcDateFrom, utcDateTo));
+
+        final List<ProjectionResult> projections = getProjections(input, utcDateFrom, utcDateTo);
+
+        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
+                input.getWarehouseId());
+
+        final List<ColumnHeader> headers = createColumnHeaders(config, utcDateFrom);
 
         return new Projection(
                 "Proyecciones",
                 new ComplexTable(
                         headers,
                         List.of(createData(config, HEADCOUNT, headcount, headers),
-                                createData(config, PRODUCTIVITY, productivity, headers),
-                                createData(config, THROUGHPUT, throughput, headers))
+                                createData(config, PRODUCTIVITY, productivities, headers),
+                                createData(config, THROUGHPUT, throughputs, headers))
                 ),
                 // TODO: Get processing time from /configuration endpoint in PlanningModelApiClient
                 new Chart(
                         new ProcessingTime(60, "minutes"),
                         projections.stream()
                                 .map(projectionResult -> ChartData.fromProjectionResponse(
-                                        projectionResult, config.getTimeZone().toZoneId())
+                                        projectionResult, config.getZoneId(), utcDateTo)
                                 )
                                 .collect(toList())
                 )
         );
     }
 
-    private EntityRequest createRequest(final Workflow workflow,
-                                        final String warehouseId,
-                                        final EntityType entityType) {
-        final ZonedDateTime currentTime = getCurrentTime();
-
+    private EntityRequest createRequest(final GetProjectionInputDto input,
+                                        final EntityType entityType,
+                                        final ZonedDateTime dateFrom,
+                                        final ZonedDateTime dateTo) {
         return EntityRequest.builder()
-                .workflow(workflow)
-                .warehouseId(warehouseId)
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
                 .entityType(entityType)
-                .dateFrom(currentTime)
-                .dateTo(currentTime.plusDays(1))
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
                 .processName(PROJECTION_PROCESS_NAMES)
                 .build();
     }
 
-    private List<ProjectionResult> getProjections(final GetProjectionInputDto input) {
-        final ZonedDateTime currentTime = getCurrentTime();
+    private List<ProjectionResult> getProjections(final GetProjectionInputDto input,
+                                                  final ZonedDateTime dateFrom,
+                                                  final ZonedDateTime dateTo) {
+
+        final String warehouseId = input.getWarehouseId();
+        final Workflow workflow = input.getWorkflow();
         final List<Backlog> backlogs = getBacklog.execute(
-                new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
+                new GetBacklogInputDto(workflow, warehouseId)
         );
 
         return planningModelGateway.runProjection(ProjectionRequest.builder()
-                .warehouseId(input.getWarehouseId())
-                .workflow(input.getWorkflow())
-                .processName(List.of(PICKING, PACKING))
+                .warehouseId(warehouseId)
+                .workflow(workflow)
+                .processName(PROJECTION_PROCESS_NAMES)
                 .type(CPT)
-                .dateFrom(currentTime)
-                .dateTo(currentTime.plusHours(HOURS_TO_SHOW))
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
                 .backlog(backlogs)
                 .build());
-
     }
 
-    private List<ColumnHeader> createColumnHeaders(final LogisticCenterConfiguration config) {
-        final LocalDateTime actualTime = config.getLocalDateTime();
+    private List<ColumnHeader> createColumnHeaders(final LogisticCenterConfiguration config,
+                                                   final ZonedDateTime utcDateFrom) {
 
-        final List<ColumnHeader> columns = new ArrayList<>(25);
-        columns.add(new ColumnHeader("column_1", "Hora de operacion", null));
+        final ZonedDateTime dateFrom = convertToTimeZone(config.getZoneId(), utcDateFrom);
+        final List<ColumnHeader> columns = new ArrayList<>(HOURS_TO_SHOW);
 
+        columns.add(new ColumnHeader("column_1", "Hora de operación", null));
         columns.addAll(IntStream.range(0, HOURS_TO_SHOW)
-                .mapToObj(index -> new ColumnHeader(
-                        format("column_%s", 2 + index),
-                        actualTime.plusHours(index).format(HOUR_FORMAT),
-                        actualTime.plusHours(index).getHour()
-                                + "-"
-                                + actualTime.plusHours(index).getDayOfMonth()))
-                .collect(toList()));
+                .mapToObj(index -> {
+                    final ZonedDateTime date = dateFrom.plusHours(index);
+                    return new ColumnHeader(
+                            format("column_%s", 2 + index),
+                            date.format(HOUR_FORMAT),
+                            getHourAndDay(date));
+                }).collect(toList()));
 
         return columns;
     }
@@ -185,7 +194,8 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                                                final List<Entity> entities) {
 
         final Map<String, Map<Source, Entity>> entitiesByHour = entities.stream()
-                .collect(groupingBy(entity -> entity.getHourAndDay(config.getTimeZone()),
+                .map(entity -> entity.convertTimeZone(config.getZoneId()))
+                .collect(groupingBy(entity -> getHourAndDay(entity.getDate()),
                         toMap(Entity::getSource, identity())));
 
         final Map<String, Content> content = new LinkedHashMap<>();
@@ -234,9 +244,4 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 return null;
         }
     }
-
-    private ZonedDateTime getCurrentTime() {
-        return ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
-    }
-
 }

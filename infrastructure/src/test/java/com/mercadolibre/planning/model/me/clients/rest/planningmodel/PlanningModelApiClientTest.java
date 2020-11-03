@@ -13,6 +13,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
@@ -37,6 +39,7 @@ import java.util.List;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
@@ -68,6 +71,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
             + "workflows/%s/simulations/run";
     private static final String SAVE_SIMULATIONS_URL = "/planning/model/"
             + "workflows/%s/simulations/save";
+    private static final String PLANNING_DISTRIBUTION_URL =
+            "/planning/model/workflows/%s/planning_distribution";
 
     private PlanningModelApiClient client;
 
@@ -558,5 +563,82 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertNotNull(configurationResponse);
         assertEquals(60, configurationResponse.getValue());
         assertEquals(MINUTES, configurationResponse.getMetricUnit());
+    }
+
+    @Test
+    public void testGetPlanningDistributionOk() throws JSONException {
+        // GIVEN
+        final ZonedDateTime currentTime =
+                ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
+        final ZonedDateTime cpt1 = currentTime.plusHours(4);
+        final ZonedDateTime cpt2 = currentTime.plusHours(5);
+        final ZonedDateTime cpt3 = currentTime.plusHours(6);
+
+        final PlanningDistributionRequest request = new PlanningDistributionRequest(
+                WAREHOUSE_ID,
+                FBM_WMS_OUTBOUND,
+                currentTime,
+                currentTime.plusHours(1)
+        );
+
+        final JSONArray response = new JSONArray()
+                .put(new JSONObject()
+                        .put("total", "7501")
+                        .put("metric_unit", "units")
+                        .put("date_in", currentTime.format(ISO_OFFSET_DATE_TIME))
+                        .put("date_out", cpt1.format(ISO_OFFSET_DATE_TIME))
+                )
+                .put(new JSONObject()
+                        .put("total", "100")
+                        .put("metric_unit", "units")
+                        .put("date_in", currentTime.format(ISO_OFFSET_DATE_TIME))
+                        .put("date_out", cpt2.format(ISO_OFFSET_DATE_TIME))
+                )
+                .put(new JSONObject()
+                        .put("total", "1212")
+                        .put("metric_unit", "units")
+                        .put("date_in", currentTime.format(ISO_OFFSET_DATE_TIME))
+                        .put("date_out", cpt3.format(ISO_OFFSET_DATE_TIME))
+                );
+
+        MockResponse.builder()
+                .withMethod(GET)
+                .withURL(format(BASE_URL + PLANNING_DISTRIBUTION_URL, FBM_WMS_OUTBOUND.getName()))
+                .withStatusCode(HttpStatus.OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(response.toString())
+                .build();
+
+        // WHEN
+        final List<PlanningDistributionResponse> planningDistributionResponses =
+                client.getPlanningDistribution(request);
+
+        // THEN
+        assertEquals(3, planningDistributionResponses.size());
+
+        final PlanningDistributionResponse cpt1Response = planningDistributionResponses.get(0);
+        final PlanningDistributionResponse cpt2Response = planningDistributionResponses.get(1);
+        final PlanningDistributionResponse cpt3Response = planningDistributionResponses.get(2);
+
+        assertEquals(7501, cpt1Response.getTotal());
+        assertEquals(UNITS, cpt1Response.getMetricUnit());
+        assertEquals(currentTime.format(ISO_OFFSET_DATE_TIME),
+                cpt1Response.getDateIn().format(ISO_OFFSET_DATE_TIME));
+        assertEquals(cpt1.format(ISO_OFFSET_DATE_TIME),
+                cpt1Response.getDateOut().format(ISO_OFFSET_DATE_TIME));
+
+        assertEquals(100, cpt2Response.getTotal());
+        assertEquals(UNITS, cpt2Response.getMetricUnit());
+        assertEquals(currentTime.format(ISO_OFFSET_DATE_TIME),
+                cpt2Response.getDateIn().format(ISO_OFFSET_DATE_TIME));
+        assertEquals(cpt2.format(ISO_OFFSET_DATE_TIME),
+                cpt2Response.getDateOut().format(ISO_OFFSET_DATE_TIME));
+
+        assertEquals(1212, cpt3Response.getTotal());
+        assertEquals(UNITS, cpt3Response.getMetricUnit());
+        assertEquals(currentTime.format(ISO_OFFSET_DATE_TIME),
+                cpt3Response.getDateIn().format(ISO_OFFSET_DATE_TIME));
+        assertEquals(cpt3.format(ISO_OFFSET_DATE_TIME),
+                cpt3Response.getDateOut().format(ISO_OFFSET_DATE_TIME));
     }
 }

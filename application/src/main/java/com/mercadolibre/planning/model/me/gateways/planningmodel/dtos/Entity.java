@@ -1,14 +1,14 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.TimeZone;
 
-@Value
 @Builder
+@Data
 public class Entity {
 
     private ZonedDateTime date;
@@ -23,13 +23,13 @@ public class Entity {
 
     private MetricUnit metricUnit;
 
-    public String getHourAndDay(final TimeZone timeZone) {
-        final ZonedDateTime dateWithTimeZone = date.withZoneSameInstant(timeZone.toZoneId());
-        return dateWithTimeZone.getHour() + "-" + dateWithTimeZone.getDayOfMonth();
-    }
-
     public LocalTime getTime() {
         return date.toLocalTime();
+    }
+
+    public Entity convertTimeZone(final ZoneId zoneId) {
+        date = date.withZoneSameInstant(zoneId);
+        return this;
     }
 
 }
