@@ -26,6 +26,8 @@ public interface PlanningModelGateway {
 
     List<SimulationResult> runSimulation(final SimulationRequest request);
 
+    List<SimulationResult> saveSimulation(final SimulationRequest request);
+
     ConfigurationResponse getConfiguration(final ConfigurationRequest request);
 
     List<PlanningDistributionResponse> getPlanningDistribution(
