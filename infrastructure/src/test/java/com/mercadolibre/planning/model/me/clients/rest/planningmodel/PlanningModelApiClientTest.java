@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
@@ -87,15 +88,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     @Test
     void testGetEntities() throws JSONException {
         // Given
-        final EntityRequest request = EntityRequest.builder()
-                .entityType(HEADCOUNT)
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId("ARTW01")
-                .dateFrom(ZonedDateTime.now())
-                .dateTo(ZonedDateTime.now().plusDays(1))
-                .source(Source.FORECAST)
-                .processName(List.of(PICKING, PACKING))
-                .build();
+        final EntityRequest request = mockEntityRequest();
 
         final JSONArray apiResponse = new JSONArray()
                 .put(new JSONObject()
@@ -135,6 +128,34 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(PACKING, headcount1.getProcessName());
         assertEquals(20, headcount1.getValue());
         assertEquals(Source.SIMULATION, headcount1.getSource());
+    }
+
+    @Test
+    void testCreateEntityParams() {
+        // GIVEN
+        final EntityRequest request = mockEntityRequest();
+        // WHEN
+        Map<String, String> entityParams =  client.createEntityParams(request);
+        String processNamesAsString = client.getProcessNamesAsString(List.of(PICKING, PACKING));
+        // THEN
+        assertEquals("picking,packing",processNamesAsString);
+        assertEquals(null, entityParams.get("source"));
+        assertEquals("ARTW01",entityParams.get("warehouse_id"));
+        assertNotNull(entityParams.get("date_from"));
+        assertNotNull(entityParams.get("date_to"));
+        assertEquals(entityParams.get("process_name"), processNamesAsString);
+    }
+
+    private EntityRequest mockEntityRequest() {
+        return EntityRequest.builder()
+                .entityType(HEADCOUNT)
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId("ARTW01")
+                .dateFrom(ZonedDateTime.now())
+                .dateTo(ZonedDateTime.now().plusDays(1))
+                .source(Source.FORECAST)
+                .processName(List.of(PICKING, PACKING))
+                .build();
     }
 
     private void mockGetEntity(final JSONArray response) {
@@ -478,7 +499,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     }
 
     @Test
-    public void testGetPlanningDistributionOk() throws JSONException {
+    void testGetPlanningDistributionOk() throws JSONException {
         // GIVEN
         final ZonedDateTime currentTime =
                 ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
