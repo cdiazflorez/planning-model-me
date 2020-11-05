@@ -161,7 +161,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         params.put("warehouse_id", request.getWarehouseId());
         params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
         params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
-
         return params;
     }
 
@@ -175,7 +174,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         };
     }
 
-    protected String getProcessNamesAsString(final List<ProcessName> processNames) {
+    private String getProcessNamesAsString(final List<ProcessName> processNames) {
         return processNames.stream().map(ProcessName::getName).collect(joining(","));
     }
 }

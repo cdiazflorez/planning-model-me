@@ -136,14 +136,12 @@ class PlanningModelApiClientTest extends BaseClientTest {
         final EntityRequest request = mockEntityRequest();
         // WHEN
         Map<String, String> entityParams =  client.createEntityParams(request);
-        String processNamesAsString = client.getProcessNamesAsString(List.of(PICKING, PACKING));
         // THEN
-        assertEquals("picking,packing",processNamesAsString);
+        assertEquals("picking,packing", entityParams.get("process_name"));
         assertEquals(null, entityParams.get("source"));
         assertEquals("ARTW01",entityParams.get("warehouse_id"));
         assertNotNull(entityParams.get("date_from"));
         assertNotNull(entityParams.get("date_to"));
-        assertEquals(entityParams.get("process_name"), processNamesAsString);
     }
 
     private EntityRequest mockEntityRequest() {
