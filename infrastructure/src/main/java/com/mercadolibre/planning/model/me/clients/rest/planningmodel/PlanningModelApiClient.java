@@ -83,16 +83,12 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .build();
     }
 
-    private Map<String, String> createEntityParams(final EntityRequest request) {
+    protected Map<String, String> createEntityParams(final EntityRequest request) {
         final Map<String, String> params = new LinkedHashMap<>();
         params.put("warehouse_id", request.getWarehouseId());
         params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
         params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
         params.put("process_name", getProcessNamesAsString(request.getProcessName()));
-
-        if (request.getSource() != null) {
-            params.put("source", request.getSource().getName());
-        }
         return params;
     }
 
@@ -178,7 +174,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         params.put("warehouse_id", request.getWarehouseId());
         params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
         params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
-
         return params;
     }
 
