@@ -20,6 +20,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
@@ -69,6 +70,8 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
     private static final DateTimeFormatter CPT_HOUR_FORMAT = ofPattern("HH:mm");
     private static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
     private static final int HOURS_TO_SHOW = 25;
+    private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
+            List.of(ProcessingType.ACTIVE_WORKERS);
 
     private final PlanningModelGateway planningModelGateway;
     private final LogisticCenterGateway logisticCenterGateway;
@@ -80,13 +83,14 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
         final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
         final List<Entity> headcount = planningModelGateway.getEntities(
-                createRequest(input, HEADCOUNT, utcDateFrom, utcDateTo));
+                createRequest(input, HEADCOUNT, utcDateFrom, utcDateTo,
+                        PROJECTION_PROCESSING_TYPES));
 
         final List<Entity> productivities = planningModelGateway.getEntities(
-                createRequest(input, PRODUCTIVITY, utcDateFrom, utcDateTo));
+                 createRequest(input, PRODUCTIVITY, utcDateFrom, utcDateTo, null));
 
         final List<Entity> throughputs = planningModelGateway.getEntities(
-                createRequest(input, THROUGHPUT, utcDateFrom, utcDateTo));
+                createRequest(input, THROUGHPUT, utcDateFrom, utcDateTo, null));
 
         final List<Backlog> backlogs = getBacklog.execute(
                 new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
@@ -216,7 +220,8 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
     private EntityRequest createRequest(final GetProjectionInputDto input,
                                         final EntityType entityType,
                                         final ZonedDateTime dateFrom,
-                                        final ZonedDateTime dateTo) {
+                                        final ZonedDateTime dateTo,
+                                        final List<ProcessingType> processingType) {
         return EntityRequest.builder()
                 .workflow(input.getWorkflow())
                 .warehouseId(input.getWarehouseId())
@@ -224,6 +229,7 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 .dateFrom(dateFrom)
                 .dateTo(dateTo)
                 .processName(PROJECTION_PROCESS_NAMES)
+                .processingType(processingType)
                 .build();
     }
 

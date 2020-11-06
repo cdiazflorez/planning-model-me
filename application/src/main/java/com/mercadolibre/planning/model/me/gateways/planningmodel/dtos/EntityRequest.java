@@ -24,4 +24,6 @@ public class EntityRequest {
 
     private List<ProcessName> processName;
 
+    private List<ProcessingType> processingType;
+
 }

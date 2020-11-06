@@ -18,6 +18,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
@@ -89,7 +90,8 @@ public class GetProjectionTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        when(planningModelGateway.getEntities(createRequest(HEADCOUNT, utcCurrentTime)))
+        when(planningModelGateway.getEntities(
+                createRequest(HEADCOUNT, utcCurrentTime, List.of(ProcessingType.ACTIVE_WORKERS))))
                 .thenReturn(mockHeadcountEntities(utcCurrentTime));
 
         when(planningModelGateway.getEntities(createRequest(PRODUCTIVITY, utcCurrentTime)))
@@ -271,6 +273,12 @@ public class GetProjectionTest {
 
     private EntityRequest createRequest(final EntityType entityType,
                                         final ZonedDateTime currentTime) {
+        return createRequest(entityType, currentTime, null);
+    }
+
+    private EntityRequest createRequest(final EntityType entityType,
+                                        final ZonedDateTime currentTime,
+                                        final List<ProcessingType> processingType) {
         return EntityRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
@@ -278,6 +286,7 @@ public class GetProjectionTest {
                 .processName(List.of(PICKING, PACKING))
                 .dateFrom(currentTime)
                 .dateTo(currentTime.plusDays(1))
+                .processingType(processingType)
                 .build();
     }
 
