@@ -3,6 +3,8 @@ package com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.stream.Stream;
+
 @Getter
 @AllArgsConstructor
 public enum ForecastProductivityProcessName {
@@ -16,4 +18,7 @@ public enum ForecastProductivityProcessName {
         return name().toLowerCase();
     }
 
+    public static Stream<ForecastProductivityProcessName> stream() {
+        return Stream.of(ForecastProductivityProcessName.values());
+    }
 }

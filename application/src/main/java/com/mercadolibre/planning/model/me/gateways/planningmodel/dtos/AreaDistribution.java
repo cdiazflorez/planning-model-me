@@ -7,5 +7,5 @@ import lombok.Getter;
 @Builder
 public class AreaDistribution {
     private String areaId;
-    private long quantity;
+    private double quantity;
 }

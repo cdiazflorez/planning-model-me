@@ -12,6 +12,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Polyvalent
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistributionData;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastSheetDto;
+import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.RepsDistributionDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.parsers.SheetParser;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastHeadcountProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessName;
@@ -22,11 +23,7 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
-import java.time.Instant;
-import java.time.LocalTime;
-import java.time.OffsetTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,10 +33,10 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.formatter;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getValueAt;
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.timeFormatter;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
@@ -48,6 +45,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workfl
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.WEEK;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 
 @Named
 @AllArgsConstructor
@@ -57,8 +55,8 @@ public class RepsForecastSheetParser implements SheetParser {
     private static final int POLYVALENT_ABILITY_LEVEL = 2;
     private static final int PROCESSING_DISTRIBUTION_STARTING_ROW = 7;
     private static final int HOURS_PER_FORECAST_PERIOD = 168;
-    private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 181;
-    private static final int HEADCOUNT_PRODUCTIVITY_STARTING_ROW = 184;
+    private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 188;
+    private static final int HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET = 3;
 
     private final LogisticCenterGateway logisticCenterGateway;
 
@@ -74,17 +72,19 @@ public class RepsForecastSheetParser implements SheetParser {
         final LogisticCenterConfiguration config =
                 logisticCenterGateway.getConfiguration(warehouseId);
 
+        final RepsDistributionDto repsDistributionDto = getProcessingDistribution(config, sheet);
+
         return new ForecastSheetDto(
                 sheet.getSheetName(),
                 Map.of(
                         WEEK, getValueAt(sheet, 2, 2),
-                        MONO_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 5),
-                        MULTI_BATCH_DISTRIBUTION, getLongValueAt(sheet, 3, 6),
-                        MULTI_ORDER_DISTRIBUTION, getLongValueAt(sheet, 3, 7),
-                        PROCESSING_DISTRIBUTION, getProcessingDistribution(config, sheet),
+                        MONO_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 5),
+                        MULTI_BATCH_DISTRIBUTION, getDoubleValueAt(sheet, 3, 6),
+                        MULTI_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 7),
+                        PROCESSING_DISTRIBUTION, repsDistributionDto.getProcessingDistributions(),
                         HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet),
                         POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet),
-                        HEADCOUNT_PRODUCTIVITY, getHeadcountProductivity(config, sheet)
+                        HEADCOUNT_PRODUCTIVITY, repsDistributionDto.getHeadcountProductivities()
                 )
         );
     }
@@ -97,41 +97,67 @@ public class RepsForecastSheetParser implements SheetParser {
         }
     }
 
-    private List<ProcessingDistribution> getProcessingDistribution(
-            final LogisticCenterConfiguration config, final MeliSheet sheet) {
+    private RepsDistributionDto getProcessingDistribution(final LogisticCenterConfiguration config,
+                                                          final MeliSheet sheet) {
 
         final List<ProcessingDistribution> processingDistributions = new ArrayList<>();
-
         ForecastProcessName.stream().forEach(forecastProcessName
                 -> forecastProcessName.getProcessTypes().forEach(forecastProcessType
                         -> processingDistributions.add(ProcessingDistribution.builder()
-                        .processName(forecastProcessName.toString())
-                        .type(forecastProcessType.toString())
-                        .quantityMetricUnit(forecastProcessType.getMetricUnit().getName())
+                                .processName(forecastProcessName.toString())
+                                .type(forecastProcessType.toString())
+                                .quantityMetricUnit(forecastProcessType.getMetricUnit().getName())
+                                .data(new ArrayList<>())
+                                .build()
+                ))
+        );
+
+        final List<HeadcountProductivity> headcountProductivities = new ArrayList<>();
+        ForecastProductivityProcessName.stream().forEach(
+                processName -> headcountProductivities.add(HeadcountProductivity.builder()
+                        .processName(processName.name())
+                        .abilityLevel(DEFAULT_ABILITY_LEVEL)
+                        .productivityMetricUnit(MetricUnit.UNITS_PER_HOUR.getName())
                         .data(new ArrayList<>())
                         .build()
-        )));
+                )
+        );
 
         for (int i = 0; i < HOURS_PER_FORECAST_PERIOD; i++) {
             final int rowIndex = PROCESSING_DISTRIBUTION_STARTING_ROW + i;
+            final ZoneId zoneId = config.getZoneId();
 
             processingDistributions
                     .forEach(processingDistribution -> {
                         final int columnIndex = getColumnIndex(processingDistribution);
 
                         processingDistribution.getData().add(ProcessingDistributionData.builder()
-                                .date(ZonedDateTime
-                                        .parse(getValueAt(sheet, rowIndex, 1),
-                                                formatter.withZone(config.getZoneId())
-                                        )
+                                .date(convertToUtc(ZonedDateTime.parse(
+                                        getValueAt(sheet, rowIndex, 1),
+                                        formatter.withZone(zoneId)))
                                 )
                                 .quantity(getIntValueAt(sheet, rowIndex, columnIndex))
                                 .build()
                         );
                     });
+
+            headcountProductivities.forEach(headcountProductivity -> {
+                final int columnIndex = ForecastProcessName.from(
+                        headcountProductivity.getProcessName()).getStartingColumn()
+                        + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET;
+
+                headcountProductivity.getData().add(HeadcountProductivityData.builder()
+                        .dayTime(convertToUtc(ZonedDateTime.parse(
+                                getValueAt(sheet, rowIndex, 1),
+                                formatter.withZone(zoneId)))
+                        )
+                        .productivity(getLongValueAt(sheet, rowIndex, columnIndex))
+                        .build()
+                );
+            });
         }
 
-        return processingDistributions;
+        return new RepsDistributionDto(processingDistributions, headcountProductivities);
     }
 
     private int getColumnIndex(final ProcessingDistribution processingDistribution) {
@@ -156,7 +182,7 @@ public class RepsForecastSheetParser implements SheetParser {
         return headcountProcessName.getAreas().stream()
                 .map(area -> AreaDistribution.builder()
                         .areaId(area.getName())
-                        .quantity(getLongValueAt(
+                        .quantity(getDoubleValueAt(
                                 sheet,
                                 headcountProcessName.getRowIndex(),
                                 area.getColumnIndex())
@@ -172,7 +198,7 @@ public class RepsForecastSheetParser implements SheetParser {
                         .abilityLevel(POLYVALENT_ABILITY_LEVEL)
                         .processName(productivityProcess.getName())
                         .productivityMetricUnit(MetricUnit.PERCENTAGE.getName())
-                        .productivity(getLongValueAt(
+                        .productivity(getDoubleValueAt(
                                 sheet,
                                 POLYVALENT_PRODUCTIVITY_STARTING_ROW,
                                 productivityProcess.getColumnIndex())
@@ -182,49 +208,4 @@ public class RepsForecastSheetParser implements SheetParser {
                 .collect(Collectors.toList());
     }
 
-    private List<HeadcountProductivity> getHeadcountProductivity(
-            final LogisticCenterConfiguration config,
-            final MeliSheet sheet) {
-
-        return  Arrays.stream(ForecastProductivityProcessName.values())
-                .map(headcountProcessName -> HeadcountProductivity.builder()
-                        .processName(headcountProcessName.getName())
-                        .abilityLevel(DEFAULT_ABILITY_LEVEL)
-                        .productivityMetricUnit(MetricUnit.UNITS_PER_HOUR.getName())
-                        .data(createHeadcountProductivityFrom(config, sheet, headcountProcessName))
-                        .build()
-                )
-                .collect(Collectors.toList());
-    }
-
-    private List<HeadcountProductivityData> createHeadcountProductivityFrom(
-            final LogisticCenterConfiguration config,
-            final MeliSheet sheet,
-            final ForecastProductivityProcessName productivityProcessName) {
-
-        final List<HeadcountProductivityData> headcountProductivityData = new ArrayList<>();
-        final ZoneId zoneId = config.getTimeZone().toZoneId();
-
-        for (int hour = 0; hour < 24; hour++) {
-            final int row = HEADCOUNT_PRODUCTIVITY_STARTING_ROW + hour;
-            headcountProductivityData.add(
-                    HeadcountProductivityData.builder()
-                            .dayTime(getUtcOffset(OffsetTime.of(
-                                    LocalTime.parse(getValueAt(sheet, row, 1), timeFormatter),
-                                    zoneId.getRules().getOffset(Instant.now()))))
-                            .productivity(getLongValueAt(
-                                    sheet,
-                                    row,
-                                    productivityProcessName.getColumnIndex())
-                            )
-                            .build()
-            );
-        }
-
-        return headcountProductivityData;
-    }
-
-    public static OffsetTime getUtcOffset(final OffsetTime offsetTime) {
-        return offsetTime.withOffsetSameInstant(ZoneOffset.UTC);
-    }
 }

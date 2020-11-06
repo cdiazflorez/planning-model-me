@@ -78,9 +78,9 @@ class RepsForecastSheetParserTest {
     private void thenForecastSheetDtoIsNotNull() {
         assertNotNull(forecastSheetDto);
         final Map<ForecastColumnName, Object> forecastSheetDtoMap = forecastSheetDto.getValues();
-        assertEquals(58L, forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
-        assertEquals(22L, forecastSheetDtoMap.get(MULTI_BATCH_DISTRIBUTION));
-        assertEquals(20L, forecastSheetDtoMap.get(MULTI_ORDER_DISTRIBUTION));
+        assertEquals(50.11, forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
+        assertEquals(30.56, forecastSheetDtoMap.get(MULTI_BATCH_DISTRIBUTION));
+        assertEquals(19.33, forecastSheetDtoMap.get(MULTI_ORDER_DISTRIBUTION));
 
 
     }

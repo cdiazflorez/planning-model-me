@@ -17,7 +17,8 @@ public enum ForecastProcessType {
     PERFORMED_PROCESSING(0, MetricUnit.UNITS),
     REMAINING_PROCESSING(0, MetricUnit.MINUTES),
     WORKERS(1, MetricUnit.WORKERS),
-    ACTIVE_WORKERS(2, MetricUnit.WORKERS);
+    ACTIVE_WORKERS(2, MetricUnit.WORKERS),
+    HEADCOUNT_PRODUCTIVITY(3, MetricUnit.UNITS_PER_HOUR);
 
     private final int columnOrder;
     private final MetricUnit metricUnit;

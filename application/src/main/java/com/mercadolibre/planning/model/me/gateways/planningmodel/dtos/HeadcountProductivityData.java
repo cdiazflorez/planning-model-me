@@ -3,11 +3,11 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 
 @Getter
 @Builder
 public class HeadcountProductivityData {
-    private OffsetTime dayTime;
+    private ZonedDateTime dayTime;
     private long productivity;
 }

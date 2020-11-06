@@ -8,6 +8,6 @@ import lombok.Getter;
 public class PolyvalentProductivity {
     private String processName;
     private String productivityMetricUnit;
-    private long productivity;
+    private double productivity;
     private int abilityLevel;
 }

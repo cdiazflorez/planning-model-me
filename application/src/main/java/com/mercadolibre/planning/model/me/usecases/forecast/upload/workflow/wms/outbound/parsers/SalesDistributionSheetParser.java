@@ -15,16 +15,17 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.formatter;
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getBigIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.PLANNING_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 import static java.util.stream.Collectors.toList;
 
 @Named
@@ -66,20 +67,21 @@ public class SalesDistributionSheetParser implements SheetParser {
                                                                 final MeliRow row) {
         final LogisticCenterConfiguration configuration =
                 logisticCenterGateway.getConfiguration(warehouseId);
+        final ZoneId zoneId = configuration.getZoneId();
 
         return PlanningDistribution.builder()
-                .dateOut(ZonedDateTime
-                        .parse(getValueAt(row, 1),
-                                formatter.withZone(configuration.getTimeZone().toZoneId()))
+                .dateOut(convertToUtc(ZonedDateTime.parse(
+                        getValueAt(row, 1),
+                        formatter.withZone(zoneId)))
                 )
-                .dateIn(ZonedDateTime
-                        .parse(getValueAt(row, 2),
-                                formatter.withZone(configuration.getTimeZone().toZoneId()))
+                .dateIn(convertToUtc(ZonedDateTime.parse(
+                        getValueAt(row, 2),
+                        formatter.withZone(zoneId)))
                 )
                 .metadata(List.of(
                         Metadata.builder()
                                 .key(ForecastColumnName.CARRIER_ID.name())
-                                .value(String.valueOf(getBigIntValueAt(row, 3)))
+                                .value(getValueAt(row, 3))
                                 .build(),
                         Metadata.builder()
                                 .key(ForecastColumnName.SERVICE_ID.name())

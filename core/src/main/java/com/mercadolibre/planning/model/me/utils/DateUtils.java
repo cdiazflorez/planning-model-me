@@ -19,4 +19,8 @@ public class DateUtils {
                                                   final ZonedDateTime date) {
         return date == null ? null : date.withZoneSameInstant(zoneId);
     }
+
+    public static ZonedDateTime convertToUtc(final ZonedDateTime date) {
+        return date.withZoneSameInstant(UTC);
+    }
 }

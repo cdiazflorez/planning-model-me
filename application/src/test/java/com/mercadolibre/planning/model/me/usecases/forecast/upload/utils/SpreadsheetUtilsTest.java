@@ -43,8 +43,9 @@ public class SpreadsheetUtilsTest {
                 .getSheetByName("Test")
                 .addRow();
 
-        assertThrows(ForecastParsingException.class,
-                () -> SpreadsheetUtils.getIntValueAt(row, 1));
+        final int result = SpreadsheetUtils.getIntValueAt(row, 1);
+
+        assertEquals(0, result);
     }
 
     @Test
@@ -82,5 +83,17 @@ public class SpreadsheetUtilsTest {
         final long result = SpreadsheetUtils.getLongValueAt(sheet, 0, 0);
 
         assertEquals(0L, result);
+    }
+
+    @Test
+    void testGetDoubleValueAtOnEmptySheetRowAndColumn() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell();
+
+        // WHEN
+        final double result = SpreadsheetUtils.getDoubleValueAt(sheet, 0, 0);
+
+        assertEquals(0.00, result);
     }
 }

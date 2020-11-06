@@ -1,11 +1,11 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 
 import java.util.List;
 
-@Getter
+@Data
 @Builder
 public class HeadcountProductivity {
     private String processName;

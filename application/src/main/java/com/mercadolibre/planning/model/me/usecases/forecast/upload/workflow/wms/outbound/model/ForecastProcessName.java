@@ -21,8 +21,8 @@ import static java.util.stream.Collectors.toMap;
 public enum ForecastProcessName {
     WAVING(List.of(PERFORMED_PROCESSING), 2),
     PICKING(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 3),
-    PACKING(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 6),
-    EXPEDITION(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 9);
+    PACKING(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 7),
+    EXPEDITION(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 11);
 
     private final List<ForecastProcessType> processTypes;
     private final int startingColumn;
@@ -41,8 +41,8 @@ public enum ForecastProcessName {
     );
 
     @JsonCreator
-    public static ForecastProcessName from(String status) {
-        return LOOKUP.get(status);
+    public static ForecastProcessName from(final String status) {
+        return LOOKUP.get(status.toLowerCase());
     }
 
 }

@@ -7,10 +7,15 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ForecastHeadcountArea {
     MZ(2),
+    ESTANDAR(2),
     RS(3),
+    PTW(3),
     BL(4),
-    RK(5),
-    HV(6);
+    VOLUMINOSO(4),
+    RK_H(5),
+    CPG(5),
+    RK_L(6),
+    HV(7);
 
     private final int columnIndex;
 
