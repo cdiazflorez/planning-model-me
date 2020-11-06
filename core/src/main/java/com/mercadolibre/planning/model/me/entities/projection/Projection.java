@@ -12,6 +12,9 @@ public class Projection {
     @JsonProperty("complex_table_1")
     private ComplexTable complexTable1;
 
+    @JsonProperty("simple_table_2")
+    private SimpleTable simpleTable2;
+
     private Chart chart;
 
 }

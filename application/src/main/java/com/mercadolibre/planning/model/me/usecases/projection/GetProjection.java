@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
@@ -16,10 +17,11 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
@@ -28,6 +30,7 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -35,6 +38,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
@@ -61,7 +65,8 @@ import static org.apache.commons.lang.StringUtils.capitalize;
 @AllArgsConstructor
 public class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
 
-    private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
+    private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
+    private static final DateTimeFormatter CPT_HOUR_FORMAT = ofPattern("HH:mm");
     private static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
     private static final int HOURS_TO_SHOW = 25;
 
@@ -83,10 +88,27 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
         final List<Entity> throughputs = planningModelGateway.getEntities(
                 createRequest(input, THROUGHPUT, utcDateFrom, utcDateTo));
 
-        final List<ProjectionResult> projections = getProjections(input, utcDateFrom, utcDateTo);
+        final List<Backlog> backlogs = getBacklog.execute(
+                new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
+        );
+
+        final List<ProjectionResult> projections =
+                getProjections(input, utcDateFrom, utcDateTo, backlogs);
 
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getWarehouseId());
+
+        final List<PlanningDistributionResponse> planningDistribution = planningModelGateway
+                .getPlanningDistribution(new PlanningDistributionRequest(
+                        input.getWarehouseId(),
+                        input.getWorkflow(),
+                        utcDateFrom,
+                        utcDateFrom,
+                        utcDateTo)
+                );
+
+        // TODO: Get processing time from /configuration endpoint in PlanningModelApiClient
+        final ProcessingTime processingTime = new ProcessingTime(60, "minutes");
 
         final List<ColumnHeader> headers = createColumnHeaders(config, utcDateFrom);
 
@@ -98,9 +120,10 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                                 createData(config, PRODUCTIVITY, productivities, headers),
                                 createData(config, THROUGHPUT, throughputs, headers))
                 ),
-                // TODO: Get processing time from /configuration endpoint in PlanningModelApiClient
+                createProjectionDetailsTable(
+                        backlogs, projections, config, planningDistribution, processingTime),
                 new Chart(
-                        new ProcessingTime(60, "minutes"),
+                        processingTime,
                         projections.stream()
                                 .map(projectionResult -> ChartData.fromProjectionResponse(
                                         projectionResult, config.getZoneId(), utcDateTo)
@@ -108,6 +131,86 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                                 .collect(toList())
                 )
         );
+    }
+
+    private SimpleTable createProjectionDetailsTable(
+            final List<Backlog> backlogs,
+            final List<ProjectionResult> projectionResults,
+            final LogisticCenterConfiguration configuration,
+            final List<PlanningDistributionResponse> planningDistribution,
+            final ProcessingTime processingTime) {
+
+        final ZoneId zoneId = configuration.getTimeZone().toZoneId();
+
+        return new SimpleTable(
+                "Resumen de Proyección",
+                List.of(
+                        new ColumnHeader("column_1", "CPT's"),
+                        new ColumnHeader("column_2", "Backlog actual"),
+                        new ColumnHeader("column_3", "Desv. vs forecast"),
+                        new ColumnHeader("column_4", "Cierre proyectado")
+                ),
+                projectionResults.stream()
+                        .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
+                        .map(projection -> {
+                            final ZonedDateTime cpt = projection.getDate();
+                            final ZonedDateTime projectedEndDate = projection
+                                    .getProjectedEndDate();
+                            final int backlog = getBacklogQuantity(cpt, backlogs);
+
+                            return Map.of(
+                                    "style", getStyle(cpt, projectedEndDate, processingTime),
+                                    "column_1", convertToTimeZone(zoneId, cpt)
+                                            .format(CPT_HOUR_FORMAT),
+                                    "column_2", String.valueOf(backlog),
+                                    "column_3", getDeviation(cpt, backlog, planningDistribution),
+                                    "column_4", projectedEndDate == null
+                                            ? "+1"
+                                            : convertToTimeZone(
+                                            zoneId,
+                                            projectedEndDate).format(CPT_HOUR_FORMAT)
+                            );
+                        })
+                        .collect(toList())
+        );
+    }
+
+    private String getStyle(final ZonedDateTime cpt,
+                            final ZonedDateTime projectedEndDate,
+                            final ProcessingTime processingTime) {
+        if (projectedEndDate == null || projectedEndDate.isAfter(cpt)) {
+            return "danger";
+        } else if (projectedEndDate.isBefore(cpt.minusMinutes(processingTime.getValue()))) {
+            return "none";
+        } else {
+            return "warning";
+        }
+    }
+
+    private String getDeviation(final ZonedDateTime cpt,
+                                final int backlogQuantity,
+                                final List<PlanningDistributionResponse> planningDistribution) {
+        final long forecastedItemsForCpt = planningDistribution
+                .stream()
+                .filter(distribution -> distribution.getDateOut().equals(cpt))
+                .mapToLong(PlanningDistributionResponse::getTotal)
+                .sum();
+
+        if (forecastedItemsForCpt == 0 || backlogQuantity == 0) {
+            return "0";
+        }
+
+        final double deviation = (((double) backlogQuantity / forecastedItemsForCpt) - 1) * 100;
+
+        return String.format("%.2f", Math.round(deviation * 100.00) / 100.00);
+    }
+
+    private int getBacklogQuantity(final ZonedDateTime cpt, final List<Backlog> backlogs) {
+        final Optional<Backlog> cptBacklog = backlogs.stream()
+                .filter(backlog -> backlog.getDate().equals(cpt))
+                .findFirst();
+
+        return cptBacklog.isPresent() ? cptBacklog.get().getQuantity() : 0;
     }
 
     private EntityRequest createRequest(final GetProjectionInputDto input,
@@ -126,17 +229,11 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
 
     private List<ProjectionResult> getProjections(final GetProjectionInputDto input,
                                                   final ZonedDateTime dateFrom,
-                                                  final ZonedDateTime dateTo) {
-
-        final String warehouseId = input.getWarehouseId();
-        final Workflow workflow = input.getWorkflow();
-        final List<Backlog> backlogs = getBacklog.execute(
-                new GetBacklogInputDto(workflow, warehouseId)
-        );
-
+                                                  final ZonedDateTime dateTo,
+                                                  final List<Backlog> backlogs) {
         return planningModelGateway.runProjection(ProjectionRequest.builder()
-                .warehouseId(warehouseId)
-                .workflow(workflow)
+                .warehouseId(input.getWarehouseId())
+                .workflow(input.getWorkflow())
                 .processName(PROJECTION_PROCESS_NAMES)
                 .type(CPT)
                 .dateFrom(dateFrom)
@@ -151,13 +248,13 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
         final ZonedDateTime dateFrom = convertToTimeZone(config.getZoneId(), utcDateFrom);
         final List<ColumnHeader> columns = new ArrayList<>(HOURS_TO_SHOW);
 
-        columns.add(new ColumnHeader("column_1", "Hora de operación", null));
+        columns.add(new ColumnHeader("column_1", "Hora de operación"));
         columns.addAll(IntStream.range(0, HOURS_TO_SHOW)
                 .mapToObj(index -> {
                     final ZonedDateTime date = dateFrom.plusHours(index);
                     return new ColumnHeader(
                             format("column_%s", 2 + index),
-                            date.format(HOUR_FORMAT),
+                            date.format(COLUMN_HOUR_FORMAT),
                             getHourAndDay(date));
                 }).collect(toList()));
 
@@ -231,8 +328,8 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 return Map.of(
                         "title_1", "Hora de operación",
                         "subtitle_1", format("%s - %s",
-                                entity.getTime().format(HOUR_FORMAT),
-                                entity.getTime().plusHours(1).format(HOUR_FORMAT)),
+                                entity.getTime().format(COLUMN_HOUR_FORMAT),
+                                entity.getTime().plusHours(1).format(COLUMN_HOUR_FORMAT)),
                         "title_2", "Cantidad de reps FCST",
                         "subtitle_2", valueOf(entity.getValue())
                 );

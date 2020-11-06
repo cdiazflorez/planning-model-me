@@ -38,6 +38,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static java.lang.String.format;
 
 @Slf4j
@@ -99,7 +100,11 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     }
 
     private boolean workingCpts(final Backlog backlog) {
-        return backlog.getDate().isAfter(ZonedDateTime.now().withHour(0));
+        final ZonedDateTime currentTime = getCurrentUtcDate();
+        final ZonedDateTime backlogCptDate = backlog.getDate();
+
+        return backlogCptDate.isAfter(currentTime)
+                && backlogCptDate.isBefore(currentTime.plusDays(1).plusHours(1));
     }
 
     private boolean validCptKeys(final AggregationResponseBucket bucket) {

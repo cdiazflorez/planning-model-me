@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
@@ -34,6 +35,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Met
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -67,7 +69,11 @@ public class ProjectionControllerTest {
         );
 
         when(getProjection.execute(any(GetProjectionInputDto.class)))
-                .thenReturn(new Projection("Test", mockComplexTable(), mockProjectionChart()));
+                .thenReturn(new Projection(
+                        "Test",
+                        mockComplexTable(),
+                        mockProjectionDetailTable(),
+                        mockProjectionChart()));
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -79,7 +85,7 @@ public class ProjectionControllerTest {
 
         // THEN
         result.andExpect(status().isOk());
-        result.andExpect(content().json(complexTableJsonResponse()));
+        result.andExpect(content().json(getResourceAsString("get_projection_response.json")));
 
         Mockito.verify(getProjection).execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
@@ -179,116 +185,55 @@ public class ProjectionControllerTest {
                         new ChartData(
                                 "10:00",
                                 "2020-07-27T10:00:00Z",
-                                "2020-07-27T09:00:00Z"
+                                "2020-07-27T08:39:00Z"
                         ),
                         new ChartData(
-                                "11:00",
-                                "2020-07-27T11:00:00Z",
-                                "2020-07-27T09:45:00Z"
+                                "08:00",
+                                "2020-07-27T08:00:00Z",
+                                "2020-07-27T07:40:00Z"
                         ),
                         new ChartData(
-                                "12:00",
-                                "2020-07-27T12:00:00Z",
-                                "2020-07-27T13:10:00Z"
+                                "07:00",
+                                "2020-07-27T07:00:00Z",
+                                "2020-07-27T07:15:00Z"
                         )
                 )
         );
     }
 
-    private String complexTableJsonResponse() {
-        return "{\n"
-                + "   \"title\":\"Test\",\n"
-                + "   \"complex_table_1\":{\n"
-                + "      \"columns\":[\n"
-                + "         {\n"
-                + "            \"id\":\"column_1\",\n"
-                + "            \"title\":\"Hora de Operacion\"\n"
-                + "         }\n"
-                + "      ],\n"
-                + "      \"data\":[\n"
-                + "         {\n"
-                + "            \"id\":\"headcount\",\n"
-                + "            \"title\":\"Headcount\",\n"
-                + "            \"open\":true,\n"
-                + "            \"content\":[\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Picking\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"30\",\n"
-                + "                     \"date\":\"2020-07-27T10:00:00Z\",\n"
-                + "                     \"tooltip\":{\n"
-                + "                        \"title_1\":\"Hora de operacion\",\n"
-                + "                        \"subtitle_1\":\"11:00 - 12:00\",\n"
-                + "                        \"title_2\":\"Cantidad de reps FCST\",\n"
-                + "                        \"subtitle_2\":\"30\"\n"
-                + "                     }\n"
-                + "                  }\n"
-                + "               },\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Packing\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"30\",\n"
-                + "                     \"date\":\"2020-07-27T10:00:00Z\"\n"
-                + "                  }\n"
-                + "               }\n"
-                + "            ]\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"id\":\"productivity\",\n"
-                + "            \"title\":\"Productivity\",\n"
-                + "            \"open\":true,\n"
-                + "            \"content\":[\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Picking\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"30\",\n"
-                + "                     \"tooltip\":{\n"
-                + "                        \"title_1\":\"Productividad polivalente\",\n"
-                + "                        \"subtitle_1\":\"30,4 uds/h\"\n"
-                + "                     }\n"
-                + "                  }\n"
-                + "               },\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Packing\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"30\"\n"
-                + "                  }\n"
-                + "               }\n"
-                + "            ]\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"id\":\"throughput\",\n"
-                + "            \"title\":\"Throughput\",\n"
-                + "            \"open\":true,\n"
-                + "            \"content\":[\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Picking\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"1600\"\n"
-                + "                  }\n"
-                + "               },\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Packing\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"1600\"\n"
-                + "                  }\n"
-                + "               }\n"
-                + "            ]\n"
-                + "         }\n"
-                + "      ]\n"
-                + "   }\n"
-                + "}";
+    private SimpleTable mockProjectionDetailTable() {
+        return new SimpleTable(
+                "Resumen de Proyección",
+                List.of(
+                        new ColumnHeader("column_1", "CPT's", null),
+                        new ColumnHeader("column_2", "Backlog actual", null),
+                        new ColumnHeader("column_3", "Desv. vs forecast", null),
+                        new ColumnHeader("column_4", "Cierre proyectado", null)
+                ),
+                List.of(
+                        Map.of(
+                                "style", "none",
+                                "column_1", "10:00",
+                                "column_2", "57",
+                                "column_3", "4",
+                                "column_4", "8:39"
+                        ),
+                        Map.of(
+                                "style", "warning",
+                                "column_1", "8:00",
+                                "column_2", "34",
+                                "column_3", "6",
+                                "column_4", "7:40"
+                        ),
+                        Map.of(
+                                "style", "danger",
+                                "column_1", "7:00",
+                                "column_2", "78",
+                                "column_3", "1",
+                                "column_4", "7:15"
+                        )
+                )
+        );
     }
+
 }

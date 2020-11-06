@@ -2,9 +2,11 @@ package com.mercadolibre.planning.model.me.usecases;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -13,6 +15,9 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
@@ -26,9 +31,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
@@ -38,9 +45,9 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static java.time.ZoneOffset.UTC;
-import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
@@ -56,6 +63,11 @@ public class GetProjectionTest {
     private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private static final TimeZone TIME_ZONE = getDefault();
+    private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
+    private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
+    private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
+    private static final ZonedDateTime CPT_4 = getCurrentUtcDate().plusHours(6);
+    private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
 
     @InjectMocks
     private GetProjection getProjection;
@@ -72,7 +84,7 @@ public class GetProjectionTest {
     @Test
     public void testExecute() {
         // Given
-        final ZonedDateTime utcCurrentTime = getCurrentTime();
+        final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
@@ -94,6 +106,14 @@ public class GetProjectionTest {
                 createProjectionRequest(mockedBacklog, utcCurrentTime)))
                 .thenReturn(mockProjections(utcCurrentTime));
 
+        when(planningModelGateway.getPlanningDistribution(new PlanningDistributionRequest(
+                WAREHOUSE_ID,
+                FBM_WMS_OUTBOUND,
+                utcCurrentTime,
+                utcCurrentTime,
+                utcCurrentTime.plusDays(1))
+        )).thenReturn(mockPlanningDistribution(utcCurrentTime));
+
         // When
         final Projection projection = getProjection.execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
@@ -102,11 +122,114 @@ public class GetProjectionTest {
         );
 
         // Then
-        final ZonedDateTime currentTime = utcCurrentTime.withZoneSameInstant(TIME_ZONE.toZoneId());
         assertEquals("Proyecciones", projection.getTitle());
 
-        final List<ColumnHeader> columns = projection.getComplexTable1().getColumns();
-        final List<Data> data = projection.getComplexTable1().getData();
+        assertComplexTable(projection.getComplexTable1());
+        assertChart(projection.getChart());
+        assertProjectionDetailsTable(projection.getSimpleTable2());
+    }
+
+    private void assertProjectionDetailsTable(final SimpleTable projectionDetailsTable) {
+        final ZoneId zoneId = TIME_ZONE.toZoneId();
+        final ZonedDateTime currentTime = convertToTimeZone(zoneId, getCurrentUtcDate());
+
+        assertEquals("Resumen de Proyección", projectionDetailsTable.getTitle());
+        assertEquals(4, projectionDetailsTable.getColumns().size());
+        assertEquals(5, projectionDetailsTable.getData().size());
+
+        final Map<String, String> cpt1 = projectionDetailsTable.getData().get(4);
+        final Map<String, String> cpt2 = projectionDetailsTable.getData().get(3);
+        final Map<String, String> cpt3 = projectionDetailsTable.getData().get(2);
+        final Map<String, String> cpt4 = projectionDetailsTable.getData().get(1);
+        final Map<String, String> cpt5 = projectionDetailsTable.getData().get(0);
+
+        assertEquals("warning", cpt1.get("style"));
+        assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
+                cpt1.get("column_1"));
+        assertEquals("150", cpt1.get("column_2"));
+        assertEquals("-63.33", cpt1.get("column_3"));
+        assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMAT),
+                cpt1.get("column_4"));
+
+        assertEquals("none", cpt2.get("style"));
+        assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
+                cpt2.get("column_1"));
+        assertEquals("235", cpt2.get("column_2"));
+        assertEquals("-21.67", cpt2.get("column_3"));
+        assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMAT), cpt2.get("column_4"));
+
+        assertEquals("none", cpt3.get("style"));
+        assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
+                cpt3.get("column_1"));
+        assertEquals("300", cpt3.get("column_2"));
+        assertEquals("44.93", cpt3.get("column_3"));
+        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(HOUR_MINUTES_FORMAT),
+                cpt3.get("column_4"));
+
+        assertEquals("danger", cpt4.get("style"));
+        assertEquals(convertToTimeZone(zoneId, CPT_4).format(HOUR_MINUTES_FORMAT),
+                cpt4.get("column_1"));
+        assertEquals("120", cpt4.get("column_2"));
+        assertEquals("-4.76", cpt4.get("column_3"));
+        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(HOUR_MINUTES_FORMAT),
+                cpt4.get("column_4"));
+
+        assertEquals("danger", cpt5.get("style"));
+        assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMAT),
+                cpt5.get("column_1"));
+        assertEquals("0", cpt5.get("column_2"));
+        assertEquals("0", cpt5.get("column_3"));
+        assertEquals("+1", cpt5.get("column_4"));
+    }
+
+    private void assertChart(final Chart chart) {
+        final ZoneId zoneId = TIME_ZONE.toZoneId();
+        final List<ChartData> chartData = chart.getData();
+        final ChartData chartData1 = chartData.get(0);
+        final ChartData chartData2 = chartData.get(1);
+        final ChartData chartData3 = chartData.get(2);
+        final ChartData chartData4 = chartData.get(3);
+        final ChartData chartData5 = chartData.get(4);
+
+        assertEquals(60, chart.getProcessingTime().getValue());
+        assertEquals(5, chartData.size());
+
+        assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
+                chartData1.getTitle());
+        assertEquals(convertToTimeZone(zoneId, CPT_1).format(DATE_FORMATTER), chartData1.getCpt());
+        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusHours(3).plusMinutes(30)
+                        .format(DATE_FORMATTER), chartData1.getProjectedEndTime());
+
+        assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
+                chartData2.getTitle());
+        assertEquals(convertToTimeZone(zoneId, CPT_2).format(DATE_FORMATTER), chartData2.getCpt());
+        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusHours(3)
+                        .format(DATE_FORMATTER), chartData2.getProjectedEndTime());
+
+        assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
+                chartData3.getTitle());
+        assertEquals(convertToTimeZone(zoneId, CPT_3).format(DATE_FORMATTER), chartData3.getCpt());
+        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusHours(3).plusMinutes(25)
+                        .format(DATE_FORMATTER), chartData3.getProjectedEndTime());
+
+        assertEquals(convertToTimeZone(zoneId, CPT_4).toLocalTime().format(HOUR_MINUTES_FORMAT),
+                chartData4.getTitle());
+        assertEquals(convertToTimeZone(zoneId, CPT_4).format(DATE_FORMATTER), chartData4.getCpt());
+        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusHours(8).plusMinutes(10)
+                        .format(DATE_FORMATTER), chartData4.getProjectedEndTime());
+
+        assertEquals(convertToTimeZone(zoneId, CPT_5).toLocalTime().format(HOUR_MINUTES_FORMAT),
+                chartData5.getTitle());
+        assertEquals(convertToTimeZone(zoneId, CPT_5).format(DATE_FORMATTER), chartData5.getCpt());
+        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusDays(1)
+                        .format(DATE_FORMATTER), chartData5.getProjectedEndTime());
+    }
+
+    private void assertComplexTable(final ComplexTable complexTable) {
+        final ZonedDateTime currentTime = getCurrentUtcDate()
+                .withZoneSameInstant(TIME_ZONE.toZoneId());
+        final List<ColumnHeader> columns = complexTable.getColumns();
+        final List<Data> data = complexTable.getData();
 
         IntStream.range(0, 24).forEach(index -> {
             assertEquals("column_" + (index + 2), columns.get(index + 1).getId());
@@ -144,83 +267,18 @@ public class GetProjectionTest {
         assertEquals(THROUGHPUT.getName(), throughput.getId());
         assertFalse(throughput.isOpen());
         assertTrue(throughput.getContent().isEmpty());
-
-        final Chart chart = projection.getChart();
-        final List<ChartData> chartData = chart.getData();
-
-        assertEquals(60, chart.getProcessingTime().getValue());
-        assertEquals(5, chartData.size());
-
-        final ChartData chartData1 = chartData.get(0);
-        assertEquals(currentTime.plusHours(4).toLocalTime().format(HOUR_MINUTES_FORMAT),
-                chartData1.getTitle());
-        assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
-        assertEquals(currentTime.plusHours(2).plusMinutes(30).format(DATE_FORMATTER),
-                chartData1.getProjectedEndTime());
-
-        final ChartData chartData2 = chartData.get(1);
-        assertEquals(currentTime.plusHours(5).toLocalTime().format(HOUR_MINUTES_FORMAT),
-                chartData2.getTitle());
-        assertEquals(currentTime.plusHours(5).format(DATE_FORMATTER), chartData2.getCpt());
-        assertEquals(currentTime.plusHours(3).format(DATE_FORMATTER),
-                chartData2.getProjectedEndTime());
-
-        final ChartData chartData3 = chartData.get(2);
-        assertEquals(
-                currentTime.plusHours(5).plusMinutes(30)
-                        .toLocalTime().format(HOUR_MINUTES_FORMAT),
-                chartData3.getTitle()
-        );
-        assertEquals(currentTime.plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
-                chartData3.getCpt());
-        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(DATE_FORMATTER),
-                chartData3.getProjectedEndTime());
-
-        final ChartData chartData4 = chartData.get(3);
-        assertEquals(currentTime.plusHours(6).toLocalTime().format(HOUR_MINUTES_FORMAT),
-                chartData4.getTitle()
-        );
-        assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
-        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(DATE_FORMATTER),
-                chartData4.getProjectedEndTime());
-
-        final ChartData chartData5 = chartData.get(4);
-        assertEquals(currentTime.plusHours(7).toLocalTime().format(HOUR_MINUTES_FORMAT),
-                chartData5.getTitle()
-        );
-        assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData5.getCpt());
-        assertEquals(currentTime.plusDays(1).format(DATE_FORMATTER),
-                chartData5.getProjectedEndTime());
     }
 
-    private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
-        return List.of(
-                ProjectionResult.builder()
-                        .date(utcCurrentTime.plusHours(4))
-                        .projectedEndDate(utcCurrentTime.plusHours(2).plusMinutes(30))
-                        .remainingQuantity(0)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(utcCurrentTime.plusHours(5))
-                        .projectedEndDate(utcCurrentTime.plusHours(3))
-                        .remainingQuantity(0)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(utcCurrentTime.plusHours(5).plusMinutes(30))
-                        .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
-                        .remainingQuantity(0)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(utcCurrentTime.plusHours(6))
-                        .projectedEndDate(utcCurrentTime.plusHours(8).plusMinutes(10))
-                        .remainingQuantity(180)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(utcCurrentTime.plusHours(7))
-                        .projectedEndDate(null)
-                        .remainingQuantity(100)
-                        .build()
-        );
+    private EntityRequest createRequest(final EntityType entityType,
+                                        final ZonedDateTime currentTime) {
+        return EntityRequest.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .entityType(entityType)
+                .processName(List.of(PICKING, PACKING))
+                .dateFrom(currentTime)
+                .dateTo(currentTime.plusDays(1))
+                .build();
     }
 
     private ProjectionRequest createProjectionRequest(final List<Backlog> backlogs,
@@ -236,39 +294,55 @@ public class GetProjectionTest {
                 .build();
     }
 
-    private List<Backlog> mockBacklog() {
-        final ZonedDateTime currentTime = getCurrentTime();
-
+    private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
         return List.of(
-                Backlog.builder()
-                        .date(currentTime.minusHours(1))
-                        .quantity(150)
+                ProjectionResult.builder()
+                        .date(CPT_1)
+                        .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(30))
+                        .remainingQuantity(0)
                         .build(),
-                Backlog.builder()
-                        .date(currentTime.plusHours(2))
-                        .quantity(235)
+                ProjectionResult.builder()
+                        .date(CPT_2)
+                        .projectedEndDate(utcCurrentTime.plusHours(3))
+                        .remainingQuantity(0)
                         .build(),
-                Backlog.builder()
-                        .date(currentTime.plusHours(3))
-                        .quantity(300)
+                ProjectionResult.builder()
+                        .date(CPT_3)
+                        .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
+                        .remainingQuantity(0)
+                        .build(),
+                ProjectionResult.builder()
+                        .date(CPT_4)
+                        .projectedEndDate(utcCurrentTime.plusHours(8).plusMinutes(10))
+                        .remainingQuantity(180)
+                        .build(),
+                ProjectionResult.builder()
+                        .date(CPT_5)
+                        .projectedEndDate(null)
+                        .remainingQuantity(100)
                         .build()
         );
     }
 
-    private EntityRequest createRequest(final EntityType entityType,
-                                        final ZonedDateTime currentTime) {
-        return EntityRequest.builder()
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId(WAREHOUSE_ID)
-                .entityType(entityType)
-                .processName(List.of(PICKING, PACKING))
-                .dateFrom(currentTime)
-                .dateTo(currentTime.plusDays(1))
-                .build();
-    }
-
-    private ZonedDateTime getCurrentTime() {
-        return now(UTC).withMinute(0).withSecond(0).withNano(0);
+    private List<Backlog> mockBacklog() {
+        return List.of(
+                Backlog.builder()
+                        .date(CPT_1)
+                        .quantity(150)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_2)
+                        .quantity(235)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_3)
+                        .quantity(300)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_4)
+                        .quantity(120)
+                        .build()
+        );
     }
 
     private List<Entity> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
@@ -331,5 +405,18 @@ public class GetProjectionTest {
 
     private List<Entity> mockThroughputEntities() {
         return emptyList();
+    }
+
+    private List<PlanningDistributionResponse> mockPlanningDistribution(
+            final ZonedDateTime utcCurrentTime) {
+        return List.of(
+                new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 281),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 128),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_2, MetricUnit.UNITS, 300),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_3, MetricUnit.UNITS, 207),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 44),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 82),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_5, MetricUnit.UNITS, 100)
+        );
     }
 }

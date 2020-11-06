@@ -73,7 +73,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     private static final String SAVE_SIMULATIONS_URL = "/planning/model/"
             + "workflows/%s/simulations/save";
     private static final String PLANNING_DISTRIBUTION_URL =
-            "/planning/model/workflows/%s/planning_distribution";
+            "/planning/model/workflows/%s/planning_distributions";
 
     private PlanningModelApiClient client;
 
@@ -597,7 +597,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 WAREHOUSE_ID,
                 FBM_WMS_OUTBOUND,
                 currentTime,
-                currentTime.plusHours(1)
+                currentTime,
+                currentTime.plusDays(1)
         );
 
         final JSONArray response = new JSONArray()

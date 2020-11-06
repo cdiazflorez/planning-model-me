@@ -5,8 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.json.JsonUtils;
 import com.mercadolibre.json_jackson.JsonJackson;
 import com.mercadolibre.restclient.MockResponse;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -30,6 +35,19 @@ public class TestUtils {
                 .withStatusCode(HttpStatus.OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .build();
+    }
+
+    public static String getResourceAsString(final String resourceName) throws IOException {
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        final InputStream resource = classLoader.getResourceAsStream(resourceName);
+
+        try {
+            return IOUtils.toString(resource, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            resource.close();
+        }
     }
 
 }

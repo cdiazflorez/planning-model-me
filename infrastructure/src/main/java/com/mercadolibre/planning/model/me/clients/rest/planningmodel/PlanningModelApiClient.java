@@ -158,7 +158,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     public List<PlanningDistributionResponse> getPlanningDistribution(
             final PlanningDistributionRequest planningDistributionRequest) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL + "/planning_distribution",
+                .url(format(WORKFLOWS_URL + "/planning_distributions",
                         planningDistributionRequest.getWorkflow().getName()))
                 .GET()
                 .queryParams(createPlanningDistributionParams(planningDistributionRequest))
@@ -172,8 +172,10 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
             final PlanningDistributionRequest request) {
         final Map<String, String> params = new LinkedHashMap<>();
         params.put("warehouse_id", request.getWarehouseId());
-        params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
-        params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
+        params.put("date_in_to", request.getDateInTo().format(ISO_OFFSET_DATE_TIME));
+        params.put("date_out_from", request.getDateOutFrom().format(ISO_OFFSET_DATE_TIME));
+        params.put("date_out_to", request.getDateOutTo().format(ISO_OFFSET_DATE_TIME));
+
         return params;
     }
 
