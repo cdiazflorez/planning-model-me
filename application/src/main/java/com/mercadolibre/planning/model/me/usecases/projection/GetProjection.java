@@ -227,6 +227,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 .dateTo(dateTo)
                 .processName(PROJECTION_PROCESS_NAMES)
                 .processingType(processingType)
+                .simulations(input.getSimulations())
                 .build();
     }
 

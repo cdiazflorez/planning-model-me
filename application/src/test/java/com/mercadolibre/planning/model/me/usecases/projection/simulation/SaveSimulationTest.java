@@ -282,6 +282,8 @@ public class SaveSimulationTest {
                 .dateFrom(currentTime)
                 .dateTo(currentTime.plusDays(1))
                 .processingType(processingTypes)
+                .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
+                        HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
                 .build();
     }
 
