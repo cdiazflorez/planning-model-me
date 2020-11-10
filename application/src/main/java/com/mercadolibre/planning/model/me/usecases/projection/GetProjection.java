@@ -21,15 +21,13 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -40,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
@@ -47,7 +46,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
@@ -62,20 +60,20 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang.StringUtils.capitalize;
 
-@Named
-@AllArgsConstructor
-public class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+public abstract class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
 
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
     private static final DateTimeFormatter CPT_HOUR_FORMAT = ofPattern("HH:mm");
-    private static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
     private static final int HOURS_TO_SHOW = 25;
     private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
             List.of(ProcessingType.ACTIVE_WORKERS);
 
-    private final PlanningModelGateway planningModelGateway;
-    private final LogisticCenterGateway logisticCenterGateway;
-    private final GetBacklog getBacklog;
+    protected static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
+
+    protected final PlanningModelGateway planningModelGateway;
+    protected final LogisticCenterGateway logisticCenterGateway;
+    protected final GetBacklog getBacklog;
 
     @Override
     public Projection execute(final GetProjectionInputDto input) {
@@ -96,8 +94,8 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
         );
 
-        final List<ProjectionResult> projections =
-                getProjections(input, utcDateFrom, utcDateTo, backlogs);
+        final List<ProjectionResult> projections = getProjection(
+                input, utcDateFrom, utcDateTo, backlogs);
 
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getWarehouseId());
@@ -108,8 +106,7 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                         input.getWorkflow(),
                         utcDateFrom,
                         utcDateFrom,
-                        utcDateTo)
-                );
+                        utcDateTo));
 
         // TODO: Get processing time from /configuration endpoint in PlanningModelApiClient
         final ProcessingTime processingTime = new ProcessingTime(60, "minutes");
@@ -125,14 +122,14 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                                 createData(config, THROUGHPUT, throughputs, headers))
                 ),
                 createProjectionDetailsTable(
-                        backlogs, projections, config, planningDistribution, processingTime),
+                        backlogs,
+                        projections,
+                        config,
+                        planningDistribution,
+                        processingTime),
                 new Chart(
                         processingTime,
-                        projections.stream()
-                                .map(projectionResult -> ChartData.fromProjectionResponse(
-                                        projectionResult, config.getZoneId(), utcDateTo)
-                                )
-                                .collect(toList())
+                        toChartData(projections, config.getZoneId(), utcDateTo)
                 )
         );
     }
@@ -214,7 +211,7 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 .filter(backlog -> backlog.getDate().equals(cpt))
                 .findFirst();
 
-        return cptBacklog.isPresent() ? cptBacklog.get().getQuantity() : 0;
+        return cptBacklog.map(Backlog::getQuantity).orElse(0);
     }
 
     private EntityRequest createRequest(final GetProjectionInputDto input,
@@ -231,21 +228,6 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 .processName(PROJECTION_PROCESS_NAMES)
                 .processingType(processingType)
                 .build();
-    }
-
-    private List<ProjectionResult> getProjections(final GetProjectionInputDto input,
-                                                  final ZonedDateTime dateFrom,
-                                                  final ZonedDateTime dateTo,
-                                                  final List<Backlog> backlogs) {
-        return planningModelGateway.runProjection(ProjectionRequest.builder()
-                .warehouseId(input.getWarehouseId())
-                .workflow(input.getWorkflow())
-                .processName(PROJECTION_PROCESS_NAMES)
-                .type(CPT)
-                .dateFrom(dateFrom)
-                .dateTo(dateTo)
-                .backlog(backlogs)
-                .build());
     }
 
     private List<ColumnHeader> createColumnHeaders(final LogisticCenterConfiguration config,
@@ -347,4 +329,21 @@ public class GetProjection implements UseCase<GetProjectionInputDto, Projection>
                 return null;
         }
     }
+
+    private List<ChartData> toChartData(final List<ProjectionResult> projectionResult,
+                                        final ZoneId zoneId,
+                                        final ZonedDateTime dateTo) {
+        return projectionResult.stream()
+                .map(projection -> ChartData.fromProjection(
+                        convertToTimeZone(zoneId, projection.getDate()),
+                        convertToTimeZone(zoneId, projection.getProjectedEndDate() == null
+                                ? dateTo : projection.getProjectedEndDate())
+                ))
+                .collect(Collectors.toList());
+    }
+
+    protected abstract List<ProjectionResult> getProjection(final GetProjectionInputDto input,
+                                                            final ZonedDateTime dateFrom,
+                                                            final ZonedDateTime dateTo,
+                                                            final List<Backlog> backlogs);
 }

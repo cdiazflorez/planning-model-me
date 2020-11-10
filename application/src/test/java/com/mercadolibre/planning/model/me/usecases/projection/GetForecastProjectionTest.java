@@ -1,4 +1,4 @@
-package com.mercadolibre.planning.model.me.usecases;
+package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
@@ -24,6 +24,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
+import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class GetProjectionTest {
+public class GetForecastProjectionTest {
 
     private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
     private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
@@ -71,7 +72,7 @@ public class GetProjectionTest {
     private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
 
     @InjectMocks
-    private GetProjection getProjection;
+    private GetForecastProjection getProjection;
 
     @Mock
     private PlanningModelGateway planningModelGateway;

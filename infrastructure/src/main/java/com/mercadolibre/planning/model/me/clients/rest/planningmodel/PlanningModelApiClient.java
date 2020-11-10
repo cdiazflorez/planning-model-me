@@ -8,7 +8,6 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
-import com.mercadolibre.planning.model.me.entities.simulation.SimulationResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
@@ -118,7 +117,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<SimulationResult> runSimulation(final SimulationRequest simulationRequest) {
+    public List<ProjectionResult> runSimulation(final SimulationRequest simulationRequest) {
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
                         + SIMULATIONS_PREFIX_URL + "/run")
@@ -130,7 +129,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<SimulationResult> saveSimulation(final SimulationRequest simulationRequest) {
+    public List<ProjectionResult> saveSimulation(final SimulationRequest simulationRequest) {
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
                         + SIMULATIONS_PREFIX_URL + "/save")

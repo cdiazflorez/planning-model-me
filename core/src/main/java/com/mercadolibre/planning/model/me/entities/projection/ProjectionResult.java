@@ -22,5 +22,8 @@ public class ProjectionResult {
     @JsonDeserialize(using = CustomDateZoneDeserializer.class)
     private ZonedDateTime projectedEndDate;
 
+    @JsonDeserialize(using = CustomDateZoneDeserializer.class)
+    private ZonedDateTime simulatedEndDate;
+
     private int remainingQuantity;
 }

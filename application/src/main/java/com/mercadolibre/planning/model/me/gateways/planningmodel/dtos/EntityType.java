@@ -8,6 +8,10 @@ public enum EntityType {
     BACKLOG,
     ORDER_DISTRIBUTION;
 
+    public static EntityType from(final String value) {
+        return valueOf(value.toUpperCase());
+    }
+
     public String getName() {
         return name().toLowerCase();
     }

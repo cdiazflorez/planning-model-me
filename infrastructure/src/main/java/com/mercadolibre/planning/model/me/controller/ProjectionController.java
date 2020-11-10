@@ -5,7 +5,7 @@ import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
-import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.newrelic.api.agent.Trace;
 import lombok.AllArgsConstructor;
@@ -29,7 +29,7 @@ import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.Use
 public class ProjectionController {
 
     private final AuthorizeUser authorizeUser;
-    private final GetProjection getProjection;
+    private final GetForecastProjection getProjection;
 
     @Trace
     @GetMapping("/projections")
