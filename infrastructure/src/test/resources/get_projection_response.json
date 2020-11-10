@@ -1,0 +1,161 @@
+{
+    "title":"Test",
+    "complex_table_1":{
+      "columns":[
+         {
+            "id":"column_1",
+            "title":"Hora de Operacion"
+         }
+      ],
+      "data":[
+         {
+            "id":"headcount",
+            "title":"Headcount",
+            "open":true,
+            "content":[
+               {
+                  "column_1":{
+                     "title":"Picking"
+                  },
+                  "column_2":{
+                     "title":"30",
+                     "date":"2020-07-27T10:00:00Z",
+                     "tooltip":{
+                        "title_1":"Hora de operacion",
+                        "subtitle_1":"11:00 - 12:00",
+                        "title_2":"Cantidad de reps FCST",
+                        "subtitle_2":"30"
+                     }
+                  }
+               },
+               {
+                  "column_1":{
+                     "title":"Packing"
+                  },
+                  "column_2":{
+                     "title":"30",
+                     "date":"2020-07-27T10:00:00Z"
+                  }
+               }
+            ]
+         },
+         {
+            "id":"productivity",
+            "title":"Productivity",
+            "open":true,
+            "content":[
+               {
+                  "column_1":{
+                     "title":"Picking"
+                  },
+                  "column_2":{
+                     "title":"30",
+                     "tooltip":{
+                        "title_1":"Productividad polivalente",
+                        "subtitle_1":"30,4 uds/h"
+                     }
+                  }
+               },
+               {
+                  "column_1":{
+                     "title":"Packing"
+                  },
+                  "column_2":{
+                     "title":"30"
+                  }
+               }
+            ]
+         },
+         {
+            "id":"throughput",
+            "title":"Throughput",
+            "open":true,
+            "content":[
+               {
+                  "column_1":{
+                     "title":"Picking"
+                  },
+                  "column_2":{
+                     "title":"1600"
+                  }
+               },
+               {
+                  "column_1":{
+                     "title":"Packing"
+                  },
+                  "column_2":{
+                     "title":"1600"
+                  }
+               }
+            ]
+         }
+      ]
+   },
+    "simple_table_2": {
+        "title": "Resumen de Proyección",
+        "columns": [
+            {
+                "id": "column_1",
+                "title": "CPT's"
+            },
+            {
+                "id": "column_2",
+                "title": "Backlog actual"
+            },
+            {
+                "id": "column_3",
+                "title": "Desv. vs forecast"
+            },
+            {
+                "id": "column_4",
+                "title": "Cierre proyectado"
+            }
+        ],
+        "data": [
+            {
+                "style": "none",
+                "column_1": "10:00",
+                "column_2": "57",
+                "column_3": "4",
+                "column_4": "8:39"
+            },
+            {
+                "style": "warning",
+                "column_1": "8:00",
+                "column_2": "34",
+                "column_3": "6",
+                "column_4": "7:40"
+            },
+            {
+                "style": "danger",
+                "column_1": "7:00",
+                "column_2": "78",
+                "column_3": "1",
+                "column_4": "7:15"
+            }
+        ]
+    },
+    "chart": {
+        "processing_time": {
+            "value": 60,
+            "unit_metric": "minutes"
+        },
+        "data": [
+            {
+                "title": "10:00",
+                "cpt": "2020-07-27T10:00:00Z",
+                "projected_end_time": "2020-07-27T08:39:00Z"
+            },
+            {
+                "title": "08:00",
+                "cpt": "2020-07-27T08:00:00Z",
+                "projected_end_time": "2020-07-27T07:40:00Z"
+            },
+            {
+                "title": "07:00",
+                "cpt": "2020-07-27T07:00:00Z",
+                "projected_end_time": "2020-07-27T07:15:00Z"
+            }
+        ]
+    }
+}

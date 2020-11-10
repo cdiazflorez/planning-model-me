@@ -1,0 +1,164 @@
+<ruleset xmlns="http://pmd.sourceforge.net/ruleset/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         name="Default Maven PMD Plugin Ruleset"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+    <description>
+        Rules selecionadas por Meli!
+    </description>
+
+
+    <!-- BEST PRACTICES -->
+    <rule ref="category/java/bestpractices.xml">
+        <!-- I think this is not SO terrible -->
+        <exclude name="GuardLogStatement"/>
+
+        <!-- Workaround as PMD doesn't have support for JUnit5 @Test annotation -->
+        <exclude name="JUnit4TestShouldUseBeforeAnnotation"/>
+        <exclude name="JUnit4TestShouldUseAfterAnnotation"/>
+        <exclude name="JUnit4TestShouldUseTestAnnotation"/>
+        <exclude name="JUnitAssertionsShouldIncludeMessage"/>
+        <exclude name="JUnitTestContainsTooManyAsserts"/>
+        <exclude name="JUnitTestsShouldIncludeAssert"/>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod">
+        <properties>
+            <!-- Ignore @Test methods -->
+            <property name="violationSuppressXPath"
+                      value="//ClassOrInterfaceBodyDeclaration/Annotation/MarkerAnnotation//Name[@Image='Test']"/>
+            <property name="violationSuppressXPath" value="//ClassOrInterfaceDeclaration['.*Test']"/>
+
+        </properties>
+    </rule>
+
+
+    <!-- CODE STYLE -->
+    <rule ref="category/java/codestyle.xml">
+        <!-- TODO: revisar estar exclusiones -->
+        <exclude name="AtLeastOneConstructor"/>
+        <exclude name="OnlyOneReturn"/>
+        <exclude name="CommentDefaultAccessModifier"/>
+    </rule>
+    <rule ref="category/java/codestyle.xml/ShortVariable">
+        <!-- Ignore lambda expressions -->
+        <properties>
+            <property name="violationSuppressXPath" value=".[ancestor::LambdaExpression]"/>
+            <property name="xpath">
+                <value>
+                    //VariableDeclaratorId[(string-length(@Image) &lt; 3) and (not (@Image='id')) and (not (@Image='to'))]
+                    [not(ancestor::ForInit)]
+                    [not((ancestor::FormalParameter) and (ancestor::TryStatement))]
+                </value>
+            </property>
+        </properties>
+    </rule>
+    <rule ref="category/java/codestyle.xml/LongVariable">
+        <!-- Ignore lambda expressions -->
+        <properties>
+            <property name="violationSuppressXPath" value=".[ancestor::LambdaExpression]"/>
+            <property name="xpath">
+                <value>
+                    //VariableDeclaratorId[string-length(@Image) &gt; 30]
+                </value>
+            </property>
+        </properties>
+    </rule>
+    <rule ref="category/java/codestyle.xml/ShortClassName">
+        <!-- We want to accept Wave as a valid class name -->
+        <properties>
+            <property name="violationSuppressXPath" value=".[ancestor::LambdaExpression]"/>
+            <property name="xpath">
+                <value>
+                    //ClassOrInterfaceDeclaration[string-length(@Image) &lt; 4]
+                </value>
+            </property>
+        </properties>
+    </rule>
+    <rule ref="category/java/codestyle.xml/ConfusingTernary">
+        <properties>
+            <property name="ignoreElseIf" value="true"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/codestyle.xml/TooManyStaticImports">
+        <properties>
+            <!-- Ignore @Test methods -->
+            <property name="xpath">
+                <value>
+                    //VariableDeclarator
+                    [../Type/ReferenceType/ClassOrInterfaceType/Annotation
+                    [@Image = 'Test']]
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- DESIGN -->
+    <rule ref="category/java/design.xml">
+        <!-- We should exclude valid usages like chaining Stream methods -->
+        <exclude name="LawOfDemeter"/>
+        <exclude name="UseUtilityClass"/>
+        <exclude name="LoosePackageCoupling"/>
+    </rule>
+
+    <rule ref="category/java/design.xml/ExcessiveImports">
+        <properties>
+            <!-- Ignore @Test methods -->
+            <property name="violationSuppressXPath"
+                      value="//ClassOrInterfaceBodyDeclaration/Annotation/MarkerAnnotation//Name[@Image='Test']"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/design.xml/SignatureDeclareThrowsException">
+        <properties>
+            <!-- Ignore @Test methods -->
+            <property name="violationSuppressXPath"
+                      value="//ClassOrInterfaceBodyDeclaration/Annotation/MarkerAnnotation//Name[@Image='Test']"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/design.xml/TooManyMethods">
+        <properties>
+            <property name="xpath">
+                <value>
+                    //VariableDeclarator
+                    [../Type/ReferenceType/ClassOrInterfaceType/Annotation
+                    [@Image = 'Test']]
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/design.xml/ExcessiveMethodLength">
+        <properties>
+            <property name="violationSuppressXPath" value="//ClassOrInterfaceDeclaration['.*Test']"/>
+        </properties>
+    </rule>
+
+    <!-- ERROR PRONE -->
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="BeanMembersShouldSerialize"/>
+        <exclude name="UseLocaleWithCaseConversions"/>
+        <exclude name="DataflowAnomalyAnalysis"/>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+        <properties>
+            <!-- Ignore @Test methods -->
+            <property name="violationSuppressXPath"
+                      value="//ClassOrInterfaceBodyDeclaration/Annotation/MarkerAnnotation//Name[@Image='Test']"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/MissingSerialVersionUID">
+        <properties>
+            <property name="violationSuppressXPath" value="//ClassOrInterfaceDeclaration['.*Exception']"/>
+        </properties>
+    </rule>
+
+    <!-- MISC -->
+    <rule ref="category/java/security.xml"/>
+
+    <rule ref="category/java/multithreading.xml">
+        <exclude name="UseConcurrentHashMap"/>
+    </rule>
+
+    <rule ref="category/java/performance.xml"/>
+</ruleset>

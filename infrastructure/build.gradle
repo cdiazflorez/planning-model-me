@@ -1,0 +1,48 @@
+plugins {
+    id 'application'
+    id 'distribution'
+    id 'org.springframework.boot' version '2.3.0.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id "io.freefair.lombok" version "5.3.0"
+}
+
+group 'com.mercadolibre'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+bootJar {
+    destinationDirectory = file("../build/libs/")
+    archiveFileName = 'application.jar'
+}
+
+mainClassName = 'com.mercadolibre.planning.model.me.PlanningModelMiddleendApplication'
+
+dependencies {
+    compile project(':application')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'com.mercadolibre:lockclient:2.1.0'
+    implementation 'com.mercadolibre.metrics:datadog-metric-wrapper:0.0.13'
+    implementation 'com.mercadolibre.fbm.wms.outbound:commons:1.1.0'
+    implementation 'com.mercadolibre.restclient:restclient-default:0.3.46'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.mercadolibre.restclient:restclient-core:0.3.46:tests'
+}
+
+configurations {
+    all*.exclude module : 'spring-boot-starter-logging'
+}
+
+test {
+    useJUnitPlatform()
+
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
+generateLombokConfig.enabled = false

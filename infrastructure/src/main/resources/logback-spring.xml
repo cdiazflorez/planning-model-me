@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <conversionRule
+            conversionWord="mdc"
+            converterClass="com.mercadolibre.fbm.wms.outbound.commons.logging.CustomMdcConverter" />
+    <conversionRule
+            conversionWord="X"
+            converterClass="com.mercadolibre.fbm.wms.outbound.commons.logging.CustomMdcConverter" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{ISO8601} [level:%level] %mdc [thread:%thread] [logger:%logger{1}] %message  %xException%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.springframework" level="ERROR">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <logger name="com.newrelic" level="WARN" />
+
+    <springProfile name="development | test | stage">
+        <logger name="com.mercadolibre.planning.model.me" level="DEBUG">
+            <appender-ref ref="CONSOLE" />
+        </logger>
+    </springProfile>
+
+    <logger name="com.mercadolibre.fbm.wms.outbound.commons.rest.HttpLoggingInterceptor" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

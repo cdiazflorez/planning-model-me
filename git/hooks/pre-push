@@ -1,0 +1,22 @@
+#!/bin/sh
+
+MODIFIED_FILES=`git status -s | wc -l`
+
+if [ ! "$MODIFIED_FILES" -eq 0 ]; then
+	# stash any unstaged changes
+	git stash -q --keep-index
+fi
+
+# run the tests with the gradle wrapper
+./gradlew check
+
+# store the last exit code in a variable
+RESULT=$?
+
+if [ ! "$MODIFIED_FILES" -eq 0 ]; then
+	# unstash the unstashed changes
+	git stash pop -q
+fi
+
+# return the './gradlew check' exit code
+exit $RESULT
