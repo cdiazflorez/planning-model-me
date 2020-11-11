@@ -146,7 +146,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     public Optional<ConfigurationResponse> getConfiguration(
             final ConfigurationRequest configurationRequest) {
         final Map<String, String> params = new LinkedHashMap<>();
-        params.put(WAREHOUSE_ID, configurationRequest.getWarehouseId());
+        params.put("logistic_center_id", configurationRequest.getWarehouseId());
         params.put("key", configurationRequest.getKey());
         final HttpRequest request = HttpRequest.builder()
                 .url(CONFIGURATION_URL)
