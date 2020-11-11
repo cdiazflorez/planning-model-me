@@ -12,6 +12,8 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
@@ -38,17 +40,20 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.PROCESSING_TIME;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
@@ -84,7 +89,7 @@ public class GetForecastProjectionTest {
     private GetBacklog getBacklog;
 
     @Test
-    public void testExecute() {
+    void testExecute() {
         // Given
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
 
@@ -100,6 +105,9 @@ public class GetForecastProjectionTest {
 
         when(planningModelGateway.getEntities(createRequest(THROUGHPUT, utcCurrentTime)))
                 .thenReturn(mockThroughputEntities());
+
+        when(planningModelGateway.getConfiguration(createConfigurationRequest()))
+                .thenReturn(mockProcessingTimeConfiguration());
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
@@ -355,6 +363,14 @@ public class GetForecastProjectionTest {
         );
     }
 
+    private ConfigurationRequest createConfigurationRequest() {
+        return  ConfigurationRequest
+                .builder()
+                .warehouseId(WAREHOUSE_ID)
+                .key(PROCESSING_TIME)
+                .build();
+    }
+
     private List<Entity> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
         return List.of(
                 Entity.builder()
@@ -415,6 +431,13 @@ public class GetForecastProjectionTest {
 
     private List<Entity> mockThroughputEntities() {
         return emptyList();
+    }
+
+    private Optional<ConfigurationResponse> mockProcessingTimeConfiguration() {
+        return Optional.ofNullable(ConfigurationResponse.builder()
+                .metricUnit(MINUTES)
+                .value(60)
+                .build());
     }
 
     private List<PlanningDistributionResponse> mockPlanningDistribution(

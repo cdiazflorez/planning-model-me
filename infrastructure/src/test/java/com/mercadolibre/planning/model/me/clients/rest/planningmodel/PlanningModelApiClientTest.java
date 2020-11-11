@@ -39,6 +39,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
@@ -460,12 +461,12 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .build();
 
         // WHEN
-        final ConfigurationResponse configurationResponse = client.getConfiguration(request);
-
+        final Optional<ConfigurationResponse> configurationResponse =
+                client.getConfiguration(request);
         // THEN
         assertNotNull(configurationResponse);
-        assertEquals(60, configurationResponse.getValue());
-        assertEquals(MINUTES, configurationResponse.getMetricUnit());
+        assertEquals(60, configurationResponse.get().getValue());
+        assertEquals(MINUTES, configurationResponse.get().getMetricUnit());
     }
 
     @Test

@@ -14,6 +14,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PlanningModelGateway {
 
@@ -27,7 +28,7 @@ public interface PlanningModelGateway {
 
     List<ProjectionResult> saveSimulation(final SimulationRequest request);
 
-    ConfigurationResponse getConfiguration(final ConfigurationRequest request);
+    Optional<ConfigurationResponse> getConfiguration(final ConfigurationRequest request);
 
     List<PlanningDistributionResponse> getPlanningDistribution(
             final PlanningDistributionRequest request);

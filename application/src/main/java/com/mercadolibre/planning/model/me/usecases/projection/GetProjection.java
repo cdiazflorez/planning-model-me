@@ -14,6 +14,8 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTi
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
@@ -44,6 +46,7 @@ import java.util.stream.IntStream;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
@@ -66,6 +69,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
     private static final DateTimeFormatter CPT_HOUR_FORMAT = ofPattern("HH:mm");
     private static final int HOURS_TO_SHOW = 25;
+    private static final String PROCESSING_TIME = "processing_time";
     private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
             List.of(ProcessingType.ACTIVE_WORKERS);
 
@@ -108,8 +112,12 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         utcDateFrom,
                         utcDateTo));
 
-        // TODO: Get processing time from /configuration endpoint in PlanningModelApiClient
-        final ProcessingTime processingTime = new ProcessingTime(60, "minutes");
+        final ProcessingTime processingTime = createProcessingTimeObject(
+                planningModelGateway.getConfiguration(
+                        ConfigurationRequest.builder()
+                                .warehouseId(input.getWarehouseId())
+                                .key(PROCESSING_TIME)
+                                .build()));
 
         final List<ColumnHeader> headers = createColumnHeaders(config, utcDateFrom);
 
@@ -132,6 +140,14 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         toChartData(projections, config.getZoneId(), utcDateTo)
                 )
         );
+    }
+
+    private ProcessingTime createProcessingTimeObject(
+            Optional<ConfigurationResponse> processingTimeConfiguration) {
+        return  processingTimeConfiguration.isPresent()
+            ? new ProcessingTime(processingTimeConfiguration.get().getValue(),
+                    processingTimeConfiguration.get().getMetricUnit().getName())
+            : new ProcessingTime(60,MINUTES.getName());
     }
 
     private SimpleTable createProjectionDetailsTable(
