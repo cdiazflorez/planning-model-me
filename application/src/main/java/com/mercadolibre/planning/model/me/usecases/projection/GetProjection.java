@@ -158,38 +158,83 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             final ProcessingTime processingTime) {
 
         final ZoneId zoneId = configuration.getTimeZone().toZoneId();
+        final boolean hasSimulatedResults = hasSimulatedResults(projectionResults);
 
         return new SimpleTable(
                 "Resumen de Proyección",
-                List.of(
-                        new ColumnHeader("column_1", "CPT's"),
-                        new ColumnHeader("column_2", "Backlog actual"),
-                        new ColumnHeader("column_3", "Desv. vs forecast"),
-                        new ColumnHeader("column_4", "Cierre proyectado")
-                ),
+                getProjectionDetailsTableColumns(hasSimulatedResults),
                 projectionResults.stream()
                         .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
-                        .map(projection -> {
-                            final ZonedDateTime cpt = projection.getDate();
-                            final ZonedDateTime projectedEndDate = projection
-                                    .getProjectedEndDate();
-                            final int backlog = getBacklogQuantity(cpt, backlogs);
-
-                            return Map.of(
-                                    "style", getStyle(cpt, projectedEndDate, processingTime),
-                                    "column_1", convertToTimeZone(zoneId, cpt)
-                                            .format(CPT_HOUR_FORMAT),
-                                    "column_2", String.valueOf(backlog),
-                                    "column_3", getDeviation(cpt, backlog, planningDistribution),
-                                    "column_4", projectedEndDate == null
-                                            ? "+1"
-                                            : convertToTimeZone(
-                                            zoneId,
-                                            projectedEndDate).format(CPT_HOUR_FORMAT)
-                            );
-                        })
+                        .map(projection -> getProjectionDetailsTableData(
+                                backlogs,
+                                planningDistribution,
+                                processingTime,
+                                zoneId,
+                                projection,
+                                hasSimulatedResults)
+                        )
                         .collect(toList())
         );
+    }
+
+    private boolean hasSimulatedResults(List<ProjectionResult> projectionResults) {
+        return projectionResults.stream().anyMatch(p -> p.getSimulatedEndDate() != null);
+    }
+
+    private Map<String, String> getProjectionDetailsTableData(
+            final List<Backlog> backlogs,
+            final List<PlanningDistributionResponse> planningDistribution,
+            final ProcessingTime processingTime,
+            final ZoneId zoneId,
+            final ProjectionResult projection,
+            final boolean hasSimulatedResults) {
+        final ZonedDateTime cpt = projection.getDate();
+        final ZonedDateTime projectedEndDate = projection.getProjectedEndDate();
+        final ZonedDateTime simulatedEndDate = projection.getSimulatedEndDate();
+        final int backlog = getBacklogQuantity(cpt, backlogs);
+
+        final Map<String, String> data = new LinkedHashMap<>();
+
+        data.putAll(Map.of(
+                "style", getStyle(cpt, projectedEndDate, processingTime),
+                "column_1", convertToTimeZone(zoneId, cpt).format(CPT_HOUR_FORMAT),
+                "column_2", String.valueOf(backlog),
+                "column_3", getDeviation(cpt, backlog, planningDistribution),
+                "column_4", projectedEndDate == null
+                        ? "Excede las 24hs"
+                        : convertToTimeZone(zoneId, projectedEndDate).format(CPT_HOUR_FORMAT))
+        );
+
+        if (hasSimulatedResults) {
+            data.put(
+                    "column_5",
+                    simulatedEndDate == null
+                            ? "Excede las 24hs"
+                            : convertToTimeZone(zoneId, simulatedEndDate).format(CPT_HOUR_FORMAT)
+            );
+        }
+
+        return data;
+    }
+
+    private List<ColumnHeader> getProjectionDetailsTableColumns(
+            final boolean hasSimulatedResults) {
+        final List<ColumnHeader> columnHeaders = new ArrayList<>();
+
+        columnHeaders.addAll(List.of(
+                new ColumnHeader("column_1", "CPT's"),
+                new ColumnHeader("column_2", "Backlog actual"),
+                new ColumnHeader("column_3", "Desv. vs forecast")
+        ));
+
+        if (hasSimulatedResults) {
+            columnHeaders.add(new ColumnHeader("column_4", "Cierre actual"));
+            columnHeaders.add(new ColumnHeader("column_5", "Cierre simulado"));
+        } else {
+            columnHeaders.add(new ColumnHeader("column_4", "Cierre proyectado"));
+        }
+
+        return columnHeaders;
     }
 
     private String getStyle(final ZonedDateTime cpt,
@@ -350,12 +395,18 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     private List<ChartData> toChartData(final List<ProjectionResult> projectionResult,
                                         final ZoneId zoneId,
                                         final ZonedDateTime dateTo) {
+        final boolean hasSimulatedResults = hasSimulatedResults(projectionResult);
+
         return projectionResult.stream()
-                .map(projection -> ChartData.fromProjection(
-                        convertToTimeZone(zoneId, projection.getDate()),
-                        convertToTimeZone(zoneId, projection.getProjectedEndDate() == null
-                                ? dateTo : projection.getProjectedEndDate())
-                ))
+                .map(projection -> {
+                    final ZonedDateTime projectedEndDate = hasSimulatedResults
+                            ? projection.getSimulatedEndDate()
+                            : projection.getProjectedEndDate();
+                    return ChartData.fromProjection(
+                            convertToTimeZone(zoneId, projection.getDate()),
+                            convertToTimeZone(zoneId, projectedEndDate == null
+                                    ? dateTo : projectedEndDate));
+                })
                 .collect(Collectors.toList());
     }
 

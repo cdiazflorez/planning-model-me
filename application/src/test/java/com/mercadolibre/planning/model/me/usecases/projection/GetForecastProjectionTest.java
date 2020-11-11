@@ -26,8 +26,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
-import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -190,7 +188,7 @@ public class GetForecastProjectionTest {
                 cpt5.get("column_1"));
         assertEquals("0", cpt5.get("column_2"));
         assertEquals("0", cpt5.get("column_3"));
-        assertEquals("+1", cpt5.get("column_4"));
+        assertEquals("Excede las 24hs", cpt5.get("column_4"));
     }
 
     private void assertChart(final Chart chart) {

@@ -162,7 +162,7 @@ public class SaveSimulationTest {
         assertEquals(currentTime.plusHours(4).toLocalTime().format(HOUR_MINUTES_FORMAT),
                 chartData1.getTitle());
         assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
-        assertEquals(currentTime.plusHours(2).plusMinutes(30).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(2).plusMinutes(35).format(DATE_FORMATTER),
                 chartData1.getProjectedEndTime());
 
         final ChartData chartData2 = chartData.get(1);
@@ -180,7 +180,7 @@ public class SaveSimulationTest {
         );
         assertEquals(currentTime.plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
                 chartData3.getCpt());
-        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(3).plusMinutes(20).format(DATE_FORMATTER),
                 chartData3.getProjectedEndTime());
 
         final ChartData chartData4 = chartData.get(3);
@@ -188,7 +188,7 @@ public class SaveSimulationTest {
                 chartData4.getTitle()
         );
         assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
-        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(8).plusMinutes(11).format(DATE_FORMATTER),
                 chartData4.getProjectedEndTime());
 
         final ChartData chartData5 = chartData.get(4);
@@ -205,7 +205,7 @@ public class SaveSimulationTest {
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(4))
                         .projectedEndDate(utcCurrentTime.plusHours(2).plusMinutes(30))
-                        .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(31))
+                        .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(35))
                         .remainingQuantity(0)
                         .build(),
                 ProjectionResult.builder()
@@ -217,7 +217,7 @@ public class SaveSimulationTest {
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(5).plusMinutes(30))
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
-                        .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(26))
+                        .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(20))
                         .remainingQuantity(0)
                         .build(),
                 ProjectionResult.builder()

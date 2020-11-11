@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -31,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
@@ -162,7 +164,7 @@ public class RunSimulationTest {
         assertEquals(currentTime.plusHours(4).toLocalTime().format(HOUR_MINUTES_FORMAT),
                 chartData1.getTitle());
         assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
-        assertEquals(currentTime.plusHours(2).plusMinutes(30).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(2).plusMinutes(35).format(DATE_FORMATTER),
                 chartData1.getProjectedEndTime());
 
         final ChartData chartData2 = chartData.get(1);
@@ -180,7 +182,7 @@ public class RunSimulationTest {
         );
         assertEquals(currentTime.plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
                 chartData3.getCpt());
-        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(3).plusMinutes(20).format(DATE_FORMATTER),
                 chartData3.getProjectedEndTime());
 
         final ChartData chartData4 = chartData.get(3);
@@ -188,7 +190,7 @@ public class RunSimulationTest {
                 chartData4.getTitle()
         );
         assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
-        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(8).plusMinutes(11).format(DATE_FORMATTER),
                 chartData4.getProjectedEndTime());
 
         final ChartData chartData5 = chartData.get(4);
@@ -198,6 +200,17 @@ public class RunSimulationTest {
         assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(currentTime.plusDays(1).format(DATE_FORMATTER),
                 chartData5.getProjectedEndTime());
+
+        final SimpleTable simpleTable = projection.getSimpleTable2();
+        assertEquals(5, simpleTable.getColumns().size());
+        assertEquals("Cierre actual", simpleTable.getColumns().get(3).getTitle());
+        assertTrue(simpleTable.getColumns().contains(
+                new ColumnHeader("column_5", "Cierre simulado"))
+        );
+
+        final List<Map<String, String>> simpleTableData = simpleTable.getData();
+        assertEquals(5, simpleTableData.size());
+        simpleTableData.forEach((dataRow) -> assertTrue(dataRow.containsKey("column_5")));
     }
 
     private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
@@ -205,7 +218,7 @@ public class RunSimulationTest {
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(4))
                         .projectedEndDate(utcCurrentTime.plusHours(2).plusMinutes(30))
-                        .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(31))
+                        .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(35))
                         .remainingQuantity(0)
                         .build(),
                 ProjectionResult.builder()
@@ -217,7 +230,7 @@ public class RunSimulationTest {
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(5).plusMinutes(30))
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
-                        .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(26))
+                        .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(20))
                         .remainingQuantity(0)
                         .build(),
                 ProjectionResult.builder()
