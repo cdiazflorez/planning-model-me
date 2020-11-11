@@ -254,7 +254,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                 final List<PlanningDistributionResponse> planningDistribution) {
         final long forecastedItemsForCpt = planningDistribution
                 .stream()
-                .filter(distribution -> distribution.getDateOut().equals(cpt))
+                .filter(distribution -> cpt.isEqual(distribution.getDateOut()))
                 .mapToLong(PlanningDistributionResponse::getTotal)
                 .sum();
 
@@ -263,13 +263,12 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         }
 
         final double deviation = (((double) backlogQuantity / forecastedItemsForCpt) - 1) * 100;
-
         return String.format("%.2f", Math.round(deviation * 100.00) / 100.00);
     }
 
     private int getBacklogQuantity(final ZonedDateTime cpt, final List<Backlog> backlogs) {
         final Optional<Backlog> cptBacklog = backlogs.stream()
-                .filter(backlog -> backlog.getDate().equals(cpt))
+                .filter(backlog -> cpt.isEqual(backlog.getDate()))
                 .findFirst();
 
         return cptBacklog.map(Backlog::getQuantity).orElse(0);
