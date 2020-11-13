@@ -84,7 +84,7 @@ class ProjectionControllerTest {
     private ComplexTable mockComplexTable() {
         return new ComplexTable(
                 List.of(
-                        new ColumnHeader("column_1", "Hora de Operacion", null)
+                        new ColumnHeader("column_1", "Horas de Operación", null)
                 ),
                 List.of(
                         new Data(HEADCOUNT.getName(), "Headcount", true,
@@ -95,7 +95,7 @@ class ProjectionControllerTest {
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
                                                         Map.of(
-                                                                "title_1", "Hora de operacion",
+                                                                "title_1", "Hora de operación",
                                                                 "subtitle_1", "11:00 - 12:00",
                                                                 "title_2", "Cantidad de reps FCST",
                                                                 "subtitle_2", "30"
@@ -111,7 +111,7 @@ class ProjectionControllerTest {
                                         )
                                 )
                         ),
-                        new Data(PRODUCTIVITY.getName(), "Productivity", true,
+                        new Data(PRODUCTIVITY.getName(), "Productividad regular", true,
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking", null, null),
@@ -183,21 +183,21 @@ class ProjectionControllerTest {
                                 "style", "none",
                                 "column_1", "10:00",
                                 "column_2", "57",
-                                "column_3", "4",
+                                "column_3", "4%",
                                 "column_4", "8:39"
                         ),
                         Map.of(
                                 "style", "warning",
                                 "column_1", "8:00",
                                 "column_2", "34",
-                                "column_3", "6",
+                                "column_3", "6%",
                                 "column_4", "7:40"
                         ),
                         Map.of(
                                 "style", "danger",
                                 "column_1", "7:00",
                                 "column_2", "78",
-                                "column_3", "1",
+                                "column_3", "1%",
                                 "column_4", "7:15"
                         )
                 )

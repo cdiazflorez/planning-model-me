@@ -268,11 +268,11 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 .sum();
 
         if (forecastedItemsForCpt == 0 || backlogQuantity == 0) {
-            return "0";
+            return "0%";
         }
 
         final double deviation = (((double) backlogQuantity / forecastedItemsForCpt) - 1) * 100;
-        return String.format("%.2f", Math.round(deviation * 100.00) / 100.00);
+        return String.format("%.1f%s", Math.round(deviation * 100.00) / 100.00, "%");
     }
 
     private int getBacklogQuantity(final ZonedDateTime cpt, final List<Backlog> backlogs) {
@@ -338,7 +338,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final ZonedDateTime dateFrom = convertToTimeZone(config.getZoneId(), utcDateFrom);
         final List<ColumnHeader> columns = new ArrayList<>(HOURS_TO_SHOW);
 
-        columns.add(new ColumnHeader("column_1", "Hora de operación"));
+        columns.add(new ColumnHeader("column_1", "Horas de Operación"));
         columns.addAll(IntStream.range(0, HOURS_TO_SHOW)
                 .mapToObj(index -> {
                     final ZonedDateTime date = dateFrom.plusHours(index);
@@ -363,7 +363,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
         return new Data(
                 entityType.getName(),
-                capitalize(entityType.getName()),
+                capitalize(entityType.getTitle()),
                 shouldOpenTab,
                 entitiesByProcess.entrySet().stream()
                         .sorted(Comparator.comparing(entry -> entry.getKey().getIndex()))

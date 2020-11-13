@@ -157,7 +157,7 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
                 cpt1.get("column_1"));
         assertEquals("150", cpt1.get("column_2"));
-        assertEquals("-63.33", cpt1.get("column_3"));
+        assertEquals("-63.3%", cpt1.get("column_3"));
         assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMAT),
                 cpt1.get("column_4"));
 
@@ -165,14 +165,14 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
                 cpt2.get("column_1"));
         assertEquals("235", cpt2.get("column_2"));
-        assertEquals("-21.67", cpt2.get("column_3"));
+        assertEquals("-21.7%", cpt2.get("column_3"));
         assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMAT), cpt2.get("column_4"));
 
         assertEquals("none", cpt3.get("style"));
         assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
                 cpt3.get("column_1"));
         assertEquals("300", cpt3.get("column_2"));
-        assertEquals("44.93", cpt3.get("column_3"));
+        assertEquals("44.9%", cpt3.get("column_3"));
         assertEquals(currentTime.plusHours(3).plusMinutes(25).format(HOUR_MINUTES_FORMAT),
                 cpt3.get("column_4"));
 
@@ -180,7 +180,7 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_4).format(HOUR_MINUTES_FORMAT),
                 cpt4.get("column_1"));
         assertEquals("120", cpt4.get("column_2"));
-        assertEquals("-4.76", cpt4.get("column_3"));
+        assertEquals("-4.8%", cpt4.get("column_3"));
         assertEquals(currentTime.plusHours(8).plusMinutes(10).format(HOUR_MINUTES_FORMAT),
                 cpt4.get("column_4"));
 
@@ -188,7 +188,7 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMAT),
                 cpt5.get("column_1"));
         assertEquals("0", cpt5.get("column_2"));
-        assertEquals("0", cpt5.get("column_3"));
+        assertEquals("0%", cpt5.get("column_3"));
         assertEquals("Excede las 24hs", cpt5.get("column_4"));
     }
 
