@@ -50,7 +50,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private static final String WAREHOUSE_ID = "warehouse_id";
     private final ObjectMapper objectMapper;
 
-
     public PlanningModelApiClient(RestClient client, ObjectMapper objectMapper) {
         super(client, PLANNING_MODEL.name());
         this.objectMapper = objectMapper;
@@ -68,10 +67,12 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .build();
 
         final List<EntityResponse> apiResponse = send(request, response ->
-                response.getData(new TypeReference<>() {}));
+                response.getData(new TypeReference<>() {
+                }));
 
         return apiResponse.stream().map(this::toEntity).collect(toList());
     }
+
 
     private Entity toEntity(final EntityResponse response) {
         return Entity.builder()
@@ -182,7 +183,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         params.put("date_in_to", request.getDateInTo().format(ISO_OFFSET_DATE_TIME));
         params.put("date_out_from", request.getDateOutFrom().format(ISO_OFFSET_DATE_TIME));
         params.put("date_out_to", request.getDateOutTo().format(ISO_OFFSET_DATE_TIME));
-
         return params;
     }
 

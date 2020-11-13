@@ -20,6 +20,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
@@ -36,6 +37,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +56,6 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PROCESSING_TIME;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
-import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -268,14 +269,15 @@ public class GetForecastProjectionTest {
         assertFalse(productivity.isOpen());
         assertEquals(26, productivity.getContent().get(0).size());
         assertEquals("30", productivity.getContent().get(0).get("column_3").getTitle());
-        assertEquals("Productividad polivalente", productivity.getContent().get(0).get("column_3")
+        assertEquals("Productividad polivalente", productivity.getContent()
+                .get(0).get("column_3")
                 .getTooltip().get("title_1"));
         assertEquals("0 uds/h", productivity.getContent().get(0).get("column_3")
                 .getTooltip().get("subtitle_1"));
 
         assertEquals(THROUGHPUT.getName(), throughput.getId());
         assertFalse(throughput.isOpen());
-        assertTrue(throughput.getContent().isEmpty());
+        assertFalse(throughput.getContent().isEmpty());
     }
 
     private EntityRequest createRequest(final EntityType entityType,
@@ -428,7 +430,7 @@ public class GetForecastProjectionTest {
     }
 
     private List<Entity> mockThroughputEntities() {
-        return emptyList();
+        return new ArrayList<>();
     }
 
     private Optional<ConfigurationResponse> mockProcessingTimeConfiguration() {

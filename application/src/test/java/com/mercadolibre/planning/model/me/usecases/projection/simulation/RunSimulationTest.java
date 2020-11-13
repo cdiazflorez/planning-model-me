@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequ
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
@@ -23,6 +24,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -46,7 +49,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
-import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -152,7 +154,26 @@ public class RunSimulationTest {
 
         assertEquals(THROUGHPUT.getName(), throughput.getId());
         assertFalse(throughput.isOpen());
-        assertTrue(throughput.getContent().isEmpty());
+        assertFalse(throughput.getContent().isEmpty());
+
+        data.stream().filter(t -> t.getId().equals("throughput"))
+                .findFirst()
+                .ifPresentOrElse(
+                        (value) ->
+                                Assertions.assertTrue(value.getContent().stream()
+                                        .anyMatch(t -> t.entrySet().stream()
+                                                .anyMatch(entry ->
+                                                        entry.getKey().equals("column_1")
+                                                                && entry.getValue()
+                                                                .getTitle()
+                                                                .equals(
+                                                                        RowName.DEVIATION.getTitle()
+                                                                )
+                                                )
+                                        )
+                                ),
+                        () -> Assertions.fail("Doesn't exists")
+        );
 
         final Chart chart = projection.getChart();
         final List<ChartData> chartData = chart.getData();
@@ -363,6 +384,6 @@ public class RunSimulationTest {
     }
 
     private List<Entity> mockThroughputEntities() {
-        return emptyList();
+        return new ArrayList<>();
     }
 }

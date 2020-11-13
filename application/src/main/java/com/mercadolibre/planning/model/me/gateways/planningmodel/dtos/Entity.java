@@ -4,7 +4,6 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 @Builder
@@ -25,11 +24,6 @@ public class Entity {
 
     public LocalTime getTime() {
         return date.toLocalTime();
-    }
-
-    public Entity convertTimeZone(final ZoneId zoneId) {
-        date = date.withZoneSameInstant(zoneId);
-        return this;
     }
 
 }

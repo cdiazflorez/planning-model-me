@@ -16,13 +16,14 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
@@ -40,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,6 +51,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName.DEVIATION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
@@ -84,15 +87,24 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final ZonedDateTime utcDateFrom = getCurrentUtcDate();
         final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
-        final List<Entity> headcount = planningModelGateway.getEntities(
+        final List<EntityRow> headcount = planningModelGateway.getEntities(
                 createRequest(input, HEADCOUNT, utcDateFrom, utcDateTo,
-                        PROJECTION_PROCESSING_TYPES));
+                        PROJECTION_PROCESSING_TYPES))
+                .stream()
+                .map(EntityRow::fromEntity)
+                .collect(toList());
 
-        final List<Entity> productivities = planningModelGateway.getEntities(
-                 createRequest(input, PRODUCTIVITY, utcDateFrom, utcDateTo, null));
+        final List<EntityRow> productivities = planningModelGateway.getEntities(
+                createRequest(input, PRODUCTIVITY, utcDateFrom, utcDateTo, null))
+                .stream()
+                .map(EntityRow::fromEntity)
+                .collect(toList());
 
-        final List<Entity> throughputs = planningModelGateway.getEntities(
-                createRequest(input, THROUGHPUT, utcDateFrom, utcDateTo, null));
+        List<EntityRow> throughputs = planningModelGateway.getEntities(
+                createRequest(input, THROUGHPUT, utcDateFrom, utcDateTo, null))
+                .stream()
+                .map(EntityRow::fromEntity)
+                .collect(toList());
 
         final List<Backlog> backlogs = getBacklog.execute(
                 new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
@@ -120,6 +132,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                 .build()));
 
         final List<ColumnHeader> headers = createColumnHeaders(config, utcDateFrom);
+        addDeviationEntities(throughputs, projections);
 
         return new Projection(
                 "Proyecciones",
@@ -144,10 +157,10 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     private ProcessingTime createProcessingTimeObject(
             Optional<ConfigurationResponse> processingTimeConfiguration) {
-        return  processingTimeConfiguration.isPresent()
-            ? new ProcessingTime(processingTimeConfiguration.get().getValue(),
-                    processingTimeConfiguration.get().getMetricUnit().getName())
-            : new ProcessingTime(60,MINUTES.getName());
+        return processingTimeConfiguration
+                .map(configurationResponse -> new ProcessingTime(configurationResponse.getValue(),
+                configurationResponse.getMetricUnit().getName()))
+                .orElseGet(() -> new ProcessingTime(60, MINUTES.getName()));
     }
 
     private SimpleTable createProjectionDetailsTable(
@@ -193,17 +206,14 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final ZonedDateTime simulatedEndDate = projection.getSimulatedEndDate();
         final int backlog = getBacklogQuantity(cpt, backlogs);
 
-        final Map<String, String> data = new LinkedHashMap<>();
-
-        data.putAll(Map.of(
+        final Map<String, String> data = new LinkedHashMap<>(Map.of(
                 "style", getStyle(cpt, projectedEndDate, processingTime),
                 "column_1", convertToTimeZone(zoneId, cpt).format(CPT_HOUR_FORMAT),
                 "column_2", String.valueOf(backlog),
                 "column_3", getDeviation(cpt, backlog, planningDistribution),
                 "column_4", projectedEndDate == null
                         ? "Excede las 24hs"
-                        : convertToTimeZone(zoneId, projectedEndDate).format(CPT_HOUR_FORMAT))
-        );
+                        : convertToTimeZone(zoneId, projectedEndDate).format(CPT_HOUR_FORMAT)));
 
         if (hasSimulatedResults) {
             data.put(
@@ -219,9 +229,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     private List<ColumnHeader> getProjectionDetailsTableColumns(
             final boolean hasSimulatedResults) {
-        final List<ColumnHeader> columnHeaders = new ArrayList<>();
 
-        columnHeaders.addAll(List.of(
+        final List<ColumnHeader> columnHeaders = new ArrayList<>(List.of(
                 new ColumnHeader("column_1", "CPT's"),
                 new ColumnHeader("column_2", "Backlog actual"),
                 new ColumnHeader("column_3", "Desv. vs forecast")
@@ -274,6 +283,38 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         return cptBacklog.map(Backlog::getQuantity).orElse(0);
     }
 
+    private void addDeviationEntities(List<EntityRow> throughputs,
+                                      List<ProjectionResult> projections) {
+        AtomicInteger acumulatedQuantity = new AtomicInteger(0);
+        projections.stream()
+                .sorted(Comparator.comparing(ProjectionResult::getDate))
+                .forEach(t -> {
+                            if (t.getRemainingQuantity() > 0) {
+                                acumulatedQuantity.addAndGet(t.getRemainingQuantity());
+                                String title = acumulatedQuantity
+                                        + " (+"
+                                        + t.getRemainingQuantity()
+                                        + ")";
+                                throughputs.add(EntityRow.builder()
+                                        .date(t.getDate())
+                                        .value(title)
+                                        .source(FORECAST)
+                                        .rowName(DEVIATION)
+                                        .build()
+                                );
+                            }
+                }
+            );
+        if (throughputs.stream().noneMatch(t -> t.getRowName().equals(DEVIATION))) {
+            throughputs.add(EntityRow.builder()
+                    .date(getCurrentUtcDate())
+                    .value("-")
+                    .source(FORECAST)
+                    .rowName(DEVIATION)
+                    .build());
+        }
+    }
+
     private EntityRequest createRequest(final GetProjectionInputDto input,
                                         final EntityType entityType,
                                         final ZonedDateTime dateFrom,
@@ -312,11 +353,11 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     private Data createData(final LogisticCenterConfiguration config,
                             final EntityType entityType,
-                            final List<Entity> entities,
+                            final List<EntityRow> entities,
                             final List<ColumnHeader> headers) {
 
-        final Map<ProcessName, List<Entity>> entitiesByProcess = entities.stream()
-                .collect(groupingBy(Entity::getProcessName));
+        final Map<RowName, List<EntityRow>> entitiesByProcess = entities.stream()
+                .collect(groupingBy(EntityRow::getRowName));
 
         final boolean shouldOpenTab = entityType == HEADCOUNT;
 
@@ -330,28 +371,29 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                 config,
                                 entityType, entry.getKey(),
                                 headers, entry.getValue()))
-                        .collect(toList()));
+                        .collect(toList())
+        );
     }
 
     private Map<String, Content> createContent(final LogisticCenterConfiguration config,
                                                final EntityType entityType,
-                                               final ProcessName processName,
+                                               final RowName processName,
                                                final List<ColumnHeader> headers,
-                                               final List<Entity> entities) {
+                                               final List<EntityRow> entities) {
 
-        final Map<String, Map<Source, Entity>> entitiesByHour = entities.stream()
+        final Map<String, Map<Source, EntityRow>> entitiesByHour = entities.stream()
                 .map(entity -> entity.convertTimeZone(config.getZoneId()))
                 .collect(groupingBy(entity -> getHourAndDay(entity.getDate()),
-                        toMap(Entity::getSource, identity())));
+                        toMap(EntityRow::getSource, identity())));
 
         final Map<String, Content> content = new LinkedHashMap<>();
 
         headers.forEach(header -> {
             if ("column_1".equals(header.getId())) {
                 content.put(header.getId(),
-                        new Content(capitalize(processName.getName()), null, null));
+                        new Content(capitalize(processName.getTitle()), null, null));
             } else {
-                final Map<Source, Entity> entityBySource = entitiesByHour.get(header.getValue());
+                final Map<Source, EntityRow> entityBySource = entitiesByHour.get(header.getValue());
 
                 if (entityBySource != null && entityBySource.containsKey(SIMULATION)) {
                     content.put(header.getId(), new Content(
@@ -371,7 +413,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         return content;
     }
 
-    private Map<String, String> createTooltip(final EntityType entityType, final Entity entity) {
+    private Map<String, String> createTooltip(final EntityType entityType, final EntityRow entity) {
         switch (entityType) {
             case HEADCOUNT:
                 return Map.of(
@@ -413,4 +455,5 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                                             final ZonedDateTime dateFrom,
                                                             final ZonedDateTime dateTo,
                                                             final List<Backlog> backlogs);
+
 }
