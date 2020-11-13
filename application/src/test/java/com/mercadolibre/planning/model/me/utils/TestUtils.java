@@ -12,6 +12,7 @@ import java.util.List;
 public class TestUtils {
 
     public static final String WAREHOUSE_ID = "ARTW01";
+    public static final String PROCESSING_TIME = "processing_time";
     public static final Long USER_ID = 1234L;
     private static final String FORECAST_EXAMPLE_FILE = "forecast_example.xlsx";
 

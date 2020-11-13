@@ -10,10 +10,12 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
@@ -39,6 +41,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
@@ -61,6 +64,7 @@ import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.of;
@@ -114,7 +118,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                         .put("source", "simulation")
                         .put("metric_unit", "percentage")
                 );
-        mockGetEntity(apiResponse);
+        mockPostEntity(apiResponse);
 
         // When
         final List<Entity> headcounts = client.getEntities(request);
@@ -124,14 +128,12 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
         final Entity headcount0 = headcounts.get(0);
         assertTrue(request.getDateFrom().isEqual(headcount0.getDate()));
-        assertEquals(FBM_WMS_OUTBOUND, headcount0.getWorkflow());
         assertEquals(PICKING, headcount0.getProcessName());
         assertEquals(30, headcount0.getValue());
         assertEquals(Source.FORECAST, headcount0.getSource());
 
         final Entity headcount1 = headcounts.get(1);
         assertTrue(request.getDateTo().isEqual(headcount1.getDate()));
-        assertEquals(FBM_WMS_OUTBOUND, headcount1.getWorkflow());
         assertEquals(PACKING, headcount1.getProcessName());
         assertEquals(20, headcount1.getValue());
         assertEquals(Source.SIMULATION, headcount1.getSource());
@@ -153,7 +155,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         Map<String, String> entityParams =  client.createEntityParams(request);
         // THEN
         assertEquals("picking,packing", entityParams.get("process_name"));
-        assertEquals(null, entityParams.get("source"));
+        assertNull(entityParams.get("source"));
         assertEquals("ARTW01",entityParams.get("warehouse_id"));
         assertNotNull(entityParams.get("date_from"));
         assertNotNull(entityParams.get("date_to"));
@@ -460,12 +462,12 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .build();
 
         // WHEN
-        final ConfigurationResponse configurationResponse = client.getConfiguration(request);
-
+        final Optional<ConfigurationResponse> configurationResponse =
+                client.getConfiguration(request);
         // THEN
         assertNotNull(configurationResponse);
-        assertEquals(60, configurationResponse.getValue());
-        assertEquals(MINUTES, configurationResponse.getMetricUnit());
+        assertEquals(60, configurationResponse.get().getValue());
+        assertEquals(MINUTES, configurationResponse.get().getMetricUnit());
     }
 
     @Test
@@ -574,9 +576,9 @@ class PlanningModelApiClientTest extends BaseClientTest {
         );
     }
 
-    private void mockGetEntity(final JSONArray response) {
+    private void mockPostEntity(final JSONArray response) {
         MockResponse.builder()
-                .withMethod(GET)
+                .withMethod(POST)
                 .withURL(format(BASE_URL + ENTITIES_URL, "headcount"))
                 .withStatusCode(HttpStatus.OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())

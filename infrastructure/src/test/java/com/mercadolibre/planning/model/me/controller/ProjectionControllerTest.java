@@ -9,9 +9,6 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
-import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
-import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
-import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
@@ -27,7 +24,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.WAVE_WRITE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
@@ -38,23 +34,19 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = ProjectionController.class)
-public class ProjectionControllerTest {
+class ProjectionControllerTest {
 
     private static final String URL = "/planning/model/middleend/workflows/%s";
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private AuthorizeUser authorizeUser;
 
     @MockBean
     private GetForecastProjection getProjection;
@@ -62,11 +54,6 @@ public class ProjectionControllerTest {
     @Test
     void getProjectionOk() throws Exception {
         // GIVEN
-        doNothing().when(authorizeUser).execute(AuthorizeUserDto.builder()
-                .userId(USER_ID)
-                .requiredPermissions(List.of(WAVE_WRITE))
-                .build()
-        );
 
         when(getProjection.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection(
@@ -94,29 +81,10 @@ public class ProjectionControllerTest {
         );
     }
 
-    @Test
-    void getProjectionUserUnauthorized() throws Exception {
-        // GIVEN
-        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
-                .thenThrow(UserNotAuthorizedException.class);
-
-        // WHEN
-        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections")
-                .param("warehouse_id", WAREHOUSE_ID)
-                .param("caller.id", String.valueOf(USER_ID))
-                .contentType(APPLICATION_JSON)
-        );
-
-        // THEN
-        result.andExpect(status().isForbidden());
-        verifyNoInteractions(getProjection);
-    }
-
     private ComplexTable mockComplexTable() {
         return new ComplexTable(
                 List.of(
-                        new ColumnHeader("column_1", "Hora de Operacion", null)
+                        new ColumnHeader("column_1", "Horas de Operación", null)
                 ),
                 List.of(
                         new Data(HEADCOUNT.getName(), "Headcount", true,
@@ -127,7 +95,7 @@ public class ProjectionControllerTest {
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
                                                         Map.of(
-                                                                "title_1", "Hora de operacion",
+                                                                "title_1", "Hora de operación",
                                                                 "subtitle_1", "11:00 - 12:00",
                                                                 "title_2", "Cantidad de reps FCST",
                                                                 "subtitle_2", "30"
@@ -143,7 +111,7 @@ public class ProjectionControllerTest {
                                         )
                                 )
                         ),
-                        new Data(PRODUCTIVITY.getName(), "Productivity", true,
+                        new Data(PRODUCTIVITY.getName(), "Productividad regular", true,
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking", null, null),
@@ -215,21 +183,21 @@ public class ProjectionControllerTest {
                                 "style", "none",
                                 "column_1", "10:00",
                                 "column_2", "57",
-                                "column_3", "4",
+                                "column_3", "4%",
                                 "column_4", "8:39"
                         ),
                         Map.of(
                                 "style", "warning",
                                 "column_1", "8:00",
                                 "column_2", "34",
-                                "column_3", "6",
+                                "column_3", "6%",
                                 "column_4", "7:40"
                         ),
                         Map.of(
                                 "style", "danger",
                                 "column_1", "7:00",
                                 "column_2", "78",
-                                "column_3", "1",
+                                "column_3", "1%",
                                 "column_4", "7:15"
                         )
                 )

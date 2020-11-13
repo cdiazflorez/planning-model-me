@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -15,6 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequ
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
@@ -22,6 +24,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,7 +33,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
@@ -44,7 +49,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
-import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -150,7 +154,26 @@ public class RunSimulationTest {
 
         assertEquals(THROUGHPUT.getName(), throughput.getId());
         assertFalse(throughput.isOpen());
-        assertTrue(throughput.getContent().isEmpty());
+        assertFalse(throughput.getContent().isEmpty());
+
+        data.stream().filter(t -> t.getId().equals("throughput"))
+                .findFirst()
+                .ifPresentOrElse(
+                        (value) ->
+                                Assertions.assertTrue(value.getContent().stream()
+                                        .anyMatch(t -> t.entrySet().stream()
+                                                .anyMatch(entry ->
+                                                        entry.getKey().equals("column_1")
+                                                                && entry.getValue()
+                                                                .getTitle()
+                                                                .equals(
+                                                                        RowName.DEVIATION.getTitle()
+                                                                )
+                                                )
+                                        )
+                                ),
+                        () -> Assertions.fail("Doesn't exists")
+        );
 
         final Chart chart = projection.getChart();
         final List<ChartData> chartData = chart.getData();
@@ -162,7 +185,7 @@ public class RunSimulationTest {
         assertEquals(currentTime.plusHours(4).toLocalTime().format(HOUR_MINUTES_FORMAT),
                 chartData1.getTitle());
         assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
-        assertEquals(currentTime.plusHours(2).plusMinutes(30).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(2).plusMinutes(35).format(DATE_FORMATTER),
                 chartData1.getProjectedEndTime());
 
         final ChartData chartData2 = chartData.get(1);
@@ -180,7 +203,7 @@ public class RunSimulationTest {
         );
         assertEquals(currentTime.plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
                 chartData3.getCpt());
-        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(3).plusMinutes(20).format(DATE_FORMATTER),
                 chartData3.getProjectedEndTime());
 
         final ChartData chartData4 = chartData.get(3);
@@ -188,7 +211,7 @@ public class RunSimulationTest {
                 chartData4.getTitle()
         );
         assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
-        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(8).plusMinutes(11).format(DATE_FORMATTER),
                 chartData4.getProjectedEndTime());
 
         final ChartData chartData5 = chartData.get(4);
@@ -198,6 +221,17 @@ public class RunSimulationTest {
         assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(currentTime.plusDays(1).format(DATE_FORMATTER),
                 chartData5.getProjectedEndTime());
+
+        final SimpleTable simpleTable = projection.getSimpleTable2();
+        assertEquals(5, simpleTable.getColumns().size());
+        assertEquals("Cierre actual", simpleTable.getColumns().get(3).getTitle());
+        assertTrue(simpleTable.getColumns().contains(
+                new ColumnHeader("column_5", "Cierre simulado"))
+        );
+
+        final List<Map<String, String>> simpleTableData = simpleTable.getData();
+        assertEquals(5, simpleTableData.size());
+        simpleTableData.forEach((dataRow) -> assertTrue(dataRow.containsKey("column_5")));
     }
 
     private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
@@ -205,7 +239,7 @@ public class RunSimulationTest {
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(4))
                         .projectedEndDate(utcCurrentTime.plusHours(2).plusMinutes(30))
-                        .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(31))
+                        .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(35))
                         .remainingQuantity(0)
                         .build(),
                 ProjectionResult.builder()
@@ -217,7 +251,7 @@ public class RunSimulationTest {
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(5).plusMinutes(30))
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
-                        .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(26))
+                        .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(20))
                         .remainingQuantity(0)
                         .build(),
                 ProjectionResult.builder()
@@ -282,6 +316,8 @@ public class RunSimulationTest {
                 .dateFrom(currentTime)
                 .dateTo(currentTime.plusDays(1))
                 .processingType(processingTypes)
+                .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
+                        HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
                 .build();
     }
 
@@ -348,6 +384,6 @@ public class RunSimulationTest {
     }
 
     private List<Entity> mockThroughputEntities() {
-        return emptyList();
+        return new ArrayList<>();
     }
 }

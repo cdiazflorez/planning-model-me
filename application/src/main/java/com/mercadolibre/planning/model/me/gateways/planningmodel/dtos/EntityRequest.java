@@ -26,4 +26,6 @@ public class EntityRequest {
 
     private List<ProcessingType> processingType;
 
+    private List<Simulation> simulations;
+
 }

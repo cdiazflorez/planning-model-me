@@ -12,20 +12,21 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
-import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,22 +37,25 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.PROCESSING_TIME;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
-import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -84,7 +88,7 @@ public class GetForecastProjectionTest {
     private GetBacklog getBacklog;
 
     @Test
-    public void testExecute() {
+    void testExecute() {
         // Given
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
 
@@ -100,6 +104,9 @@ public class GetForecastProjectionTest {
 
         when(planningModelGateway.getEntities(createRequest(THROUGHPUT, utcCurrentTime)))
                 .thenReturn(mockThroughputEntities());
+
+        when(planningModelGateway.getConfiguration(createConfigurationRequest()))
+                .thenReturn(mockProcessingTimeConfiguration());
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
@@ -150,7 +157,7 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
                 cpt1.get("column_1"));
         assertEquals("150", cpt1.get("column_2"));
-        assertEquals("-63.33", cpt1.get("column_3"));
+        assertEquals("-63.3%", cpt1.get("column_3"));
         assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMAT),
                 cpt1.get("column_4"));
 
@@ -158,14 +165,14 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
                 cpt2.get("column_1"));
         assertEquals("235", cpt2.get("column_2"));
-        assertEquals("-21.67", cpt2.get("column_3"));
+        assertEquals("-21.7%", cpt2.get("column_3"));
         assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMAT), cpt2.get("column_4"));
 
         assertEquals("none", cpt3.get("style"));
         assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
                 cpt3.get("column_1"));
         assertEquals("300", cpt3.get("column_2"));
-        assertEquals("44.93", cpt3.get("column_3"));
+        assertEquals("44.9%", cpt3.get("column_3"));
         assertEquals(currentTime.plusHours(3).plusMinutes(25).format(HOUR_MINUTES_FORMAT),
                 cpt3.get("column_4"));
 
@@ -173,7 +180,7 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_4).format(HOUR_MINUTES_FORMAT),
                 cpt4.get("column_1"));
         assertEquals("120", cpt4.get("column_2"));
-        assertEquals("-4.76", cpt4.get("column_3"));
+        assertEquals("-4.8%", cpt4.get("column_3"));
         assertEquals(currentTime.plusHours(8).plusMinutes(10).format(HOUR_MINUTES_FORMAT),
                 cpt4.get("column_4"));
 
@@ -181,8 +188,8 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMAT),
                 cpt5.get("column_1"));
         assertEquals("0", cpt5.get("column_2"));
-        assertEquals("0", cpt5.get("column_3"));
-        assertEquals("+1", cpt5.get("column_4"));
+        assertEquals("0%", cpt5.get("column_3"));
+        assertEquals("Excede las 24hs", cpt5.get("column_4"));
     }
 
     private void assertChart(final Chart chart) {
@@ -262,14 +269,15 @@ public class GetForecastProjectionTest {
         assertFalse(productivity.isOpen());
         assertEquals(26, productivity.getContent().get(0).size());
         assertEquals("30", productivity.getContent().get(0).get("column_3").getTitle());
-        assertEquals("Productividad polivalente", productivity.getContent().get(0).get("column_3")
+        assertEquals("Productividad polivalente", productivity.getContent()
+                .get(0).get("column_3")
                 .getTooltip().get("title_1"));
         assertEquals("0 uds/h", productivity.getContent().get(0).get("column_3")
                 .getTooltip().get("subtitle_1"));
 
         assertEquals(THROUGHPUT.getName(), throughput.getId());
         assertFalse(throughput.isOpen());
-        assertTrue(throughput.getContent().isEmpty());
+        assertFalse(throughput.getContent().isEmpty());
     }
 
     private EntityRequest createRequest(final EntityType entityType,
@@ -355,6 +363,14 @@ public class GetForecastProjectionTest {
         );
     }
 
+    private ConfigurationRequest createConfigurationRequest() {
+        return  ConfigurationRequest
+                .builder()
+                .warehouseId(WAREHOUSE_ID)
+                .key(PROCESSING_TIME)
+                .build();
+    }
+
     private List<Entity> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
         return List.of(
                 Entity.builder()
@@ -414,7 +430,14 @@ public class GetForecastProjectionTest {
     }
 
     private List<Entity> mockThroughputEntities() {
-        return emptyList();
+        return new ArrayList<>();
+    }
+
+    private Optional<ConfigurationResponse> mockProcessingTimeConfiguration() {
+        return Optional.ofNullable(ConfigurationResponse.builder()
+                .metricUnit(MINUTES)
+                .value(60)
+                .build());
     }
 
     private List<PlanningDistributionResponse> mockPlanningDistribution(

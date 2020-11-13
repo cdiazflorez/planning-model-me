@@ -113,7 +113,7 @@ public class SimulationControllerTest {
     private ComplexTable mockComplexTable() {
         return new ComplexTable(
                 List.of(
-                        new ColumnHeader("column_1", "Hora de Operacion", null)
+                        new ColumnHeader("column_1", "Horas de Operación", null)
                 ),
                 List.of(
                         new Data(HEADCOUNT.getName(), "Headcount", true,
@@ -124,7 +124,7 @@ public class SimulationControllerTest {
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
                                                         Map.of(
-                                                                "title_1", "Hora de operacion",
+                                                                "title_1", "Hora de operación",
                                                                 "subtitle_1", "11:00 - 12:00",
                                                                 "title_2", "Cantidad de reps FCST",
                                                                 "subtitle_2", "30"
@@ -140,7 +140,7 @@ public class SimulationControllerTest {
                                         )
                                 )
                         ),
-                        new Data(PRODUCTIVITY.getName(), "Productivity", true,
+                        new Data(PRODUCTIVITY.getName(), "Productividad regular", true,
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking", null, null),
@@ -205,7 +205,7 @@ public class SimulationControllerTest {
                 + "      \"columns\":[\n"
                 + "         {\n"
                 + "            \"id\":\"column_1\",\n"
-                + "            \"title\":\"Hora de Operacion\"\n"
+                + "            \"title\":\"Horas de Operación\"\n"
                 + "         }\n"
                 + "      ],\n"
                 + "      \"data\":[\n"
@@ -222,7 +222,7 @@ public class SimulationControllerTest {
                 + "                     \"title\":\"30\",\n"
                 + "                     \"date\":\"2020-07-27T10:00:00Z\",\n"
                 + "                     \"tooltip\":{\n"
-                + "                        \"title_1\":\"Hora de operacion\",\n"
+                + "                        \"title_1\":\"Hora de operación\",\n"
                 + "                        \"subtitle_1\":\"11:00 - 12:00\",\n"
                 + "                        \"title_2\":\"Cantidad de reps FCST\",\n"
                 + "                        \"subtitle_2\":\"30\"\n"
@@ -242,7 +242,7 @@ public class SimulationControllerTest {
                 + "         },\n"
                 + "         {\n"
                 + "            \"id\":\"productivity\",\n"
-                + "            \"title\":\"Productivity\",\n"
+                + "            \"title\":\"Productividad regular\",\n"
                 + "            \"open\":true,\n"
                 + "            \"content\":[\n"
                 + "               {\n"

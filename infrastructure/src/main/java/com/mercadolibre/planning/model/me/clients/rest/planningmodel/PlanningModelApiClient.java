@@ -32,6 +32,7 @@ import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
@@ -46,8 +47,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String SIMULATIONS_PREFIX_URL = "/simulations";
+    private static final String WAREHOUSE_ID = "warehouse_id";
     private final ObjectMapper objectMapper;
-
 
     public PlanningModelApiClient(RestClient client, ObjectMapper objectMapper) {
         super(client, PLANNING_MODEL.name());
@@ -60,16 +61,18 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .url(format(WORKFLOWS_URL + "/entities/%s",
                         entityRequest.getWorkflow().getName(),
                         entityRequest.getEntityType().getName()))
-                .GET()
+                .POST(requestSupplier(entityRequest))
                 .queryParams(createEntityParams(entityRequest))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
         final List<EntityResponse> apiResponse = send(request, response ->
-                response.getData(new TypeReference<>() {}));
+                response.getData(new TypeReference<>() {
+                }));
 
         return apiResponse.stream().map(this::toEntity).collect(toList());
     }
+
 
     private Entity toEntity(final EntityResponse response) {
         return Entity.builder()
@@ -84,7 +87,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
     protected Map<String, String> createEntityParams(final EntityRequest request) {
         final Map<String, String> params = new LinkedHashMap<>();
-        params.put("warehouse_id", request.getWarehouseId());
+        params.put(WAREHOUSE_ID, request.getWarehouseId());
         params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
         params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
         params.put("process_name", getEnumNamesAsString(request.getProcessName()));
@@ -141,11 +144,11 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public ConfigurationResponse getConfiguration(final ConfigurationRequest configurationRequest) {
+    public Optional<ConfigurationResponse> getConfiguration(
+            final ConfigurationRequest configurationRequest) {
         final Map<String, String> params = new LinkedHashMap<>();
-        params.put("warehouse_id", configurationRequest.getWarehouseId());
+        params.put("logistic_center_id", configurationRequest.getWarehouseId());
         params.put("key", configurationRequest.getKey());
-
         final HttpRequest request = HttpRequest.builder()
                 .url(CONFIGURATION_URL)
                 .GET()
@@ -153,7 +156,10 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
-        return send(request, response -> response.getData(new TypeReference<>() {}));
+        final ConfigurationResponse configurationResponse =
+                send(request, response -> response.getData(new TypeReference<>() {}));
+
+        return Optional.ofNullable(configurationResponse);
     }
 
     @Override
@@ -173,11 +179,10 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private Map<String, String> createPlanningDistributionParams(
             final PlanningDistributionRequest request) {
         final Map<String, String> params = new LinkedHashMap<>();
-        params.put("warehouse_id", request.getWarehouseId());
+        params.put(WAREHOUSE_ID, request.getWarehouseId());
         params.put("date_in_to", request.getDateInTo().format(ISO_OFFSET_DATE_TIME));
         params.put("date_out_from", request.getDateOutFrom().format(ISO_OFFSET_DATE_TIME));
         params.put("date_out_to", request.getDateOutTo().format(ISO_OFFSET_DATE_TIME));
-
         return params;
     }
 

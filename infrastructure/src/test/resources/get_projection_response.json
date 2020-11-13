@@ -4,7 +4,7 @@
       "columns":[
          {
             "id":"column_1",
-            "title":"Hora de Operacion"
+            "title":"Horas de Operación"
          }
       ],
       "data":[
@@ -21,7 +21,7 @@
                      "title":"30",
                      "date":"2020-07-27T10:00:00Z",
                      "tooltip":{
-                        "title_1":"Hora de operacion",
+                        "title_1":"Hora de operación",
                         "subtitle_1":"11:00 - 12:00",
                         "title_2":"Cantidad de reps FCST",
                         "subtitle_2":"30"
@@ -41,7 +41,7 @@
          },
          {
             "id":"productivity",
-            "title":"Productivity",
+            "title":"Productividad regular",
             "open":true,
             "content":[
                {
@@ -116,21 +116,21 @@
                 "style": "none",
                 "column_1": "10:00",
                 "column_2": "57",
-                "column_3": "4",
+                "column_3": "4%",
                 "column_4": "8:39"
             },
             {
                 "style": "warning",
                 "column_1": "8:00",
                 "column_2": "34",
-                "column_3": "6",
+                "column_3": "6%",
                 "column_4": "7:40"
             },
             {
                 "style": "danger",
                 "column_1": "7:00",
                 "column_2": "78",
-                "column_3": "1",
+                "column_3": "1%",
                 "column_4": "7:15"
             }
         ]

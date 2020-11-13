@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.exception;
 
-import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,19 +16,6 @@ import javax.servlet.http.HttpServletRequest;
 public class ApiExceptionHandler {
 
     private static final String EXCEPTION_ATTRIBUTE = "application.exception";
-
-    @ExceptionHandler(UserNotAuthorizedException.class)
-    public ResponseEntity<ErrorResponse> handle(final UserNotAuthorizedException exception,
-                                                final HttpServletRequest request) {
-
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.FORBIDDEN)
-                .message(exception.getMessage())
-                .error("user_not_authorized_error")
-                .build();
-
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
 
     @ExceptionHandler(ForecastParsingException.class)
     public ResponseEntity<ErrorResponse> handleException(

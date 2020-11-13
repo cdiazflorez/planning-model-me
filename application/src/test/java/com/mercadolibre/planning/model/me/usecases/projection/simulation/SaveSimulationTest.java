@@ -15,6 +15,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequ
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
@@ -22,6 +23,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
@@ -44,7 +48,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
-import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,6 +76,7 @@ public class SaveSimulationTest {
     private GetBacklog getBacklog;
 
     @Test
+    @DisplayName("Execute the case when all the data is correctly generated")
     public void testExecute() {
         // Given
         final ZonedDateTime utcCurrentTime = getCurrentTime();
@@ -88,7 +92,7 @@ public class SaveSimulationTest {
                 .thenReturn(mockProductivityEntities(utcCurrentTime));
 
         when(planningModelGateway.getEntities(createRequest(THROUGHPUT, utcCurrentTime, null)))
-                .thenReturn(emptyList());
+                .thenReturn(mockThroughputEntities(utcCurrentTime));
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
@@ -102,9 +106,10 @@ public class SaveSimulationTest {
         final Projection projection = saveSimulation.execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
-                .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
-                        HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
-                )))))
+                .simulations(List.of(new Simulation(PICKING,
+                        List.of(new SimulationEntity(
+                                HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
+                        )))))
                 .build()
         );
 
@@ -126,6 +131,79 @@ public class SaveSimulationTest {
         final Data productivity = data.get(1);
         final Data throughput = data.get(2);
 
+        thenHeadcountDataIsOk(currentTime, headcount);
+
+        thenProductivityDataIsOk(productivity);
+
+        thenThroughputDataIsOk(throughput);
+
+        final Chart chart = projection.getChart();
+        final List<ChartData> chartData = chart.getData();
+
+        thenTestCharDataIsOk(currentTime, chart, chartData);
+    }
+
+    @Test
+    @DisplayName("Execute the case when projections is empty and deviation too")
+    public void testExecute2() {
+        // Given
+        final ZonedDateTime utcCurrentTime = getCurrentTime();
+
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+                .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+
+        when(planningModelGateway.getEntities(createRequest(HEADCOUNT, utcCurrentTime,
+                List.of(ProcessingType.ACTIVE_WORKERS))))
+                .thenReturn(mockHeadcountEntities(utcCurrentTime));
+
+        when(planningModelGateway.getEntities(createRequest(PRODUCTIVITY, utcCurrentTime, null)))
+                .thenReturn(new ArrayList<>());
+
+        when(planningModelGateway.getEntities(createRequest(THROUGHPUT, utcCurrentTime, null)))
+                .thenReturn(mockThroughputEntities(utcCurrentTime));
+
+        final List<Backlog> mockedBacklog = mockBacklog();
+        when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
+                .thenReturn(mockedBacklog);
+
+        when(planningModelGateway.saveSimulation(
+                createSimulationRequest(mockedBacklog, utcCurrentTime)))
+                .thenReturn(new ArrayList<>());
+
+        // When
+        final Projection projection = saveSimulation.execute(GetProjectionInputDto.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .simulations(List.of(new Simulation(PICKING,
+                        List.of(new SimulationEntity(
+                                HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
+                        )))))
+                .build()
+        );
+
+        // Then
+        final List<Data> data = projection.getComplexTable1().getData();
+        data.stream().filter(t -> t.getId().equals("throughput"))
+                .findFirst()
+                .ifPresentOrElse(
+                        (value) ->
+                                Assertions.assertTrue(value.getContent().stream()
+                                        .anyMatch(t -> t.entrySet().stream()
+                                                .anyMatch(entry ->
+                                                        entry.getKey().equals("column_1")
+                                                                && entry.getValue()
+                                                                .getTitle()
+                                                                .equals(
+                                                                        RowName.DEVIATION.getTitle()
+                                                                )
+                                                )
+                                        )
+                                ),
+                        () -> Assertions.fail("Doesn't exists")
+        );
+    }
+
+    private void thenHeadcountDataIsOk(ZonedDateTime currentTime, Data headcount) {
         assertEquals(HEADCOUNT.getName(), headcount.getId());
         assertTrue(headcount.isOpen());
         assertEquals(26, headcount.getContent().get(0).size());
@@ -138,23 +216,63 @@ public class SaveSimulationTest {
         assertEquals("10", headcount.getContent().get(0).get("column_2")
                 .getTooltip().get("subtitle_2"));
         assertEquals("15", headcount.getContent().get(1).get("column_4").getTitle());
+    }
 
+    private void thenProductivityDataIsOk(Data productivity) {
         assertEquals(PRODUCTIVITY.getName(), productivity.getId());
         assertFalse(productivity.isOpen());
         assertEquals(26, productivity.getContent().get(0).size());
         assertEquals("30", productivity.getContent().get(0).get("column_3").getTitle());
-        assertEquals("Productividad polivalente", productivity.getContent().get(0).get("column_3")
-                .getTooltip().get("title_1"));
+        assertEquals("Productividad polivalente", productivity
+                .getContent()
+                .get(0)
+                .get("column_3")
+                .getTooltip()
+                .get("title_1"));
         assertEquals("0 uds/h", productivity.getContent().get(0).get("column_3")
                 .getTooltip().get("subtitle_1"));
+    }
 
+    private void thenThroughputDataIsOk(Data throughput) {
         assertEquals(THROUGHPUT.getName(), throughput.getId());
         assertFalse(throughput.isOpen());
-        assertTrue(throughput.getContent().isEmpty());
+        assertEquals(26, throughput.getContent().get(0).size());
+        assertEquals(26, throughput.getContent().get(1).size());
+        assertEquals(2, throughput.getContent().size());
+        Long entriesWithEmptyTitle = throughput.getContent()
+                .get(1)
+                .entrySet()
+                .stream()
+                .filter(map -> map.getValue().getTitle().equals("-"))
+                .count();
+        assertEquals(21, entriesWithEmptyTitle);
 
-        final Chart chart = projection.getChart();
-        final List<ChartData> chartData = chart.getData();
+        assertEquals("60", throughput.getContent().get(0).get("column_2")
+                .getTitle());
+        assertEquals("30", throughput.getContent().get(0).get("column_3")
+                .getTitle());
+        assertEquals("50", throughput.getContent().get(0).get("column_4")
+                .getTitle());
+        assertEquals("75", throughput.getContent().get(0).get("column_26")
+                .getTitle());
+        assertEquals("-", throughput.getContent().get(0).get("column_25")
+                .getTitle());
 
+        assertEquals("-", throughput.getContent().get(1).get("column_6")
+                .getTitle());
+        assertEquals("50 (+50)", throughput.getContent().get(1).get("column_7")
+                .getTitle());
+        assertEquals("230 (+180)", throughput.getContent().get(1).get("column_8")
+                .getTitle());
+        assertEquals("260 (+30)", throughput.getContent().get(1).get("column_9")
+                .getTitle());
+        assertEquals("360 (+100)", throughput.getContent().get(1).get("column_10")
+                .getTitle());
+    }
+
+    private void thenTestCharDataIsOk(ZonedDateTime currentTime,
+                                      Chart chart,
+                                      List<ChartData> chartData) {
         assertEquals(60, chart.getProcessingTime().getValue());
         assertEquals(5, chartData.size());
 
@@ -162,13 +280,13 @@ public class SaveSimulationTest {
         assertEquals(currentTime.plusHours(4).toLocalTime().format(HOUR_MINUTES_FORMAT),
                 chartData1.getTitle());
         assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
-        assertEquals(currentTime.plusHours(2).plusMinutes(30).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(2).plusMinutes(35).format(DATE_FORMATTER),
                 chartData1.getProjectedEndTime());
 
         final ChartData chartData2 = chartData.get(1);
-        assertEquals(currentTime.plusHours(5).toLocalTime().format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(7).toLocalTime().format(HOUR_MINUTES_FORMAT),
                 chartData2.getTitle());
-        assertEquals(currentTime.plusHours(5).format(DATE_FORMATTER), chartData2.getCpt());
+        assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData2.getCpt());
         assertEquals(currentTime.plusHours(3).format(DATE_FORMATTER),
                 chartData2.getProjectedEndTime());
 
@@ -180,7 +298,7 @@ public class SaveSimulationTest {
         );
         assertEquals(currentTime.plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
                 chartData3.getCpt());
-        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(3).plusMinutes(20).format(DATE_FORMATTER),
                 chartData3.getProjectedEndTime());
 
         final ChartData chartData4 = chartData.get(3);
@@ -188,14 +306,14 @@ public class SaveSimulationTest {
                 chartData4.getTitle()
         );
         assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
-        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(DATE_FORMATTER),
+        assertEquals(currentTime.plusHours(8).plusMinutes(11).format(DATE_FORMATTER),
                 chartData4.getProjectedEndTime());
 
         final ChartData chartData5 = chartData.get(4);
-        assertEquals(currentTime.plusHours(7).toLocalTime().format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(8).toLocalTime().format(HOUR_MINUTES_FORMAT),
                 chartData5.getTitle()
         );
-        assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData5.getCpt());
+        assertEquals(currentTime.plusHours(8).format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(currentTime.plusDays(1).format(DATE_FORMATTER),
                 chartData5.getProjectedEndTime());
     }
@@ -205,20 +323,20 @@ public class SaveSimulationTest {
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(4))
                         .projectedEndDate(utcCurrentTime.plusHours(2).plusMinutes(30))
-                        .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(31))
+                        .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(35))
                         .remainingQuantity(0)
                         .build(),
                 ProjectionResult.builder()
-                        .date(utcCurrentTime.plusHours(5))
+                        .date(utcCurrentTime.plusHours(7))
                         .projectedEndDate(utcCurrentTime.plusHours(3))
                         .simulatedEndDate(utcCurrentTime.plusHours(3))
-                        .remainingQuantity(0)
+                        .remainingQuantity(30)
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(5).plusMinutes(30))
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
-                        .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(26))
-                        .remainingQuantity(0)
+                        .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(20))
+                        .remainingQuantity(50)
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(6))
@@ -227,7 +345,7 @@ public class SaveSimulationTest {
                         .remainingQuantity(180)
                         .build(),
                 ProjectionResult.builder()
-                        .date(utcCurrentTime.plusHours(7))
+                        .date(utcCurrentTime.plusHours(8))
                         .remainingQuantity(100)
                         .build()
         );
@@ -246,9 +364,10 @@ public class SaveSimulationTest {
                                 backlog.getDate(),
                                 backlog.getQuantity()))
                         .collect(toList()))
-                .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
-                        HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
-                )))))
+                .simulations(List.of(new Simulation(PICKING,
+                        List.of(new SimulationEntity(
+                                HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
+                        )))))
                 .build();
     }
 
@@ -282,6 +401,9 @@ public class SaveSimulationTest {
                 .dateFrom(currentTime)
                 .dateTo(currentTime.plusDays(1))
                 .processingType(processingTypes)
+                .simulations(List.of(new Simulation(PICKING,
+                        List.of(new SimulationEntity(
+                                HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
                 .build();
     }
 
@@ -345,5 +467,34 @@ public class SaveSimulationTest {
                         .value(75)
                         .build()
         );
+    }
+
+    private List<Entity> mockThroughputEntities(final ZonedDateTime utcCurrentTime) {
+        ArrayList<Entity> list = new ArrayList<>();
+        list.add(Entity.builder()
+                .date(utcCurrentTime)
+                .processName(PICKING)
+                .source(Source.FORECAST)
+                .value(60)
+                .build());
+        list.add(Entity.builder()
+                .date(utcCurrentTime.plusHours(1))
+                .processName(PICKING)
+                .source(Source.SIMULATION)
+                .value(30)
+                .build());
+        list.add(Entity.builder()
+                .date(utcCurrentTime.plusHours(2))
+                .processName(PICKING)
+                .source(Source.FORECAST)
+                .value(50)
+                .build());
+        list.add(Entity.builder()
+                .date(utcCurrentTime.plusDays(1))
+                .processName(PICKING)
+                .source(Source.FORECAST)
+                .value(75)
+                .build());
+        return list;
     }
 }
