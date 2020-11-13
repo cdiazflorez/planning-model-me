@@ -118,7 +118,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                         .put("source", "simulation")
                         .put("metric_unit", "percentage")
                 );
-        mockGetEntity(apiResponse);
+        mockPostEntity(apiResponse);
 
         // When
         final List<Entity> headcounts = client.getEntities(request);
@@ -576,9 +576,9 @@ class PlanningModelApiClientTest extends BaseClientTest {
         );
     }
 
-    private void mockGetEntity(final JSONArray response) {
+    private void mockPostEntity(final JSONArray response) {
         MockResponse.builder()
-                .withMethod(GET)
+                .withMethod(POST)
                 .withURL(format(BASE_URL + ENTITIES_URL, "headcount"))
                 .withStatusCode(HttpStatus.OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())

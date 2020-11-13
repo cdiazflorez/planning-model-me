@@ -61,7 +61,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .url(format(WORKFLOWS_URL + "/entities/%s",
                         entityRequest.getWorkflow().getName(),
                         entityRequest.getEntityType().getName()))
-                .GET()
+                .POST(requestSupplier(entityRequest))
                 .queryParams(createEntityParams(entityRequest))
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
