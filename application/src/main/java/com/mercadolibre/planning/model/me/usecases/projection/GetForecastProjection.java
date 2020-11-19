@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 
 import javax.inject.Named;
 
@@ -20,8 +21,9 @@ public class GetForecastProjection extends GetProjection {
 
     public GetForecastProjection(final PlanningModelGateway planningModelGateway,
                                  final LogisticCenterGateway logisticCenterGateway,
-                                 final GetBacklog getBacklog) {
-        super(planningModelGateway, logisticCenterGateway, getBacklog);
+                                 final GetBacklog getBacklog,
+                                 final GetSales getSales) {
+        super(planningModelGateway, logisticCenterGateway, getBacklog, getSales);
     }
 
     @Override

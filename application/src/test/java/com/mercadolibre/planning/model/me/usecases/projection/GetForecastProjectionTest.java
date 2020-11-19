@@ -20,7 +20,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
@@ -28,6 +27,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
+import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -87,6 +88,9 @@ public class GetForecastProjectionTest {
     @Mock
     private GetBacklog getBacklog;
 
+    @Mock
+    private GetSales getSales;
+
     @Test
     void testExecute() {
         // Given
@@ -111,6 +115,10 @@ public class GetForecastProjectionTest {
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
                 .thenReturn(mockedBacklog);
+
+        when(getSales.execute(new GetSalesInputDto(
+                FBM_WMS_OUTBOUND, WAREHOUSE_ID, utcCurrentTime.minusHours(28)))
+        ).thenReturn(mockSales());
 
         when(planningModelGateway.runProjection(
                 createProjectionRequest(mockedBacklog, utcCurrentTime)))
@@ -157,7 +165,7 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
                 cpt1.get("column_1"));
         assertEquals("150", cpt1.get("column_2"));
-        assertEquals("-63.3%", cpt1.get("column_3"));
+        assertEquals("-14.4%", cpt1.get("column_3"));
         assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMAT),
                 cpt1.get("column_4"));
 
@@ -165,14 +173,14 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
                 cpt2.get("column_1"));
         assertEquals("235", cpt2.get("column_2"));
-        assertEquals("-21.7%", cpt2.get("column_3"));
+        assertEquals("17.5%", cpt2.get("column_3"));
         assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMAT), cpt2.get("column_4"));
 
         assertEquals("none", cpt3.get("style"));
         assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
                 cpt3.get("column_1"));
         assertEquals("300", cpt3.get("column_2"));
-        assertEquals("44.9%", cpt3.get("column_3"));
+        assertEquals("-3.4%", cpt3.get("column_3"));
         assertEquals(currentTime.plusHours(3).plusMinutes(25).format(HOUR_MINUTES_FORMAT),
                 cpt3.get("column_4"));
 
@@ -363,6 +371,27 @@ public class GetForecastProjectionTest {
         );
     }
 
+    private List<Backlog> mockSales() {
+        return List.of(
+                Backlog.builder()
+                        .date(CPT_1)
+                        .quantity(350)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_2)
+                        .quantity(235)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_3)
+                        .quantity(200)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_4)
+                        .quantity(120)
+                        .build()
+        );
+    }
+
     private ConfigurationRequest createConfigurationRequest() {
         return  ConfigurationRequest
                 .builder()
@@ -445,7 +474,7 @@ public class GetForecastProjectionTest {
         return List.of(
                 new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 281),
                 new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 128),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_2, MetricUnit.UNITS, 300),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_2, MetricUnit.UNITS, 200),
                 new PlanningDistributionResponse(utcCurrentTime, CPT_3, MetricUnit.UNITS, 207),
                 new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 44),
                 new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 82),

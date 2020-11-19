@@ -23,6 +23,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
+import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -75,6 +77,9 @@ public class SaveSimulationTest {
     @Mock
     private GetBacklog getBacklog;
 
+    @Mock
+    private GetSales getSales;
+
     @Test
     @DisplayName("Execute the case when all the data is correctly generated")
     public void testExecute() {
@@ -97,6 +102,10 @@ public class SaveSimulationTest {
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
                 .thenReturn(mockedBacklog);
+
+        when(getSales.execute(new GetSalesInputDto(
+                FBM_WMS_OUTBOUND, WAREHOUSE_ID, utcCurrentTime.minusHours(28)))
+        ).thenReturn(mockSales());
 
         when(planningModelGateway.saveSimulation(
                 createSimulationRequest(mockedBacklog, utcCurrentTime)))
@@ -386,6 +395,25 @@ public class SaveSimulationTest {
                 Backlog.builder()
                         .date(currentTime.plusHours(3))
                         .quantity(300)
+                        .build()
+        );
+    }
+
+    private List<Backlog> mockSales() {
+        final ZonedDateTime currentTime = getCurrentTime();
+
+        return List.of(
+                Backlog.builder()
+                        .date(currentTime.plusHours(1))
+                        .quantity(350)
+                        .build(),
+                Backlog.builder()
+                        .date(currentTime.plusHours(2))
+                        .quantity(235)
+                        .build(),
+                Backlog.builder()
+                        .date(currentTime.plusHours(3))
+                        .quantity(200)
                         .build()
         );
     }
