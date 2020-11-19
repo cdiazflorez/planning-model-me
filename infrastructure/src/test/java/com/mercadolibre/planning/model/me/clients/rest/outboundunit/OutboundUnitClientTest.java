@@ -9,7 +9,6 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.UnitGro
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationFilterRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotal;
-import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitSorter;
@@ -40,11 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
-import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.CARDINALITY;
-import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.CARRIER_NAME;
-import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
-import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitOrdering.ASC;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitProperty.ESTIMATED_TIME_DEPARTURE;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
@@ -52,6 +47,7 @@ import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.POST;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -85,7 +81,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
     @Nested
     @DisplayName("Test Search")
-    class SearchUnit {
+    class SearchUnitGroups {
         private static final String GROUP_TYPE = "order";
 
         @Test
@@ -150,7 +146,8 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .limit(10)
                     .offset(0)
                     .filter(new SearchUnitAggregationFilterRequest(List.of(
-                            Map.of(WAREHOUSE_ID.toJson(), "BRSP01"),
+                            Map.of(SearchUnitFilterRequestStringValue.WAREHOUSE_ID.toJson(),
+                                    "BRSP01"),
                             Map.of(SearchUnitFilterRequestStringValue.GROUP_TYPE.toJson(), "order"),
                             Map.of(STATUS.toJson(), "pending")))
                     )
@@ -213,7 +210,8 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .limit(10)
                     .offset(0)
                     .filter(new SearchUnitAggregationFilterRequest(List.of(
-                            Map.of(WAREHOUSE_ID.toJson(), "BRSP01"),
+                            Map.of(SearchUnitFilterRequestStringValue.WAREHOUSE_ID.toJson(),
+                                    "BRSP01"),
                             Map.of(SearchUnitFilterRequestStringValue.GROUP_TYPE.toJson(), "order"),
                             Map.of(STATUS.toJson(), "pending")))
                     )
@@ -419,6 +417,117 @@ public class OutboundUnitClientTest extends BaseClientTest {
             assertEquals(200, backlogCpt3.getQuantity());
         }
 
+        @Test
+        @DisplayName("OU returns quantities grouped by CPT OK")
+        public void testGetSales() throws JsonProcessingException, JSONException {
+            // GIVEN
+            final ZonedDateTime currentTime =
+                    ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
+            final String dateCreatedFrom = currentTime.minusHours(28).format(ISO_OFFSET_DATE_TIME);
+
+            final Map<String, Object> requestBody = ImmutableMap.<String, Object>builder()
+                    .put("limit", 0)
+                    .put("offset", 0)
+                    .put("filter", singletonMap("and", asList(
+                            singletonMap("warehouse_id", "ARTW01"),
+                            singletonMap("group_type", GROUP_TYPE),
+                            singletonMap("date_created_from", dateCreatedFrom)
+                    )))
+                    .put("aggregations", singletonList(
+                            ImmutableMap.<String, Object>builder()
+                                    .put("name", "by_etd")
+                                    .put("keys", singletonList("etd"))
+                                    .put("totals", singletonList(
+                                            ImmutableMap.<String, String>builder()
+                                                    .put("operation", "sum")
+                                                    .put("operand", "$quantity")
+                                                    .put("alias", "ventas")
+                                                    .build()
+                                    ))
+                                    .build()
+                    ))
+                    .build();
+
+            final JSONObject responseBody = new JSONObject()
+                    .put("paging", new JSONObject().put("totals", "10"))
+                    .put("results", new JSONArray())
+                    .put("aggregations", new JSONArray().put(new JSONObject()
+                            .put("name", "by_etd")
+                            .put("buckets", new JSONArray()
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put(currentTime.plusHours(1).toString())
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "ventas")
+                                                            .put("result", 800)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put(currentTime.plusHours(2).toString())
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "ventas")
+                                                            .put("result", 700)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put(currentTime.plusHours(3).toString())
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "ventas")
+                                                            .put("result", 500)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put("undefined")
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 37)
+                                                    )
+                                            )
+                                    )
+                            )
+                    ));
+
+            successfulResponse(
+                    POST,
+                    searchGroupUrl(GROUP_TYPE),
+                    objectMapper.writeValueAsString(requestBody),
+                    responseBody.toString()
+            );
+
+            // WHEN
+            final List<Backlog> backlogs =
+                    outboundUnitClient.getSalesByCpt(TestUtils.WAREHOUSE_ID, dateCreatedFrom);
+
+            // THEN
+            assertEquals(3, backlogs.size());
+
+            final Backlog backlogCpt1 = backlogs.get(0);
+            assertEquals(currentTime.plusHours(1), backlogCpt1.getDate());
+            assertEquals(800, backlogCpt1.getQuantity());
+
+            final Backlog backlogCpt2 = backlogs.get(1);
+            assertEquals(currentTime.plusHours(2), backlogCpt2.getDate());
+            assertEquals(700, backlogCpt2.getQuantity());
+
+            final Backlog backlogCpt3 = backlogs.get(2);
+            assertEquals(currentTime.plusHours(3), backlogCpt3.getDate());
+            assertEquals(500, backlogCpt3.getQuantity());
+        }
+
         private String searchGroupUrl(final String groupType) {
             return UnitGroupUrlBuilder
                     .create(format("/%s/search", groupType))
@@ -489,53 +598,9 @@ public class OutboundUnitClientTest extends BaseClientTest {
         builder.build();
     }
 
-    private JSONObject dummyUnitJson(final String id, final String status) throws JSONException {
-        return new JSONObject()
-                .put("id", id)
-                .put("status", status)
-                .put("group",
-                        new JSONObject()
-                                .put(
-                                        "estimated_departure_time",
-                                        "2019-03-08T12:00:00Z")
-                );
-    }
-
     private JSONObject dummyUnitGroupJson(final String value) throws JSONException {
         return new JSONObject()
                 .put("id", value);
-    }
-
-    private static class UnitUrlBuilder {
-        private static final String DOMAIN = "http://internal.mercadolibre.com";
-        private static final String BASE_PATH = "/wms/outbound/units";
-
-        private final String path;
-        private final Map<String, String> params;
-
-        public UnitUrlBuilder(final String path, final Map<String, String> params) {
-            this.path = path;
-            this.params = params;
-        }
-
-        public static UnitUrlBuilder create(final String path) {
-            return new UnitUrlBuilder(path, new HashMap<>());
-        }
-
-        public UnitUrlBuilder withParams(final Map<String, String> params) {
-            this.params.putAll(params);
-            return this;
-        }
-
-        public String build() {
-            return format("%s%s%s?%s",
-                    DOMAIN,
-                    BASE_PATH,
-                    path,
-                    params.entrySet().stream()
-                            .map(entry -> format("%s=%s", entry.getKey(), entry.getValue()))
-                            .collect(joining("&")));
-        }
     }
 
     private static class UnitGroupUrlBuilder {
