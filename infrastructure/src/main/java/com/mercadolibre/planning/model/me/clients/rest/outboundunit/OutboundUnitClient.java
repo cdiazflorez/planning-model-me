@@ -11,8 +11,6 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.UnitGro
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationFilterRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotal;
-import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequest;
-import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.AggregationResponse;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.AggregationResponseBucket;
@@ -35,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.DATE_CREATED_FROM;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
@@ -116,6 +115,43 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .date(ZonedDateTime.parse(bucket.getKeys().get(0)))
                 .quantity(Math.toIntExact(bucket.getTotals().get(0).getResult()))
                 .build();
+    }
+
+    @Override
+    public List<Backlog> getSalesByCpt(final String warehouseId, final String dateCreatedFrom) {
+        final SearchUnitRequest request = SearchUnitRequest.builder()
+                .limit(0)
+                .offset(0)
+                .filter(new SearchUnitAggregationFilterRequest(List.of(
+                        Map.of(WAREHOUSE_ID.toJson(), warehouseId),
+                        Map.of(GROUP_TYPE.toJson(), "order"),
+                        Map.of(DATE_CREATED_FROM.toJson(), dateCreatedFrom)
+                )))
+                .aggregations(List.of(
+                        SearchUnitAggregationRequest.builder()
+                                .name(AGGREGATION_BY_ETD)
+                                .keys(List.of("etd"))
+                                .totals(List.of(
+                                        SearchUnitAggregationRequestTotal.builder()
+                                                .alias("sales")
+                                                .operand("$quantity")
+                                                .operation(SUM)
+                                                .build()
+                                ))
+                                .build()
+                ))
+                .build();
+
+        final OutboundUnitSearchResponse<UnitGroup> response = searchGroups("order", request);
+
+        return response.getAggregations().stream()
+                .filter(aggregationResponse ->
+                        aggregationResponse.getName().equalsIgnoreCase(AGGREGATION_BY_ETD))
+                .map(AggregationResponse::getBuckets)
+                .flatMap(aggregationResponseBuckets -> aggregationResponseBuckets.stream())
+                .filter(this::validCptKeys)
+                .map(this::toBacklog)
+                .collect(Collectors.toList());
     }
 
     @Trace(metricName = "API/outboundUnit/searchGroups")

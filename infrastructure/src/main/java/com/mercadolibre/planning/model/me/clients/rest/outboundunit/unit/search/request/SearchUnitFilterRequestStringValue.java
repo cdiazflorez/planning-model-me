@@ -13,6 +13,7 @@ public enum SearchUnitFilterRequestStringValue {
     CARRIER_ID,
     SERVICE_NAME,
     SERVICE_ID,
+    DATE_CREATED_FROM,
     ETD_FROM,
     ETD_TO,
     VOLUME_FROM,

@@ -29,6 +29,8 @@ import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
+import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -72,6 +74,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
     private static final DateTimeFormatter CPT_HOUR_FORMAT = ofPattern("HH:mm");
     private static final int HOURS_TO_SHOW = 25;
+    private static final int SELLING_PERIOD_HOURS = 28;
     private static final String PROCESSING_TIME = "processing_time";
     private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
             List.of(ProcessingType.ACTIVE_WORKERS);
@@ -81,6 +84,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     protected final PlanningModelGateway planningModelGateway;
     protected final LogisticCenterGateway logisticCenterGateway;
     protected final GetBacklog getBacklog;
+    protected final GetSales getSales;
 
     @Override
     public Projection execute(final GetProjectionInputDto input) {
@@ -108,6 +112,12 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
         final List<Backlog> backlogs = getBacklog.execute(
                 new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
+        );
+
+        final List<Backlog> sales = getSales.execute(new GetSalesInputDto(
+                input.getWorkflow(),
+                input.getWarehouseId(),
+                utcDateFrom.minusHours(SELLING_PERIOD_HOURS))
         );
 
         final List<ProjectionResult> projections = getProjection(
@@ -144,6 +154,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 ),
                 createProjectionDetailsTable(
                         backlogs,
+                        sales,
                         projections,
                         config,
                         planningDistribution,
@@ -165,6 +176,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     private SimpleTable createProjectionDetailsTable(
             final List<Backlog> backlogs,
+            final List<Backlog> sales,
             final List<ProjectionResult> projectionResults,
             final LogisticCenterConfiguration configuration,
             final List<PlanningDistributionResponse> planningDistribution,
@@ -180,6 +192,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
                         .map(projection -> getProjectionDetailsTableData(
                                 backlogs,
+                                sales,
                                 planningDistribution,
                                 processingTime,
                                 zoneId,
@@ -196,6 +209,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     private Map<String, String> getProjectionDetailsTableData(
             final List<Backlog> backlogs,
+            final List<Backlog> sales,
             final List<PlanningDistributionResponse> planningDistribution,
             final ProcessingTime processingTime,
             final ZoneId zoneId,
@@ -205,12 +219,13 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final ZonedDateTime projectedEndDate = projection.getProjectedEndDate();
         final ZonedDateTime simulatedEndDate = projection.getSimulatedEndDate();
         final int backlog = getBacklogQuantity(cpt, backlogs);
+        final int soldItems = getBacklogQuantity(cpt, sales);
 
         final Map<String, String> data = new LinkedHashMap<>(Map.of(
                 "style", getStyle(cpt, projectedEndDate, processingTime),
                 "column_1", convertToTimeZone(zoneId, cpt).format(CPT_HOUR_FORMAT),
                 "column_2", String.valueOf(backlog),
-                "column_3", getDeviation(cpt, backlog, planningDistribution),
+                "column_3", getDeviation(cpt, soldItems, planningDistribution),
                 "column_4", projectedEndDate == null
                         ? "Excede las 24hs"
                         : convertToTimeZone(zoneId, projectedEndDate).format(CPT_HOUR_FORMAT)));

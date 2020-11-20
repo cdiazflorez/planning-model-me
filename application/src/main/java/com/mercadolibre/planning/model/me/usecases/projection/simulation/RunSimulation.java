@@ -9,6 +9,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 
 import javax.inject.Named;
 
@@ -22,8 +23,9 @@ public class RunSimulation extends GetProjection {
 
     protected RunSimulation(final PlanningModelGateway planningModelGateway,
                             final LogisticCenterGateway logisticCenterGateway,
-                            final GetBacklog getBacklog) {
-        super(planningModelGateway, logisticCenterGateway, getBacklog);
+                            final GetBacklog getBacklog,
+                            final GetSales getSales) {
+        super(planningModelGateway, logisticCenterGateway, getBacklog, getSales);
     }
 
     @Override

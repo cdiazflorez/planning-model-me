@@ -7,7 +7,10 @@ import java.util.List;
 
 public interface BacklogGateway {
 
+    boolean supportsWorkflow(final Workflow workflow);
+
     List<Backlog> getBacklog(final String warehouseId);
 
-    boolean supportsWorkflow(final Workflow workflow);
+    List<Backlog> getSalesByCpt(final String warehouseId, final String dateCreatedFrom);
+
 }
