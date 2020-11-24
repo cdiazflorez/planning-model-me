@@ -14,6 +14,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
@@ -47,6 +48,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.createProductivityRequest;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -93,7 +95,7 @@ public class SaveSimulationTest {
                 List.of(ProcessingType.ACTIVE_WORKERS))))
                 .thenReturn(mockHeadcountEntities(utcCurrentTime));
 
-        when(planningModelGateway.getEntities(createRequest(PRODUCTIVITY, utcCurrentTime, null)))
+        when(planningModelGateway.getProductivity(createProductivityRequest(utcCurrentTime)))
                 .thenReturn(mockProductivityEntities(utcCurrentTime));
 
         when(planningModelGateway.getEntities(createRequest(THROUGHPUT, utcCurrentTime, null)))
@@ -165,7 +167,7 @@ public class SaveSimulationTest {
                 List.of(ProcessingType.ACTIVE_WORKERS))))
                 .thenReturn(mockHeadcountEntities(utcCurrentTime));
 
-        when(planningModelGateway.getEntities(createRequest(PRODUCTIVITY, utcCurrentTime, null)))
+        when(planningModelGateway.getProductivity(createProductivityRequest(utcCurrentTime)))
                 .thenReturn(new ArrayList<>());
 
         when(planningModelGateway.getEntities(createRequest(THROUGHPUT, utcCurrentTime, null)))
@@ -238,7 +240,7 @@ public class SaveSimulationTest {
                 .get("column_3")
                 .getTooltip()
                 .get("title_1"));
-        assertEquals("0 uds/h", productivity.getContent().get(0).get("column_3")
+        assertEquals("20 uds/h", productivity.getContent().get(0).get("column_3")
                 .getTooltip().get("subtitle_1"));
     }
 
@@ -468,31 +470,63 @@ public class SaveSimulationTest {
         );
     }
 
-    private List<Entity> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
+    private List<Productivity> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
         return List.of(
-                Entity.builder()
+                Productivity.builder()
                         .date(utcCurrentTime)
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(60)
+                        .abilityLevel(1)
                         .build(),
-                Entity.builder()
+                Productivity.builder()
                         .date(utcCurrentTime.plusHours(1))
                         .processName(PICKING)
                         .source(Source.SIMULATION)
                         .value(30)
+                        .abilityLevel(1)
                         .build(),
-                Entity.builder()
+                Productivity.builder()
                         .date(utcCurrentTime.plusHours(2))
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(50)
+                        .abilityLevel(1)
                         .build(),
-                Entity.builder()
+                Productivity.builder()
                         .date(utcCurrentTime.plusDays(1))
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(75)
+                        .abilityLevel(1)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime)
+                        .processName(PICKING)
+                        .source(Source.FORECAST)
+                        .value(50)
+                        .abilityLevel(2)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusHours(1))
+                        .processName(PICKING)
+                        .source(Source.FORECAST)
+                        .value(20)
+                        .abilityLevel(2)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusHours(2))
+                        .processName(PICKING)
+                        .source(Source.FORECAST)
+                        .value(40)
+                        .abilityLevel(2)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusDays(1))
+                        .processName(PICKING)
+                        .source(Source.FORECAST)
+                        .value(65)
+                        .abilityLevel(2)
                         .build()
         );
     }

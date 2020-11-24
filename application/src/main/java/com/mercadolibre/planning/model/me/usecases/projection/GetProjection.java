@@ -23,6 +23,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
@@ -62,6 +64,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -78,6 +81,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     private static final String PROCESSING_TIME = "processing_time";
     private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
             List.of(ProcessingType.ACTIVE_WORKERS);
+    private static final int MAIN_ABILITY_LEVEL = 1;
+    private static final int POLYVALENT_ABILITY_LEVEL = 2;
 
     protected static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
 
@@ -98,9 +103,17 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 .map(EntityRow::fromEntity)
                 .collect(toList());
 
-        final List<EntityRow> productivities = planningModelGateway.getEntities(
-                createRequest(input, PRODUCTIVITY, utcDateFrom, utcDateTo, null))
-                .stream()
+        final List<Productivity> productivities = planningModelGateway.getProductivity(
+                createProductivityRequest(input, utcDateFrom, utcDateTo));
+
+        final List<EntityRow> mainProductivities = productivities.stream()
+                .filter(productivity -> productivity.getAbilityLevel() == MAIN_ABILITY_LEVEL
+                        || productivity.getAbilityLevel() == 0)
+                .map(EntityRow::fromEntity)
+                .collect(toList());
+
+        final List<EntityRow> polyvalentProductivities = productivities.stream()
+                .filter(productivity -> productivity.getAbilityLevel() == POLYVALENT_ABILITY_LEVEL)
                 .map(EntityRow::fromEntity)
                 .collect(toList());
 
@@ -148,9 +161,10 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 "Proyecciones",
                 new ComplexTable(
                         headers,
-                        List.of(createData(config, HEADCOUNT, headcount, headers),
-                                createData(config, PRODUCTIVITY, productivities, headers),
-                                createData(config, THROUGHPUT, throughputs, headers))
+                        List.of(createData(config, HEADCOUNT, headcount, headers, emptyList()),
+                                createData(config, PRODUCTIVITY, mainProductivities,
+                                        headers, polyvalentProductivities),
+                                createData(config, THROUGHPUT, throughputs, headers, emptyList()))
                 ),
                 createProjectionDetailsTable(
                         backlogs,
@@ -347,6 +361,23 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 .build();
     }
 
+    private ProductivityRequest createProductivityRequest(
+            final GetProjectionInputDto input,
+            final ZonedDateTime dateFrom,
+            final ZonedDateTime dateTo) {
+
+        return ProductivityRequest.builder()
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
+                .entityType(PRODUCTIVITY)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .processName(PROJECTION_PROCESS_NAMES)
+                .simulations(input.getSimulations())
+                .abilityLevel(List.of(MAIN_ABILITY_LEVEL, POLYVALENT_ABILITY_LEVEL))
+                .build();
+    }
+
     private List<ColumnHeader> createColumnHeaders(final LogisticCenterConfiguration config,
                                                    final ZonedDateTime utcDateFrom) {
 
@@ -369,10 +400,13 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     private Data createData(final LogisticCenterConfiguration config,
                             final EntityType entityType,
                             final List<EntityRow> entities,
-                            final List<ColumnHeader> headers) {
+                            final List<ColumnHeader> headers,
+                            final List<EntityRow> polyvalentProductivity) {
 
         final Map<RowName, List<EntityRow>> entitiesByProcess = entities.stream()
                 .collect(groupingBy(EntityRow::getRowName));
+        final Map<RowName, List<EntityRow>> polyvalentPByProcess = polyvalentProductivity.stream()
+                .collect(groupingBy((EntityRow::getRowName)));
 
         final boolean shouldOpenTab = entityType == HEADCOUNT;
 
@@ -384,8 +418,11 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         .sorted(Comparator.comparing(entry -> entry.getKey().getIndex()))
                         .map(entry -> createContent(
                                 config,
-                                entityType, entry.getKey(),
-                                headers, entry.getValue()))
+                                entityType,
+                                entry.getKey(),
+                                headers,
+                                entry.getValue(),
+                                polyvalentPByProcess.getOrDefault(entry.getKey(), emptyList())))
                         .collect(toList())
         );
     }
@@ -394,12 +431,20 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                                final EntityType entityType,
                                                final RowName processName,
                                                final List<ColumnHeader> headers,
-                                               final List<EntityRow> entities) {
+                                               final List<EntityRow> entities,
+                                               final List<EntityRow> polyvalentProductivity) {
 
         final Map<String, Map<Source, EntityRow>> entitiesByHour = entities.stream()
                 .map(entity -> entity.convertTimeZone(config.getZoneId()))
                 .collect(groupingBy(entity -> getHourAndDay(entity.getDate()),
                         toMap(EntityRow::getSource, identity())));
+
+        final Map<String, String> polyvalentProductivityByHour = polyvalentProductivity.stream()
+                .map(entity -> entity.convertTimeZone(config.getZoneId()))
+                .collect(toMap(
+                        entity -> getHourAndDay(entity.getDate()),
+                        EntityRow::getValue,
+                        (value1, value2) -> value2));
 
         final Map<String, Content> content = new LinkedHashMap<>();
 
@@ -414,7 +459,12 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                     content.put(header.getId(), new Content(
                             valueOf(entityBySource.get(SIMULATION).getValue()),
                             entityBySource.get(SIMULATION).getDate(),
-                            createTooltip(entityType, entityBySource.get(FORECAST))));
+                            createTooltip(
+                                    entityType,
+                                    entityBySource.get(FORECAST),
+                                    polyvalentProductivityByHour.getOrDefault(
+                                            header.getValue(), "-")
+                                    )));
                 } else if (entityBySource != null && entityBySource.containsKey(FORECAST)) {
                     content.put(header.getId(), new Content(
                             valueOf(entityBySource.get(FORECAST).getValue()),
@@ -428,7 +478,9 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         return content;
     }
 
-    private Map<String, String> createTooltip(final EntityType entityType, final EntityRow entity) {
+    private Map<String, String> createTooltip(final EntityType entityType,
+                                              final EntityRow entity,
+                                              final String polyvalentProductivity) {
         switch (entityType) {
             case HEADCOUNT:
                 return Map.of(
@@ -442,7 +494,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             case PRODUCTIVITY:
                 return Map.of(
                         "title_1", "Productividad polivalente",
-                        "subtitle_1", format("%s uds/h", 0));
+                        "subtitle_1", format("%s uds/h", polyvalentProductivity));
             default:
                 return null;
         }
