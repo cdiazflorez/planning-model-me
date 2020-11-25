@@ -46,6 +46,7 @@ public class SaveSimulation extends GetProjection {
                                         backlog.getQuantity()))
                                 .collect(toList()))
                         .simulations(input.getSimulations())
+                        .userId(input.getUserId())
                         .build());
     }
 

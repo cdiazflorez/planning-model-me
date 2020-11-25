@@ -16,4 +16,5 @@ public class SimulationRequest {
     private ZonedDateTime dateTo;
     private List<QuantityByDate> backlog;
     private List<Simulation> simulations;
+    private long userId;
 }

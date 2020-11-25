@@ -8,6 +8,10 @@ import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
+import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
+import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
+import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
@@ -35,6 +39,8 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -54,6 +60,9 @@ public class SimulationControllerTest {
     @MockBean
     private SaveSimulation saveSimulation;
 
+    @MockBean
+    private AuthorizeUser authorizeUser;
+
     @Test
     void testRunSimulation() throws Exception {
         // GIVEN
@@ -70,8 +79,31 @@ public class SimulationControllerTest {
         );
 
         // THEN
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID,
+                List.of(UserPermission.OUTBOUND_SIMULATION)));
+
         result.andExpect(status().isOk());
         result.andExpect(content().json(complexTableJsonResponse()));
+    }
+
+    @Test
+    void testRunSimulationUserUnauthorized() throws Exception {
+        // GIVEN
+        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                .thenThrow(UserNotAuthorizedException.class);
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/run")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .content(mockRunSimulationRequest())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isForbidden());
+        verifyNoInteractions(runSimulation);
     }
 
     @Test
@@ -90,8 +122,31 @@ public class SimulationControllerTest {
         );
 
         // THEN
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID,
+                List.of(UserPermission.OUTBOUND_SIMULATION)));
+
         result.andExpect(status().isOk());
         result.andExpect(content().json(complexTableJsonResponse()));
+    }
+
+    @Test
+    void testSaveSimulationUserUnauthorized() throws Exception {
+        // GIVEN
+        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                .thenThrow(UserNotAuthorizedException.class);
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/save")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .content(mockRunSimulationRequest())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isForbidden());
+        verifyNoInteractions(saveSimulation);
     }
 
     private String mockRunSimulationRequest() throws JSONException {

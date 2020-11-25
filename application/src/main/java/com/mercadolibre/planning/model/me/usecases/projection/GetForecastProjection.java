@@ -40,6 +40,7 @@ public class GetForecastProjection extends GetProjection {
                         .dateFrom(dateFrom)
                         .dateTo(dateTo)
                         .backlog(backlogs)
+                        .userId(input.getUserId())
                         .build());
     }
 

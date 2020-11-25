@@ -9,6 +9,10 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
+import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
+import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
+import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
@@ -24,6 +28,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
@@ -34,19 +39,23 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = ProjectionController.class)
-class ProjectionControllerTest {
+public class ProjectionControllerTest {
 
     private static final String URL = "/planning/model/middleend/workflows/%s";
 
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private AuthorizeUser authorizeUser;
 
     @MockBean
     private GetForecastProjection getProjection;
@@ -54,7 +63,6 @@ class ProjectionControllerTest {
     @Test
     void getProjectionOk() throws Exception {
         // GIVEN
-
         when(getProjection.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection(
                         "Test",
@@ -74,11 +82,32 @@ class ProjectionControllerTest {
         result.andExpect(status().isOk());
         result.andExpect(content().json(getResourceAsString("get_projection_response.json")));
 
-        Mockito.verify(getProjection).execute(GetProjectionInputDto.builder()
+        verify(getProjection).execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .build()
         );
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void getProjectionUserUnauthorized() throws Exception {
+        // GIVEN
+        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                .thenThrow(UserNotAuthorizedException.class);
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isForbidden());
+        verifyNoInteractions(getProjection);
     }
 
     private ComplexTable mockComplexTable() {
