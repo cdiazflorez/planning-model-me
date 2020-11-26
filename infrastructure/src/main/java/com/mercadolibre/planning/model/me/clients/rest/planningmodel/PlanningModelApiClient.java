@@ -7,6 +7,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
+import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.ProductivityResponse;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
@@ -19,6 +20,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
@@ -73,6 +76,21 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         return apiResponse.stream().map(this::toEntity).collect(toList());
     }
 
+    @Override
+    public List<Productivity> getProductivity(final ProductivityRequest productivityRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL + "/entities/productivity",
+                        productivityRequest.getWorkflow().getName()))
+                .POST(requestSupplier(productivityRequest))
+                .queryParams(createEntityParams(productivityRequest))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        final List<ProductivityResponse> apiResponse = send(request, response ->
+                response.getData(new TypeReference<>() {}));
+
+        return apiResponse.stream().map(this::toProductivity).collect(toList());
+    }
 
     private Entity toEntity(final EntityResponse response) {
         return Entity.builder()
@@ -82,6 +100,18 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .value(response.getValue())
                 .source(Source.from(response.getSource()))
                 .metricUnit(MetricUnit.from(response.getMetricUnit()))
+                .build();
+    }
+
+    private Productivity toProductivity(final ProductivityResponse response) {
+        return Productivity.builder()
+                .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
+                .processName(ProcessName.from(response.getProcessName()))
+                .workflow(Workflow.from(response.getWorkflow()).orElseThrow())
+                .value(response.getValue())
+                .source(Source.from(response.getSource()))
+                .metricUnit(MetricUnit.from(response.getMetricUnit()))
+                .abilityLevel(response.getAbilityLevel())
                 .build();
     }
 

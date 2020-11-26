@@ -17,5 +17,6 @@ public class ProjectionRequest {
     private ZonedDateTime dateFrom;
     private ZonedDateTime dateTo;
     private List<Backlog> backlog;
+    private long userId;
 
 }

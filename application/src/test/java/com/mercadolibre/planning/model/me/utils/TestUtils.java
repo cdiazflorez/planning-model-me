@@ -1,5 +1,9 @@
 package com.mercadolibre.planning.model.me.utils;
 
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.spreadsheet.MeliDocument;
 import com.mercadolibre.spreadsheet.MeliDocumentFactory;
 import com.mercadolibre.spreadsheet.MeliSheet;
@@ -7,7 +11,14 @@ import com.mercadolibre.spreadsheet.implementations.poi.PoiDocument;
 import com.mercadolibre.spreadsheet.implementations.poi.PoiMeliDocumentFactory;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.List;
+
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 
 public class TestUtils {
 
@@ -57,5 +68,20 @@ public class TestUtils {
             exception.printStackTrace();
             return null;
         }
+    }
+
+    public static ProductivityRequest createProductivityRequest(final ZonedDateTime currentTime) {
+        return ProductivityRequest.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .entityType(PRODUCTIVITY)
+                .processName(List.of(PICKING, PACKING))
+                .dateFrom(currentTime)
+                .dateTo(currentTime.plusDays(1))
+                .abilityLevel(List.of(1,2))
+                .simulations(List.of(new Simulation(PICKING,
+                        List.of(new SimulationEntity(
+                                HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
+                .build();
     }
 }

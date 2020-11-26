@@ -16,4 +16,6 @@ public class GetProjectionInputDto {
     private String warehouseId;
 
     private List<Simulation> simulations;
+
+    private long userId;
 }

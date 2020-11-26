@@ -1,13 +1,15 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 
-@Value
-@Builder
+@Getter
+@SuperBuilder
+@EqualsAndHashCode
 public class EntityRequest {
 
     private Workflow workflow;

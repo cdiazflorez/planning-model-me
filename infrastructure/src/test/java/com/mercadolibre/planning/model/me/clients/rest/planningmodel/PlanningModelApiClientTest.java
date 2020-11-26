@@ -10,13 +10,13 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
@@ -59,6 +59,7 @@ import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
 import static com.mercadolibre.restclient.http.HttpMethod.POST;
 import static java.lang.String.format;
+import static java.time.ZonedDateTime.now;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -137,6 +138,64 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(PACKING, headcount1.getProcessName());
         assertEquals(20, headcount1.getValue());
         assertEquals(Source.SIMULATION, headcount1.getSource());
+    }
+
+    @Test
+    void testGetProductivity() throws JSONException {
+
+        // Given
+        final ProductivityRequest request = ProductivityRequest.builder()
+                .entityType(HEADCOUNT)
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId("ARTW01")
+                .dateFrom(ZonedDateTime.now())
+                .dateTo(ZonedDateTime.now().plusDays(1))
+                .source(Source.FORECAST)
+                .processName(List.of(PICKING, PACKING))
+                .abilityLevel(List.of(1,2))
+                .build();
+
+
+        final JSONArray apiResponse = new JSONArray()
+                .put(new JSONObject()
+                        .put("date", request.getDateFrom().format(ISO_OFFSET_DATE_TIME))
+                        .put("workflow", "fbm-wms-outbound")
+                        .put("process_name", "picking")
+                        .put("value", "30")
+                        .put("source", "forecast")
+                        .put("metric_unit", "minutes")
+                        .put("ability_level", 1)
+                )
+                .put(new JSONObject()
+                        .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
+                        .put("workflow", "fbm-wms-outbound")
+                        .put("process_name", "packing")
+                        .put("value", "20")
+                        .put("source", "simulation")
+                        .put("metric_unit", "percentage")
+                        .put("ability_level", 2)
+                );
+        mockPostProductivity(apiResponse);
+
+        // When
+        final List<Productivity> productivities = client.getProductivity(request);
+
+        // Then
+        assertEquals(2, productivities.size());
+
+        final Productivity productivity1 = productivities.get(0);
+        assertTrue(request.getDateFrom().isEqual(productivity1.getDate()));
+        assertEquals(PICKING, productivity1.getProcessName());
+        assertEquals(30, productivity1.getValue());
+        assertEquals(Source.FORECAST, productivity1.getSource());
+        assertEquals(1, productivity1.getAbilityLevel());
+
+        final Productivity productivity2 = productivities.get(1);
+        assertTrue(request.getDateTo().isEqual(productivity2.getDate()));
+        assertEquals(PACKING, productivity2.getProcessName());
+        assertEquals(20, productivity2.getValue());
+        assertEquals(Source.SIMULATION, productivity2.getSource());
+        assertEquals(2, productivity2.getAbilityLevel());
     }
 
     @Test
@@ -580,6 +639,16 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + ENTITIES_URL, "headcount"))
+                .withStatusCode(HttpStatus.OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(response.toString())
+                .build();
+    }
+
+    private void mockPostProductivity(final JSONArray response) {
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(format(BASE_URL + ENTITIES_URL, "productivity"))
                 .withStatusCode(HttpStatus.OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(response.toString())
