@@ -1,0 +1,22 @@
+[
+    {
+        "key":"mono_order_distribution",
+        "value":"58"
+    },
+    {
+        "key":"multi_order_distribution",
+        "value":"23"
+    },
+    {
+        "key":"multi_batch_distribution",
+        "value":"72"
+    },
+    {
+        "key":"warehouse_id",
+        "value":"ARBA01"
+    },
+    {
+        "key":"week",
+        "value":"48-2020"
+    }
+]

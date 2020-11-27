@@ -6,7 +6,9 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
@@ -21,6 +23,9 @@ import java.util.Optional;
 public interface PlanningModelGateway {
 
     List<Entity> getEntities(final EntityRequest request);
+
+    List<Metadata> getForecastMetadata(final Workflow workflow,
+                                       final ForecastMetadataRequest request);
 
     List<Productivity> getProductivity(final ProductivityRequest request);
 

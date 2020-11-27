@@ -15,7 +15,9 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
@@ -74,6 +76,28 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 }));
 
         return apiResponse.stream().map(this::toEntity).collect(toList());
+    }
+
+    @Override
+    public List<Metadata> getForecastMetadata(final Workflow workflow,
+                                            final ForecastMetadataRequest forecastMetadataRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, workflow) + "/metadata")
+                .GET()
+                .queryParams(createForecastMetadataParams(forecastMetadataRequest))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    protected Map<String, String> createForecastMetadataParams(
+            final ForecastMetadataRequest request) {
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put(WAREHOUSE_ID, request.getWarehouseId());
+        params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
+        params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
+        return params;
     }
 
     @Override
