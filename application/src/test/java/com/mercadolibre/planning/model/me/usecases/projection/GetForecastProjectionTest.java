@@ -349,7 +349,7 @@ public class GetForecastProjectionTest {
                 ProjectionResult.builder()
                         .date(CPT_3)
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
-                        .remainingQuantity(0)
+                        .remainingQuantity(100)
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_4)

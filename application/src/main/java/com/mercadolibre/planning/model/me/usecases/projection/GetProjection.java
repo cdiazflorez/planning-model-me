@@ -45,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -64,6 +65,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
@@ -314,26 +316,28 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     private void addDeviationEntities(List<EntityRow> throughputs,
                                       List<ProjectionResult> projections) {
+
+        final TreeMap<ZonedDateTime, Integer> quantityByDate = projections.stream()
+                .collect(toMap(
+                        o -> o.getDate().truncatedTo(HOURS),
+                        ProjectionResult::getRemainingQuantity,
+                        Integer::sum,
+                        TreeMap::new));
+
         AtomicInteger acumulatedQuantity = new AtomicInteger(0);
-        projections.stream()
-                .sorted(Comparator.comparing(ProjectionResult::getDate))
-                .forEach(t -> {
-                            if (t.getRemainingQuantity() > 0) {
-                                acumulatedQuantity.addAndGet(t.getRemainingQuantity());
-                                String title = acumulatedQuantity
-                                        + " (+"
-                                        + t.getRemainingQuantity()
-                                        + ")";
-                                throughputs.add(EntityRow.builder()
-                                        .date(t.getDate())
-                                        .value(title)
-                                        .source(FORECAST)
-                                        .rowName(DEVIATION)
-                                        .build()
-                                );
-                            }
-                }
-            );
+        quantityByDate.forEach((dateTime, quantity) -> {
+            if (quantity > 0) {
+                acumulatedQuantity.addAndGet(quantity);
+                throughputs.add(EntityRow.builder()
+                        .date(dateTime)
+                        .value(acumulatedQuantity + " (+" + quantity + ")")
+                        .source(FORECAST)
+                        .rowName(DEVIATION)
+                        .build()
+                );
+            }
+        });
+
         if (throughputs.stream().noneMatch(t -> t.getRowName().equals(DEVIATION))) {
             throughputs.add(EntityRow.builder()
                     .date(getCurrentUtcDate())
@@ -436,8 +440,9 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
         final Map<String, Map<Source, EntityRow>> entitiesByHour = entities.stream()
                 .map(entity -> entity.convertTimeZone(config.getZoneId()))
-                .collect(groupingBy(entity -> getHourAndDay(entity.getDate()),
-                        toMap(EntityRow::getSource, identity())));
+                .collect(groupingBy(
+                        entity -> getHourAndDay(entity.getDate()),
+                        toMap(EntityRow::getSource, identity(), (e1, e2) -> e2)));
 
         final Map<String, String> polyvalentProductivityByHour = polyvalentProductivity.stream()
                 .map(entity -> entity.convertTimeZone(config.getZoneId()))
