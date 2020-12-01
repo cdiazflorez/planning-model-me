@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.upload.parsers.outbound;
 
+import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -33,7 +34,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class RepsForecastSheetParserTest {
 
-    @InjectMocks
+    private static final String INVALID_FILE_PATH = "forecast_example_invalid_date.xlsx";
+
+	@InjectMocks
     private RepsForecastSheetParser repsForecastSheetParser;
 
     @Mock
@@ -84,5 +87,19 @@ class RepsForecastSheetParserTest {
 
 
     }
+    
+    @Test
+    @DisplayName("Excel parsed with errors in date format")
+    void parseFileWithInvalidDateFormat() {
+    	givenAnExcelFileWithInvalidDate();
+    	assertThrows(ForecastParsingException.class, ()->whenExcelIsParsedBy(WAREHOUSE_ID));
+    }
+
+	private void givenAnExcelFileWithInvalidDate() {
+		when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+        .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+		repsSheet = getMeliSheetFromTestFile(WORKERS.getName(),INVALID_FILE_PATH);
+		
+	}
 
 }

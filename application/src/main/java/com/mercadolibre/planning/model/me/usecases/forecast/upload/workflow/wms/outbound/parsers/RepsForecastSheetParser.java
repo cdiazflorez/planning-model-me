@@ -14,6 +14,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Processing
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.RepsDistributionDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.parsers.SheetParser;
+import com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastHeadcountProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessType;
@@ -24,7 +25,6 @@ import lombok.AllArgsConstructor;
 import javax.inject.Named;
 
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.formatter;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
@@ -45,7 +44,6 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workfl
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.WEEK;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 
 @Named
 @AllArgsConstructor
@@ -132,10 +130,7 @@ public class RepsForecastSheetParser implements SheetParser {
                         final int columnIndex = getColumnIndex(processingDistribution);
 
                         processingDistribution.getData().add(ProcessingDistributionData.builder()
-                                .date(convertToUtc(ZonedDateTime.parse(
-                                        getValueAt(sheet, rowIndex, 1),
-                                        formatter.withZone(zoneId)))
-                                )
+                                .date(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
                                 .quantity(getIntValueAt(sheet, rowIndex, columnIndex))
                                 .build()
                         );
@@ -147,10 +142,7 @@ public class RepsForecastSheetParser implements SheetParser {
                         + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET;
 
                 headcountProductivity.getData().add(HeadcountProductivityData.builder()
-                        .dayTime(convertToUtc(ZonedDateTime.parse(
-                                getValueAt(sheet, rowIndex, 1),
-                                formatter.withZone(zoneId)))
-                        )
+                        .dayTime(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
                         .productivity(getLongValueAt(sheet, rowIndex, columnIndex))
                         .build()
                 );

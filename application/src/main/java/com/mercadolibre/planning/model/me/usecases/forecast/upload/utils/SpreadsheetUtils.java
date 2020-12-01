@@ -8,9 +8,12 @@ import com.mercadolibre.spreadsheet.implementations.poi.PoiDocument;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
-
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 import static java.lang.String.format;
 
 public class SpreadsheetUtils {
@@ -112,4 +115,37 @@ public class SpreadsheetUtils {
                     ), e);
         }
     }
+    
+    public static ZonedDateTime getDateTimeAt(final MeliRow row, final int column,final ZoneId zoneId) {
+    	try {
+			final String value = getValueAt(row, column);
+			
+			return convertToUtc(ZonedDateTime.parse(
+			        value,
+			        formatter.withZone(zoneId)));
+		} catch (DateTimeParseException e) {
+			throw new ForecastParsingException(
+                    format("Error while trying to parse cell in row: %d and column: %d",
+                            row.getIndex(),
+                            column
+                    ), e);
+		}
+    }
+    
+    public static ZonedDateTime getDateTimeAt(final MeliSheet sheet,final int row, final int column,final ZoneId zoneId) {
+    	try {
+			final String value = getValueAt(sheet,row, column);
+			
+			return convertToUtc(ZonedDateTime.parse(
+			        value,
+			        formatter.withZone(zoneId)));
+		} catch (DateTimeParseException e) {
+			throw new ForecastParsingException(
+                    format("Error while trying to parse cell in row:%d and column:%d",
+                            row,
+                            column
+                    ), e);
+		}
+    }
 }
+
