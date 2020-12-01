@@ -11,6 +11,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
@@ -52,6 +53,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.mockPostUrlSuccess;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.objectMapper;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
@@ -59,7 +61,6 @@ import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
 import static com.mercadolibre.restclient.http.HttpMethod.POST;
 import static java.lang.String.format;
-import static java.time.ZonedDateTime.now;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -77,6 +78,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
     private static final String ENTITIES_URL =
             "/planning/model/workflows/fbm-wms-outbound/entities/%s";
     private static final String POST_FORECAST_URL = "/planning/model/workflows/%s/forecasts";
+    private static final String GET_FORECAST_METADATA_URL =
+            "/planning/model/workflows/%s/metadata";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String RUN_PROJECTIONS_URL = "/planning/model/workflows/%s/projections";
     private static final String RUN_SIMULATIONS_URL = "/planning/model/"
@@ -138,6 +141,68 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(PACKING, headcount1.getProcessName());
         assertEquals(20, headcount1.getValue());
         assertEquals(Source.SIMULATION, headcount1.getSource());
+    }
+
+    @Test
+    void testGetForecastMetadata() throws IOException {
+
+        // GIVEN
+        final ForecastMetadataRequest request = ForecastMetadataRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .dateFrom(ZonedDateTime.now())
+                .dateTo(ZonedDateTime.now().plusDays(1))
+                .build();
+
+        MockResponse.builder()
+                .withMethod(GET)
+                .withURL(BASE_URL + format(GET_FORECAST_METADATA_URL, FBM_WMS_OUTBOUND))
+                .withStatusCode(HttpStatus.OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(
+                        getResourceAsString("forecast_metadata_response.json"))
+                .build();
+
+
+        //WHEN
+        final List<Metadata> forecastMetadata =
+                client.getForecastMetadata(FBM_WMS_OUTBOUND,request);
+
+        //THEN
+        assertNotNull(forecastMetadata);
+        assertEquals(5, forecastMetadata.size());
+        forecastMetadataEqualTo(forecastMetadata.get(0),
+                "mono_order_distribution", "58");
+        forecastMetadataEqualTo(forecastMetadata.get(1),
+                "multi_order_distribution", "23");
+        forecastMetadataEqualTo(forecastMetadata.get(2),
+                "multi_batch_distribution", "72");
+        forecastMetadataEqualTo(forecastMetadata.get(3),
+                "warehouse_id", "ARBA01");
+        forecastMetadataEqualTo(forecastMetadata.get(4),
+                "week", "48-2020");
+    }
+
+    @Test
+    void testCreateForecastMetadataParams() {
+        // GIVEN
+        final ForecastMetadataRequest request = ForecastMetadataRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .dateFrom(ZonedDateTime.now())
+                .dateTo(ZonedDateTime.now().plusDays(1))
+                .build();
+        // WHEN
+        Map<String, String> forecastMetadataParams =  client.createForecastMetadataParams(request);
+        // THEN
+        assertEquals("ARTW01",forecastMetadataParams.get("warehouse_id"));
+        assertNotNull(forecastMetadataParams.get("date_from"));
+        assertNotNull(forecastMetadataParams.get("date_to"));
+    }
+
+    private void forecastMetadataEqualTo(final Metadata output,
+                                         final String key,
+                                         final String value) {
+        assertEquals(key, output.getKey());
+        assertEquals(value, output.getValue());
     }
 
     @Test
