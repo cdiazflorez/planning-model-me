@@ -35,7 +35,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getValueAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getCellAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
@@ -75,7 +75,7 @@ public class RepsForecastSheetParser implements SheetParser {
         return new ForecastSheetDto(
                 sheet.getSheetName(),
                 Map.of(
-                        WEEK, getValueAt(sheet, 2, 2),
+                        WEEK, getCellAt(sheet, 2, 2),
                         MONO_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 5),
                         MULTI_BATCH_DISTRIBUTION, getDoubleValueAt(sheet, 3, 6),
                         MULTI_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 7),
@@ -88,7 +88,7 @@ public class RepsForecastSheetParser implements SheetParser {
     }
 
     private void validateIfWarehouseIdIsCorrect(String warehouseId, MeliSheet sheet) {
-        final String warehouseIdFromSheet = getValueAt(sheet, 3, 2);
+        final String warehouseIdFromSheet = getCellAt(sheet, 3, 2).getValue();
         boolean warehouseIdsAreDifferent = !warehouseIdFromSheet.equalsIgnoreCase(warehouseId);
         if (isNullOrEmpty(warehouseIdFromSheet) || warehouseIdsAreDifferent) {
             throw new UnmatchedWarehouseException(warehouseId, warehouseIdFromSheet);
