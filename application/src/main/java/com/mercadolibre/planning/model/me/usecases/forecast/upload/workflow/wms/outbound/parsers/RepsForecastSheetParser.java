@@ -32,10 +32,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getCellAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getCellAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;

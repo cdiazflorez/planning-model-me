@@ -14,6 +14,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 import static java.lang.String.format;
 
@@ -40,9 +41,8 @@ public class SpreadsheetUtils {
     }
 
     public static int getIntValueAt(final MeliRow row, final int column) {
-    	MeliCell cell=null;
+        MeliCell cell = getCellAt(row, column);;
         try {
-        	cell=getCellAt(row, column);
             final String value = cell.getValue();
 
             return value == null || value.isEmpty()
@@ -56,9 +56,8 @@ public class SpreadsheetUtils {
     }
 
     public static int getIntValueAt(final MeliSheet sheet, final int row, final int column) {
-    	MeliCell cell=null;
+        MeliCell cell = getCellAt(sheet, row, column);;
         try {
-        	cell=getCellAt(sheet, row, column);
             final String value = cell.getValue();
 
             return value == null || value.isEmpty()
@@ -66,7 +65,7 @@ public class SpreadsheetUtils {
                     : numberFormatter.parse(value).intValue();
         } catch (ParseException | NullPointerException e) {
             throw new ForecastParsingException(
-                    format("Error while trying to parse cell (%s)" + " for sheet: %s",
+                    format("Error while trying to parse cell (%s)" + " for sheet: %s", 
                             cell.getAddress(),
                             sheet.getSheetName()
                     ), e);
@@ -74,9 +73,8 @@ public class SpreadsheetUtils {
     }
 
     public static long getLongValueAt(final MeliRow row, final int column) {
-    	MeliCell cell=null;
+        MeliCell cell = getCellAt(row, column);;
         try {
-        	cell=getCellAt(row, column);
             final String value = cell.getValue();
 
             return value == null || value.isEmpty()
@@ -85,16 +83,15 @@ public class SpreadsheetUtils {
         } catch (ParseException | NullPointerException e) {
             throw new ForecastParsingException(
                     format("Error while trying to parse cell (%s)", 
-                    		cell.getAddress()),
+                    cell.getAddress()),
                     e
             );
         }
     }
 
     public static long getLongValueAt(final MeliSheet sheet, final int row, final int column) {
-    	MeliCell cell=null;
+        MeliCell cell = getCellAt(sheet, row, column);;
         try {
-        	cell=getCellAt(sheet, row, column);
             final String value = cell.getValue();
 
             return value == null || value.isEmpty()
@@ -102,16 +99,14 @@ public class SpreadsheetUtils {
                     : numberFormatter.parse(value).longValue();
         } catch (ParseException | NullPointerException e) {
             throw new ForecastParsingException(
-                    format("Error while trying to parse cell (%s)",
-                            cell.getAddress()
-                    ), e);
+                    format("Error while trying to parse cell (%s)", 
+                    cell.getAddress()), e);
         }
     }
 
     public static double getDoubleValueAt(final MeliSheet sheet, final int row, final int column) {
-    	MeliCell cell=null;
-    	try {
-    		cell=getCellAt(sheet, row, column);
+        MeliCell cell = getCellAt(sheet, row, column);;
+        try {
             final String value = cell.getValue();
 
             return value == null || value.isEmpty()
@@ -119,45 +114,42 @@ public class SpreadsheetUtils {
                     : numberFormatter.parse(value).doubleValue();
         } catch (ParseException | NullPointerException e) {
             throw new ForecastParsingException(
-                    format("Error while trying to parse cell (%s)",
-                           cell.getAddress(),
-                            column
-                    ), e);
+                    format("Error while trying to parse cell (%s)", 
+                    cell.getAddress()), e);
         }
     }
     
-    public static ZonedDateTime getDateTimeAt(final MeliRow row, final int column,final ZoneId zoneId) {
-    	MeliCell cell=null;
-    	try {
-    		cell=getCellAt(row, column);
-			final String value = cell.getValue();
-			
-			return convertToUtc(ZonedDateTime.parse(
-			        value,
-			        formatter.withZone(zoneId)));
-		} catch (DateTimeParseException e) {
-			throw new ForecastParsingException(
+    public static ZonedDateTime getDateTimeAt(final MeliRow row, final int column,
+              final ZoneId zoneId) {
+        MeliCell cell = getCellAt(row, column);;
+        try {
+            final String value = cell.getValue();
+            
+            return convertToUtc(ZonedDateTime.parse(
+                    value,
+                    formatter.withZone(zoneId)));
+        } catch (DateTimeParseException e) {
+            throw new ForecastParsingException(
                     format("Error while trying to parse cell (%s)",
-                            cell.getAddress()
-                    ), e);
-		}
+                    cell.getAddress()), e);
+        }
     }
     
-    public static ZonedDateTime getDateTimeAt(final MeliSheet sheet,final int row, final int column,final ZoneId zoneId) {
-    	MeliCell cell=null;
-    	try {
-    		cell=getCellAt(sheet,row, column);
-			final String value = cell.getValue();
-			
-			return convertToUtc(ZonedDateTime.parse(
-			        value,
-			        formatter.withZone(zoneId)));
-		} catch (DateTimeParseException e) {
-			throw new ForecastParsingException(
+    public static ZonedDateTime getDateTimeAt(final MeliSheet sheet,final int row, 
+            final int column,
+            final ZoneId zoneId) {
+        MeliCell cell = getCellAt(sheet,row, column);
+        try {
+            final String value = cell.getValue();
+            
+            return convertToUtc(ZonedDateTime.parse(
+                    value,
+                    formatter.withZone(zoneId)));
+        } catch (DateTimeParseException e) {
+            throw new ForecastParsingException(
                     format("Error while trying to parse cell (%s) ",
-                            cell.getAddress()
-                    ), e);
-		}
+                    cell.getAddress()), e);
+        }
     }
 }
 

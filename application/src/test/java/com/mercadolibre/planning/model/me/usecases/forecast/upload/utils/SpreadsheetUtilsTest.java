@@ -24,7 +24,7 @@ public class SpreadsheetUtilsTest {
 
     private Exception exception;
 
-	@Test
+    @Test
     void testCreateMeliDocumentFromOk() {
         // GIVEN
         final byte[] validByteArray = createMeliDocumentAsByteArray(List.of(WORKERS.getName()));
@@ -46,9 +46,7 @@ public class SpreadsheetUtilsTest {
     @Test
     void testGetIntValueAtError() {
         // GIVEN
-        final MeliRow row = createMeliDocument(List.of("Test"))
-                .getSheetByName("Test")
-                .addRow();
+        final MeliRow row = createMeliDocument(List.of("Test")).getSheetByName("Test").addRow();
 
         final int result = SpreadsheetUtils.getIntValueAt(row, 1);
 
@@ -70,9 +68,7 @@ public class SpreadsheetUtilsTest {
     @Test
     void testGetLongValueAtOnEmptyRowAndColumn() {
         // GIVEN
-        final MeliRow row = createMeliDocument(List.of("Test"))
-                .getSheetByName("Test")
-                .addRow();
+        final MeliRow row = createMeliDocument(List.of("Test")).getSheetByName("Test").addRow();
 
         // WHEN
         final long result = SpreadsheetUtils.getLongValueAt(row, 0);
@@ -103,7 +99,7 @@ public class SpreadsheetUtilsTest {
 
         assertEquals(0.00, result);
     }
-    
+
     @Test
     void testGetDateTimeAtSuccess() {
         // GIVEN
@@ -111,15 +107,16 @@ public class SpreadsheetUtilsTest {
         sheet.addRow().addCell().setValue("12/12/2020 08:00");
 
         // WHEN
-        final ZonedDateTime result = SpreadsheetUtils.getDateTimeAt(sheet, 0, 0, ZoneId.systemDefault());
+        final ZonedDateTime result = SpreadsheetUtils.getDateTimeAt(sheet, 0, 0,
+                ZoneId.systemDefault());
 
         assertNotNull(result);
-        
+
         assertEquals(2020, result.get(ChronoField.YEAR));
-        assertEquals(12,result.get(ChronoField.MONTH_OF_YEAR));
+        assertEquals(12, result.get(ChronoField.MONTH_OF_YEAR));
         assertEquals(12, result.get(ChronoField.DAY_OF_MONTH));
     }
-    
+
     @Test
     void testGetDateTimeAtError() {
         // GIVEN
@@ -127,12 +124,12 @@ public class SpreadsheetUtilsTest {
         sheet.addRow().addCell().setValue("24/12/2020 08:00");
 
         // WHEN
-		try {
-			 SpreadsheetUtils.getDateTimeAt(sheet, 0, 0, ZoneId.systemDefault());
-		} catch (Exception e) {
-			exception=e;
-		}
-		assertNotNull(exception);
+        try {
+            SpreadsheetUtils.getDateTimeAt(sheet, 0, 0, ZoneId.systemDefault());
+        } catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
         assertTrue(exception instanceof ForecastParsingException);
     }
 }

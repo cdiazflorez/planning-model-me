@@ -26,15 +26,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class SalesDistributionSheetParserTest {
 
-	private static final String INVALID_FILE_PATH = "forecast_example_invalid_date.xlsx";
+    private static final String INVALID_FILE_PATH = "forecast_example_invalid_date.xlsx";
 
-	@InjectMocks
+    @InjectMocks
     private SalesDistributionSheetParser salesDistributionSheetParser;
 
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
 
-	private MeliSheet ordersSheet;
+    private MeliSheet ordersSheet;
 
     @Test
     void parseOk() {
@@ -44,24 +44,25 @@ public class SalesDistributionSheetParserTest {
                 .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
 
         // WHEN
-        final ForecastSheetDto forecastSheetDto =
-                salesDistributionSheetParser.parse(WAREHOUSE_ID, repsSheet);
+        final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse(WAREHOUSE_ID,
+                repsSheet);
 
         // THEN
         assertNotNull(forecastSheetDto);
     }
-    
+
     @Test
     @DisplayName("Excel parsed with errors in date format")
     void parseFileWithInvalidDateFormat() {
-    	givenAnExcelFileWithInvalidDate();
-    	assertThrows(ForecastParsingException.class, ()->salesDistributionSheetParser.parse(WAREHOUSE_ID, ordersSheet));
+        givenAnExcelFileWithInvalidDate();
+        assertThrows(ForecastParsingException.class,
+                () -> salesDistributionSheetParser.parse(WAREHOUSE_ID, ordersSheet));
     }
 
-	private void givenAnExcelFileWithInvalidDate() {
-		when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-        .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
-		ordersSheet = getMeliSheetFromTestFile(ORDER_DISTRIBUTION.getName(),INVALID_FILE_PATH);
-		
-	}
+    private void givenAnExcelFileWithInvalidDate() {
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+        ordersSheet = getMeliSheetFromTestFile(ORDER_DISTRIBUTION.getName(), INVALID_FILE_PATH);
+
+    }
 }
