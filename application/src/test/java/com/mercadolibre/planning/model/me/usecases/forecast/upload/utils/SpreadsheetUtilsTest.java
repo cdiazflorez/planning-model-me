@@ -6,6 +6,10 @@ import com.mercadolibre.spreadsheet.MeliRow;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import org.junit.jupiter.api.Test;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalField;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastSheet.WORKERS;
@@ -14,8 +18,11 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.createMeliDocum
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SpreadsheetUtilsTest {
+
+    private Exception exception;
 
     @Test
     void testCreateMeliDocumentFromOk() {
@@ -39,9 +46,7 @@ public class SpreadsheetUtilsTest {
     @Test
     void testGetIntValueAtError() {
         // GIVEN
-        final MeliRow row = createMeliDocument(List.of("Test"))
-                .getSheetByName("Test")
-                .addRow();
+        final MeliRow row = createMeliDocument(List.of("Test")).getSheetByName("Test").addRow();
 
         final int result = SpreadsheetUtils.getIntValueAt(row, 1);
 
@@ -63,9 +68,7 @@ public class SpreadsheetUtilsTest {
     @Test
     void testGetLongValueAtOnEmptyRowAndColumn() {
         // GIVEN
-        final MeliRow row = createMeliDocument(List.of("Test"))
-                .getSheetByName("Test")
-                .addRow();
+        final MeliRow row = createMeliDocument(List.of("Test")).getSheetByName("Test").addRow();
 
         // WHEN
         final long result = SpreadsheetUtils.getLongValueAt(row, 0);
@@ -95,5 +98,38 @@ public class SpreadsheetUtilsTest {
         final double result = SpreadsheetUtils.getDoubleValueAt(sheet, 0, 0);
 
         assertEquals(0.00, result);
+    }
+
+    @Test
+    void testGetDateTimeAtSuccess() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("12/12/2020 08:00");
+
+        // WHEN
+        final ZonedDateTime result = SpreadsheetUtils.getDateTimeAt(sheet, 0, 0,
+                ZoneId.systemDefault());
+
+        assertNotNull(result);
+
+        assertEquals(2020, result.get(ChronoField.YEAR));
+        assertEquals(12, result.get(ChronoField.MONTH_OF_YEAR));
+        assertEquals(12, result.get(ChronoField.DAY_OF_MONTH));
+    }
+
+    @Test
+    void testGetDateTimeAtError() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("24/12/2020 08:00");
+
+        // WHEN
+        try {
+            SpreadsheetUtils.getDateTimeAt(sheet, 0, 0, ZoneId.systemDefault());
+        } catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertTrue(exception instanceof ForecastParsingException);
     }
 }
