@@ -29,12 +29,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getCellAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAtFromDuration;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
@@ -128,10 +130,12 @@ public class RepsForecastSheetParser implements SheetParser {
             processingDistributions
                     .forEach(processingDistribution -> {
                         final int columnIndex = getColumnIndex(processingDistribution);
-
+                        int quantity = getCorrectQuantity(sheet, rowIndex, processingDistribution,
+                                columnIndex);
+                        
                         processingDistribution.getData().add(ProcessingDistributionData.builder()
                                 .date(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
-                                .quantity(getIntValueAt(sheet, rowIndex, columnIndex))
+                                .quantity(quantity)
                                 .build()
                         );
                     });
@@ -150,6 +154,20 @@ public class RepsForecastSheetParser implements SheetParser {
         }
 
         return new RepsDistributionDto(processingDistributions, headcountProductivities);
+    }
+
+    private int getCorrectQuantity(final MeliSheet sheet, final int rowIndex,
+            ProcessingDistribution processingDistribution, final int columnIndex) {
+        int quantity = 0;
+        if (Objects.equals(processingDistribution.getType(), 
+                ForecastProcessType.REMAINING_PROCESSING.toString()) 
+                && Objects.equals(processingDistribution.getQuantityMetricUnit(), 
+                    MetricUnit.MINUTES.getName())) {
+            quantity = getIntValueAtFromDuration(sheet, rowIndex, columnIndex);
+        } else {
+            quantity = getIntValueAt(sheet, rowIndex, columnIndex);
+        }
+        return quantity;
     }
 
     private int getColumnIndex(final ProcessingDistribution processingDistribution) {
