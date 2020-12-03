@@ -46,9 +46,10 @@ public class SpreadsheetUtilsTest {
     @Test
     void testGetIntValueAtError() {
         // GIVEN
-        final MeliRow row = createMeliDocument(List.of("Test")).getSheetByName("Test").addRow();
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        final MeliRow row = sheet.addRow();
 
-        final int result = SpreadsheetUtils.getIntValueAt(row, 1);
+        final int result = SpreadsheetUtils.getIntValueAt(sheet, row, 1);
 
         assertEquals(0, result);
     }
@@ -68,10 +69,11 @@ public class SpreadsheetUtilsTest {
     @Test
     void testGetLongValueAtOnEmptyRowAndColumn() {
         // GIVEN
-        final MeliRow row = createMeliDocument(List.of("Test")).getSheetByName("Test").addRow();
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        final MeliRow row = sheet.addRow();
 
         // WHEN
-        final long result = SpreadsheetUtils.getLongValueAt(row, 0);
+        final long result = SpreadsheetUtils.getLongValueAt(sheet, row, 0);
 
         assertEquals(0, result);
     }
