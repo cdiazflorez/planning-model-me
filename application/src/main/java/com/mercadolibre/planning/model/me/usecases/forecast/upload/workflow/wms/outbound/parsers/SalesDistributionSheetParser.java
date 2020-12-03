@@ -50,7 +50,7 @@ public class SalesDistributionSheetParser implements SheetParser {
                                                                      final String warehouseId) {
         return sheet.getRowsStartingFrom(startingRow).stream()
                 .filter(this::rowIsNotEmpty)
-                .map((row) -> createPlanningDistributionFrom(warehouseId, row))
+                .map((row) -> createPlanningDistributionFrom(warehouseId, row,sheet))
                 .collect(toList());
     }
 
@@ -62,14 +62,15 @@ public class SalesDistributionSheetParser implements SheetParser {
     }
 
     private PlanningDistribution createPlanningDistributionFrom(final String warehouseId,
-                                                                final MeliRow row) {
+                                                                final MeliRow row, 
+                                                                final MeliSheet sheet) {
         final LogisticCenterConfiguration configuration =
                 logisticCenterGateway.getConfiguration(warehouseId);
         final ZoneId zoneId = configuration.getZoneId();
 
         return PlanningDistribution.builder()
-                .dateOut(SpreadsheetUtils.getDateTimeAt(row, 1, zoneId))
-                .dateIn(SpreadsheetUtils.getDateTimeAt(row, 2, zoneId))
+                .dateOut(SpreadsheetUtils.getDateTimeAt(sheet, row, 1, zoneId))
+                .dateIn(SpreadsheetUtils.getDateTimeAt(sheet, row, 2, zoneId))
                 .metadata(List.of(
                         Metadata.builder()
                                 .key(ForecastColumnName.CARRIER_ID.name())
@@ -77,14 +78,14 @@ public class SalesDistributionSheetParser implements SheetParser {
                                 .build(),
                         Metadata.builder()
                                 .key(ForecastColumnName.SERVICE_ID.name())
-                                .value(String.valueOf(getIntValueAt(row, 4)))
+                                .value(String.valueOf(getIntValueAt(sheet, row, 4)))
                                 .build(),
                         Metadata.builder()
                                 .key(ForecastColumnName.CANALIZATION.name())
                                 .value(getCellAt(row, 5).getValue())
                                 .build()
                 ))
-                .quantity(getIntValueAt(row,6))
+                .quantity(getIntValueAt(sheet, row,6))
                 .quantityMetricUnit(MetricUnit.UNITS.getName())
                 .build();
     }
