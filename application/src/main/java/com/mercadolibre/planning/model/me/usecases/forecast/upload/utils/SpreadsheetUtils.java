@@ -76,7 +76,7 @@ public class SpreadsheetUtils {
     }
 
     public static int getIntValueAt(final MeliSheet sheet, final int row, final int column) {
-        MeliCell cell = getCellAt(sheet, row, column);;
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
 

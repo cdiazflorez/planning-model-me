@@ -15,6 +15,8 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.OutboundUnitSearchResponse;
 import com.mercadolibre.planning.model.me.config.JsonUtilsConfiguration;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.utils.TestUtils;
 import com.mercadolibre.restclient.MockResponse;
 import com.mercadolibre.restclient.http.HttpMethod;
@@ -39,9 +41,16 @@ import java.util.List;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.ETD_FROM;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.ETD_TO;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitOrdering.ASC;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitProperty.ESTIMATED_TIME_DEPARTURE;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.PENDING;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_GROUP;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_PACK;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_PICK;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.POST;
@@ -98,9 +107,9 @@ public class OutboundUnitClientTest extends BaseClientTest {
             );
 
             // THEN
-            assertEquals(exception.getApiName(), "OUTBOUND_UNIT");
-            assertEquals(exception.getPath(), "/wms/outbound/groups/order/search");
-            assertEquals(exception.getHttpMethod(), POST);
+            assertEquals("OUTBOUND_UNIT", exception.getApiName());
+            assertEquals("/wms/outbound/groups/order/search", exception.getPath());
+            assertEquals(POST, exception.getHttpMethod());
             assertNotNull(exception.getCause());
         }
 
@@ -414,6 +423,128 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             final Backlog backlogCpt3 = backlogs.get(2);
             assertEquals(currentTime.plusHours(3), backlogCpt3.getDate());
+            assertEquals(200, backlogCpt3.getQuantity());
+        }
+
+        @Test
+        @DisplayName("Units API returns OK by Process Backlog")
+        public void testGetProcessBacklog() throws JsonProcessingException, JSONException {
+            // GIVEN
+            final ZonedDateTime utcDateFrom = getCurrentUtcDate();
+            final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
+
+            final Map<String, Object> requestBody = ImmutableMap.<String, Object>builder()
+                    .put("limit", 0)
+                    .put("offset", 0)
+                    .put("filter", singletonMap("and", asList(
+                            singletonMap("warehouse_id", "ARTW01"),
+                            singletonMap("group_type", GROUP_TYPE),
+                            singletonMap(ETD_FROM, utcDateFrom),
+                            singletonMap(ETD_TO, utcDateTo),
+                            singletonMap("or", List.of(
+                                    Map.of(STATUS.toJson(), "pending"),
+                                    Map.of(STATUS.toJson(), "to_pick"),
+                                    Map.of(STATUS.toJson(), "to_pack"),
+                                    Map.of(STATUS.toJson(), "to_group")
+                                    )
+                            ))))
+                    .put("aggregations", singletonList(
+                            ImmutableMap.<String, Object>builder()
+                                    .put("name", "by_etd")
+                                    .put("keys", singletonList("etd"))
+                                    .put("totals", singletonList(
+                                            ImmutableMap.<String, String>builder()
+                                                    .put("operation", "sum")
+                                                    .put("operand", "$quantity")
+                                                    .put("alias", "total_units")
+                                                    .build()
+                                    ))
+                                    .build()
+                    ))
+                    .build();
+
+            final JSONObject responseBody = new JSONObject()
+                    .put("paging", new JSONObject().put("totals", "10"))
+                    .put("results", new JSONArray())
+                    .put("aggregations", new JSONArray().put(new JSONObject()
+                            .put("name", "by_etd")
+                            .put("buckets", new JSONArray()
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put("pending")
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 114)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put("to_pack")
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 754)
+                                                    )
+                                            )
+                                    )
+                                    .put(new JSONObject()
+                                            .put("keys", new JSONArray()
+                                                    .put("to_group")
+                                            )
+                                            .put("totals", new JSONArray()
+                                                    .put(new JSONObject()
+                                                            .put("alias", "total_units")
+                                                            .put("result", 200)
+                                                    )
+                                            )
+                                    )
+                            )
+                    ));
+
+            successfulResponse(
+                    POST,
+                    searchGroupUrl(GROUP_TYPE),
+                    objectMapper.writeValueAsString(requestBody),
+                    responseBody.toString()
+            );
+
+
+            GetMonitorInput input = GetMonitorInput.builder()
+                    .warehouseId(TestUtils.WAREHOUSE_ID)
+                    .dateTo(utcDateTo)
+                    .dateFrom(utcDateFrom)
+                    .build();
+
+            // WHEN
+            final String status = "status";
+            List<Map<String, String>> statuses = List.of(
+                    Map.of(status, PENDING.toName()),
+                    Map.of(status, TO_PICK.toName()),
+                    Map.of(status, TO_PACK.toName()),
+                    Map.of(status, TO_GROUP.toName())
+            );
+            final List<ProcessBacklog> backlogs = outboundUnitClient.getBacklog(statuses,
+                    input.getWarehouseId(),
+                    input.getDateFrom(),
+                    input.getDateTo());
+
+            // THEN
+            assertEquals(3, backlogs.size());
+
+            final ProcessBacklog backlogCpt1 = backlogs.get(0);
+            assertEquals("pending", backlogCpt1.getProcess());
+            assertEquals(114, backlogCpt1.getQuantity());
+
+            final ProcessBacklog backlogCpt2 = backlogs.get(1);
+            assertEquals("to_pack", backlogCpt2.getProcess());
+            assertEquals(754, backlogCpt2.getQuantity());
+
+            final ProcessBacklog backlogCpt3 = backlogs.get(2);
+            assertEquals("to_group", backlogCpt3.getProcess());
             assertEquals(200, backlogCpt3.getQuantity());
         }
 

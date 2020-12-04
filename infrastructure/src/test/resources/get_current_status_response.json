@@ -1,0 +1,59 @@
+{
+  "title": "Modelo de Priorización",
+  "subtitle_1": "Estado Actual",
+  "subtitle_2": "Última actualización: Today...",
+  "monitor_data": [
+    {
+      "type": "deviation"
+    },
+    {
+      "type": "current_status",
+      "processes": [
+        {
+          "title": "Outbound Planning",
+          "metrics": [
+            {
+              "type": "backlog",
+              "title": "Backlog en",
+              "subtitle": "Ready to Wave",
+              "value": "0 uds."
+            }
+          ]
+        },
+        {
+          "title": "Picking",
+          "metrics": [
+            {
+              "type": "backlog",
+              "title": "Backlog en",
+              "subtitle": "Ready to Pick",
+              "value": "2.232 uds."
+            }
+          ]
+        },
+        {
+          "title": "Packing",
+          "metrics": [
+            {
+              "type": "backlog",
+              "title": "Backlog en",
+              "subtitle": "Ready to Pack",
+              "value": "1.442 uds."
+            }
+          ]
+        },
+        {
+          "title": "Wall In",
+          "metrics": [
+            {
+              "type": "backlog",
+              "title": "Backlog en",
+              "subtitle": "Ready to Group",
+              "value": "725 uds."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

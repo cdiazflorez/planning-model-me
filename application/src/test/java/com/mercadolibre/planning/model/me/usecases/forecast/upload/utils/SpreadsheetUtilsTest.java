@@ -11,7 +11,6 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
-
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastSheet.WORKERS;
@@ -68,6 +67,24 @@ public class SpreadsheetUtilsTest {
 
         assertEquals(0, result);
     }
+    
+    @Test
+    void testGetIntValueAtOnError() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("AWord");
+
+        // WHEN
+        
+        try {
+            SpreadsheetUtils.getIntValueAt(sheet, 0, 0);
+        } catch (Exception e) {
+            exception = e;
+        }
+
+        assertNotNull(exception);
+        assertTrue(exception instanceof ForecastParsingException);
+    }
 
     @Test
     void testGetLongValueAtOnEmptyRowAndColumn() {
@@ -94,6 +111,22 @@ public class SpreadsheetUtilsTest {
     }
 
     @Test
+    void testGetLongValueAtError() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("AWord");
+
+        // WHEN
+        try {
+            SpreadsheetUtils.getLongValueAt(sheet, 0, 0);
+        } catch (Exception e) {
+            exception = e;        
+        }
+        assertNotNull(exception);
+        assertTrue(exception instanceof ForecastParsingException);
+    }
+    
+    @Test
     void testGetDoubleValueAtOnEmptySheetRowAndColumn() {
         // GIVEN
         final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
@@ -103,6 +136,23 @@ public class SpreadsheetUtilsTest {
         final double result = SpreadsheetUtils.getDoubleValueAt(sheet, 0, 0);
 
         assertEquals(0.00, result);
+    }
+    
+    @Test
+    void testGetDoubleValueAtError() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("AWord");
+
+        // WHEN
+        try {
+            SpreadsheetUtils.getDoubleValueAt(sheet, 0, 0);
+        } catch (Exception e) {
+            exception = e;
+        }
+
+        assertNotNull(exception);
+        assertTrue(exception instanceof ForecastParsingException);
     }
 
     @Test
@@ -194,4 +244,5 @@ public class SpreadsheetUtilsTest {
         assertNotNull(exception);
         assertTrue(exception instanceof ForecastParsingException);
     }
+   
 }

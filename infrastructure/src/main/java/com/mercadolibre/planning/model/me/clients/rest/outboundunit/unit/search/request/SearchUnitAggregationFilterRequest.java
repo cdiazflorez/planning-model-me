@@ -10,5 +10,5 @@ import java.util.Map;
 @AllArgsConstructor
 public class SearchUnitAggregationFilterRequest {
 
-    private List<Map<String, String>> and;
+    private List<Map<String, Object>> and;
 }
