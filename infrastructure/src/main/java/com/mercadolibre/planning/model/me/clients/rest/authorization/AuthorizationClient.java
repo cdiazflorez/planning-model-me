@@ -17,7 +17,7 @@ import java.util.Set;
 import static java.util.stream.Collectors.toList;
 
 
-@Component
+//@Component
 public class AuthorizationClient extends HttpClient implements AuthorizationGateway {
 
     private static final String URL = "/wms/users/%s";
