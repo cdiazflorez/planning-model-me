@@ -130,12 +130,11 @@ public class RepsForecastSheetParser implements SheetParser {
             processingDistributions
                     .forEach(processingDistribution -> {
                         final int columnIndex = getColumnIndex(processingDistribution);
-                        int quantity = getCorrectQuantity(sheet, rowIndex, processingDistribution,
-                                columnIndex);
                         
                         processingDistribution.getData().add(ProcessingDistributionData.builder()
                                 .date(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
-                                .quantity(quantity)
+                                .quantity(getQuantity(sheet, rowIndex, processingDistribution,
+                                        columnIndex))
                                 .build()
                         );
                     });
@@ -156,18 +155,19 @@ public class RepsForecastSheetParser implements SheetParser {
         return new RepsDistributionDto(processingDistributions, headcountProductivities);
     }
 
-    private int getCorrectQuantity(final MeliSheet sheet, final int rowIndex,
+    private int getQuantity(final MeliSheet sheet, final int rowIndex,
             ProcessingDistribution processingDistribution, final int columnIndex) {
-        int quantity = 0;
-        if (Objects.equals(processingDistribution.getType(), 
-                ForecastProcessType.REMAINING_PROCESSING.toString()) 
-                && Objects.equals(processingDistribution.getQuantityMetricUnit(), 
-                    MetricUnit.MINUTES.getName())) {
-            quantity = getIntValueAtFromDuration(sheet, rowIndex, columnIndex);
-        } else {
-            quantity = getIntValueAt(sheet, rowIndex, columnIndex);
-        }
-        return quantity;
+        
+        return isRemainingProcessing(processingDistribution) 
+                ? getIntValueAtFromDuration(sheet, rowIndex, columnIndex) 
+                        : getIntValueAt(sheet, rowIndex, columnIndex);
+    }
+
+    private boolean isRemainingProcessing(ProcessingDistribution processingDistribution) {
+        return ForecastProcessType.REMAINING_PROCESSING 
+                == ForecastProcessType.from(processingDistribution.getType()) 
+                && MetricUnit.MINUTES 
+                == MetricUnit.from(processingDistribution.getQuantityMetricUnit());
     }
 
     private int getColumnIndex(final ProcessingDistribution processingDistribution) {
