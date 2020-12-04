@@ -1,10 +1,13 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.upload.parsers.outbound;
 
+import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.parsers.SalesDistributionSheetParser;
 import com.mercadolibre.spreadsheet.MeliSheet;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,16 +20,21 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workfl
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFromTestFile;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class SalesDistributionSheetParserTest {
+
+    private static final String INVALID_FILE_PATH = "forecast_example_invalid_date.xlsx";
 
     @InjectMocks
     private SalesDistributionSheetParser salesDistributionSheetParser;
 
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
+
+    private MeliSheet ordersSheet;
 
     @Test
     void parseOk() {
@@ -36,10 +44,25 @@ public class SalesDistributionSheetParserTest {
                 .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
 
         // WHEN
-        final ForecastSheetDto forecastSheetDto =
-                salesDistributionSheetParser.parse(WAREHOUSE_ID, repsSheet);
+        final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse(WAREHOUSE_ID,
+                repsSheet);
 
         // THEN
         assertNotNull(forecastSheetDto);
+    }
+
+    @Test
+    @DisplayName("Excel parsed with errors in date format")
+    void parseFileWithInvalidDateFormat() {
+        givenAnExcelFileWithInvalidDate();
+        assertThrows(ForecastParsingException.class,
+                () -> salesDistributionSheetParser.parse(WAREHOUSE_ID, ordersSheet));
+    }
+
+    private void givenAnExcelFileWithInvalidDate() {
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+        ordersSheet = getMeliSheetFromTestFile(ORDER_DISTRIBUTION.getName(), INVALID_FILE_PATH);
+
     }
 }
