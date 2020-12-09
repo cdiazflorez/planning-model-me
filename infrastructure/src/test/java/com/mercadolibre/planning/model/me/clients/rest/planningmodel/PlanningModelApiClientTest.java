@@ -25,7 +25,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
 import com.mercadolibre.restclient.MockResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -46,9 +45,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
@@ -92,8 +88,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
             + "workflows/%s/simulations/save";
     private static final String PLANNING_DISTRIBUTION_URL =
             "/planning/model/workflows/%s/planning_distributions";
-    private static final String SUGGESTED_WAVES_URL =
-            "/planning/model/workflows/%s/suggested_waves";
 
     private PlanningModelApiClient client;
 
@@ -676,50 +670,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 cpt3Response.getDateIn().format(ISO_OFFSET_DATE_TIME));
         assertEquals(cpt3.format(ISO_OFFSET_DATE_TIME),
                 cpt3Response.getDateOut().format(ISO_OFFSET_DATE_TIME));
-    }
-
-
-    @Test
-    void testGetSuggestedWaves() throws JSONException {
-        // GIVEN
-        final ZonedDateTime currentTime =
-                ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
-        final JSONArray response = new JSONArray()
-                .put(new JSONObject()
-                        .put("quantity", "100")
-                        .put("wave_cardinality", "mono_order_distribution")
-                )
-                .put(new JSONObject()
-                        .put("quantity", "100")
-                        .put("wave_cardinality", "multi_order_distribution")
-                )
-                .put(new JSONObject()
-                        .put("quantity", "50")
-                        .put("wave_cardinality", "multi_batch_distribution")
-                );
-
-        MockResponse.builder()
-                .withMethod(GET)
-                .withURL(BASE_URL + format(SUGGESTED_WAVES_URL, FBM_WMS_OUTBOUND))
-                .withStatusCode(HttpStatus.OK.value())
-                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-                .withResponseBody(response.toString())
-                .build();
-
-        // WHEN
-        final List<SuggestedWave> suggestedWaves =
-                client.getSuggestedWaves(FBM_WMS_OUTBOUND, WAREHOUSE_ID, currentTime,
-                        currentTime.plusHours(1), 20);
-        // THEN
-        assertNotNull(suggestedWaves);
-        assertEquals(100, suggestedWaves.get(0).getQuantity());
-        assertEquals(MONO_ORDER_DISTRIBUTION, suggestedWaves.get(0).getWaveCardinality());
-
-        assertEquals(100, suggestedWaves.get(1).getQuantity());
-        assertEquals(MULTI_ORDER_DISTRIBUTION, suggestedWaves.get(1).getWaveCardinality());
-
-        assertEquals(50, suggestedWaves.get(2).getQuantity());
-        assertEquals(MULTI_BATCH_DISTRIBUTION, suggestedWaves.get(2).getWaveCardinality());
     }
 
     private static Stream<Arguments> entityRequests() {

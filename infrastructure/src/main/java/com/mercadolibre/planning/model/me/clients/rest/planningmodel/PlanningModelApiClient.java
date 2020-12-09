@@ -27,7 +27,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
@@ -54,8 +53,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String SIMULATIONS_PREFIX_URL = "/simulations";
     private static final String WAREHOUSE_ID = "warehouse_id";
-    private static final String DATE_FROM = "date_from";
-    private static final String DATE_TO = "date_to";
     private final ObjectMapper objectMapper;
 
     public PlanningModelApiClient(RestClient client, ObjectMapper objectMapper) {
@@ -96,7 +93,11 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
     protected Map<String, String> createForecastMetadataParams(
             final ForecastMetadataRequest request) {
-        return getBaseParam(request.getWarehouseId(), request.getDateFrom(), request.getDateTo());
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put(WAREHOUSE_ID, request.getWarehouseId());
+        params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
+        params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
+        return params;
     }
 
     @Override
@@ -139,23 +140,14 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     protected Map<String, String> createEntityParams(final EntityRequest request) {
-        final Map<String, String> params = getBaseParam(request.getWarehouseId(),
-                request.getDateFrom(),
-                request.getDateTo());
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put(WAREHOUSE_ID, request.getWarehouseId());
+        params.put("date_from", request.getDateFrom().format(ISO_OFFSET_DATE_TIME));
+        params.put("date_to", request.getDateTo().format(ISO_OFFSET_DATE_TIME));
         params.put("process_name", getEnumNamesAsString(request.getProcessName()));
         if (request.getProcessingType() != null) {
             params.put("processing_type", getEnumNamesAsString(request.getProcessingType()));
         }
-        return params;
-    }
-
-    private Map<String, String> getBaseParam(String warehouseId,
-                                             ZonedDateTime dateFrom,
-                                             ZonedDateTime dateTo) {
-        final Map<String, String> params = new LinkedHashMap<>();
-        params.put(WAREHOUSE_ID, warehouseId);
-        params.put(DATE_FROM, dateFrom.format(ISO_OFFSET_DATE_TIME));
-        params.put(DATE_TO, dateTo.format(ISO_OFFSET_DATE_TIME));
         return params;
     }
 
@@ -167,8 +159,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK, HttpStatus.CREATED))
                 .build();
 
-        return send(request, response -> response.getData(new TypeReference<>() {
-        }));
+        return send(request, response -> response.getData(new TypeReference<>() {}));
     }
 
     @Override
@@ -236,26 +227,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
-        return send(request, response -> response.getData(new TypeReference<>() {
-        }));
-    }
-
-    public List<SuggestedWave> getSuggestedWaves(final Workflow workflow,
-                                                 final String warehouseId,
-                                                 final ZonedDateTime dateFrom,
-                                                 final ZonedDateTime dateTo,
-                                                 final Integer backlog) {
-        final Map<String, String> params = getBaseParam(warehouseId, dateFrom, dateTo);
-        params.put("backlog", backlog.toString());
-
-        final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL + "/suggested_waves", workflow))
-                .GET()
-                .queryParams(params)
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
-                .build();
-        return send(request, response -> response.getData(new TypeReference<>() {
-        }));
+        return send(request, response -> response.getData(new TypeReference<>() {}));
     }
 
     private Map<String, String> createPlanningDistributionParams(

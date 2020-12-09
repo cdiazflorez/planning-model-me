@@ -10,7 +10,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 
 import javax.inject.Named;
 
@@ -25,10 +24,8 @@ public class SaveSimulation extends GetProjection {
     protected SaveSimulation(final PlanningModelGateway planningModelGateway,
                              final LogisticCenterGateway logisticCenterGateway,
                              final GetBacklog getBacklog,
-                             final GetSales getSales,
-                             final GetWaveSuggestion getWaveSuggestion) {
-        super(planningModelGateway, logisticCenterGateway, getBacklog, getSales,
-                getWaveSuggestion);
+                             final GetSales getSales) {
+        super(planningModelGateway, logisticCenterGateway, getBacklog, getSales);
     }
 
     @Override

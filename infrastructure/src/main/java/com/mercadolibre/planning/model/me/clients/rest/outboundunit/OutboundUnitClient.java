@@ -111,7 +111,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                                            final ZonedDateTime dateFrom,
                                            final ZonedDateTime dateTo) {
         final SearchUnitRequest request = SearchUnitRequest.builder()
-                .limit(1)
+                .limit(0)
                 .offset(0)
                 .filter(new SearchUnitAggregationFilterRequest(List.of(
                         Map.of(WAREHOUSE_ID.toJson(), warehouseId),

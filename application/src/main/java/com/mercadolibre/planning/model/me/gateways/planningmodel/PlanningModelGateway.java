@@ -15,10 +15,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,10 +41,4 @@ public interface PlanningModelGateway {
 
     List<PlanningDistributionResponse> getPlanningDistribution(
             final PlanningDistributionRequest request);
-
-    List<SuggestedWave> getSuggestedWaves(final Workflow workflow,
-                                          final String warehouseId,
-                                          final ZonedDateTime dateFrom,
-                                          final ZonedDateTime dateTo,
-                                          final Integer backlog);
 }

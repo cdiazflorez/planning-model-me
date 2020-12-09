@@ -1,52 +1,16 @@
 {
-  "title": "Test",
-  "simple_table_1": {
-    "title": "Ondas sugeridas",
-    "columns": [
-      {
-        "id": "column_1",
-        "title": "Sig. hora 9:00-10:00"
-      },
-      {
-        "id": "column_2",
-        "title": "Tamaño de onda"
-      }
-    ],
-    "data": [
-      {
-        "column_1": {
-          "title": "Unidades por onda",
-          "subtitle": "mono_order_distribution"
-        },
-        "column_2": "130 uds."
-      },
-      {
-        "column_1": {
-          "title": "Unidades por onda",
-          "subtitle": "multi_batch_distribution"
-        },
-        "column_2": "0 uds."
-      },
-      {
-        "column_1": {
-          "title": "Unidades por onda",
-          "subtitle": "multi_order_distribution"
-        },
-        "column_2": "0 uds."
-      }
-    ]
-  },
-  "complex_table_1": {
-    "columns": [
-      {
-        "id": "column_1",
-        "title": "Horas de Operación"
-      }
-    ],
-    "data": [
-      {
-        "id": "headcount",
-        "title": "Headcount",
+    "title":"Test",
+    "complex_table_1":{
+      "columns":[
+         {
+            "id":"column_1",
+            "title":"Horas de Operación"
+         }
+      ],
+      "data":[
+         {
+            "id":"headcount",
+            "title":"Headcount",
             "open":true,
             "content":[
                {

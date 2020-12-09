@@ -5,7 +5,6 @@ import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -27,8 +26,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputD
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,21 +38,15 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.createProductivityRequest;
 import static java.time.ZoneOffset.UTC;
@@ -91,9 +82,6 @@ public class SaveSimulationTest {
     @Mock
     private GetSales getSales;
 
-    @Mock
-    private GetWaveSuggestion getWaveSuggestion;
-
     @Test
     @DisplayName("Execute the case when all the data is correctly generated")
     public void testExecute() {
@@ -124,18 +112,6 @@ public class SaveSimulationTest {
         when(planningModelGateway.saveSimulation(
                 createSimulationRequest(mockedBacklog, utcCurrentTime)))
                 .thenReturn(mockProjections(utcCurrentTime));
-
-        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
-        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
-
-        when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
-                        .warehouseId(WAREHOUSE_ID)
-                        .workflow(FBM_WMS_OUTBOUND)
-                        .zoneId(TIME_ZONE.toZoneId())
-                        .build()
-                )
-        )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
 
         // When
         final Projection projection = saveSimulation.execute(GetProjectionInputDto.builder()
@@ -204,23 +180,6 @@ public class SaveSimulationTest {
         when(planningModelGateway.saveSimulation(
                 createSimulationRequest(mockedBacklog, utcCurrentTime)))
                 .thenReturn(new ArrayList<>());
-
-        when(planningModelGateway.saveSimulation(
-                createSimulationRequest(mockedBacklog, utcCurrentTime)))
-                .thenReturn(mockProjections(utcCurrentTime));
-
-        final ZonedDateTime utcDateTimeFrom = getCurrentUtcDateTime();
-        final ZonedDateTime utcDateTimeTo = (utcDateTimeFrom.getMinute() <= 30
-                ? utcDateTimeFrom.plusHours(1) : utcDateTimeFrom.plusHours(2)
-        ).minusMinutes(utcDateTimeFrom.getMinute());
-
-        when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
-                        .warehouseId(WAREHOUSE_ID)
-                        .workflow(FBM_WMS_OUTBOUND)
-                        .zoneId(TIME_ZONE.toZoneId())
-                        .build()
-                )
-        )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
 
         // When
         final Projection projection = saveSimulation.execute(GetProjectionInputDto.builder()
@@ -599,37 +558,5 @@ public class SaveSimulationTest {
                 .value(75)
                 .build());
         return list;
-    }
-
-    private SimpleTable mockSuggestedWaves(final ZonedDateTime utcDateTimeFrom,
-                                           final ZonedDateTime utcDateTimeTo) {
-        final String title = "Ondas sugeridas";
-        final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())
-                .format(ofPattern("HH:mm")) + "-"
-                + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
-                .format(ofPattern("HH:mm"));
-        final String expextedTitle = "Sig. hora " + nextHour;
-        final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", expextedTitle),
-                new ColumnHeader("column_2", "Tamaño de onda")
-        );
-        final List<Map<String, Object>> data = List.of(
-                Map.of("column_1",
-                        Map.of("title","Unidades por onda","subtitle",
-                                MONO_ORDER_DISTRIBUTION.getTitle()),
-                        "column_2", "0 uds."
-                ),
-                Map.of("column_1",
-                        Map.of("title","Unidades por onda","subtitle",
-                                MULTI_BATCH_DISTRIBUTION.getTitle()),
-                        "column_2", "100 uds."
-                ),
-                Map.of("column_1",
-                        Map.of("title","Unidades por onda","subtitle",
-                                MULTI_ORDER_DISTRIBUTION.getTitle()),
-                        "column_2", "100 uds."
-                )
-        );
-        return new SimpleTable(title, columnHeaders, data);
     }
 }

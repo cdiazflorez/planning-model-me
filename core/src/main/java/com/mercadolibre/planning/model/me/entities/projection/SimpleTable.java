@@ -9,5 +9,5 @@ import java.util.Map;
 public class SimpleTable {
     private String title;
     private List<ColumnHeader> columns;
-    private List<Map<String,Object>> data;
+    private List<Map<String,String>> data;
 }
