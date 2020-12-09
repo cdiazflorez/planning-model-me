@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
@@ -15,6 +16,7 @@ import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.User
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,6 +32,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
@@ -37,6 +41,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Met
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -67,7 +72,10 @@ public class SimulationControllerTest {
     void testRunSimulation() throws Exception {
         // GIVEN
         when(runSimulation.execute(any(GetProjectionInputDto.class)))
-                .thenReturn(new Projection("Test", mockComplexTable(), null,
+                .thenReturn(new Projection("Test",
+                        mockSuggestedWaves(),
+                        mockComplexTable(),
+                        null,
                         mockProjectionChart()));
 
         // WHEN
@@ -83,7 +91,9 @@ public class SimulationControllerTest {
                 List.of(UserPermission.OUTBOUND_SIMULATION)));
 
         result.andExpect(status().isOk());
-        result.andExpect(content().json(complexTableJsonResponse()));
+        result.andExpect(content().json(getResourceAsString(
+                "get_current_projection_response.json"
+        )));
     }
 
     @Test
@@ -110,7 +120,10 @@ public class SimulationControllerTest {
     void testSaveSimulation() throws Exception {
         // GIVEN
         when(saveSimulation.execute(any(GetProjectionInputDto.class)))
-                .thenReturn(new Projection("Test", mockComplexTable(), null,
+                .thenReturn(new Projection("Test",
+                        mockSuggestedWaves(),
+                        mockComplexTable(),
+                        null,
                         mockProjectionChart()));
 
         // WHEN
@@ -126,7 +139,9 @@ public class SimulationControllerTest {
                 List.of(UserPermission.OUTBOUND_SIMULATION)));
 
         result.andExpect(status().isOk());
-        result.andExpect(content().json(complexTableJsonResponse()));
+        result.andExpect(content().json(getResourceAsString(
+                "get_current_projection_response.json"
+        )));
     }
 
     @Test
@@ -253,100 +268,24 @@ public class SimulationControllerTest {
         );
     }
 
-    private String complexTableJsonResponse() {
-        return "{\n"
-                + "   \"title\":\"Test\",\n"
-                + "   \"complex_table_1\":{\n"
-                + "      \"columns\":[\n"
-                + "         {\n"
-                + "            \"id\":\"column_1\",\n"
-                + "            \"title\":\"Horas de Operación\"\n"
-                + "         }\n"
-                + "      ],\n"
-                + "      \"data\":[\n"
-                + "         {\n"
-                + "            \"id\":\"headcount\",\n"
-                + "            \"title\":\"Headcount\",\n"
-                + "            \"open\":true,\n"
-                + "            \"content\":[\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Picking\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"30\",\n"
-                + "                     \"date\":\"2020-07-27T10:00:00Z\",\n"
-                + "                     \"tooltip\":{\n"
-                + "                        \"title_1\":\"Hora de operación\",\n"
-                + "                        \"subtitle_1\":\"11:00 - 12:00\",\n"
-                + "                        \"title_2\":\"Cantidad de reps FCST\",\n"
-                + "                        \"subtitle_2\":\"30\"\n"
-                + "                     }\n"
-                + "                  }\n"
-                + "               },\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Packing\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"30\",\n"
-                + "                     \"date\":\"2020-07-27T10:00:00Z\"\n"
-                + "                  }\n"
-                + "               }\n"
-                + "            ]\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"id\":\"productivity\",\n"
-                + "            \"title\":\"Productividad regular\",\n"
-                + "            \"open\":true,\n"
-                + "            \"content\":[\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Picking\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"30\",\n"
-                + "                     \"tooltip\":{\n"
-                + "                        \"title_1\":\"Productividad polivalente\",\n"
-                + "                        \"subtitle_1\":\"30,4 uds/h\"\n"
-                + "                     }\n"
-                + "                  }\n"
-                + "               },\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Packing\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"30\"\n"
-                + "                  }\n"
-                + "               }\n"
-                + "            ]\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"id\":\"throughput\",\n"
-                + "            \"title\":\"Throughput\",\n"
-                + "            \"open\":true,\n"
-                + "            \"content\":[\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Picking\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"1600\"\n"
-                + "                  }\n"
-                + "               },\n"
-                + "               {\n"
-                + "                  \"column_1\":{\n"
-                + "                     \"title\":\"Packing\"\n"
-                + "                  },\n"
-                + "                  \"column_2\":{\n"
-                + "                     \"title\":\"1600\"\n"
-                + "                  }\n"
-                + "               }\n"
-                + "            ]\n"
-                + "         }\n"
-                + "      ]\n"
-                + "   }\n"
-                + "}";
+    private SimpleTable mockSuggestedWaves() {
+        final String title = "Ondas sugeridas";
+        final List<ColumnHeader> columnHeaders = List.of(
+                new ColumnHeader("column_1", "Sig. hora 23:00-1:00"),
+                new ColumnHeader("column_2", "Tamaño de onda")
+        );
+        final List<Map<String, Object>> data = List.of(
+                Map.of("column_1",
+                        Map.of("title","Unidades por onda","subtitle",
+                                MONO_ORDER_DISTRIBUTION.getName()),
+                        "column_2", "130 uds."
+                ),
+                Map.of("column_1",
+                        Map.of("title","Unidades por onda","subtitle",
+                                MULTI_BATCH_DISTRIBUTION.getName()),
+                        "column_2", "0 uds."
+                )
+        );
+        return new SimpleTable(title, columnHeaders, data);
     }
 }
