@@ -1,11 +1,13 @@
-    package com.mercadolibre.planning.model.me.usecases.forecast.upload.utils;
+package com.mercadolibre.planning.model.me.usecases.forecast.upload.utils;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.spreadsheet.MeliDocument;
 import com.mercadolibre.spreadsheet.MeliRow;
 import com.mercadolibre.spreadsheet.MeliSheet;
+
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
@@ -20,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SpreadsheetUtilsTest {
+    private static final String HOUR_MINUTE_FORMAT_PATTERN = "^([0]?[0-9]|[0-9][0-9]):[0-5][0-9]$";
 
     private Exception exception;
 
@@ -181,6 +184,63 @@ public class SpreadsheetUtilsTest {
         } catch (Exception e) {
             exception = e;
         }
+    }
+    
+    @Test
+    void testGetDurationValueSuccess() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("01:18");
+
+        // WHEN
+        final Duration result = SpreadsheetUtils.getDurationAt(sheet, 0, 0,
+                HOUR_MINUTE_FORMAT_PATTERN);
+
+        assertNotNull(result);
+        assertEquals(18, result.toMinutesPart());
+        assertEquals(1, result.toHoursPart());
+    }
+
+    @Test
+    void testGetDurationValueFailedByInputFormat() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("01:18:00");
+
+        // WHEN
+        try {
+            SpreadsheetUtils.getDurationAt(sheet, 0, 0, HOUR_MINUTE_FORMAT_PATTERN);
+        } catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertTrue(exception instanceof ForecastParsingException);
+    }
+
+    @Test
+    void testGetIntValueFromDurationValueSuccess() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("01:18");
+
+        // WHEN
+        final int result = SpreadsheetUtils.getIntValueAtFromDuration(sheet, 0, 0);
+
+        assertEquals(78, result);
+    }
+
+    @Test
+    void testGetIntValueFromDurationValueFailed() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+
+        // WHEN
+        try {
+            SpreadsheetUtils.getIntValueAtFromDuration(sheet, 0, 0);
+        } catch (ForecastParsingException e) {
+            exception = e;
+        }
+
         assertNotNull(exception);
         assertTrue(exception instanceof ForecastParsingException);
     }

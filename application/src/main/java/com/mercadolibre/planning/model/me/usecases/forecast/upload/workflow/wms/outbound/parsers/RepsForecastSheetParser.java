@@ -29,12 +29,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getCellAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAtFromDuration;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
@@ -128,10 +130,11 @@ public class RepsForecastSheetParser implements SheetParser {
             processingDistributions
                     .forEach(processingDistribution -> {
                         final int columnIndex = getColumnIndex(processingDistribution);
-
+                        
                         processingDistribution.getData().add(ProcessingDistributionData.builder()
                                 .date(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
-                                .quantity(getIntValueAt(sheet, rowIndex, columnIndex))
+                                .quantity(getQuantity(sheet, rowIndex, processingDistribution,
+                                        columnIndex))
                                 .build()
                         );
                     });
@@ -150,6 +153,21 @@ public class RepsForecastSheetParser implements SheetParser {
         }
 
         return new RepsDistributionDto(processingDistributions, headcountProductivities);
+    }
+
+    private int getQuantity(final MeliSheet sheet, final int rowIndex,
+            ProcessingDistribution processingDistribution, final int columnIndex) {
+        
+        return isRemainingProcessing(processingDistribution) 
+                ? getIntValueAtFromDuration(sheet, rowIndex, columnIndex) 
+                        : getIntValueAt(sheet, rowIndex, columnIndex);
+    }
+
+    private boolean isRemainingProcessing(ProcessingDistribution processingDistribution) {
+        return ForecastProcessType.REMAINING_PROCESSING 
+                == ForecastProcessType.from(processingDistribution.getType()) 
+                && MetricUnit.MINUTES 
+                == MetricUnit.from(processingDistribution.getQuantityMetricUnit());
     }
 
     private int getColumnIndex(final ProcessingDistribution processingDistribution) {

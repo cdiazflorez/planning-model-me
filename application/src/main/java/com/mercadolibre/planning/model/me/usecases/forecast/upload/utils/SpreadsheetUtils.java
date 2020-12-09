@@ -9,17 +9,22 @@ import com.mercadolibre.spreadsheet.implementations.poi.PoiDocument;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.regex.Pattern;
 
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 import static java.lang.String.format;
 
 public class SpreadsheetUtils {
 
+    private static final char CHAR_LETTER_A = 'A';
+    private static final String HOUR_MINUTE_FORMAT_PATTERN = "^([0]?[0-9]|[0-9][0-9]):[0-5][0-9]$";
     private static final String PARSE_ERROR_MESSAGE = "Error while trying to parse "
             + "cell (%s) for sheet: %s";
     
@@ -40,7 +45,18 @@ public class SpreadsheetUtils {
     }
 
     public static MeliCell getCellAt(final MeliSheet sheet, final int row, final int column) {
-        return sheet.getRowAt(row).getCellAt(column);
+        try {
+            return sheet.getRowAt(row).getCellAt(column);
+        } catch (NullPointerException e) {
+            throw new ForecastParsingException(
+                    format("Error while trying to parse cell (%s)", getCellAddress(row, column)), e
+            );
+        }
+    }
+
+    private static String getCellAddress(final int row, final int column) {
+        return new StringBuilder((char) (((int) CHAR_LETTER_A) + row))
+                .append("").append(column + 1).toString();
     }
 
     public static int getIntValueAt(final MeliSheet sheet, final MeliRow row, final int column) {
@@ -156,6 +172,50 @@ public class SpreadsheetUtils {
                     cell.getAddress(), sheet.getSheetName()), e);
         }
     }
+        
+
+    public static Duration getDurationAt(final MeliSheet sheet, final int row, final int column,
+            String durationFormatPattern) {
+        MeliCell cell = getCellAt(sheet,row, column);
+        try {
+            final String value = cell.getValue();
+            validatePattern(durationFormatPattern, value);
+            return getDurationValue(value);
+        } catch (IllegalArgumentException | DateTimeParseException e) {
+            throw new ForecastParsingException(
+                    format(PARSE_ERROR_MESSAGE,
+                    cell.getAddress(), sheet.getSheetName()), e);
+        }
+    }
+
+    public static int getIntValueAtFromDuration(final MeliSheet sheet, final int row,
+            final int column) {
+        MeliCell cell = getCellAt(sheet,row, column);
+        try {
+            final Duration value = getDurationAt(sheet, row, column, HOUR_MINUTE_FORMAT_PATTERN);
+            return Long.valueOf(value.toMinutes()).intValue();
+        } catch (NullPointerException e) {
+            throw new ForecastParsingException(
+                    format(PARSE_ERROR_MESSAGE, 
+                    Objects.nonNull(cell) ? cell.getAddress() : null, sheet.getSheetName()),
+                    e);
+        }
+    }
     
+    private static void validatePattern(String durationFormatPattern, final String value) {
+        if (!Pattern.compile(durationFormatPattern).matcher(value).matches()) {
+            throw new IllegalArgumentException();
+        }
+    }
+    
+    private static Duration getDurationValue(final String value) {
+        String[] durationData = value.split(":");
+        StringBuilder parserStringbuilder = new StringBuilder();
+        parserStringbuilder.append("PT").append(durationData[0]).append("H")
+                .append(durationData[1]).append("M");
+        Duration durationValue = Duration.parse(parserStringbuilder);
+        return durationValue;
+    }
+   
 }
 
