@@ -203,7 +203,21 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final boolean hasSimulatedResults = hasSimulatedResults(projectionResults);
         final List<Double> calculatedDeviations = new LinkedList<>();
 
-        List<Map<String, String>> tableData = projectionResults.stream()
+        return new SimpleTable(
+                "Resumen de Proyección",
+                getProjectionDetailsTableColumns(hasSimulatedResults),
+                getTableData(backlogs, sales, projectionResults,
+                        planningDistribution, processingTime, zoneId, hasSimulatedResults,
+                        calculatedDeviations)
+        );
+    }
+
+    private List<Map<String, String>> getTableData(final List<Backlog> backlogs,
+            final List<Backlog> sales, final List<ProjectionResult> projectionResults,
+            final List<PlanningDistributionResponse> planningDistribution,
+            final ProcessingTime processingTime, final ZoneId zoneId,
+            final boolean hasSimulatedResults, final List<Double> calculatedDeviations) {
+        final List<Map<String, String>> tableData = projectionResults.stream()
                 .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
                 .map(projection -> getProjectionDetailsTableData(
                         backlogs,
@@ -217,11 +231,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 )
                 .collect(toList());
         tableData.add(addTotalsRow(backlogs,calculatedDeviations));
-        return new SimpleTable(
-                "Resumen de Proyección",
-                getProjectionDetailsTableColumns(hasSimulatedResults),
-                tableData
-        );
+        return tableData;
     }
 
     
@@ -237,7 +247,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     }
 
     private String calculateBacklogTotal(List<Backlog> backlogs) {
-        int total = backlogs.stream().mapToInt(backlog -> backlog.getQuantity()).sum();
+        final int total = backlogs.stream().mapToInt(backlog -> backlog.getQuantity()).sum();
         return String.valueOf(total);
     }
 
@@ -324,13 +334,10 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                 final int backlogQuantity,
                                 final List<PlanningDistributionResponse> planningDistribution,
                                 final List<Double> calculatedDeviations) {
-        final double forecastedItemsForCpt = getNumericDeviation(cpt, backlogQuantity, 
+        final double deviation = getNumericDeviation(cpt, backlogQuantity, 
                 planningDistribution);
-        calculatedDeviations.add(forecastedItemsForCpt);
-        if (forecastedItemsForCpt == 0 || backlogQuantity == 0) {
-            return "0%";
-        }
-        return String.format("%.1f%s", Math.round(forecastedItemsForCpt * 100.00) / 100.00, "%");
+        calculatedDeviations.add(deviation);
+        return String.format("%.1f%s", Math.round(deviation * 100.00) / 100.00, "%");
     }
 
     private double getNumericDeviation(final ZonedDateTime cpt, final int backlogQuantity,

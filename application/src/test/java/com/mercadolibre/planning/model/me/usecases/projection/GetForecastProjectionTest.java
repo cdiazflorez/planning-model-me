@@ -199,7 +199,7 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMAT),
                 cpt5.get("column_1"));
         assertEquals("0", cpt5.get("column_2"));
-        assertEquals("0%", cpt5.get("column_3"));
+        assertEquals("0.0%", cpt5.get("column_3"));
         assertEquals("Excede las 24hs", cpt5.get("column_4"));
         
         assertEquals("none", cpt0.get("style"));
