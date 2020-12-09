@@ -180,12 +180,7 @@ public class SpreadsheetUtils {
         try {
             final String value = cell.getValue();
             validatePattern(durationFormatPattern, value);
-            String[] durationData = value.split(":");
-            StringBuilder parserStringbuilder = new StringBuilder();
-            parserStringbuilder.append("PT").append(durationData[0]).append("H")
-                    .append(durationData[1]).append("M");
-            Duration durationValue = Duration.parse(parserStringbuilder);
-            return durationValue;
+            return getDurationValue(value);
         } catch (IllegalArgumentException | DateTimeParseException e) {
             throw new ForecastParsingException(
                     format(PARSE_ERROR_MESSAGE,
@@ -193,13 +188,6 @@ public class SpreadsheetUtils {
         }
     }
 
-    private static void validatePattern(String durationFormatPattern, final String value) {
-        if (!Pattern.compile(durationFormatPattern).matcher(value).matches()) {
-            throw new IllegalArgumentException();
-        }
-    }
-    
-   
     public static int getIntValueAtFromDuration(final MeliSheet sheet, final int row,
             final int column) {
         MeliCell cell = getCellAt(sheet,row, column);
@@ -213,5 +201,21 @@ public class SpreadsheetUtils {
                     e);
         }
     }
+    
+    private static void validatePattern(String durationFormatPattern, final String value) {
+        if (!Pattern.compile(durationFormatPattern).matcher(value).matches()) {
+            throw new IllegalArgumentException();
+        }
+    }
+    
+    private static Duration getDurationValue(final String value) {
+        String[] durationData = value.split(":");
+        StringBuilder parserStringbuilder = new StringBuilder();
+        parserStringbuilder.append("PT").append(durationData[0]).append("H")
+                .append(durationData[1]).append("M");
+        Duration durationValue = Duration.parse(parserStringbuilder);
+        return durationValue;
+    }
+   
 }
 
