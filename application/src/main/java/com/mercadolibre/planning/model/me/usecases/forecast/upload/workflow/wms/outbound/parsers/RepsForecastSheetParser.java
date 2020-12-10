@@ -14,6 +14,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Processing
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.RepsDistributionDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.parsers.SheetParser;
+import com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastHeadcountProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessType;
@@ -24,19 +25,19 @@ import lombok.AllArgsConstructor;
 import javax.inject.Named;
 
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.formatter;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getCellAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAtFromDuration;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
@@ -45,7 +46,6 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workfl
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.WEEK;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 
 @Named
 @AllArgsConstructor
@@ -77,7 +77,7 @@ public class RepsForecastSheetParser implements SheetParser {
         return new ForecastSheetDto(
                 sheet.getSheetName(),
                 Map.of(
-                        WEEK, getValueAt(sheet, 2, 2),
+                        WEEK, getCellAt(sheet, 2, 2),
                         MONO_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 5),
                         MULTI_BATCH_DISTRIBUTION, getDoubleValueAt(sheet, 3, 6),
                         MULTI_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 7),
@@ -90,7 +90,7 @@ public class RepsForecastSheetParser implements SheetParser {
     }
 
     private void validateIfWarehouseIdIsCorrect(String warehouseId, MeliSheet sheet) {
-        final String warehouseIdFromSheet = getValueAt(sheet, 3, 2);
+        final String warehouseIdFromSheet = getCellAt(sheet, 3, 2).getValue();
         boolean warehouseIdsAreDifferent = !warehouseIdFromSheet.equalsIgnoreCase(warehouseId);
         if (isNullOrEmpty(warehouseIdFromSheet) || warehouseIdsAreDifferent) {
             throw new UnmatchedWarehouseException(warehouseId, warehouseIdFromSheet);
@@ -130,13 +130,11 @@ public class RepsForecastSheetParser implements SheetParser {
             processingDistributions
                     .forEach(processingDistribution -> {
                         final int columnIndex = getColumnIndex(processingDistribution);
-
+                        
                         processingDistribution.getData().add(ProcessingDistributionData.builder()
-                                .date(convertToUtc(ZonedDateTime.parse(
-                                        getValueAt(sheet, rowIndex, 1),
-                                        formatter.withZone(zoneId)))
-                                )
-                                .quantity(getIntValueAt(sheet, rowIndex, columnIndex))
+                                .date(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
+                                .quantity(getQuantity(sheet, rowIndex, processingDistribution,
+                                        columnIndex))
                                 .build()
                         );
                     });
@@ -147,10 +145,7 @@ public class RepsForecastSheetParser implements SheetParser {
                         + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET;
 
                 headcountProductivity.getData().add(HeadcountProductivityData.builder()
-                        .dayTime(convertToUtc(ZonedDateTime.parse(
-                                getValueAt(sheet, rowIndex, 1),
-                                formatter.withZone(zoneId)))
-                        )
+                        .dayTime(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
                         .productivity(getLongValueAt(sheet, rowIndex, columnIndex))
                         .build()
                 );
@@ -158,6 +153,21 @@ public class RepsForecastSheetParser implements SheetParser {
         }
 
         return new RepsDistributionDto(processingDistributions, headcountProductivities);
+    }
+
+    private int getQuantity(final MeliSheet sheet, final int rowIndex,
+            ProcessingDistribution processingDistribution, final int columnIndex) {
+        
+        return isRemainingProcessing(processingDistribution) 
+                ? getIntValueAtFromDuration(sheet, rowIndex, columnIndex) 
+                        : getIntValueAt(sheet, rowIndex, columnIndex);
+    }
+
+    private boolean isRemainingProcessing(ProcessingDistribution processingDistribution) {
+        return ForecastProcessType.REMAINING_PROCESSING 
+                == ForecastProcessType.from(processingDistribution.getType()) 
+                && MetricUnit.MINUTES 
+                == MetricUnit.from(processingDistribution.getQuantityMetricUnit());
     }
 
     private int getColumnIndex(final ProcessingDistribution processingDistribution) {

@@ -16,8 +16,10 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.AggregationResponseBucket;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.OutboundUnitSearchResponse;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.GetMonitorInput;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import com.newrelic.api.agent.Trace;
@@ -26,6 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +37,8 @@ import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.DATE_CREATED_FROM;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.ETD_FROM;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.ETD_TO;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
@@ -47,6 +52,8 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     private static final String SEARCH_GROUPS_URL = "/wms/outbound/groups/%s/search";
     public static final String CLIENT_ID = "9999";
     private static final String AGGREGATION_BY_ETD = "by_etd";
+    private static final String ORDER_VALUE = "order";
+
 
     private final ObjectMapper objectMapper;
 
@@ -67,7 +74,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .offset(0)
                 .filter(new SearchUnitAggregationFilterRequest(List.of(
                         Map.of(WAREHOUSE_ID.toJson(), warehouseId),
-                        Map.of(GROUP_TYPE.toJson(), "order"),
+                        Map.of(GROUP_TYPE.toJson(), ORDER_VALUE),
                         Map.of(STATUS.toJson(), "pending")
                 )))
                 .aggregations(List.of(
@@ -85,16 +92,55 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 ))
                 .build();
 
-        final OutboundUnitSearchResponse<UnitGroup> response = searchGroups("order", request);
+        final OutboundUnitSearchResponse<UnitGroup> response = searchGroups(ORDER_VALUE, request);
 
         return response.getAggregations().stream()
                 .filter(aggregationResponse ->
                         aggregationResponse.getName().equalsIgnoreCase(AGGREGATION_BY_ETD))
                 .map(AggregationResponse::getBuckets)
-                .flatMap(aggregationResponseBuckets -> aggregationResponseBuckets.stream())
+                .flatMap(Collection::stream)
                 .filter(this::validCptKeys)
                 .map(this::toBacklog)
                 .filter(this::workingCpts)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProcessBacklog> getBacklog(final List<Map<String, String>> statuses,
+                                           final String warehouseId,
+                                           final ZonedDateTime dateFrom,
+                                           final ZonedDateTime dateTo) {
+        final SearchUnitRequest request = SearchUnitRequest.builder()
+                .limit(0)
+                .offset(0)
+                .filter(new SearchUnitAggregationFilterRequest(List.of(
+                        Map.of(WAREHOUSE_ID.toJson(), warehouseId),
+                        Map.of(GROUP_TYPE.toJson(), ORDER_VALUE),
+                        Map.of(ETD_FROM.toJson(), dateFrom),
+                        Map.of(ETD_TO.toJson(), dateTo),
+                        Map.of("or", statuses)
+                )))
+                .aggregations(List.of(
+                        SearchUnitAggregationRequest.builder()
+                                .name(STATUS.toJson())
+                                .keys(List.of(STATUS.toJson()))
+                                .totals(List.of(
+                                        SearchUnitAggregationRequestTotal.builder()
+                                                .alias("total_units")
+                                                .operand("$quantity")
+                                                .operation(SUM)
+                                                .build()
+                                ))
+                                .build()
+                ))
+                .build();
+
+        final OutboundUnitSearchResponse<UnitGroup> response = searchGroups(ORDER_VALUE, request);
+
+        return response.getAggregations().stream()
+                .map(AggregationResponse::getBuckets)
+                .flatMap(Collection::stream)
+                .map(this::toProcessBacklog)
                 .collect(Collectors.toList());
     }
 
@@ -113,6 +159,13 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     private Backlog toBacklog(final AggregationResponseBucket bucket) {
         return Backlog.builder()
                 .date(ZonedDateTime.parse(bucket.getKeys().get(0)))
+                .quantity(Math.toIntExact(bucket.getTotals().get(0).getResult()))
+                .build();
+    }
+
+    private ProcessBacklog toProcessBacklog(final AggregationResponseBucket bucket) {
+        return ProcessBacklog.builder()
+                .process(bucket.getKeys().get(0))
                 .quantity(Math.toIntExact(bucket.getTotals().get(0).getResult()))
                 .build();
     }
