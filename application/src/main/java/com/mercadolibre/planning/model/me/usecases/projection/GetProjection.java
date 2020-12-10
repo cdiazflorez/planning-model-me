@@ -42,6 +42,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -200,23 +201,61 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
         final ZoneId zoneId = configuration.getTimeZone().toZoneId();
         final boolean hasSimulatedResults = hasSimulatedResults(projectionResults);
+        final List<Double> calculatedDeviations = new LinkedList<>();
 
         return new SimpleTable(
                 "Resumen de Proyección",
                 getProjectionDetailsTableColumns(hasSimulatedResults),
-                projectionResults.stream()
-                        .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
-                        .map(projection -> getProjectionDetailsTableData(
-                                backlogs,
-                                sales,
-                                planningDistribution,
-                                processingTime,
-                                zoneId,
-                                projection,
-                                hasSimulatedResults)
-                        )
-                        .collect(toList())
+                getTableData(backlogs, sales, projectionResults,
+                        planningDistribution, processingTime, zoneId, hasSimulatedResults,
+                        calculatedDeviations)
         );
+    }
+
+    private List<Map<String, String>> getTableData(final List<Backlog> backlogs,
+            final List<Backlog> sales, final List<ProjectionResult> projectionResults,
+            final List<PlanningDistributionResponse> planningDistribution,
+            final ProcessingTime processingTime, final ZoneId zoneId,
+            final boolean hasSimulatedResults, final List<Double> calculatedDeviations) {
+        final List<Map<String, String>> tableData = projectionResults.stream()
+                .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
+                .map(projection -> getProjectionDetailsTableData(
+                        backlogs,
+                        sales,
+                        planningDistribution,
+                        processingTime,
+                        zoneId,
+                        projection,
+                        hasSimulatedResults,
+                        calculatedDeviations)
+                )
+                .collect(toList());
+        tableData.add(addTotalsRow(backlogs,calculatedDeviations));
+        return tableData;
+    }
+
+    
+
+    private Map<String, String> addTotalsRow(List<Backlog> backlogs,
+            List<Double> calculatedDeviations) {
+        return Map.of("style", "none",
+                "column_1", "Total",
+                "column_2", calculateBacklogTotal(backlogs),
+                "column_3",calculateDeviationTotal(calculatedDeviations),
+                "column_4","",
+                "column_5","");
+    }
+
+    private String calculateBacklogTotal(List<Backlog> backlogs) {
+        final int total = backlogs.stream().mapToInt(backlog -> backlog.getQuantity()).sum();
+        return String.valueOf(total);
+    }
+
+    private String calculateDeviationTotal(
+            List<Double> calculatedDeviations) {
+        final double totalDeviation = calculatedDeviations.stream()
+                .reduce(0.0, (subtotal, element) -> subtotal + element); 
+        return String.format("%.1f%s", Math.round(totalDeviation * 100.00) / 100.00, "%");
     }
 
     private boolean hasSimulatedResults(List<ProjectionResult> projectionResults) {
@@ -230,7 +269,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             final ProcessingTime processingTime,
             final ZoneId zoneId,
             final ProjectionResult projection,
-            final boolean hasSimulatedResults) {
+            final boolean hasSimulatedResults, 
+            List<Double> calculatedDeviations) {
         final ZonedDateTime cpt = projection.getDate();
         final ZonedDateTime projectedEndDate = projection.getProjectedEndDate();
         final ZonedDateTime simulatedEndDate = projection.getSimulatedEndDate();
@@ -241,7 +281,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 "style", getStyle(cpt, projectedEndDate, processingTime),
                 "column_1", convertToTimeZone(zoneId, cpt).format(CPT_HOUR_FORMAT),
                 "column_2", String.valueOf(backlog),
-                "column_3", getDeviation(cpt, soldItems, planningDistribution),
+                "column_3", getDeviation(cpt, soldItems, planningDistribution, 
+                        calculatedDeviations),
                 "column_4", projectedEndDate == null
                         ? "Excede las 24hs"
                         : convertToTimeZone(zoneId, projectedEndDate).format(CPT_HOUR_FORMAT)));
@@ -291,7 +332,16 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     private String getDeviation(final ZonedDateTime cpt,
                                 final int backlogQuantity,
-                                final List<PlanningDistributionResponse> planningDistribution) {
+                                final List<PlanningDistributionResponse> planningDistribution,
+                                final List<Double> calculatedDeviations) {
+        final double deviation = getNumericDeviation(cpt, backlogQuantity, 
+                planningDistribution);
+        calculatedDeviations.add(deviation);
+        return String.format("%.1f%s", Math.round(deviation * 100.00) / 100.00, "%");
+    }
+
+    private double getNumericDeviation(final ZonedDateTime cpt, final int backlogQuantity,
+            final List<PlanningDistributionResponse> planningDistribution) {
         final long forecastedItemsForCpt = planningDistribution
                 .stream()
                 .filter(distribution -> cpt.isEqual(distribution.getDateOut()))
@@ -299,11 +349,11 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 .sum();
 
         if (forecastedItemsForCpt == 0 || backlogQuantity == 0) {
-            return "0%";
+            return 0;
         }
 
         final double deviation = (((double) backlogQuantity / forecastedItemsForCpt) - 1) * 100;
-        return String.format("%.1f%s", Math.round(deviation * 100.00) / 100.00, "%");
+        return deviation;
     }
 
     private int getBacklogQuantity(final ZonedDateTime cpt, final List<Backlog> backlogs) {

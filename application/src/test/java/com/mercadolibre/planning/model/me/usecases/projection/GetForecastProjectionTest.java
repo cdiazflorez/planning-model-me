@@ -155,8 +155,9 @@ public class GetForecastProjectionTest {
 
         assertEquals("Resumen de Proyección", projectionDetailsTable.getTitle());
         assertEquals(4, projectionDetailsTable.getColumns().size());
-        assertEquals(5, projectionDetailsTable.getData().size());
+        assertEquals(6, projectionDetailsTable.getData().size());
 
+        final Map<String, String> cpt0 = projectionDetailsTable.getData().get(5);
         final Map<String, String> cpt1 = projectionDetailsTable.getData().get(4);
         final Map<String, String> cpt2 = projectionDetailsTable.getData().get(3);
         final Map<String, String> cpt3 = projectionDetailsTable.getData().get(2);
@@ -198,8 +199,15 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMAT),
                 cpt5.get("column_1"));
         assertEquals("0", cpt5.get("column_2"));
-        assertEquals("0%", cpt5.get("column_3"));
+        assertEquals("0.0%", cpt5.get("column_3"));
         assertEquals("Excede las 24hs", cpt5.get("column_4"));
+        
+        assertEquals("none", cpt0.get("style"));
+        assertEquals("Total",
+                cpt0.get("column_1"));
+        assertEquals("805", cpt0.get("column_2"));
+        assertEquals("-5.1%", cpt0.get("column_3"));
+        assertEquals("", cpt0.get("column_4"));
     }
 
     private void assertChart(final Chart chart) {

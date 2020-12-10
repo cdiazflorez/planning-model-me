@@ -242,7 +242,7 @@ public class RunSimulationTest {
         );
 
         final List<Map<String, String>> simpleTableData = simpleTable.getData();
-        assertEquals(5, simpleTableData.size());
+        assertEquals(6, simpleTableData.size());
         simpleTableData.forEach((dataRow) -> assertTrue(dataRow.containsKey("column_5")));
     }
 
