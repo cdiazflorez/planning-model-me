@@ -33,6 +33,8 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputD
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
+import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
+import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -93,6 +95,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     protected final LogisticCenterGateway logisticCenterGateway;
     protected final GetBacklog getBacklog;
     protected final GetSales getSales;
+    protected final GetWaveSuggestion getWaveSuggestion;
 
     @Override
     public Projection execute(final GetProjectionInputDto input) {
@@ -162,6 +165,12 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
         return new Projection(
                 "Proyecciones",
+                getWaveSuggestion.execute(GetWaveSuggestionInputDto.builder()
+                        .zoneId(config.getZoneId())
+                        .warehouseId(input.getWarehouseId())
+                        .workflow(input.getWorkflow())
+                        .build()
+                ),
                 new ComplexTable(
                         headers,
                         List.of(createData(config, HEADCOUNT, headcount, headers, emptyList()),
@@ -187,7 +196,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             Optional<ConfigurationResponse> processingTimeConfiguration) {
         return processingTimeConfiguration
                 .map(configurationResponse -> new ProcessingTime(configurationResponse.getValue(),
-                configurationResponse.getMetricUnit().getName()))
+                        configurationResponse.getMetricUnit().getName()))
                 .orElseGet(() -> new ProcessingTime(60, MINUTES.getName()));
     }
 
@@ -212,12 +221,12 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         );
     }
 
-    private List<Map<String, String>> getTableData(final List<Backlog> backlogs,
+    private List<Map<String, Object>> getTableData(final List<Backlog> backlogs,
             final List<Backlog> sales, final List<ProjectionResult> projectionResults,
             final List<PlanningDistributionResponse> planningDistribution,
             final ProcessingTime processingTime, final ZoneId zoneId,
             final boolean hasSimulatedResults, final List<Double> calculatedDeviations) {
-        final List<Map<String, String>> tableData = projectionResults.stream()
+        final List<Map<String, Object>> tableData = projectionResults.stream()
                 .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
                 .map(projection -> getProjectionDetailsTableData(
                         backlogs,
@@ -236,7 +245,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     
 
-    private Map<String, String> addTotalsRow(List<Backlog> backlogs,
+    private Map<String, Object> addTotalsRow(List<Backlog> backlogs,
             List<Double> calculatedDeviations) {
         return Map.of("style", "none",
                 "column_1", "Total",
@@ -262,7 +271,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         return projectionResults.stream().anyMatch(p -> p.getSimulatedEndDate() != null);
     }
 
-    private Map<String, String> getProjectionDetailsTableData(
+    private Map<String, Object> getProjectionDetailsTableData(
             final List<Backlog> backlogs,
             final List<Backlog> sales,
             final List<PlanningDistributionResponse> planningDistribution,
@@ -277,7 +286,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final int backlog = getBacklogQuantity(cpt, backlogs);
         final int soldItems = getBacklogQuantity(cpt, sales);
 
-        final Map<String, String> data = new LinkedHashMap<>(Map.of(
+        final Map<String, Object> data = new LinkedHashMap<>(Map.of(
                 "style", getStyle(cpt, projectedEndDate, processingTime),
                 "column_1", convertToTimeZone(zoneId, cpt).format(CPT_HOUR_FORMAT),
                 "column_2", String.valueOf(backlog),
