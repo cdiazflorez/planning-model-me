@@ -244,5 +244,45 @@ public class SpreadsheetUtilsTest {
         assertNotNull(exception);
         assertTrue(exception instanceof ForecastParsingException);
     }
+    
+    @Test
+    void testGetStringValueSuccess() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("01:18");
+
+        // WHEN
+        final String result = SpreadsheetUtils.getStringValueAt(sheet, 0, 0);
+
+        assertEquals("01:18", result);
+    }
+    
+    @Test
+    void testGetStringValueFailed() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+
+        // WHEN
+        try {
+            SpreadsheetUtils.getStringValueAt(sheet, 0, 0);
+        } catch (ForecastParsingException e) {
+            exception = e;
+        }
+
+        assertNotNull(exception);
+        assertTrue(exception instanceof ForecastParsingException);
+    }
+    
+    @Test
+    void testGetStringValueFromIntRowAndCellSuccess() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("01:18");
+
+        // WHEN
+        final String result = SpreadsheetUtils.getStringValueAt(sheet, sheet.getRowAt(0), 0);
+
+        assertEquals("01:18", result);
+    }   
    
 }
