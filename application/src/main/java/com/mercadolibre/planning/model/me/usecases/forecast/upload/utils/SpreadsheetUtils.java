@@ -41,7 +41,7 @@ public class SpreadsheetUtils {
     }
     
     public static String getStringValueAt(final MeliSheet sheet, final int row, final int column) {
-        return getCellAt(sheet,row, column).getValue();
+        return getCellAt(sheet, row, column).getValue();
     }
     
     public static String getStringValueAt(final MeliSheet sheet, final MeliRow row, 
