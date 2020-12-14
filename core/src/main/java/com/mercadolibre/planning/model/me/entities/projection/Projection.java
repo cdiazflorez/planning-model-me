@@ -9,6 +9,9 @@ public class Projection {
 
     private String title;
 
+    @JsonProperty("simple_table_1")
+    private SimpleTable simpleTable1;
+
     @JsonProperty("complex_table_1")
     private ComplexTable complexTable1;
 

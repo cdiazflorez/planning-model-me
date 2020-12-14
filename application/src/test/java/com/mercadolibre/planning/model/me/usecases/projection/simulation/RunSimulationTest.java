@@ -16,7 +16,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequ
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
@@ -28,6 +27,8 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputD
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
+import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
+import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,12 +44,16 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.createProductivityRequest;
 import static java.time.ZoneOffset.UTC;
@@ -84,6 +89,9 @@ public class RunSimulationTest {
     @Mock
     private GetSales getSales;
 
+    @Mock
+    private GetWaveSuggestion getWaveSuggestion;
+
     @Test
     public void testExecute() {
         // Given
@@ -113,6 +121,18 @@ public class RunSimulationTest {
         when(planningModelGateway.runSimulation(
                 createSimulationRequest(mockedBacklog, utcCurrentTime)))
                 .thenReturn(mockProjections(utcCurrentTime));
+
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
+        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
+
+        when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
+                        .warehouseId(WAREHOUSE_ID)
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .zoneId(TIME_ZONE.toZoneId())
+                        .build()
+                )
+        )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
 
         // When
         final Projection projection = runSimulation.execute(GetProjectionInputDto.builder()
@@ -241,8 +261,8 @@ public class RunSimulationTest {
                 new ColumnHeader("column_5", "Cierre simulado"))
         );
 
-        final List<Map<String, String>> simpleTableData = simpleTable.getData();
-        assertEquals(5, simpleTableData.size());
+        final List<Map<String, Object>> simpleTableData = simpleTable.getData();
+        assertEquals(6, simpleTableData.size());
         simpleTableData.forEach((dataRow) -> assertTrue(dataRow.containsKey("column_5")));
     }
 
@@ -416,6 +436,38 @@ public class RunSimulationTest {
                         .abilityLevel(1)
                         .build()
         );
+    }
+
+    private SimpleTable mockSuggestedWaves(final ZonedDateTime utcDateTimeFrom,
+                                           final ZonedDateTime utcDateTimeTo) {
+        final String title = "Ondas sugeridas";
+        final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())
+                .format(ofPattern("HH:mm")) + "-"
+                + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
+                .format(ofPattern("HH:mm"));
+        final String expextedTitle = "Sig. hora " + nextHour;
+        final List<ColumnHeader> columnHeaders = List.of(
+                new ColumnHeader("column_1", expextedTitle),
+                new ColumnHeader("column_2", "Tamaño de onda")
+        );
+        final List<Map<String, Object>> data = List.of(
+                Map.of("column_1",
+                        Map.of("title","Unidades por onda","subtitle",
+                                MONO_ORDER_DISTRIBUTION.getTitle()),
+                        "column_2", "0 uds."
+                ),
+                Map.of("column_1",
+                        Map.of("title","Unidades por onda","subtitle",
+                                MULTI_BATCH_DISTRIBUTION.getTitle()),
+                        "column_2", "100 uds."
+                ),
+                Map.of("column_1",
+                        Map.of("title","Unidades por onda","subtitle",
+                                MULTI_ORDER_DISTRIBUTION.getTitle()),
+                        "column_2", "100 uds."
+                )
+        );
+        return new SimpleTable(title, columnHeaders, data);
     }
 
     private List<Entity> mockThroughputEntities() {
