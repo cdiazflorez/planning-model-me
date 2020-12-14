@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.clients.groot;
 
 import com.mercadolibre.kraken.client.clients.KrakenAttributesClient;
 import com.mercadolibre.kraken.client.clients.KrakenUserClient;
+import com.mercadolibre.kraken.client.exceptions.KrakenClientException;
 import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGateway;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
@@ -27,15 +28,20 @@ public class KrakenClient implements AuthorizationGateway {
 
     @Override
     public UserAuthorization get(Long userId) {
-        Map user = krakenUserClient.getUser(userId);
-        if (isUserActive(user)) {
-            Map warehouseAttribute
-                    = krakenAttributesClient.getUserAttribute(userId, WAREHOUSE_ATTRIBUTE);
-            List<Map> permissions = krakenUserClient.getAssignedPermissions(userId);
-            return new UserAuthorization(userId,
-                    getWarehouses(warehouseAttribute),
-                    getPermissions(permissions));
-        } else {
+        try {
+            Map user = krakenUserClient.getUser(userId);
+            if (isUserActive(user)) {
+                Map warehouseAttribute
+                        = krakenAttributesClient.getUserAttribute(userId, WAREHOUSE_ATTRIBUTE);
+                List<Map> permissions = krakenUserClient.getAssignedPermissions(userId);
+                return new UserAuthorization(userId,
+                        getWarehouses(warehouseAttribute),
+                        getPermissions(permissions));
+            } else {
+                return new UserAuthorization(userId,
+                        Collections.emptyList(), Collections.emptyList());
+            }
+        } catch (KrakenClientException kce) {
             return new UserAuthorization(userId, Collections.emptyList(), Collections.emptyList());
         }
     }
