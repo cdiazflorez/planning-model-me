@@ -59,6 +59,17 @@ public class TestUtils {
             return null;
         }
     }
+    
+    public static MeliSheet getMeliSheetFromTestFile(String name,String filePath) {
+        final byte[] forecastExampleFile = getResource(filePath);
+
+        try {
+            return new PoiDocument(forecastExampleFile).getSheetByName(name);
+        } catch (MeliDocument.MeliDocumentException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public static byte[] getResource(final String resourceName) {
         try {

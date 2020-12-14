@@ -31,6 +31,8 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputD
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
+import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
+import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -47,6 +49,9 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
@@ -93,6 +98,9 @@ public class GetForecastProjectionTest {
     @Mock
     private GetSales getSales;
 
+    @Mock
+    private GetWaveSuggestion getWaveSuggestion;
+
     @Test
     void testExecute() {
         // Given
@@ -134,6 +142,18 @@ public class GetForecastProjectionTest {
                 utcCurrentTime.plusDays(1))
         )).thenReturn(mockPlanningDistribution(utcCurrentTime));
 
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
+        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
+
+        when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
+                        .warehouseId(WAREHOUSE_ID)
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .zoneId(TIME_ZONE.toZoneId())
+                        .build()
+                )
+        )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
+
         // When
         final Projection projection = getProjection.execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
@@ -144,9 +164,37 @@ public class GetForecastProjectionTest {
         // Then
         assertEquals("Proyecciones", projection.getTitle());
 
+        assertSimpleTable(projection.getSimpleTable1(), utcDateTimeFrom, utcDateTimeTo);
         assertComplexTable(projection.getComplexTable1());
         assertChart(projection.getChart());
         assertProjectionDetailsTable(projection.getSimpleTable2());
+    }
+
+    private void assertSimpleTable(final SimpleTable simpleTable,
+                                   final ZonedDateTime utcDateTimeFrom,
+                                   final ZonedDateTime utcDateTimeTo) {
+        List<Map<String, Object>> data = simpleTable.getData();
+        assertEquals(3, data.size());
+        assertEquals("0 uds.", data.get(0).get("column_2"));
+        final Map<String, Object> column1Mono = (Map<String, Object>) data.get(0).get("column_1");
+        assertEquals(MONO_ORDER_DISTRIBUTION.getTitle(), column1Mono.get("subtitle"));
+
+        assertEquals("100 uds.", data.get(1).get("column_2"));
+        final Map<String, Object> column1Multi = (Map<String, Object>) data.get(1).get("column_1");
+        assertEquals(MULTI_BATCH_DISTRIBUTION.getTitle(), column1Multi.get("subtitle"));
+
+        assertEquals("100 uds.", data.get(1).get("column_2"));
+        final Map<String, Object> column1MultiBatch = (Map<String, Object>) data.get(2).get(
+                "column_1");
+        assertEquals(MULTI_ORDER_DISTRIBUTION.getTitle(), column1MultiBatch.get("subtitle"));
+
+        final String title = simpleTable.getColumns().get(0).getTitle();
+        final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())
+                .format(ofPattern("HH:mm")) + "-"
+                + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
+                .format(ofPattern("HH:mm"));
+        final String expextedTitle = "Sig. hora " + nextHour;
+        assertEquals(title, expextedTitle);
     }
 
     private void assertProjectionDetailsTable(final SimpleTable projectionDetailsTable) {
@@ -155,13 +203,14 @@ public class GetForecastProjectionTest {
 
         assertEquals("Resumen de Proyección", projectionDetailsTable.getTitle());
         assertEquals(4, projectionDetailsTable.getColumns().size());
-        assertEquals(5, projectionDetailsTable.getData().size());
+        assertEquals(6, projectionDetailsTable.getData().size());
 
-        final Map<String, String> cpt1 = projectionDetailsTable.getData().get(4);
-        final Map<String, String> cpt2 = projectionDetailsTable.getData().get(3);
-        final Map<String, String> cpt3 = projectionDetailsTable.getData().get(2);
-        final Map<String, String> cpt4 = projectionDetailsTable.getData().get(1);
-        final Map<String, String> cpt5 = projectionDetailsTable.getData().get(0);
+        final Map<String, Object> cpt0 = projectionDetailsTable.getData().get(5);
+        final Map<String, Object> cpt1 = projectionDetailsTable.getData().get(4);
+        final Map<String, Object> cpt2 = projectionDetailsTable.getData().get(3);
+        final Map<String, Object> cpt3 = projectionDetailsTable.getData().get(2);
+        final Map<String, Object> cpt4 = projectionDetailsTable.getData().get(1);
+        final Map<String, Object> cpt5 = projectionDetailsTable.getData().get(0);
 
         assertEquals("warning", cpt1.get("style"));
         assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
@@ -198,8 +247,15 @@ public class GetForecastProjectionTest {
         assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMAT),
                 cpt5.get("column_1"));
         assertEquals("0", cpt5.get("column_2"));
-        assertEquals("0%", cpt5.get("column_3"));
+        assertEquals("0.0%", cpt5.get("column_3"));
         assertEquals("Excede las 24hs", cpt5.get("column_4"));
+
+        assertEquals("none", cpt0.get("style"));
+        assertEquals("Total",
+                cpt0.get("column_1"));
+        assertEquals("805", cpt0.get("column_2"));
+        assertEquals("-5.1%", cpt0.get("column_3"));
+        assertEquals("", cpt0.get("column_4"));
     }
 
     private void assertChart(final Chart chart) {
@@ -526,5 +582,37 @@ public class GetForecastProjectionTest {
                 new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 82),
                 new PlanningDistributionResponse(utcCurrentTime, CPT_5, MetricUnit.UNITS, 100)
         );
+    }
+
+    private SimpleTable mockSuggestedWaves(final ZonedDateTime utcDateTimeFrom,
+                                           final ZonedDateTime utcDateTimeTo) {
+        final String title = "Ondas sugeridas";
+        final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())
+                .format(ofPattern("HH:mm")) + "-"
+                + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
+                .format(ofPattern("HH:mm"));
+        final String expextedTitle = "Sig. hora " + nextHour;
+        final List<ColumnHeader> columnHeaders = List.of(
+                new ColumnHeader("column_1", expextedTitle),
+                new ColumnHeader("column_2", "Tamaño de onda")
+        );
+        final List<Map<String, Object>> data = List.of(
+                Map.of("column_1",
+                        Map.of("title", "Unidades por onda", "subtitle",
+                                MONO_ORDER_DISTRIBUTION.getTitle()),
+                        "column_2", "0 uds."
+                ),
+                Map.of("column_1",
+                        Map.of("title", "Unidades por onda", "subtitle",
+                                MULTI_BATCH_DISTRIBUTION.getTitle()),
+                        "column_2", "100 uds."
+                ),
+                Map.of("column_1",
+                        Map.of("title", "Unidades por onda", "subtitle",
+                                MULTI_ORDER_DISTRIBUTION.getTitle()),
+                        "column_2", "100 uds."
+                )
+        );
+        return new SimpleTable(title, columnHeaders, data);
     }
 }

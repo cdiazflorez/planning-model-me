@@ -11,6 +11,10 @@ public class DateUtils {
         return ZonedDateTime.now(UTC).withMinute(0).withSecond(0).withNano(0);
     }
 
+    public static ZonedDateTime getCurrentUtcDateTime() {
+        return ZonedDateTime.now(UTC).withSecond(0).withNano(0);
+    }
+
     public static String getHourAndDay(final ZonedDateTime date) {
         return date.getHour() + "-" + date.getDayOfMonth();
     }
