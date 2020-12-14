@@ -208,7 +208,7 @@ public class SpreadsheetUtils {
     }
 
     private static String getCellAddress(final int row, final int column) {
-        return String.valueOf(((char) (((int) CHAR_LETTER_A) + row))+""+(column + 1));
+        return String.valueOf(((char) (((int) CHAR_LETTER_A) + row)) + "" + (column + 1));
     }
     
     private static MeliCell getCellAt(final MeliSheet sheet,final MeliRow row, final int column) {
