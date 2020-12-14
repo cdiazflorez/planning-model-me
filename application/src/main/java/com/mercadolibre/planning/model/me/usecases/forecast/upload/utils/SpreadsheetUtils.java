@@ -83,7 +83,7 @@ public class SpreadsheetUtils {
     }
 
     public static long getLongValueAt(final MeliSheet sheet, final MeliRow row, final int column) {
-        MeliCell cell = getCellAt(sheet, row, column);;
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
 
@@ -100,7 +100,7 @@ public class SpreadsheetUtils {
     }
 
     public static long getLongValueAt(final MeliSheet sheet, final int row, final int column) {
-        MeliCell cell = getCellAt(sheet, row, column);;
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
 
@@ -116,7 +116,7 @@ public class SpreadsheetUtils {
 
     public static double getDoubleValueAt(final MeliSheet sheet, final int row, 
             final int column) {
-        MeliCell cell = getCellAt(sheet, row, column);;
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
 
@@ -208,8 +208,7 @@ public class SpreadsheetUtils {
     }
 
     private static String getCellAddress(final int row, final int column) {
-        return new StringBuilder((char) (((int) CHAR_LETTER_A) + row))
-                .append("").append(column + 1).toString();
+        return String.valueOf(((char) (((int) CHAR_LETTER_A) + row))+""+(column + 1));
     }
     
     private static MeliCell getCellAt(final MeliSheet sheet,final MeliRow row, final int column) {
