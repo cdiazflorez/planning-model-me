@@ -74,6 +74,6 @@ public class KrakenClientTest {
     }
 
     private Map getAttribute() {
-        return Map.of("key", "warehouse", "value", new String[]{"MXCD01", "ARBA01"});
+        return Map.of("key", "warehouse", "value", List.of("MXCD01", "ARBA01"));
     }
 }
