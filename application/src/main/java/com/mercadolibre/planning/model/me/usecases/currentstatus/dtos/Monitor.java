@@ -2,20 +2,20 @@ package com.mercadolibre.planning.model.me.usecases.currentstatus.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.MonitorData;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
-@Data
-@Builder
+@Getter
+@SuperBuilder
 public class Monitor {
 
-    private String title;
+    private final String title;
     @JsonProperty("subtitle_1")
-    private String subtitle1;
+    private final String subtitle1;
     @JsonProperty("subtitle_2")
-    private String subtitle2;
-    private List<MonitorData> monitorData;
+    private final String subtitle2;
+    private final List<MonitorData> monitorData;
 
 }

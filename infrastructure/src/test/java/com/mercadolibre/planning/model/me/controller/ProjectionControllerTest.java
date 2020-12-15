@@ -9,14 +9,12 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
-import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -29,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
@@ -64,11 +65,15 @@ public class ProjectionControllerTest {
     void getProjectionOk() throws Exception {
         // GIVEN
         when(getProjection.execute(any(GetProjectionInputDto.class)))
-                .thenReturn(new Projection(
-                        "Test",
-                        mockComplexTable(),
-                        mockProjectionDetailTable(),
-                        mockProjectionChart()));
+                .thenReturn(
+                        new Projection(
+                                "Test",
+                                mockSuggestedWaves(),
+                                mockComplexTable(),
+                                mockProjectionDetailTable(),
+                                mockProjectionChart()
+                        )
+            );
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -231,6 +236,32 @@ public class ProjectionControllerTest {
                         )
                 )
         );
+    }
+
+    private SimpleTable mockSuggestedWaves() {
+        final String title = "Ondas sugeridas";
+        final List<ColumnHeader> columnHeaders = List.of(
+                new ColumnHeader("column_1", "Sig. hora 9:00-10:00"),
+                new ColumnHeader("column_2", "Tamaño de onda")
+        );
+        final List<Map<String, Object>> data = List.of(
+                Map.of("column_1",
+                        Map.of("title", "Unidades por onda", "subtitle",
+                                MONO_ORDER_DISTRIBUTION.getName()),
+                        "column_2", "130 uds."
+                ),
+                Map.of("column_1",
+                        Map.of("title", "Unidades por onda", "subtitle",
+                                MULTI_BATCH_DISTRIBUTION.getName()),
+                        "column_2", "0 uds."
+                ),
+                Map.of("column_1",
+                        Map.of("title", "Unidades por onda", "subtitle",
+                                MULTI_ORDER_DISTRIBUTION.getName()),
+                        "column_2", "0 uds."
+                )
+        );
+        return new SimpleTable(title, columnHeaders, data);
     }
 
 }
