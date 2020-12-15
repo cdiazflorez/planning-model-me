@@ -7,6 +7,8 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.Paging;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.Unit;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.UnitGroup;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationFilterRequest;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequest;
@@ -19,7 +21,6 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.GetMonitorInput;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import com.newrelic.api.agent.Trace;
@@ -32,6 +33,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,6 +42,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.ETD_FROM;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.ETD_TO;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.GROUP_TYPE;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.LIMIT;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
@@ -50,6 +53,7 @@ import static java.lang.String.format;
 public class OutboundUnitClient extends HttpClient implements BacklogGateway {
 
     private static final String SEARCH_GROUPS_URL = "/wms/outbound/groups/%s/search";
+    private static final String SEARCH_UNITS_URL = "/wms/outbound/units/search";
     public static final String CLIENT_ID = "9999";
     private static final String AGGREGATION_BY_ETD = "by_etd";
     private static final String ORDER_VALUE = "order";
@@ -144,6 +148,24 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public ProcessBacklog getUnitBacklog(final String statuses,
+                                         final String warehouseId,
+                                         final ZonedDateTime dateFrom,
+                                         final ZonedDateTime dateTo) {
+
+        final Map<String, String> defaultParams = defaultParams();
+        defaultParams.put(WAREHOUSE_ID.toJson(), warehouseId);
+        defaultParams.put("group.etd_from", dateFrom.toString());
+        defaultParams.put("group.etd_to", dateTo.toString());
+        defaultParams.put(STATUS.toJson(), statuses);
+        defaultParams.put(LIMIT.toJson(), "1");
+
+        final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams);
+        int quantity = Objects.nonNull(response) ? response.getPaging().getTotal() : 0;
+        return ProcessBacklog.builder().process(statuses).quantity(quantity).build();
+    }
+
     private boolean workingCpts(final Backlog backlog) {
         final ZonedDateTime currentTime = getCurrentUtcDate();
         final ZonedDateTime backlogCptDate = backlog.getDate();
@@ -219,7 +241,22 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
-        return send(request, response -> response.getData(new TypeReference<>() {}));
+        return send(request, response -> response.getData(new TypeReference<>() {
+        }));
+    }
+
+    @Trace(metricName = "API/outboundUnit/searchUnits")
+    public OutboundUnitSearchResponse<Unit> searchUnits(final Map<String, String> params) {
+
+        final HttpRequest request = HttpRequest.builder()
+                .url(SEARCH_UNITS_URL)
+                .GET()
+                .queryParams(params)
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {
+        }));
     }
 
     private Map<String, String> defaultParams() {

@@ -102,7 +102,7 @@ class MonitorControllerTest {
                 .subtitle1("Estado Actual")
                 .subtitle2("Última actualización: Today...")
                 .monitorData(List.of(
-                        DeviationData.builder().build(),
+                        new DeviationData(),
                         CurrentStatusData.builder().processes(processes).build()
                 ))
                 .build();

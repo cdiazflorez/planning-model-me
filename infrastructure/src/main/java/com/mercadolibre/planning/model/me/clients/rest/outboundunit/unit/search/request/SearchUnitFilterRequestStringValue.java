@@ -8,6 +8,7 @@ public enum SearchUnitFilterRequestStringValue {
     ID,
     GROUP_TYPE,
     STATUS,
+    LIMIT,
     CARDINALITY,
     CARRIER_NAME,
     CARRIER_ID,

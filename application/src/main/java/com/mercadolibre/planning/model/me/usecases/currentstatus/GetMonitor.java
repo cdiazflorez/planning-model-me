@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.currentstatus;
 
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -22,15 +23,12 @@ import java.text.NumberFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.PENDING;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_GROUP;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_PACK;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_PICK;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PACKING;
@@ -48,7 +46,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     @Override
     public Monitor execute(GetMonitorInput input) {
         final List<MonitorData> monitorDataList = getMonitorData(input);
-        String currentTime = getCurrentTime(input);
+        final String currentTime = getCurrentTime(input);
         return Monitor.builder()
                 .title("Modelo de Priorización")
                 .subtitle1("Estado Actual")
@@ -77,7 +75,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private CurrentStatusData getCurrentStatusData(GetMonitorInput input) {
-        ArrayList<Process> processes = new ArrayList<>();
+        final ArrayList<Process> processes = new ArrayList<>();
         addMetricBacklog(input, processes);
         addThroughputMetric();
         addProductivityMetric();
@@ -86,20 +84,26 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
 
     private void addMetricBacklog(GetMonitorInput input, ArrayList<Process> processes) {
         final String status = "status";
-        List<Map<String, String>> statuses = List.of(
-                Map.of(status, PENDING.toName()),
-                Map.of(status, TO_PICK.toName()),
-                Map.of(status, TO_PACK.toName()),
-                Map.of(status, TO_GROUP.toName())
+        final List<Map<String, String>> statuses = List.of(
+                Map.of(status, OUTBOUND_PLANNING.getStatus()),
+                Map.of(status, PACKING.getStatus())
         );
-        final List<ProcessBacklog> processBacklogs =
-                backlogGatewayProvider.getBy(input.getWorkflow())
-                        .orElseThrow(() -> new BacklogGatewayNotSupportedException(input
-                                .getWorkflow()))
-                        .getBacklog(statuses,
-                                input.getWarehouseId(),
-                                input.getDateFrom(),
-                                input.getDateTo());
+        final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
+                .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
+        List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo());
+        final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(PICKING.getStatus(),
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo());
+        final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(WALL_IN.getStatus(),
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo());
+        processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog));
+
         processBacklogs.forEach(processBacklog ->
                 addProcessIfExist(processes, processBacklog)
         );
@@ -150,7 +154,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private void completeProcess(ArrayList<Process> processes) {
-        List<ProcessInfo> processList = List.of(OUTBOUND_PLANNING, PICKING, PACKING, WALL_IN);
+        List<ProcessInfo> processList = List.of(OUTBOUND_PLANNING, PACKING);
         processList.stream().filter(t -> processes.stream()
                 .noneMatch(current -> current.getTitle().equalsIgnoreCase(t.getTitle()))
         ).forEach(noneMatchProcess -> {
