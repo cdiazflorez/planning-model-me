@@ -38,7 +38,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.MonitorDataType.DEVIATION;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.PENDING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_GROUP;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_PACK;
@@ -54,12 +56,18 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZo
 @AllArgsConstructor
 public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     
+    private static final String ICON_ATTRIBUTE = "icon";
+
+    private static final String STATUS_ATTRIBUTE = "status";
+
     private static final String UNITS_DEFAULT_STRING = "%d uds.";
 
     private static final int SELLING_PERIOD_HOURS = 28;
 
     final BacklogGatewayProvider backlogGatewayProvider;
+    
     protected final LogisticCenterGateway logisticCenterGateway;
+    
     private GetSales getSales;
 
     private PlanningModelGateway planningModelGateway;
@@ -98,47 +106,58 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         
         double totalDeviation = getTotalDeviation(plannedBacklogs, realSales);
         
-        long totalPlanned=plannedBacklogs.stream().mapToLong(planned -> planned.getTotal()).sum();
+        long totalPlanned = plannedBacklogs.stream().mapToLong(planned -> planned.getTotal()).sum();
         
-        int totalSales=realSales.stream().mapToInt(realSale -> realSale.getQuantity()).sum();
+        int totalSales = realSales.stream().mapToInt(realSale -> realSale.getQuantity()).sum();
         
-        long difference=Math.abs(totalPlanned-totalSales);
+        long difference = Math.abs(totalPlanned - totalSales);
         
         return buildDeviationData(totalDeviation, totalPlanned, totalSales, difference);
     }
 
     private double getTotalDeviation(List<PlanningDistributionResponse> plannedBacklogs,
             List<Backlog> realSales) {
-        double totalDeviation = plannedBacklogs.stream()
-                .mapToDouble(planned -> getDeviation(planned, realSales)).sum();
+        double totalDeviation = realSales.stream()
+                .mapToDouble(sold -> getDeviation(sold, plannedBacklogs)).sum();
         return Math.round(totalDeviation * 100.00) / 100.00;
     }
 
     private DeviationData buildDeviationData(double totalDeviation, long totalPlanned,
             int totalSales, long difference) {
-        return DeviationData.builder().metrics(DeviationMetric.builder()
-                        .deviationPercentage(Metric.builder()
-                            .title("% Desviación FCST / Ventas")
-                            .value(String.format("%.1f%s",totalDeviation,"%"))
-                            .status("warning")
-                            .icon("arrow_up")
-                            .build())
-                        .deviationUnits(DeviationUnit.builder()
-                            .title("Desviación en unidades")
-                            .value(String.format(UNITS_DEFAULT_STRING, difference))
-                            .detail(DeviationUnitDetail.builder()
-                                .forecastUnits(Metric.builder()
-                                    .title("Cantidad Forecast")
-                                    .value(String.format(UNITS_DEFAULT_STRING, totalPlanned))
-                                    .build())
-                                .currentUnits(Metric.builder()
-                                    .title("Cantidad Real")
-                                    .value(String.format(UNITS_DEFAULT_STRING, totalSales))
-                                    .build())
+        DeviationData deviationData = DeviationData.builder().metrics(DeviationMetric.builder()
+                .deviationPercentage(Metric.builder()
+                        .title("% Desviación FCST / Ventas")
+                        .value(String.format("%.1f%s",totalDeviation,"%"))
+                        .status(getStyleForDeviation(totalDeviation,STATUS_ATTRIBUTE))
+                        .icon(getStyleForDeviation(totalDeviation, ICON_ATTRIBUTE))
+                        .build())
+                    .deviationUnits(DeviationUnit.builder()
+                        .title("Desviación en unidades")
+                        .value(String.format(UNITS_DEFAULT_STRING, difference))
+                        .detail(DeviationUnitDetail.builder()
+                            .forecastUnits(Metric.builder()
+                                .title("Cantidad Forecast")
+                                .value(String.format(UNITS_DEFAULT_STRING, totalPlanned))
+                                .build())
+                            .currentUnits(Metric.builder()
+                                .title("Cantidad Real")
+                                .value(String.format(UNITS_DEFAULT_STRING, totalSales))
                                 .build())
                             .build())
                         .build())
-                    .build();
+                    .build())
+                .build();
+        deviationData.setType(DEVIATION.getType());
+        return deviationData;
+    }
+
+    private String getStyleForDeviation(double totalDeviation, String attribute) {
+        if (Objects.equals(attribute, ICON_ATTRIBUTE)) {
+            return totalDeviation > 0 ? "arrow_up" : "arrow_down";
+        } else if (Objects.equals(attribute, STATUS_ATTRIBUTE)) {
+            return totalDeviation > 0 ? "warning" : null;
+        }
+        return null;
     }
 
     private List<Backlog> getSales(GetMonitorInput input) {
@@ -160,12 +179,14 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         
     }
     
-    private double getDeviation(PlanningDistributionResponse planned, List<Backlog> sales) {
-        Backlog saleInTime = sales.stream().filter(sale -> Objects.equals(planned.getDateOut(), 
-                sale.getDate())).findFirst().orElse(null);
-        int salesQuantity=Objects.nonNull(saleInTime)?saleInTime.getQuantity():0;
-        long plannedQuantity=planned.getTotal();
-        if(salesQuantity==0 || plannedQuantity==0) {
+    private double getDeviation(Backlog sold, List<PlanningDistributionResponse> plannedSales) {
+        List<PlanningDistributionResponse> plannedSalesFound = plannedSales.stream()
+                .filter(sale -> Objects.equals(sold.getDate(), 
+                sale.getDateOut())).collect(Collectors.toList());
+        long plannedQuantity = plannedSalesFound.stream()
+                .mapToLong(planned -> planned.getTotal()).sum();
+        int salesQuantity = sold.getQuantity();
+        if (salesQuantity == 0 || plannedQuantity == 0) {
             return 0;
         }        
         return (((double) salesQuantity / plannedQuantity) - 1) * 100;
@@ -180,7 +201,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private void addMetricBacklog(GetMonitorInput input, ArrayList<Process> processes) {
-        final String status = "status";
+        final String status = STATUS_ATTRIBUTE;
         List<Map<String, String>> statuses = List.of(
                 Map.of(status, PENDING.toName()),
                 Map.of(status, TO_PICK.toName()),
