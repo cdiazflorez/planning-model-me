@@ -1,0 +1,124 @@
+{
+    "title": "Proyecciones",
+    "tabs": [
+        {
+            "type": "cpt",
+            "title": "Cumplimiento de CPTs"
+        },
+        {
+            "type": "backlog",
+            "title": "Backlogs"
+        }
+    ],
+    "selections": {
+        "title": "Procesos",
+        "values": [
+            {
+                "id": "picking",
+                "title": "Ready to pick",
+                "selected": true
+            },
+            {
+                "id": "packing",
+                "title": "Ready to pack",
+                "selected": true
+            }
+        ]
+    },
+    "simple_table_1": {
+        "title": "Ready to wave FCST vs Real",
+        "columns": [
+            {
+                "id": "column_1",
+                "title": "Horas de operación"
+            },
+            {
+                "id": "column_2",
+                "title": "10:00"
+            },
+            {
+                "id": "column_3",
+                "title": "11:00"
+            },
+            {
+                "id": "column_4",
+                "title": "12:00"
+            },
+            {
+                "id": "column_5",
+                "title": "13:00"
+            }
+        ],
+        "data": [
+            {
+                "column_1": {
+                    "title": "FCST",
+                    "subtitle": "(uds.)"
+                },
+                "column_2": "2100",
+                "column_3": "2225",
+                "column_4": "2400",
+                "column_5": "2334"
+            },
+            {
+                "column_1": {
+                    "title": "Real",
+                    "subtitle": "(uds.)"
+                },
+                "column_2": "2100",
+                "column_3": "2225",
+                "column_4": "2400",
+                "column_5": "2334"
+            }
+        ]
+    },
+    "simple_table_2": {
+        "title": "Gráfico de proyección de backlogs",
+        "columns": [
+            {
+                "id": "column_1",
+                "title": "Horas de operación"
+            },
+            {
+                "id": "column_2",
+                "title": "10:00"
+            },
+            {
+                "id": "column_3",
+                "title": "11:00"
+            },
+            {
+                "id": "column_4",
+                "title": "12:00"
+            },
+            {
+                "id": "column_5",
+                "title": "13:00"
+            }
+        ],
+        "data": [
+            {
+                "column_1": {
+                    "title": "RTPick",
+                    "id": "ready_to_pick",
+                    "subtitle": "(uds.)"
+                },
+                "column_2": "1930",
+                "column_3": "1920",
+                "column_4": "1966",
+                "column_5": "2000"
+            },
+            {
+                "column_1": {
+                    "title": "RTPack",
+                    "id": "ready_to_pack",
+                    "subtitle": "(uds.)"
+                },
+                "column_2": "1977",
+                "column_3": "1920",
+                "column_4": "1953",
+                "column_5": "1948"
+            }
+        ]
+    }
+}

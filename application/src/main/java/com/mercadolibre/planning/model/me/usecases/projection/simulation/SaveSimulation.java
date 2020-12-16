@@ -1,9 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;

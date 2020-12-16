@@ -271,8 +271,8 @@ public class SimulationControllerTest {
     private SimpleTable mockSuggestedWaves() {
         final String title = "Ondas sugeridas";
         final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", "Sig. hora 23:00-1:00"),
-                new ColumnHeader("column_2", "Tamaño de onda")
+                new ColumnHeader("column_1", "Sig. hora 23:00-1:00", null),
+                new ColumnHeader("column_2", "Tamaño de onda", null)
         );
         final List<Map<String, Object>> data = List.of(
                 Map.of("column_1",

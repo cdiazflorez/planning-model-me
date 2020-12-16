@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
@@ -12,7 +14,9 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTi
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +64,9 @@ public class ProjectionControllerTest {
 
     @MockBean
     private GetForecastProjection getProjection;
+
+    @MockBean
+    private GetBacklogProjection getBacklogProjection;
 
     @Test
     void getProjectionOk() throws Exception {
@@ -113,6 +120,103 @@ public class ProjectionControllerTest {
         // THEN
         result.andExpect(status().isForbidden());
         verifyNoInteractions(getProjection);
+    }
+
+    @Test
+    void getCptProjectionOk() throws Exception {
+        // GIVEN
+        when(getProjection.execute(any(GetProjectionInputDto.class)))
+                .thenReturn(new Projection(
+                        "Test",
+                        mockSuggestedWaves(),
+                        mockComplexTable(),
+                        mockProjectionDetailTable(),
+                        mockProjectionChart()));
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/cpt")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(getResourceAsString("get_projection_response.json")));
+
+        verify(getProjection).execute(GetProjectionInputDto.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .build()
+        );
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void getCptProjectionUserUnauthorized() throws Exception {
+        // GIVEN
+        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                .thenThrow(UserNotAuthorizedException.class);
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/cpt")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isForbidden());
+        verifyNoInteractions(getProjection);
+    }
+
+    @Test
+    void getBacklogProjectionOk() throws Exception {
+        // GIVEN
+        final String responseMock = getResourceAsString("get_backlog_projection_response.json");
+        final ObjectMapper mapper = new ObjectMapper();
+
+        when(getBacklogProjection.execute(any(BacklogProjectionInput.class))).thenReturn(
+                mapper.readValue(responseMock, BacklogProjection.class)
+        );
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/backlog")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .param("process_name", "waving", "picking", "packing")
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(getResourceAsString(
+                "get_backlog_projection_response.json")));
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void getBacklogProjectionUserUnauthorized() throws Exception {
+        // GIVEN
+        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                .thenThrow(UserNotAuthorizedException.class);
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/backlog")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isForbidden());
+        verifyNoInteractions(getBacklogProjection);
     }
 
     private ComplexTable mockComplexTable() {
@@ -241,8 +345,8 @@ public class ProjectionControllerTest {
     private SimpleTable mockSuggestedWaves() {
         final String title = "Ondas sugeridas";
         final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", "Sig. hora 9:00-10:00"),
-                new ColumnHeader("column_2", "Tamaño de onda")
+                new ColumnHeader("column_1", "Sig. hora 9:00-10:00", null),
+                new ColumnHeader("column_2", "Tamaño de onda", null)
         );
         final List<Map<String, Object>> data = List.of(
                 Map.of("column_1",

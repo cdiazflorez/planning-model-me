@@ -6,7 +6,6 @@ import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
@@ -25,6 +24,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
@@ -51,7 +51,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
@@ -65,6 +64,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Sou
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -160,7 +160,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                 .key(PROCESSING_TIME)
                                 .build()));
 
-        final List<ColumnHeader> headers = createColumnHeaders(config, utcDateFrom);
+        final List<ColumnHeader> headers = createColumnHeaders(
+                convertToTimeZone(config.getZoneId(), utcDateFrom), HOURS_TO_SHOW);
         addDeviationEntities(throughputs, projections);
 
         return new Projection(
@@ -312,16 +313,16 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             final boolean hasSimulatedResults) {
 
         final List<ColumnHeader> columnHeaders = new ArrayList<>(List.of(
-                new ColumnHeader("column_1", "CPT's"),
-                new ColumnHeader("column_2", "Backlog actual"),
-                new ColumnHeader("column_3", "Desv. vs forecast")
+                new ColumnHeader("column_1", "CPT's", null),
+                new ColumnHeader("column_2", "Backlog actual", null),
+                new ColumnHeader("column_3", "Desv. vs forecast", null)
         ));
 
         if (hasSimulatedResults) {
-            columnHeaders.add(new ColumnHeader("column_4", "Cierre actual"));
-            columnHeaders.add(new ColumnHeader("column_5", "Cierre simulado"));
+            columnHeaders.add(new ColumnHeader("column_4", "Cierre actual", null));
+            columnHeaders.add(new ColumnHeader("column_5", "Cierre simulado", null));
         } else {
-            columnHeaders.add(new ColumnHeader("column_4", "Cierre proyectado"));
+            columnHeaders.add(new ColumnHeader("column_4", "Cierre proyectado", null));
         }
 
         return columnHeaders;
@@ -439,25 +440,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 .simulations(input.getSimulations())
                 .abilityLevel(List.of(MAIN_ABILITY_LEVEL, POLYVALENT_ABILITY_LEVEL))
                 .build();
-    }
-
-    private List<ColumnHeader> createColumnHeaders(final LogisticCenterConfiguration config,
-                                                   final ZonedDateTime utcDateFrom) {
-
-        final ZonedDateTime dateFrom = convertToTimeZone(config.getZoneId(), utcDateFrom);
-        final List<ColumnHeader> columns = new ArrayList<>(HOURS_TO_SHOW);
-
-        columns.add(new ColumnHeader("column_1", "Horas de Operación"));
-        columns.addAll(IntStream.range(0, HOURS_TO_SHOW)
-                .mapToObj(index -> {
-                    final ZonedDateTime date = dateFrom.plusHours(index);
-                    return new ColumnHeader(
-                            format("column_%s", 2 + index),
-                            date.format(COLUMN_HOUR_FORMAT),
-                            getHourAndDay(date));
-                }).collect(toList()));
-
-        return columns;
     }
 
     private Data createData(final LogisticCenterConfiguration config,

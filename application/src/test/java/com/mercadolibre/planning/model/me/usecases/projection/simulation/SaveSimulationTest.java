@@ -4,7 +4,6 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
@@ -16,6 +15,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequ
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
@@ -610,8 +610,8 @@ public class SaveSimulationTest {
                 .format(ofPattern("HH:mm"));
         final String expextedTitle = "Sig. hora " + nextHour;
         final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", expextedTitle),
-                new ColumnHeader("column_2", "Tamaño de onda")
+                new ColumnHeader("column_1", expextedTitle, null),
+                new ColumnHeader("column_2", "Tamaño de onda", null)
         );
         final List<Map<String, Object>> data = List.of(
                 Map.of("column_1",
