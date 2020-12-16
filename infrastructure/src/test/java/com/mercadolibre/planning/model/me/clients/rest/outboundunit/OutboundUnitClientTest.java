@@ -40,19 +40,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.OutboundUnitClient.CLIENT_ID;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.ETD_FROM;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.ETD_TO;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
+import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitOrdering.ASC;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitProperty.ESTIMATED_TIME_DEPARTURE;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.PENDING;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_GROUP;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_PACK;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.TO_PICK;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PICKING;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
+import static com.mercadolibre.restclient.http.HttpMethod.GET;
 import static com.mercadolibre.restclient.http.HttpMethod.POST;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
@@ -471,34 +474,12 @@ public class OutboundUnitClientTest extends BaseClientTest {
                             .put("buckets", new JSONArray()
                                     .put(new JSONObject()
                                             .put("keys", new JSONArray()
-                                                    .put("pending")
-                                            )
-                                            .put("totals", new JSONArray()
-                                                    .put(new JSONObject()
-                                                            .put("alias", "total_units")
-                                                            .put("result", 114)
-                                                    )
-                                            )
-                                    )
-                                    .put(new JSONObject()
-                                            .put("keys", new JSONArray()
                                                     .put("to_pack")
                                             )
                                             .put("totals", new JSONArray()
                                                     .put(new JSONObject()
                                                             .put("alias", "total_units")
                                                             .put("result", 754)
-                                                    )
-                                            )
-                                    )
-                                    .put(new JSONObject()
-                                            .put("keys", new JSONArray()
-                                                    .put("to_group")
-                                            )
-                                            .put("totals", new JSONArray()
-                                                    .put(new JSONObject()
-                                                            .put("alias", "total_units")
-                                                            .put("result", 200)
                                                     )
                                             )
                                     )
@@ -522,10 +503,8 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // WHEN
             final String status = "status";
             List<Map<String, String>> statuses = List.of(
-                    Map.of(status, PENDING.toName()),
-                    Map.of(status, TO_PICK.toName()),
-                    Map.of(status, TO_PACK.toName()),
-                    Map.of(status, TO_GROUP.toName())
+                    Map.of(status, OUTBOUND_PLANNING.getStatus()),
+                    Map.of(status, PACKING.getStatus())
             );
             final List<ProcessBacklog> backlogs = outboundUnitClient.getBacklog(statuses,
                     input.getWarehouseId(),
@@ -533,19 +512,50 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     input.getDateTo());
 
             // THEN
-            assertEquals(3, backlogs.size());
+            assertEquals(1, backlogs.size());
 
-            final ProcessBacklog backlogCpt1 = backlogs.get(0);
-            assertEquals("pending", backlogCpt1.getProcess());
-            assertEquals(114, backlogCpt1.getQuantity());
-
-            final ProcessBacklog backlogCpt2 = backlogs.get(1);
+            final ProcessBacklog backlogCpt2 = backlogs.get(0);
             assertEquals("to_pack", backlogCpt2.getProcess());
             assertEquals(754, backlogCpt2.getQuantity());
+        }
 
-            final ProcessBacklog backlogCpt3 = backlogs.get(2);
-            assertEquals("to_group", backlogCpt3.getProcess());
-            assertEquals(200, backlogCpt3.getQuantity());
+        @Test
+        @DisplayName("Units API returns OK by Unit Process Backlog")
+        public void testGetUnitProcessBacklog() throws JsonProcessingException, JSONException {
+            // GIVEN
+            final ZonedDateTime utcDateFrom = getCurrentUtcDate();
+            final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
+
+            final Map<String, String> requestParam = ImmutableMap.<String, String>builder()
+                    .put("limit", "1")
+                    .put("group.etd_from", utcDateFrom.toString())
+                    .put("group.etd_to", utcDateTo.toString())
+                    .put("status", PICKING.getStatus())
+                    .put("client.id", CLIENT_ID)
+                    .put("warehouse_id", TestUtils.WAREHOUSE_ID)
+                    .build();
+
+            final JSONObject responseBody = new JSONObject()
+                    .put("paging", new JSONObject().put("total", "100"))
+                    .put("results", new JSONArray())
+                    ;
+
+            successfulResponse(
+                    GET,
+                    searchUnitUrl(requestParam),
+                    null,
+                    responseBody.toString()
+            );
+
+            // WHEN
+            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(PICKING.getStatus(),
+                    TestUtils.WAREHOUSE_ID,
+                    utcDateFrom,
+                    utcDateTo);
+
+            // THEN
+            assertEquals(PICKING.getStatus(), backlogs.getProcess());
+            assertEquals(100, backlogs.getQuantity());
         }
 
         @Test
@@ -661,8 +671,15 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
         private String searchGroupUrl(final String groupType) {
             return UnitGroupUrlBuilder
-                    .create(format("/%s/search", groupType))
+                    .create(format("/groups/%s/search", groupType))
                     .withParams(ImmutableMap.of("client.id", "9999"))
+                    .build();
+        }
+
+        private String searchUnitUrl(final Map<String, String> params) {
+            return UnitGroupUrlBuilder
+                    .create("/units/search")
+                    .withParams(params)
                     .build();
         }
 
@@ -736,7 +753,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
     private static class UnitGroupUrlBuilder {
         private static final String DOMAIN = "http://internal.mercadolibre.com";
-        private static final String BASE_PATH = "/wms/outbound/groups";
+        private static final String BASE_PATH = "/wms/outbound";
 
         private final String path;
         private final Map<String, String> params;
