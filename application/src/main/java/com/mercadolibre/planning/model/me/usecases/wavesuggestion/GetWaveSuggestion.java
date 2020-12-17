@@ -23,7 +23,7 @@ import java.util.Map;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.PENDING;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -54,7 +54,7 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                 backlogGatewayProvider.getBy(input.getWorkflow())
                         .orElseThrow(() -> new BacklogGatewayNotSupportedException(input
                                 .getWorkflow()))
-                        .getBacklog(List.of(Map.of("status", PENDING.toName())),
+                        .getBacklog(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus())),
                                 input.getWarehouseId(),
                                 utcDateTimeFrom,
                                 utcDateTimeFrom.plusHours(25))
@@ -81,8 +81,8 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                 dateFrom.format(TIME_FORMATTER) + "-" + dateTo.format(TIME_FORMATTER);
 
         final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", "Sig. hora " + nextHour),
-                new ColumnHeader("column_2", "Tamaño de onda")
+                new ColumnHeader("column_1", "Sig. hora " + nextHour, null),
+                new ColumnHeader("column_2", "Tamaño de onda", null)
         );
         final List<Map<String, Object>> data = List.of(
                 createSuggestedWaveEntry(suggestedWaves, MONO_ORDER_DISTRIBUTION),

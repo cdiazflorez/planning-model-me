@@ -8,7 +8,6 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.ProductivityResponse;
-import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
@@ -25,10 +24,13 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import org.springframework.http.HttpStatus;
@@ -53,6 +55,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String SIMULATIONS_PREFIX_URL = "/simulations";
+    private static final String PROJECTION_URL = "/projections/%s";
     private static final String WAREHOUSE_ID = "warehouse_id";
     private static final String DATE_FROM = "date_from";
     private static final String DATE_TO = "date_to";
@@ -113,29 +116,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 response.getData(new TypeReference<>() {}));
 
         return apiResponse.stream().map(this::toProductivity).collect(toList());
-    }
-
-    private Entity toEntity(final EntityResponse response) {
-        return Entity.builder()
-                .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
-                .processName(ProcessName.from(response.getProcessName()))
-                .workflow(Workflow.from(response.getWorkflow()).orElseThrow())
-                .value(response.getValue())
-                .source(Source.from(response.getSource()))
-                .metricUnit(MetricUnit.from(response.getMetricUnit()))
-                .build();
-    }
-
-    private Productivity toProductivity(final ProductivityResponse response) {
-        return Productivity.builder()
-                .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
-                .processName(ProcessName.from(response.getProcessName()))
-                .workflow(Workflow.from(response.getWorkflow()).orElseThrow())
-                .value(response.getValue())
-                .source(Source.from(response.getSource()))
-                .metricUnit(MetricUnit.from(response.getMetricUnit()))
-                .abilityLevel(response.getAbilityLevel())
-                .build();
     }
 
     protected Map<String, String> createEntityParams(final EntityRequest request) {
@@ -258,6 +238,19 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         }));
     }
 
+    @Override
+    public List<BacklogProjectionResponse> getBacklogProjection(
+            final BacklogProjectionRequest request) {
+
+        final HttpRequest httpRequest = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL + PROJECTION_URL, request.getWorkflow(), "backlogs"))
+                .POST(requestSupplier(request))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        return send(httpRequest, response -> response.getData(new TypeReference<>() {}));
+    }
+
     private Map<String, String> createPlanningDistributionParams(
             final PlanningDistributionRequest request) {
         final Map<String, String> params = new LinkedHashMap<>();
@@ -281,5 +274,28 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private String getEnumNamesAsString(final List<? extends Enum> namedEnums) {
         return namedEnums.stream().map(Enum::name).map(String::toLowerCase)
                 .collect(joining(","));
+    }
+
+    private Entity toEntity(final EntityResponse response) {
+        return Entity.builder()
+                .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
+                .processName(ProcessName.from(response.getProcessName()))
+                .workflow(Workflow.from(response.getWorkflow()).orElseThrow())
+                .value(response.getValue())
+                .source(Source.from(response.getSource()))
+                .metricUnit(MetricUnit.from(response.getMetricUnit()))
+                .build();
+    }
+
+    private Productivity toProductivity(final ProductivityResponse response) {
+        return Productivity.builder()
+                .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
+                .processName(ProcessName.from(response.getProcessName()))
+                .workflow(Workflow.from(response.getWorkflow()).orElseThrow())
+                .value(response.getValue())
+                .source(Source.from(response.getSource()))
+                .metricUnit(MetricUnit.from(response.getMetricUnit()))
+                .abilityLevel(response.getAbilityLevel())
+                .build();
     }
 }

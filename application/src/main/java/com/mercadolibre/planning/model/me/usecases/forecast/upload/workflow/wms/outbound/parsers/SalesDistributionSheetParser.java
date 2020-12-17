@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getCellAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getStringValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.PLANNING_DISTRIBUTION;
 import static java.util.stream.Collectors.toList;
 
@@ -74,7 +74,7 @@ public class SalesDistributionSheetParser implements SheetParser {
                 .metadata(List.of(
                         Metadata.builder()
                                 .key(ForecastColumnName.CARRIER_ID.name())
-                                .value(getCellAt(row, 3).getValue())
+                                .value(getStringValueAt(sheet,row, 3))
                                 .build(),
                         Metadata.builder()
                                 .key(ForecastColumnName.SERVICE_ID.name())
@@ -82,7 +82,7 @@ public class SalesDistributionSheetParser implements SheetParser {
                                 .build(),
                         Metadata.builder()
                                 .key(ForecastColumnName.CANALIZATION.name())
-                                .value(getCellAt(row, 5).getValue())
+                                .value(getStringValueAt(sheet,row, 5))
                                 .build()
                 ))
                 .quantity(getIntValueAt(sheet, row,6))

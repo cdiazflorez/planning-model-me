@@ -1,18 +1,18 @@
 package com.mercadolibre.planning.model.me.usecases.currentstatus.dtos;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.ZonedDateTime;
 
 @SuperBuilder
-@Data
+@Getter
 public class GetMonitorInput {
 
-    private String warehouseId;
-    private Workflow workflow;
-    private ZonedDateTime dateTo;
-    private ZonedDateTime dateFrom;
+    private final String warehouseId;
+    private final Workflow workflow;
+    private final ZonedDateTime dateTo;
+    private final ZonedDateTime dateFrom;
 
 }

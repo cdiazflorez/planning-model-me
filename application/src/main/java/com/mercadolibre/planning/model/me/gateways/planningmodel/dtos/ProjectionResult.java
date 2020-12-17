@@ -1,9 +1,7 @@
-package com.mercadolibre.planning.model.me.entities.projection;
+package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
 import com.mercadolibre.planning.model.me.utils.CustomDateZoneDeserializer;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
