@@ -4,5 +4,6 @@ public enum RestPool {
     PLANNING_MODEL,
     OUTBOUND_UNIT,
     LOGISTIC_CENTER,
-    AUTHORIZATION;
+    AUTHORIZATION,
+    ANALYTICS;
 }

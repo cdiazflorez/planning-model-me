@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
 
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.ANALYTICS;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AUTHORIZATION;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT;
@@ -24,13 +25,15 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PL
         RestClientConfig.PlanningModelClientProperties.class,
         RestClientConfig.OutboundUnitRestClientProperties.class,
         RestClientConfig.LogisticCenterClientProperties.class,
-        RestClientConfig.AuthorizationClientProperties.class
+        RestClientConfig.AuthorizationClientProperties.class,
+        RestClientConfig.AnalyticsClientProperties.class
 })
 public class RestClientConfig {
     private PlanningModelClientProperties planningModelClientProperties;
     private OutboundUnitRestClientProperties outboundUnitProperties;
     private LogisticCenterClientProperties logisticCenterClientProperties;
     private AuthorizationClientProperties authorizationClientProperties;
+    private AnalyticsClientProperties analyticsClientProperties;
 
     @Bean
     public RestClient restClient() throws IOException {
@@ -45,7 +48,10 @@ public class RestClientConfig {
                                         "logistic_center", 30)),
                         restPool(AUTHORIZATION.name(),
                                 authorizationClientProperties, localCache(
-                                        "authorizations", 200))
+                                        "authorizations", 200)),
+                        restPool(ANALYTICS.name(),
+                                analyticsClientProperties, localCache(
+                                        "analytics", 200))
                 )
                 .build();
     }
@@ -93,5 +99,9 @@ public class RestClientConfig {
 
     @ConfigurationProperties("restclient.pool.authorization")
     public static class AuthorizationClientProperties extends RestClientProperties {
+    }
+    
+    @ConfigurationProperties("restclient.pool.analytics")
+    public static class AnalyticsClientProperties extends RestClientProperties {
     }
 }
