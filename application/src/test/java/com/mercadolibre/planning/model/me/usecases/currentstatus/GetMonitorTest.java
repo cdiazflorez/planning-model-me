@@ -211,7 +211,7 @@ class GetMonitorTest {
         
         assertTrue(monitorDataList.get(0) instanceof DeviationData);
         DeviationData deviationData = (DeviationData) monitorDataList.get(0);
-        assertEquals("-5.1%", deviationData.getMetrics().getDeviationPercentage().getValue());
+        assertEquals("-13.2%", deviationData.getMetrics().getDeviationPercentage().getValue());
         assertNull(deviationData.getMetrics().getDeviationPercentage().getStatus());
         assertEquals("arrow_down", deviationData.getMetrics().getDeviationPercentage().getIcon());
         assertEquals("905 uds.", deviationData.getMetrics().getDeviationUnits()
