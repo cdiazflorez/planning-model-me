@@ -45,6 +45,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_FINISH;
+import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PICKUP_FINISH;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
@@ -52,11 +54,14 @@ import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.mon
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PICKING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static java.util.Arrays.asList;
 
 @Named
 @AllArgsConstructor
 public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     
+    private static final int HOURS_OFFSET = 1;
+
     private static final String ICON_ATTRIBUTE = "icon";
 
     private static final String STATUS_ATTRIBUTE = "status";
@@ -221,8 +226,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
             final ArrayList<Process> processes) {
         final List<UnitsResume> unitsLastHour = analyticsClient
                 .getUnitsInInterval(input.getWarehouseId(), 
-                        1, Arrays.asList(AnalyticsQueryEvent.PACKING_FINISH,
-                                AnalyticsQueryEvent.PICKUP_FINISH));
+                        HOURS_OFFSET, asList(PACKING_FINISH, PICKUP_FINISH));
         unitsLastHour.forEach(unitLastHour -> addMetricToProcess(unitLastHour, processes));
         
     }

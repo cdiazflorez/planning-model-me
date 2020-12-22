@@ -198,8 +198,8 @@ class GetMonitorTest {
         
         Metric pickingThroughputMetric = picking.getMetrics().get(1);
         assertEquals(PICKING.getSubtitle(), pickingThroughputMetric.getSubtitle());
-        assertEquals(THROUGHPUT_PER_HOUR.getTitle(), pickingThroughputMetric.getTitle());
-        assertEquals(THROUGHPUT_PER_HOUR.getType(), pickingThroughputMetric.getType());
+        assertEquals("Procesamiento", pickingThroughputMetric.getTitle());
+        assertEquals("throughput_per_hour", pickingThroughputMetric.getType());
         assertEquals("3020 uds./h", pickingThroughputMetric.getValue());
 
         final Optional<Process> optionalPacking = currentStatusData.getProcesses().stream()

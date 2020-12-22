@@ -3,8 +3,7 @@ package com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitorda
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.Arrays;
-import java.util.Objects;
+import static java.util.Arrays.stream;
 
 @AllArgsConstructor
 @Getter
@@ -18,8 +17,8 @@ public enum ProcessInfo {
     private final String title;
     
     public static ProcessInfo getByTitle(String title) {
-        return Arrays.stream(ProcessInfo.values())
-                .filter(pInfo -> Objects.equals(pInfo.getTitle(), title))
+        return stream(ProcessInfo.values())
+                .filter(pInfo -> pInfo.getTitle().equalsIgnoreCase(title))
                 .findFirst()
                 .orElse(null);
     }
