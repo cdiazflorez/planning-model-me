@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.MonitorDataType.DEVIATION;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PACKING;
@@ -97,30 +96,32 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private DeviationData getDeviationData(GetMonitorInput input) {
-        List<PlanningDistributionResponse> plannedBacklogs = getPlannedBacklog(input);
+        final List<PlanningDistributionResponse> plannedBacklogs = getPlannedBacklog(input);
 
-        List<Backlog> realSales = getSales(input);
+        final List<Backlog> realSales = getSales(input);
         
-        long totalPlanned = plannedBacklogs.stream().mapToLong(planned -> planned.getTotal()).sum();
+        final long totalPlanned = plannedBacklogs.stream()
+                .mapToLong(planned -> planned.getTotal()).sum();
         
-        int totalSales = realSales.stream().mapToInt(realSale -> realSale.getQuantity()).sum();
+        final int totalSales = realSales.stream()
+                .mapToInt(realSale -> realSale.getQuantity()).sum();
         
-        long difference = Math.abs(totalPlanned - totalSales);
+        final long difference = Math.abs(totalPlanned - totalSales);
         
-        double totalDeviation = getTotalDeviation(totalPlanned, totalSales);
+        final double totalDeviation = getTotalDeviation(totalPlanned, totalSales);
         
         return buildDeviationData(totalDeviation, totalPlanned, totalSales, difference);
     }
 
-    private double getTotalDeviation(long totalBacklog,
-            int totalSales) {
-        double totalDeviation = (((double) totalSales / totalBacklog) - 1) * 100;;
+    private double getTotalDeviation(final long totalBacklog,
+            final int totalSales) {
+        final double totalDeviation = (((double) totalSales / totalBacklog) - 1) * 100;
         return Math.round(totalDeviation * 100.00) / 100.00;
     }
 
-    private DeviationData buildDeviationData(double totalDeviation, long totalPlanned,
-            int totalSales, long difference) {
-        DeviationData deviationData = DeviationData.builder().metrics(DeviationMetric.builder()
+    private DeviationData buildDeviationData(final double totalDeviation, final long totalPlanned,
+            final int totalSales, final long difference) {
+        DeviationData deviationData = new DeviationData(DeviationMetric.builder()
                 .deviationPercentage(Metric.builder()
                         .title("% Desviación FCST / Ventas")
                         .value(String.format("%.1f%s",totalDeviation,"%"))
@@ -141,9 +142,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                                 .build())
                             .build())
                         .build())
-                    .build())
-                .build();
-        deviationData.setType(DEVIATION.getType());
+                    .build());
         return deviationData;
     }
 
