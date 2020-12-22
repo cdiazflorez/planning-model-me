@@ -1,16 +1,11 @@
 package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -19,6 +14,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Processing
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
@@ -26,6 +22,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.ProcessBacklog;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.restclient.MockResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,7 +40,6 @@ import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,10 +54,10 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Met
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.mockPostUrlSuccess;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.objectMapper;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -67,21 +66,16 @@ import static com.mercadolibre.restclient.http.HttpMethod.POST;
 import static java.lang.String.format;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.of;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class PlanningModelApiClientTest extends BaseClientTest {
 
     private static final String ENTITIES_URL =
             "/planning/model/workflows/fbm-wms-outbound/entities/%s";
-    private static final String POST_FORECAST_URL = "/planning/model/workflows/%s/forecasts";
     private static final String GET_FORECAST_METADATA_URL =
             "/planning/model/workflows/%s/metadata";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
@@ -289,52 +283,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals("ARTW01",entityParams.get("warehouse_id"));
         assertNotNull(entityParams.get("date_from"));
         assertNotNull(entityParams.get("date_to"));
-    }
-
-    @Test
-    void testPostForecastOk() throws JSONException {
-        // GIVEN
-        final String date = new Date().toString();
-        final Forecast forecast = Forecast.builder()
-                .metadata(List.of(
-                        Metadata.builder()
-                                .key("warehouse_id")
-                                .value(WAREHOUSE_ID)
-                                .build()
-                ))
-                .build();
-        final JSONObject request = new JSONObject()
-                .put("workflow", FBM_WMS_OUTBOUND)
-                .put("last_update", date)
-                .put("metadata", new JSONArray()
-                        .put(new JSONObject().put("warehouse_id", WAREHOUSE_ID))
-                );
-
-        mockPostUrlSuccess(format(BASE_URL + POST_FORECAST_URL, FBM_WMS_OUTBOUND), request);
-
-        // WHEN - THEN
-        assertDoesNotThrow(() -> client.postForecast(FBM_WMS_OUTBOUND, forecast));
-    }
-
-    @Test
-    void testPostForecastError() throws IOException {
-        // GIVEN
-        final ObjectMapper mockedObjectMapper = mock(ObjectMapper.class);
-        this.client = new PlanningModelApiClient(getRestTestClient(), mockedObjectMapper);
-        final Forecast forecast = Forecast.builder()
-                .metadata(List.of(
-                        Metadata.builder()
-                                .key("warehouse_id")
-                                .value(WAREHOUSE_ID)
-                                .build()
-                ))
-                .build();
-
-        when(mockedObjectMapper.writeValueAsBytes(forecast))
-                .thenThrow(JsonProcessingException.class);
-
-        // WHEN - THEN
-        assertThrows(ClientException.class,() -> client.postForecast(FBM_WMS_OUTBOUND, forecast));
     }
 
     @Test
@@ -678,7 +626,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 cpt3Response.getDateOut().format(ISO_OFFSET_DATE_TIME));
     }
 
-
     @Test
     void testGetSuggestedWaves() throws JSONException {
         // GIVEN
@@ -720,6 +667,67 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
         assertEquals(50, suggestedWaves.get(2).getQuantity());
         assertEquals(MULTI_BATCH_DISTRIBUTION, suggestedWaves.get(2).getWaveCardinality());
+    }
+
+    @Test
+    public void testGetBacklogProjection() throws IOException {
+        // GIVEN
+        final BacklogProjectionRequest request = BacklogProjectionRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .dateFrom(ZonedDateTime.now())
+                .dateTo(ZonedDateTime.now().plusDays(1))
+                .workflow(FBM_WMS_OUTBOUND)
+                .processName(List.of(WAVING, PICKING, PACKING))
+                .currentBacklog(List.of(
+                        new ProcessBacklog(WAVING, 100),
+                        new ProcessBacklog(PICKING, 150),
+                        new ProcessBacklog(PACKING, 200)))
+                .build();
+
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(format(BASE_URL + RUN_PROJECTIONS_URL + "/backlogs", FBM_WMS_OUTBOUND))
+                .withStatusCode(HttpStatus.OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(getResourceAsString("get_backlog_projection_api_response.json"))
+                .build();
+
+        // WHEN
+        final List<BacklogProjectionResponse> response = client.getBacklogProjection(request);
+
+        // THEN
+        assertEquals(3, response.size());
+        assertEquals(WAVING, response.get(0).getProcessName());
+        assertEquals(PICKING, response.get(1).getProcessName());
+        assertEquals(PACKING, response.get(2).getProcessName());
+
+        final List<ProjectionValue> wavingValues = response.get(0).getValues();
+        final List<ProjectionValue> pickingValues = response.get(1).getValues();
+        final List<ProjectionValue> packingValues = response.get(2).getValues();
+
+        assertEquals(3, wavingValues.size());
+        assertEquals(ZonedDateTime.parse("2020-01-01T10:00:00Z"), wavingValues.get(0).getDate());
+        assertEquals(1000, wavingValues.get(0).getQuantity());
+        assertEquals(ZonedDateTime.parse("2020-01-01T11:00:00Z"), wavingValues.get(1).getDate());
+        assertEquals(2000, wavingValues.get(1).getQuantity());
+        assertEquals(ZonedDateTime.parse("2020-01-01T12:00:00Z"), wavingValues.get(2).getDate());
+        assertEquals(3000, wavingValues.get(2).getQuantity());
+
+        assertEquals(3, pickingValues.size());
+        assertEquals(ZonedDateTime.parse("2020-01-01T10:00:00Z"), pickingValues.get(0).getDate());
+        assertEquals(1100, pickingValues.get(0).getQuantity());
+        assertEquals(ZonedDateTime.parse("2020-01-01T11:00:00Z"), pickingValues.get(1).getDate());
+        assertEquals(2100, pickingValues.get(1).getQuantity());
+        assertEquals(ZonedDateTime.parse("2020-01-01T12:00:00Z"), pickingValues.get(2).getDate());
+        assertEquals(3100, pickingValues.get(2).getQuantity());
+
+        assertEquals(3, packingValues.size());
+        assertEquals(ZonedDateTime.parse("2020-01-01T10:00:00Z"), packingValues.get(0).getDate());
+        assertEquals(1200, packingValues.get(0).getQuantity());
+        assertEquals(ZonedDateTime.parse("2020-01-01T11:00:00Z"), packingValues.get(1).getDate());
+        assertEquals(2200, packingValues.get(1).getQuantity());
+        assertEquals(ZonedDateTime.parse("2020-01-01T12:00:00Z"), packingValues.get(2).getDate());
+        assertEquals(3200, packingValues.get(2).getQuantity());
     }
 
     private static Stream<Arguments> entityRequests() {

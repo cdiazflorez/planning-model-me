@@ -81,8 +81,8 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                 dateFrom.format(TIME_FORMATTER) + "-" + dateTo.format(TIME_FORMATTER);
 
         final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", "Sig. hora " + nextHour),
-                new ColumnHeader("column_2", "Tamaño de onda")
+                new ColumnHeader("column_1", "Sig. hora " + nextHour, null),
+                new ColumnHeader("column_2", "Tamaño de onda", null)
         );
         final List<Map<String, Object>> data = List.of(
                 createSuggestedWaveEntry(suggestedWaves, MONO_ORDER_DISTRIBUTION),

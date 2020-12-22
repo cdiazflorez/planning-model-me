@@ -1,0 +1,43 @@
+[{
+    "process_name": "waving",
+    "values": [{
+            "date": "2020-01-01T10:00:00Z",
+            "quantity": 1000
+        },
+        {
+            "date": "2020-01-01T11:00:00Z",
+            "quantity": 2000
+        },
+        {
+            "date": "2020-01-01T12:00:00Z",
+            "quantity": 3000
+        }]
+}, {
+    "process_name": "picking",
+    "values": [{
+            "date": "2020-01-01T10:00:00Z",
+            "quantity": 1100
+        },
+        {
+            "date": "2020-01-01T11:00:00Z",
+            "quantity": 2100
+        },
+        {
+            "date": "2020-01-01T12:00:00Z",
+            "quantity": 3100
+        }]
+}, {
+    "process_name": "packing",
+    "values": [{
+            "date": "2020-01-01T10:00:00Z",
+            "quantity": 1200
+        },
+        {
+            "date": "2020-01-01T11:00:00Z",
+            "quantity": 2200
+        },
+        {
+            "date": "2020-01-01T12:00:00Z",
+            "quantity": 3200
+        }]
+}]

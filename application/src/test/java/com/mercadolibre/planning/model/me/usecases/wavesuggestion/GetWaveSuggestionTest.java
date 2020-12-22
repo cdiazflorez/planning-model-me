@@ -71,7 +71,7 @@ class GetWaveSuggestionTest {
                 utcDateTimeFrom.plusHours(25)
         )).thenReturn(List.of(
                 ProcessBacklog.builder()
-                        .process(ProcessInfo.OUTBOUND_PLANNING.getStatus())
+                        .process(OUTBOUND_PLANNING.getStatus())
                         .quantity(2232)
                         .build()
         ));
