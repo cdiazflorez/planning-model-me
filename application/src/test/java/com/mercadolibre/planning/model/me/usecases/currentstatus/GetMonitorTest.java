@@ -1,8 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.currentstatus;
 
+import com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
+import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -30,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +42,7 @@ import java.util.TimeZone;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.MonitorDataType.CURRENT_STATUS;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PICKING;
@@ -79,6 +84,9 @@ class GetMonitorTest {
     @Mock
     private PlanningModelGateway planningModelGateway;
 
+    @Mock
+    private AnalyticsGateway analyticsGateway;
+    
     private static final TimeZone TIME_ZONE = getDefault();
 
     @Test
@@ -144,6 +152,21 @@ class GetMonitorTest {
                         .quantity(2232)
                         .build()
         );
+        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1, 
+                Arrays.asList(AnalyticsQueryEvent.PACKING_FINISH,
+                        AnalyticsQueryEvent.PICKUP_FINISH)
+        )).thenReturn(
+                List.of(UnitsResume.builder()
+                        .process(AnalyticsQueryEvent.PACKING_FINISH)
+                        .eventCount(120)
+                        .unitCount(150)
+                        .build(),
+                        UnitsResume.builder()
+                        .process(AnalyticsQueryEvent.PICKUP_FINISH)
+                        .eventCount(2020)
+                        .unitCount(3020)
+                        .build()) 
+        );
 
         // WHEN
         final Monitor monitor = getMonitor.execute(input);
@@ -172,6 +195,12 @@ class GetMonitorTest {
         assertEquals(BACKLOG.getTitle(), pickingBacklogMetric.getTitle());
         assertEquals(BACKLOG.getType(), pickingBacklogMetric.getType());
         assertEquals("2.232 uds.", pickingBacklogMetric.getValue());
+        
+        Metric pickingThroughputMetric = picking.getMetrics().get(1);
+        assertEquals(PICKING.getSubtitle(), pickingThroughputMetric.getSubtitle());
+        assertEquals("Procesamiento", pickingThroughputMetric.getTitle());
+        assertEquals("throughput_per_hour", pickingThroughputMetric.getType());
+        assertEquals("3020 uds./h", pickingThroughputMetric.getValue());
 
         final Optional<Process> optionalPacking = currentStatusData.getProcesses().stream()
                 .filter(t -> PACKING.getTitle().equals(t.getTitle()))
@@ -184,6 +213,12 @@ class GetMonitorTest {
         assertEquals(BACKLOG.getTitle(), packingBacklogMetric.getTitle());
         assertEquals(BACKLOG.getType(), packingBacklogMetric.getType());
         assertEquals("1.442 uds.", packingBacklogMetric.getValue());
+        
+        Metric packingThroughputMetric = packing.getMetrics().get(1);
+        assertEquals(PACKING.getSubtitle(), packingThroughputMetric.getSubtitle());
+        assertEquals(THROUGHPUT_PER_HOUR.getTitle(), packingThroughputMetric.getTitle());
+        assertEquals(THROUGHPUT_PER_HOUR.getType(), packingThroughputMetric.getType());
+        assertEquals("150 uds./h", packingThroughputMetric.getValue());
 
         final Optional<Process> optionalWallIn = currentStatusData.getProcesses().stream()
                 .filter(t -> WALL_IN.getTitle().equals(t.getTitle()))

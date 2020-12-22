@@ -1,8 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.currentstatus;
 
+import com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
+import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -35,23 +38,30 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_FINISH;
+import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PICKUP_FINISH;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PICKING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static java.util.Arrays.asList;
 
 @Named
 @AllArgsConstructor
 public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     
+    private static final int HOURS_OFFSET = 1;
+
     private static final String ICON_ATTRIBUTE = "icon";
 
     private static final String STATUS_ATTRIBUTE = "status";
@@ -63,6 +73,8 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     final BacklogGatewayProvider backlogGatewayProvider;
     
     protected final LogisticCenterGateway logisticCenterGateway;
+    
+    protected final AnalyticsGateway analyticsClient;
     
     private GetSales getSales;
 
@@ -177,7 +189,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     private CurrentStatusData getCurrentStatusData(GetMonitorInput input) {
         final ArrayList<Process> processes = new ArrayList<>();
         addMetricBacklog(input, processes);
-        addThroughputMetric();
+        addThroughputMetric(input, processes);
         addProductivityMetric();
         return CurrentStatusData.builder().processes(processes).build();
     }
@@ -210,8 +222,35 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         completeProcess(processes);
     }
 
-    private void addThroughputMetric() {
-        //TODO Get and add throughput metric
+    private void addThroughputMetric(final GetMonitorInput input, 
+            final ArrayList<Process> processes) {
+        final List<UnitsResume> unitsLastHour = analyticsClient
+                .getUnitsInInterval(input.getWarehouseId(), 
+                        HOURS_OFFSET, asList(PACKING_FINISH, PICKUP_FINISH));
+        unitsLastHour.forEach(unitLastHour -> addMetricToProcess(unitLastHour, processes));
+        
+    }
+
+    private void addMetricToProcess(final UnitsResume unitLastHour, 
+            final ArrayList<Process> processes) {
+        final AnalyticsQueryEvent eventType = unitLastHour.getProcess();
+        final Process relatedProcess = processes.stream().filter(process 
+                -> Objects.equals(process.getTitle(), 
+                        eventType.getRelatedProcess()))
+                .findFirst()
+                .orElse(null);
+        
+        if (Objects.nonNull(relatedProcess)) {
+            final Metric metric = Metric.builder()
+                    .title(THROUGHPUT_PER_HOUR.getTitle())
+                    .type(THROUGHPUT_PER_HOUR.getType())
+                    .subtitle(ProcessInfo.getByTitle(eventType
+                           .getRelatedProcess())
+                           .getSubtitle())
+                    .value(unitLastHour.getUnitCount() + " uds./h")                   
+                    .build();
+            relatedProcess.getMetrics().add(metric);                    
+        }
     }
 
     private void addProductivityMetric() {
@@ -238,7 +277,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         if (processBacklog.getProcess().equalsIgnoreCase(processInfo.getStatus())) {
             final String quantity = NumberFormat.getNumberInstance(Locale.GERMAN)
                             .format(processBacklog.getQuantity());
-            final Metric metric = Metric.builder()
+            final Metric backlogMetric = Metric.builder()
                     .type(BACKLOG.getType())
                     .title(BACKLOG.getTitle())
                     .subtitle(processInfo.getSubtitle())
@@ -246,8 +285,9 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                     .build();
             final Process process = Process.builder()
                     .title(processInfo.getTitle())
-                    .metrics(List.of(metric))
+                    .metrics(new LinkedList<>())
                     .build();
+            process.getMetrics().add(backlogMetric);
             return Optional.of(process);
         }
         return Optional.empty();
