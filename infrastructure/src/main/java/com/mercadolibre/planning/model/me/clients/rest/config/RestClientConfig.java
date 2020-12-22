@@ -18,6 +18,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AU
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_FORECAST;
 
 @AllArgsConstructor
 @Configuration
@@ -26,7 +27,8 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PL
         RestClientConfig.OutboundUnitRestClientProperties.class,
         RestClientConfig.LogisticCenterClientProperties.class,
         RestClientConfig.AuthorizationClientProperties.class,
-        RestClientConfig.AnalyticsClientProperties.class
+        RestClientConfig.AnalyticsClientProperties.class,
+        RestClientConfig.PlanningModelForecastClientProperties.class
 })
 public class RestClientConfig {
     private PlanningModelClientProperties planningModelClientProperties;
@@ -34,6 +36,7 @@ public class RestClientConfig {
     private LogisticCenterClientProperties logisticCenterClientProperties;
     private AuthorizationClientProperties authorizationClientProperties;
     private AnalyticsClientProperties analyticsClientProperties;
+    private PlanningModelForecastClientProperties planningModelForecastClientProperties;
 
     @Bean
     public RestClient restClient() throws IOException {
@@ -42,7 +45,6 @@ public class RestClientConfig {
                 .withPool(
                         restPool(PLANNING_MODEL.name(), planningModelClientProperties),
                         restPool(OUTBOUND_UNIT.name(), outboundUnitProperties),
-                        restPool(PLANNING_MODEL.name(), planningModelClientProperties),
                         restPool(LOGISTIC_CENTER.name(),
                                 logisticCenterClientProperties, localCache(
                                         "logistic_center", 30)),
@@ -51,7 +53,9 @@ public class RestClientConfig {
                                         "authorizations", 200)),
                         restPool(ANALYTICS.name(),
                                 analyticsClientProperties, localCache(
-                                        "analytics", 200))
+                                        "analytics", 200)),
+                        restPool(PLANNING_MODEL_FORECAST.name(),
+                                planningModelForecastClientProperties)
                 )
                 .build();
     }
@@ -103,5 +107,10 @@ public class RestClientConfig {
     
     @ConfigurationProperties("restclient.pool.analytics")
     public static class AnalyticsClientProperties extends RestClientProperties {
+        
+    }
+
+    @ConfigurationProperties("restclient.pool.planning-model-forecast")
+    public static class PlanningModelForecastClientProperties extends RestClientProperties {
     }
 }

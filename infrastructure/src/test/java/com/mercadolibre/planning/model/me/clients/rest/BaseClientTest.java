@@ -36,12 +36,18 @@ public class BaseClientTest {
                 new AnalyticsClientProperties();
         analyticsClientProperties.setBaseUrl(BASE_URL);
 
+        final RestClientConfig.PlanningModelForecastClientProperties
+                planningModelForecastClientProperties = new RestClientConfig
+                .PlanningModelForecastClientProperties();
+        planningModelForecastClientProperties.setBaseUrl(BASE_URL);
+
         return new RestClientConfig(
                 planningModelClientProperties,
                 outboundUnitRestClientProperties,
                 logisticCenterClientProperties,
                 authorizationClientProperties,
-                analyticsClientProperties
+                analyticsClientProperties,
+                planningModelForecastClientProperties
         ).restClient();
     }
 

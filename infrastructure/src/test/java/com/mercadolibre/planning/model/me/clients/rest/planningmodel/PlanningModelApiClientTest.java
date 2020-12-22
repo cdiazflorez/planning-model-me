@@ -1,15 +1,11 @@
 package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -44,7 +40,6 @@ import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +58,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.mockPostUrlSuccess;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.objectMapper;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -72,21 +66,16 @@ import static com.mercadolibre.restclient.http.HttpMethod.POST;
 import static java.lang.String.format;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.of;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class PlanningModelApiClientTest extends BaseClientTest {
 
     private static final String ENTITIES_URL =
             "/planning/model/workflows/fbm-wms-outbound/entities/%s";
-    private static final String POST_FORECAST_URL = "/planning/model/workflows/%s/forecasts";
     private static final String GET_FORECAST_METADATA_URL =
             "/planning/model/workflows/%s/metadata";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
@@ -294,52 +283,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals("ARTW01",entityParams.get("warehouse_id"));
         assertNotNull(entityParams.get("date_from"));
         assertNotNull(entityParams.get("date_to"));
-    }
-
-    @Test
-    void testPostForecastOk() throws JSONException {
-        // GIVEN
-        final String date = new Date().toString();
-        final Forecast forecast = Forecast.builder()
-                .metadata(List.of(
-                        Metadata.builder()
-                                .key("warehouse_id")
-                                .value(WAREHOUSE_ID)
-                                .build()
-                ))
-                .build();
-        final JSONObject request = new JSONObject()
-                .put("workflow", FBM_WMS_OUTBOUND)
-                .put("last_update", date)
-                .put("metadata", new JSONArray()
-                        .put(new JSONObject().put("warehouse_id", WAREHOUSE_ID))
-                );
-
-        mockPostUrlSuccess(format(BASE_URL + POST_FORECAST_URL, FBM_WMS_OUTBOUND), request);
-
-        // WHEN - THEN
-        assertDoesNotThrow(() -> client.postForecast(FBM_WMS_OUTBOUND, forecast));
-    }
-
-    @Test
-    void testPostForecastError() throws IOException {
-        // GIVEN
-        final ObjectMapper mockedObjectMapper = mock(ObjectMapper.class);
-        this.client = new PlanningModelApiClient(getRestTestClient(), mockedObjectMapper);
-        final Forecast forecast = Forecast.builder()
-                .metadata(List.of(
-                        Metadata.builder()
-                                .key("warehouse_id")
-                                .value(WAREHOUSE_ID)
-                                .build()
-                ))
-                .build();
-
-        when(mockedObjectMapper.writeValueAsBytes(forecast))
-                .thenThrow(JsonProcessingException.class);
-
-        // WHEN - THEN
-        assertThrows(ClientException.class,() -> client.postForecast(FBM_WMS_OUTBOUND, forecast));
     }
 
     @Test

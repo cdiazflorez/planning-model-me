@@ -13,9 +13,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -137,18 +135,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         params.put(DATE_FROM, dateFrom.format(ISO_OFFSET_DATE_TIME));
         params.put(DATE_TO, dateTo.format(ISO_OFFSET_DATE_TIME));
         return params;
-    }
-
-    @Override
-    public ForecastResponse postForecast(final Workflow workflow, final Forecast forecastDto) {
-        final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, workflow) + "/forecasts")
-                .POST(requestSupplier(forecastDto))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK, HttpStatus.CREATED))
-                .build();
-
-        return send(request, response -> response.getData(new TypeReference<>() {
-        }));
     }
 
     @Override
