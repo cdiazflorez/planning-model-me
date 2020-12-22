@@ -1,5 +1,15 @@
 {
   "title": "Test",
+    "tabs": [
+        {
+            "type": "cpt",
+            "title": "Cumplimiento de CPTs"
+        },
+        {
+            "type": "backlog",
+            "title": "Backlogs"
+        }
+    ],
   "simple_table_1": {
     "title": "Ondas sugeridas",
     "columns": [

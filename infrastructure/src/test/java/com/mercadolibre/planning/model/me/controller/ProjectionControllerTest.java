@@ -39,6 +39,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
@@ -78,7 +79,8 @@ public class ProjectionControllerTest {
                                 mockSuggestedWaves(),
                                 mockComplexTable(),
                                 mockProjectionDetailTable(),
-                                mockProjectionChart()
+                                mockProjectionChart(),
+                                createTabs()
                         )
             );
 
@@ -131,7 +133,8 @@ public class ProjectionControllerTest {
                         mockSuggestedWaves(),
                         mockComplexTable(),
                         mockProjectionDetailTable(),
-                        mockProjectionChart()));
+                        mockProjectionChart(),
+                        createTabs()));
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders

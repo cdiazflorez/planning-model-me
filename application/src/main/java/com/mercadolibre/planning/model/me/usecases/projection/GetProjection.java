@@ -35,6 +35,7 @@ import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
+import com.mercadolibre.planning.model.me.utils.ResponseUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -65,6 +66,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZo
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -189,7 +191,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 new Chart(
                         processingTime,
                         toChartData(projections, config.getZoneId(), utcDateTo)
-                )
+                ),
+                createTabs()
         );
     }
 
@@ -244,7 +247,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         return tableData;
     }
 
-    
+
 
     private Map<String, Object> addTotalsRow(List<Backlog> backlogs,
             List<Double> calculatedDeviations) {
@@ -264,7 +267,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     private String calculateDeviationTotal(
             List<Double> calculatedDeviations) {
         final double totalDeviation = calculatedDeviations.stream()
-                .reduce(0.0, (subtotal, element) -> subtotal + element); 
+                .reduce(0.0, (subtotal, element) -> subtotal + element);
         return String.format("%.1f%s", Math.round(totalDeviation * 100.00) / 100.00, "%");
     }
 
@@ -279,7 +282,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             final ProcessingTime processingTime,
             final ZoneId zoneId,
             final ProjectionResult projection,
-            final boolean hasSimulatedResults, 
+            final boolean hasSimulatedResults,
             List<Double> calculatedDeviations) {
         final ZonedDateTime cpt = projection.getDate();
         final ZonedDateTime projectedEndDate = projection.getProjectedEndDate();
@@ -291,7 +294,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 "style", getStyle(cpt, projectedEndDate, processingTime),
                 "column_1", convertToTimeZone(zoneId, cpt).format(CPT_HOUR_FORMAT),
                 "column_2", String.valueOf(backlog),
-                "column_3", getDeviation(cpt, soldItems, planningDistribution, 
+                "column_3", getDeviation(cpt, soldItems, planningDistribution,
                         calculatedDeviations),
                 "column_4", projectedEndDate == null
                         ? "Excede las 24hs"
@@ -344,7 +347,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                 final int backlogQuantity,
                                 final List<PlanningDistributionResponse> planningDistribution,
                                 final List<Double> calculatedDeviations) {
-        final double deviation = getNumericDeviation(cpt, backlogQuantity, 
+        final double deviation = getNumericDeviation(cpt, backlogQuantity,
                 planningDistribution);
         calculatedDeviations.add(deviation);
         return String.format("%.1f%s", Math.round(deviation * 100.00) / 100.00, "%");
