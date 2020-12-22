@@ -227,16 +227,17 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         
     }
 
-    private void addMetricToProcess(UnitsResume unitLastHour, ArrayList<Process> processes) {
-        AnalyticsQueryEvent eventType = unitLastHour.getProcess();
-        Process relatedProcess = processes.stream().filter(process 
+    private void addMetricToProcess(final UnitsResume unitLastHour, 
+            final ArrayList<Process> processes) {
+        final AnalyticsQueryEvent eventType = unitLastHour.getProcess();
+        final Process relatedProcess = processes.stream().filter(process 
                 -> Objects.equals(process.getTitle(), 
                         eventType.getRelatedProcess()))
                 .findFirst()
                 .orElse(null);
         
         if (Objects.nonNull(relatedProcess)) {
-            Metric metric = Metric.builder()
+            final Metric metric = Metric.builder()
                     .title(THROUGHPUT_PER_HOUR.getTitle())
                     .type(THROUGHPUT_PER_HOUR.getType())
                     .subtitle(ProcessInfo.getByTitle(eventType

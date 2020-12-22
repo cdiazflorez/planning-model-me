@@ -10,13 +10,13 @@ public enum AnalyticsQueryEvent {
     PICKUP_FINISH("Picking"),
     PACKING_FINISH("Packing");
     
-    private String relatedProcess;
+    private final String relatedProcess;
     
     public String getName() {
         return name().toLowerCase();
     }
 
-    public static AnalyticsQueryEvent fromString(String process) {
+    public static AnalyticsQueryEvent fromString(final String process) {
         return valueOf(process.toUpperCase());
     }
 }
