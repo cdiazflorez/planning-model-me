@@ -11,7 +11,8 @@ public enum EntityType {
     HEADCOUNT("Headcount"),
     THROUGHPUT("Throughput"),
     BACKLOG(null),
-    ORDER_DISTRIBUTION(null);
+    ORDER_DISTRIBUTION(null),
+    REMAINING_PROCESSING(null);
 
     private String title;
 

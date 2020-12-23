@@ -8,6 +8,8 @@ import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatew
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -26,9 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.REMAINING_PROCESSING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -87,6 +91,30 @@ public class GetBacklogProjectionTest {
             );
 
         final ZonedDateTime firstDate = getNextHour(A_DATE);
+
+        when(planningModel.getEntities(EntityRequest.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .processName(List.of(PICKING))
+                .entityType(REMAINING_PROCESSING)
+                .dateFrom(A_DATE)
+                .dateTo(A_DATE.plusHours(25))
+                .build())
+        ).thenReturn(List.of(
+                Entity.builder()
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .processName(PICKING)
+                        .date(firstDate)
+                        .value(150)
+                        .build(),
+                Entity.builder()
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .processName(PICKING)
+                        .date(firstDate.plusHours(1))
+                        .value(210)
+                        .build()
+        ));
+
         when(planningModel.getBacklogProjection(BacklogProjectionRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(WORKFLOW)
@@ -99,16 +127,16 @@ public class GetBacklogProjectionTest {
                         new CurrentBacklog(PACKING, 1442)))
                 .build())).thenReturn(List.of(
                         new BacklogProjectionResponse(WAVING, List.of(
-                                new ProjectionValue(firstDate, 100, "forecast"),
-                                new ProjectionValue(firstDate.plusHours(1), 200, "forecast")
+                                new ProjectionValue(firstDate, 100),
+                                new ProjectionValue(firstDate.plusHours(1), 200)
                         )),
                         new BacklogProjectionResponse(PICKING, List.of(
-                                new ProjectionValue(firstDate, 120, "forecast"),
-                                new ProjectionValue(firstDate.plusHours(1), 220, "forecast")
+                                new ProjectionValue(firstDate, 120),
+                                new ProjectionValue(firstDate.plusHours(1), 220)
                         )),
                         new BacklogProjectionResponse(PACKING, List.of(
-                                new ProjectionValue(firstDate, 130, "forecast"),
-                                new ProjectionValue(firstDate.plusHours(1), 230, "forecast")
+                                new ProjectionValue(firstDate, 130),
+                                new ProjectionValue(firstDate.plusHours(1), 230)
                         ))
         ));
 
@@ -148,8 +176,8 @@ public class GetBacklogProjectionTest {
         assertEquals(2, otherProcessesSimpleTable.getData().size());
 
         final Map<String, Object> rtwTargetData = wavingSimpleTable.getData().get(0);
-        assertEquals("0", rtwTargetData.get("column_2"));
-        assertEquals("0", rtwTargetData.get("column_3"));
+        assertEquals("150", rtwTargetData.get("column_2"));
+        assertEquals("210", rtwTargetData.get("column_3"));
         assertEquals("0", rtwTargetData.get("column_4"));
 
         final Map<String, Object> rtwRealData = wavingSimpleTable.getData().get(1);

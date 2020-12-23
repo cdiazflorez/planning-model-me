@@ -11,6 +11,8 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -31,7 +33,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.REMAINING_PROCESSING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
@@ -41,7 +45,6 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZo
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 @Named
@@ -107,15 +110,26 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
 
     private BacklogProjection mapResponse(final BacklogProjectionInput input,
                                           final List<BacklogProjectionResponse> projections) {
+        final ZonedDateTime dateFrom = input.getDateFrom();
         final ZoneId zoneId = logisticCenter.getConfiguration(input.getWarehouseId()).getZoneId();
         final List<ColumnHeader> headers = createColumnHeaders(
-                convertToTimeZone(zoneId, getNextHour(input.getDateFrom())), HOURS_TO_SHOW);
+                convertToTimeZone(zoneId, getNextHour(dateFrom)), HOURS_TO_SHOW);
+
+        final List<Entity> remainingProcessing = planningModel.getEntities(EntityRequest.builder()
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
+                .processName(List.of(PICKING))
+                .entityType(REMAINING_PROCESSING)
+                .dateFrom(dateFrom)
+                .dateTo(dateFrom.plusHours(HOURS_TO_SHOW))
+                .build());
 
         return com.mercadolibre.planning.model.me.entities.projection.BacklogProjection.builder()
                 .title("Proyecciones")
                 .tabs(ResponseUtils.createTabs())
                 .selections(createSelections(input.getProcessName()))
-                .simpleTable1(createWavingTable(zoneId, headers, projections.get(0)))
+                .simpleTable1(createWavingTable(
+                        zoneId, headers, projections.get(0), remainingProcessing))
                 .simpleTable2(createProcessTable(zoneId, headers, projections))
                 .build();
     }
@@ -135,16 +149,17 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
 
     private SimpleTable createWavingTable(final ZoneId zoneId,
                                           final List<ColumnHeader> headers,
-                                          final BacklogProjectionResponse projection) {
-
+                                          final BacklogProjectionResponse projection,
+                                          final List<Entity> remainingProcessing) {
         return new SimpleTable("Ready to wave FCST vs Real", headers, List.of(
                 createTableValues(
                         zoneId,
                         Map.of("title","FCST","subtitle","(uds.)"),
                         headers,
-                        projection.getValues().stream()
-                                .map(e -> new ProjectionValue(e.getDate(), 0, null))
-                                .collect(toList())),
+                        remainingProcessing.stream()
+                                .map(ProjectionValue::fromEntity)
+                                .collect(Collectors.toList())
+                ),
                 createTableValues(
                         zoneId,
                         Map.of("title","Real","subtitle","(uds.)"),
