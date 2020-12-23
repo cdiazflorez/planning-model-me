@@ -268,7 +268,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     }
 
     private String calculateDeviationTotal(
-            long totalForecast, int totalRealSales) {
+            final long totalForecast, final int totalRealSales) {
         if (totalForecast == 0) {
             return "0%";
         }
