@@ -59,7 +59,7 @@ class MonitorControllerTest {
     private AuthorizeUser authorizeUser;
 
     @Test
-    void testSaveSimulation() throws Exception {
+    void testGetMonitors() throws Exception {
         // GIVEN
         when(getMonitor.execute(any()))
                 .thenReturn(mockCurrentStatus());

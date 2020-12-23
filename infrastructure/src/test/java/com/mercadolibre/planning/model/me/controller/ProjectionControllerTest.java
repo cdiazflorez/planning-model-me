@@ -15,7 +15,7 @@ import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.GetForecastProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.GetCptProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
@@ -40,6 +40,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
@@ -64,65 +65,10 @@ public class ProjectionControllerTest {
     private AuthorizeUser authorizeUser;
 
     @MockBean
-    private GetForecastProjection getProjection;
+    private GetCptProjection getProjection;
 
     @MockBean
     private GetBacklogProjection getBacklogProjection;
-
-    @Test
-    void getProjectionOk() throws Exception {
-        // GIVEN
-        when(getProjection.execute(any(GetProjectionInputDto.class)))
-                .thenReturn(
-                        new Projection(
-                                "Test",
-                                mockSuggestedWaves(),
-                                mockComplexTable(),
-                                mockProjectionDetailTable(),
-                                mockProjectionChart(),
-                                createTabs()
-                        )
-            );
-
-        // WHEN
-        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections")
-                .param("warehouse_id", WAREHOUSE_ID)
-                .param("caller.id", String.valueOf(USER_ID))
-                .contentType(APPLICATION_JSON)
-        );
-
-        // THEN
-        result.andExpect(status().isOk());
-        result.andExpect(content().json(getResourceAsString("get_projection_response.json")));
-
-        verify(getProjection).execute(GetProjectionInputDto.builder()
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId(WAREHOUSE_ID)
-                .build()
-        );
-
-        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
-    }
-
-    @Test
-    void getProjectionUserUnauthorized() throws Exception {
-        // GIVEN
-        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
-                .thenThrow(UserNotAuthorizedException.class);
-
-        // WHEN
-        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections")
-                .param("warehouse_id", WAREHOUSE_ID)
-                .param("caller.id", String.valueOf(USER_ID))
-                .contentType(APPLICATION_JSON)
-        );
-
-        // THEN
-        result.andExpect(status().isForbidden());
-        verifyNoInteractions(getProjection);
-    }
 
     @Test
     void getCptProjectionOk() throws Exception {
@@ -189,10 +135,12 @@ public class ProjectionControllerTest {
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
                 .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/backlog")
+                .contentType(APPLICATION_JSON)
                 .param("warehouse_id", WAREHOUSE_ID)
                 .param("caller.id", String.valueOf(USER_ID))
                 .param("process_name", "waving", "picking", "packing")
-                .contentType(APPLICATION_JSON)
+                .param("date_from", A_DATE.toString())
+                .param("date_to", A_DATE.plusHours(25).toString())
         );
 
         // THEN
@@ -214,6 +162,9 @@ public class ProjectionControllerTest {
                 .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/backlog")
                 .param("warehouse_id", WAREHOUSE_ID)
                 .param("caller.id", String.valueOf(USER_ID))
+                .param("process_name", "waving", "picking", "packing")
+                .param("date_from", A_DATE.toString())
+                .param("date_to", A_DATE.plusHours(25).toString())
                 .contentType(APPLICATION_JSON)
         );
 

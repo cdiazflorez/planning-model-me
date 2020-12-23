@@ -4,6 +4,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import static java.time.ZoneOffset.UTC;
+import static java.time.temporal.ChronoUnit.HOURS;
 
 public class DateUtils {
 
@@ -26,5 +27,9 @@ public class DateUtils {
 
     public static ZonedDateTime convertToUtc(final ZonedDateTime date) {
         return date.withZoneSameInstant(UTC);
+    }
+
+    public static ZonedDateTime getNextHour(final ZonedDateTime dateTime) {
+        return dateTime.truncatedTo(HOURS).plusHours(1);
     }
 }

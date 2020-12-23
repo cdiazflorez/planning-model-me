@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class GetForecastProjectionTest {
+public class GetCptProjectionTest {
 
     private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
     private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
@@ -84,7 +84,7 @@ public class GetForecastProjectionTest {
     private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
 
     @InjectMocks
-    private GetForecastProjection getProjection;
+    private GetCptProjection getProjection;
 
     @Mock
     private PlanningModelGateway planningModelGateway;

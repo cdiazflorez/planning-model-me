@@ -23,7 +23,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.ProcessBacklog;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.restclient.MockResponse;
@@ -679,9 +679,9 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .workflow(FBM_WMS_OUTBOUND)
                 .processName(List.of(WAVING, PICKING, PACKING))
                 .currentBacklog(List.of(
-                        new ProcessBacklog(WAVING, 100),
-                        new ProcessBacklog(PICKING, 150),
-                        new ProcessBacklog(PACKING, 200)))
+                        new CurrentBacklog(WAVING, 100),
+                        new CurrentBacklog(PICKING, 150),
+                        new CurrentBacklog(PACKING, 200)))
                 .build();
 
         MockResponse.builder()

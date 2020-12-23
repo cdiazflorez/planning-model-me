@@ -46,7 +46,7 @@ public class SimulationController {
     @PostMapping("/run")
     public ResponseEntity<Projection> run(
             @PathVariable final Workflow workflow,
-            @RequestParam("caller.id") @NotNull Long callerId,
+            @RequestParam("caller.id") final @NotNull Long callerId,
             @RequestBody @Valid final RunSimulationRequest request) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_SIMULATION)));
@@ -64,8 +64,8 @@ public class SimulationController {
     @PostMapping("/save")
     public ResponseEntity<Projection> save(
             @PathVariable final Workflow workflow,
-            @RequestParam("caller.id") @NotNull Long callerId,
-            @RequestBody @Valid final SaveSimulationRequest request) {
+            @RequestParam("caller.id") final @NotNull Long callerId,
+            @RequestBody final SaveSimulationRequest request) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_SIMULATION)));
 
