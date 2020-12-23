@@ -254,7 +254,7 @@ public class GetCptProjectionTest {
         assertEquals("Total",
                 cpt0.get("column_1"));
         assertEquals("805", cpt0.get("column_2"));
-        assertEquals("-5.1%", cpt0.get("column_3"));
+        assertEquals("-13.2%", cpt0.get("column_3"));
         assertEquals("", cpt0.get("column_4"));
     }
 
