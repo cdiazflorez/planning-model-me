@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConfigurationProperties("kraken.client")
-public class KrackenConfig {
+public class KrakenConfig {
 
     private int connectionTimeout = 1000;
     private int socketTimeout = 1000;
