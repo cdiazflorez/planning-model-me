@@ -4,8 +4,29 @@
   "subtitle_2": "Última actualización: Today...",
   "monitor_data": [
     {
-      "type": "deviation"
-    },
+    	"type":"deviation",
+	    "metrics":{
+	      "deviation_percentage":{
+	         "title":"% Desviación FCST / Ventas",
+	         "value":"-5.1%",
+	         "icon":"arrow_down"
+	      },
+	      "deviation_units":{
+	         "title":"Desviación en unidades",
+	         "value":"137 uds.",
+	         "detail":{
+	            "forecast_units":{
+	               "title":"Cantidad Forecast",
+	               "value":"1042 uds."
+	            },
+	            "current_units":{
+	               "title":"Cantidad Real",
+	               "value":"905 uds."
+	            }
+	         }
+	      }
+	   }
+	},
     {
       "type": "current_status",
       "processes": [

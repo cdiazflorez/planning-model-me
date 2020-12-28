@@ -5,7 +5,6 @@ import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.ProjectionResult;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
@@ -24,6 +23,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Processing
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class GetForecastProjectionTest {
+public class GetCptProjectionTest {
 
     private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
     private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
@@ -84,7 +84,7 @@ public class GetForecastProjectionTest {
     private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
 
     @InjectMocks
-    private GetForecastProjection getProjection;
+    private GetCptProjection getProjection;
 
     @Mock
     private PlanningModelGateway planningModelGateway;
@@ -254,7 +254,7 @@ public class GetForecastProjectionTest {
         assertEquals("Total",
                 cpt0.get("column_1"));
         assertEquals("805", cpt0.get("column_2"));
-        assertEquals("-5.1%", cpt0.get("column_3"));
+        assertEquals("-13.2%", cpt0.get("column_3"));
         assertEquals("", cpt0.get("column_4"));
     }
 
@@ -593,8 +593,8 @@ public class GetForecastProjectionTest {
                 .format(ofPattern("HH:mm"));
         final String expextedTitle = "Sig. hora " + nextHour;
         final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", expextedTitle),
-                new ColumnHeader("column_2", "Tamaño de onda")
+                new ColumnHeader("column_1", expextedTitle, null),
+                new ColumnHeader("column_2", "Tamaño de onda", null)
         );
         final List<Map<String, Object>> data = List.of(
                 Map.of("column_1",

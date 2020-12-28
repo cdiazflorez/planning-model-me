@@ -39,6 +39,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
@@ -76,7 +77,8 @@ public class SimulationControllerTest {
                         mockSuggestedWaves(),
                         mockComplexTable(),
                         null,
-                        mockProjectionChart()));
+                        mockProjectionChart(),
+                        createTabs()));
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -124,7 +126,8 @@ public class SimulationControllerTest {
                         mockSuggestedWaves(),
                         mockComplexTable(),
                         null,
-                        mockProjectionChart()));
+                        mockProjectionChart(),
+                        createTabs()));
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -271,8 +274,8 @@ public class SimulationControllerTest {
     private SimpleTable mockSuggestedWaves() {
         final String title = "Ondas sugeridas";
         final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", "Sig. hora 23:00-1:00"),
-                new ColumnHeader("column_2", "Tamaño de onda")
+                new ColumnHeader("column_1", "Sig. hora 23:00-1:00", null),
+                new ColumnHeader("column_2", "Tamaño de onda", null)
         );
         final List<Map<String, Object>> data = List.of(
                 Map.of("column_1",

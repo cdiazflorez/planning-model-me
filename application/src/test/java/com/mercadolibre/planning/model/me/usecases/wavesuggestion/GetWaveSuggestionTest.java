@@ -24,7 +24,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.StatusType.PENDING;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -65,13 +65,13 @@ class GetWaveSuggestionTest {
 
         when(backlogGatewayProvider.getBy(FBM_WMS_OUTBOUND))
                 .thenReturn(Optional.of(backlogGateway));
-        when(backlogGateway.getBacklog(List.of(Map.of("status", PENDING.toName())),
+        when(backlogGateway.getBacklog(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus())),
                 WAREHOUSE_ID,
                 utcDateTimeFrom,
                 utcDateTimeFrom.plusHours(25)
         )).thenReturn(List.of(
                 ProcessBacklog.builder()
-                        .process(ProcessInfo.OUTBOUND_PLANNING.getStatus())
+                        .process(OUTBOUND_PLANNING.getStatus())
                         .quantity(2232)
                         .build()
         ));

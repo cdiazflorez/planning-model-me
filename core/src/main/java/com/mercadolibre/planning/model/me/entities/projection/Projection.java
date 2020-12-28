@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import lombok.Value;
 
+import java.util.List;
+
 @Value
 public class Projection {
 
@@ -19,5 +21,7 @@ public class Projection {
     private SimpleTable simpleTable2;
 
     private Chart chart;
+
+    List<Tab> tabs;
 
 }

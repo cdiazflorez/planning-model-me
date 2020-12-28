@@ -39,28 +39,18 @@ public class SpreadsheetUtils {
             throw new ForecastParsingException("Error while trying to create MeliDocument", e);
         }
     }
-
-    public static MeliCell getCellAt(final MeliRow row, final int column) {
-        return row.getCellAt(column);
+    
+    public static String getStringValueAt(final MeliSheet sheet, final int row, final int column) {
+        return getCellAt(sheet, row, column).getValue();
     }
-
-    public static MeliCell getCellAt(final MeliSheet sheet, final int row, final int column) {
-        try {
-            return sheet.getRowAt(row).getCellAt(column);
-        } catch (NullPointerException e) {
-            throw new ForecastParsingException(
-                    format("Error while trying to parse cell (%s)", getCellAddress(row, column)), e
-            );
-        }
-    }
-
-    private static String getCellAddress(final int row, final int column) {
-        return new StringBuilder((char) (((int) CHAR_LETTER_A) + row))
-                .append("").append(column + 1).toString();
+    
+    public static String getStringValueAt(final MeliSheet sheet, final MeliRow row, 
+            final int column) {
+        return getCellAt(sheet, row, column).getValue();
     }
 
     public static int getIntValueAt(final MeliSheet sheet, final MeliRow row, final int column) {
-        MeliCell cell = getCellAt(row, column);;
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
 
@@ -93,7 +83,7 @@ public class SpreadsheetUtils {
     }
 
     public static long getLongValueAt(final MeliSheet sheet, final MeliRow row, final int column) {
-        MeliCell cell = getCellAt(row, column);;
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
 
@@ -110,7 +100,7 @@ public class SpreadsheetUtils {
     }
 
     public static long getLongValueAt(final MeliSheet sheet, final int row, final int column) {
-        MeliCell cell = getCellAt(sheet, row, column);;
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
 
@@ -126,7 +116,7 @@ public class SpreadsheetUtils {
 
     public static double getDoubleValueAt(final MeliSheet sheet, final int row, 
             final int column) {
-        MeliCell cell = getCellAt(sheet, row, column);;
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
 
@@ -142,7 +132,7 @@ public class SpreadsheetUtils {
     
     public static ZonedDateTime getDateTimeAt(final MeliSheet sheet, final MeliRow row,
             final int column, final ZoneId zoneId) {
-        MeliCell cell = getCellAt(row, column);
+        MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = cell.getValue();
             
@@ -215,6 +205,24 @@ public class SpreadsheetUtils {
                 .append(durationData[1]).append("M");
         Duration durationValue = Duration.parse(parserStringbuilder);
         return durationValue;
+    }
+
+    private static String getCellAddress(final int row, final int column) {
+        return String.valueOf(((char) (((int) CHAR_LETTER_A) + row)) + "" + (column + 1));
+    }
+    
+    private static MeliCell getCellAt(final MeliSheet sheet,final MeliRow row, final int column) {
+        return row.getCellAt(column);
+    }
+    
+    private static MeliCell getCellAt(final MeliSheet sheet, final int row, final int column) {
+        try {
+            return sheet.getRowAt(row).getCellAt(column);
+        } catch (NullPointerException e) {
+            throw new ForecastParsingException(
+                    format("Error while trying to parse cell (%s)", getCellAddress(row, column)), e
+            );
+        }
     }
    
 }

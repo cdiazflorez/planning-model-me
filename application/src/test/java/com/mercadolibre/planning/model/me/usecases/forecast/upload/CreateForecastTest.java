@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.upload;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelForecastGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastDto;
@@ -19,7 +19,7 @@ public class CreateForecastTest {
     private CreateForecast createForecast;
 
     @Mock
-    private PlanningModelGateway planningModelGateway;
+    private PlanningModelForecastGateway planningModelForecastGateway;
 
     @Test
     void testExecuteOk() {
@@ -33,7 +33,8 @@ public class CreateForecastTest {
         createForecast.execute(input);
 
         // THEN
-        verify(planningModelGateway).postForecast(input.getWorkflow(), input.getForecast());
+        verify(planningModelForecastGateway)
+                .postForecast(input.getWorkflow(), input.getForecast());
     }
 
 
