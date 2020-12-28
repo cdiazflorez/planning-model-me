@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.clients.rest;
 
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig;
+import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.AnalyticsClientProperties;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.AuthorizationClientProperties;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.LogisticCenterClientProperties;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.PlanningModelClientProperties;
@@ -30,12 +31,23 @@ public class BaseClientTest {
         final AuthorizationClientProperties authorizationClientProperties =
                 new AuthorizationClientProperties();
         authorizationClientProperties.setBaseUrl(BASE_URL);
+        
+        final AnalyticsClientProperties analyticsClientProperties =
+                new AnalyticsClientProperties();
+        analyticsClientProperties.setBaseUrl(BASE_URL);
+
+        final RestClientConfig.PlanningModelForecastClientProperties
+                planningModelForecastClientProperties = new RestClientConfig
+                .PlanningModelForecastClientProperties();
+        planningModelForecastClientProperties.setBaseUrl(BASE_URL);
 
         return new RestClientConfig(
                 planningModelClientProperties,
                 outboundUnitRestClientProperties,
                 logisticCenterClientProperties,
-                authorizationClientProperties
+                authorizationClientProperties,
+                analyticsClientProperties,
+                planningModelForecastClientProperties
         ).restClient();
     }
 

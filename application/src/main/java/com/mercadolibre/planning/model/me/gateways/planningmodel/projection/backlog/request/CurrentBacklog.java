@@ -4,7 +4,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import lombok.Value;
 
 @Value
-public class ProcessBacklog {
+public class CurrentBacklog {
 
     ProcessName processName;
 

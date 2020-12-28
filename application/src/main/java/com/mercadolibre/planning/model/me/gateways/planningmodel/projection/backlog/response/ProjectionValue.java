@@ -1,12 +1,17 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.utils.CustomDateZoneDeserializer;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.ZonedDateTime;
 
-@Value
+@Data
+@Builder
+@AllArgsConstructor
 public class ProjectionValue {
 
     @JsonDeserialize(using = CustomDateZoneDeserializer.class)
@@ -14,5 +19,11 @@ public class ProjectionValue {
 
     int quantity;
 
-    String source;
+    public static ProjectionValue fromEntity(final Entity entity) {
+        return ProjectionValue.builder()
+                .date(entity.getDate())
+                .quantity(entity.getValue())
+                .build();
+    }
+
 }

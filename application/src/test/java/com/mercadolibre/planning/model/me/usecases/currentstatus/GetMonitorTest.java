@@ -1,26 +1,39 @@
 package com.mercadolibre.planning.model.me.usecases.currentstatus;
 
+import com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent;
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
+import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.Monitor;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.CurrentStatusData;
+import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.DeviationData;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.MonitorData;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.Process;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
+import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +42,7 @@ import java.util.TimeZone;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.MonitorDataType.CURRENT_STATUS;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PICKING;
@@ -38,12 +52,19 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetMonitorTest {
+    
+    private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
+    private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
+    private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
+    private static final ZonedDateTime CPT_4 = getCurrentUtcDate().plusHours(6);
+    private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
 
     @InjectMocks
     private GetMonitor getMonitor;
@@ -56,12 +77,22 @@ class GetMonitorTest {
 
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
+    
+    @Mock
+    private GetSales getSales;
 
+    @Mock
+    private PlanningModelGateway planningModelGateway;
+
+    @Mock
+    private AnalyticsGateway analyticsGateway;
+    
     private static final TimeZone TIME_ZONE = getDefault();
 
     @Test
     public void testExecuteOk() {
         // GIVEN
+        final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
         final GetMonitorInput input = GetMonitorInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
@@ -104,6 +135,13 @@ class GetMonitorTest {
                         .quantity(725)
                         .build()
         );
+        
+        when(getSales.execute(new GetSalesInputDto(
+                FBM_WMS_OUTBOUND, WAREHOUSE_ID, utcCurrentTime.minusHours(28)))
+        ).thenReturn(mockSales());
+        
+        when(planningModelGateway.getPlanningDistribution(Mockito.any()
+        )).thenReturn(mockPlanningDistribution(utcCurrentTime));
         when(backlogGateway.getUnitBacklog(WALL_IN.getStatus(),
                 input.getWarehouseId(),
                 input.getDateFrom(),
@@ -113,6 +151,21 @@ class GetMonitorTest {
                         .process(PICKING.getStatus())
                         .quantity(2232)
                         .build()
+        );
+        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1, 
+                Arrays.asList(AnalyticsQueryEvent.PACKING_FINISH,
+                        AnalyticsQueryEvent.PICKUP_FINISH)
+        )).thenReturn(
+                List.of(UnitsResume.builder()
+                        .process(AnalyticsQueryEvent.PACKING_FINISH)
+                        .eventCount(120)
+                        .unitCount(150)
+                        .build(),
+                        UnitsResume.builder()
+                        .process(AnalyticsQueryEvent.PICKUP_FINISH)
+                        .eventCount(2020)
+                        .unitCount(3020)
+                        .build()) 
         );
 
         // WHEN
@@ -142,6 +195,12 @@ class GetMonitorTest {
         assertEquals(BACKLOG.getTitle(), pickingBacklogMetric.getTitle());
         assertEquals(BACKLOG.getType(), pickingBacklogMetric.getType());
         assertEquals("2.232 uds.", pickingBacklogMetric.getValue());
+        
+        Metric pickingThroughputMetric = picking.getMetrics().get(1);
+        assertEquals(PICKING.getSubtitle(), pickingThroughputMetric.getSubtitle());
+        assertEquals("Procesamiento", pickingThroughputMetric.getTitle());
+        assertEquals("throughput_per_hour", pickingThroughputMetric.getType());
+        assertEquals("3020 uds./h", pickingThroughputMetric.getValue());
 
         final Optional<Process> optionalPacking = currentStatusData.getProcesses().stream()
                 .filter(t -> PACKING.getTitle().equals(t.getTitle()))
@@ -154,6 +213,12 @@ class GetMonitorTest {
         assertEquals(BACKLOG.getTitle(), packingBacklogMetric.getTitle());
         assertEquals(BACKLOG.getType(), packingBacklogMetric.getType());
         assertEquals("1.442 uds.", packingBacklogMetric.getValue());
+        
+        Metric packingThroughputMetric = packing.getMetrics().get(1);
+        assertEquals(PACKING.getSubtitle(), packingThroughputMetric.getSubtitle());
+        assertEquals(THROUGHPUT_PER_HOUR.getTitle(), packingThroughputMetric.getTitle());
+        assertEquals(THROUGHPUT_PER_HOUR.getType(), packingThroughputMetric.getType());
+        assertEquals("150 uds./h", packingThroughputMetric.getValue());
 
         final Optional<Process> optionalWallIn = currentStatusData.getProcesses().stream()
                 .filter(t -> WALL_IN.getTitle().equals(t.getTitle()))
@@ -178,6 +243,51 @@ class GetMonitorTest {
         assertEquals(BACKLOG.getTitle(), planningBacklogMetric.getTitle());
         assertEquals(BACKLOG.getType(), planningBacklogMetric.getType());
         assertEquals("0 uds.", planningBacklogMetric.getValue());
+        
+        assertTrue(monitorDataList.get(0) instanceof DeviationData);
+        DeviationData deviationData = (DeviationData) monitorDataList.get(0);
+        assertEquals("-13.2%", deviationData.getMetrics().getDeviationPercentage().getValue());
+        assertNull(deviationData.getMetrics().getDeviationPercentage().getStatus());
+        assertEquals("arrow_down", deviationData.getMetrics().getDeviationPercentage().getIcon());
+        assertEquals("905 uds.", deviationData.getMetrics().getDeviationUnits()
+                .getDetail().getCurrentUnits().getValue());
+        assertEquals("1042 uds.", deviationData.getMetrics().getDeviationUnits()
+                .getDetail().getForecastUnits().getValue());
+        
+    }
+    
+    private List<Backlog> mockSales() {
+        return List.of(
+                Backlog.builder()
+                        .date(CPT_1)
+                        .quantity(350)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_2)
+                        .quantity(235)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_3)
+                        .quantity(200)
+                        .build(),
+                Backlog.builder()
+                        .date(CPT_4)
+                        .quantity(120)
+                        .build()
+        );
+    }
+    
+    private List<PlanningDistributionResponse> mockPlanningDistribution(
+            final ZonedDateTime utcCurrentTime) {
+        return List.of(
+                new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 281),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 128),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_2, MetricUnit.UNITS, 200),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_3, MetricUnit.UNITS, 207),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 44),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 82),
+                new PlanningDistributionResponse(utcCurrentTime, CPT_5, MetricUnit.UNITS, 100)
+        );
     }
 
     @Test

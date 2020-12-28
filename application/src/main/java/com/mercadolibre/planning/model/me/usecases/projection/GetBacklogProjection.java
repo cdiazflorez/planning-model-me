@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.SelectionValue;
 import com.mercadolibre.planning.model.me.entities.projection.Selections;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
@@ -10,17 +11,16 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.ProcessBacklog;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
-import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.planning.model.me.utils.ResponseUtils;
 import lombok.AllArgsConstructor;
 
@@ -33,15 +33,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.REMAINING_PROCESSING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest.fromInput;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 @Named
@@ -55,36 +58,34 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
     protected final LogisticCenterGateway logisticCenter;
 
     protected final GetBacklog getBacklog;
+
     private final BacklogGatewayProvider backlogGatewayProvider;
 
     @Override
     public BacklogProjection execute(final BacklogProjectionInput input) {
-
-        final ZonedDateTime dateFrom = DateUtils.getCurrentUtcDate();
-        final List<ProcessBacklog> backlogs = getBacklogList(input, dateFrom);
-        final BacklogProjectionRequest request = createRequest(input, dateFrom, backlogs);
+        final List<CurrentBacklog> backlogs = getBacklogList(input);
         final List<BacklogProjectionResponse> projections = planningModel
-                .getBacklogProjection(request);
+                .getBacklogProjection(fromInput(input, backlogs));
 
-        return mapResponse(input, projections, dateFrom);
+        return mapResponse(input, projections);
     }
 
-    private List<ProcessBacklog> getBacklogList(final BacklogProjectionInput input,
-                                                final ZonedDateTime dateFrom) {
-        final String status = "status";
+    private List<CurrentBacklog> getBacklogList(final BacklogProjectionInput input) {
+        final ZonedDateTime dateFrom = input.getDateFrom();
         final List<Map<String, String>> statuses = List.of(
-                Map.of(status, OUTBOUND_PLANNING.getStatus()),
-                Map.of(status, ProcessInfo.PACKING.getStatus())
+                Map.of("status", OUTBOUND_PLANNING.getStatus()),
+                Map.of("status", ProcessInfo.PACKING.getStatus())
         );
+
         final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
-        List<com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog> backlogs =
+        List<ProcessBacklog> backlogs =
                 backlogGateway.getBacklog(statuses,
                         input.getWarehouseId(),
                         dateFrom,
                         dateFrom.plusHours(HOURS_TO_SHOW)
                 );
-        final com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog pickingBacklog =
+        final ProcessBacklog pickingBacklog =
                 backlogGateway.getUnitBacklog(
                         ProcessInfo.PICKING.getStatus(),
                         input.getWarehouseId(),
@@ -92,48 +93,43 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
                         dateFrom.plusHours(HOURS_TO_SHOW)
                 );
         return List.of(
-                new ProcessBacklog(WAVING, backlogs.stream()
+                new CurrentBacklog(WAVING, backlogs.stream()
                         .filter(t -> t.getProcess().equals(OUTBOUND_PLANNING.getStatus()))
                         .findFirst()
-                        .map(t -> t.getQuantity())
+                        .map(ProcessBacklog::getQuantity)
                         .orElse(0)
                 ),
-                new ProcessBacklog(PICKING, pickingBacklog.getQuantity()),
-                new ProcessBacklog(PACKING, backlogs.stream()
+                new CurrentBacklog(PICKING, pickingBacklog.getQuantity()),
+                new CurrentBacklog(PACKING, backlogs.stream()
                         .filter(t -> t.getProcess().equals(ProcessInfo.PACKING.getStatus()))
                         .findFirst()
-                        .map(t -> t.getQuantity())
+                        .map(ProcessBacklog::getQuantity)
                         .orElse(0))
         );
     }
 
-    private BacklogProjectionRequest createRequest(final BacklogProjectionInput input,
-                                                   final ZonedDateTime dateFrom,
-                                                   final List<ProcessBacklog> processBacklogs) {
-        return BacklogProjectionRequest.builder()
-                .warehouseId(input.getWarehouseId())
-                .workflow(input.getWorkflow())
-                .processName(input.getProcessName())
-                .dateFrom(dateFrom)
-                .dateTo(dateFrom.plusHours(HOURS_TO_SHOW))
-                .currentBacklog(processBacklogs)
-                .build();
-    }
-
     private BacklogProjection mapResponse(final BacklogProjectionInput input,
-                                          final List<BacklogProjectionResponse> projections,
-                                          final ZonedDateTime dateFrom) {
-
+                                          final List<BacklogProjectionResponse> projections) {
+        final ZonedDateTime dateFrom = input.getDateFrom();
         final ZoneId zoneId = logisticCenter.getConfiguration(input.getWarehouseId()).getZoneId();
         final List<ColumnHeader> headers = createColumnHeaders(
-                convertToTimeZone(zoneId, dateFrom),
-                HOURS_TO_SHOW);
+                convertToTimeZone(zoneId, getNextHour(dateFrom)), HOURS_TO_SHOW);
+
+        final List<Entity> remainingProcessing = planningModel.getEntities(EntityRequest.builder()
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
+                .processName(List.of(PICKING))
+                .entityType(REMAINING_PROCESSING)
+                .dateFrom(dateFrom)
+                .dateTo(dateFrom.plusHours(HOURS_TO_SHOW))
+                .build());
 
         return com.mercadolibre.planning.model.me.entities.projection.BacklogProjection.builder()
                 .title("Proyecciones")
                 .tabs(ResponseUtils.createTabs())
                 .selections(createSelections(input.getProcessName()))
-                .simpleTable1(createWavingTable(zoneId, headers, projections.get(0)))
+                .simpleTable1(createWavingTable(
+                        zoneId, headers, projections.get(0), remainingProcessing))
                 .simpleTable2(createProcessTable(zoneId, headers, projections))
                 .build();
     }
@@ -153,23 +149,22 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
 
     private SimpleTable createWavingTable(final ZoneId zoneId,
                                           final List<ColumnHeader> headers,
-                                          final BacklogProjectionResponse projection) {
-
+                                          final BacklogProjectionResponse projection,
+                                          final List<Entity> remainingProcessing) {
         return new SimpleTable("Ready to wave FCST vs Real", headers, List.of(
                 createTableValues(
                         zoneId,
                         Map.of("title","FCST","subtitle","(uds.)"),
                         headers,
-                        projection.getValues().stream()
-                                .filter(this::isBacklogFromForecast)
-                                .collect(toList())),
+                        remainingProcessing.stream()
+                                .map(ProjectionValue::fromEntity)
+                                .collect(Collectors.toList())
+                ),
                 createTableValues(
                         zoneId,
                         Map.of("title","Real","subtitle","(uds.)"),
                         headers,
-                        projection.getValues()
-                                .stream().filter(v -> !isBacklogFromForecast(v))
-                                .collect(toList())))
+                        projection.getValues()))
         );
     }
 
@@ -219,9 +214,5 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
                         header.getValue(), "0"))
         );
         return values;
-    }
-
-    private boolean isBacklogFromForecast(final ProjectionValue value) {
-        return Source.FORECAST.getName().equals(value.getSource());
     }
 }

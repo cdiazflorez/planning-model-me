@@ -41,10 +41,10 @@ public class MonitorController {
     public ResponseEntity<Monitor> getMonitor(
             @PathVariable final Workflow workflow,
             @RequestParam("caller.id") @NotNull final Long callerId,
-            @RequestParam("warehouse_id") @NotNull @NotBlank final String warehouseId,
-            @RequestParam("date_from") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            @RequestParam @NotNull @NotBlank final String warehouseId,
+            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             final ZonedDateTime dateFrom,
-            @RequestParam("date_to") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             final ZonedDateTime dateTo) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));

@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -20,6 +22,8 @@ import static com.mercadolibre.restclient.http.HttpMethod.POST;
 public class TestUtils {
     public static final String WAREHOUSE_ID = "ARTW01";
     public static final Long USER_ID = 1234L;
+    public static final ZonedDateTime A_DATE = ZonedDateTime.of(2020, 8, 19, 17, 40, 0, 0,
+            ZoneId.of("UTC"));
 
     public static ObjectMapper objectMapper() {
         return ((JsonJackson) JsonUtils.INSTANCE.getEngine())

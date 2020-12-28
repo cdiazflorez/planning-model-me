@@ -18,13 +18,13 @@ import java.util.List;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
 
 @Named
-public class GetForecastProjection extends GetProjection {
+public class GetCptProjection extends GetProjection {
 
-    public GetForecastProjection(final PlanningModelGateway planningModelGateway,
-                                 final LogisticCenterGateway logisticCenterGateway,
-                                 final GetBacklog getBacklog,
-                                 final GetSales getSales,
-                                 final GetWaveSuggestion getWaveSuggestion) {
+    public GetCptProjection(final PlanningModelGateway planningModelGateway,
+                            final LogisticCenterGateway logisticCenterGateway,
+                            final GetBacklog getBacklog,
+                            final GetSales getSales,
+                            final GetWaveSuggestion getWaveSuggestion) {
         super(planningModelGateway, logisticCenterGateway, getBacklog, getSales,
                 getWaveSuggestion);
     }

@@ -42,7 +42,7 @@ public class ForecastController {
     @PostMapping("/upload")
     public ResponseEntity<ForecastResponse> upload(
             @PathVariable final Workflow workflow,
-            @RequestParam("warehouse_id") final String warehouseId,
+            @RequestParam final String warehouseId,
             @RequestPart("file") final MultipartFile file) {
 
         log.info("Uploading forecast. [warehouse_id:{}][workflow:{}][filename:{}]",

@@ -7,6 +7,9 @@ import com.mercadolibre.planning.model.me.usecases.currentstatus.GetMonitor;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.Monitor;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.DeviationData;
+import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.deviation.DeviationMetric;
+import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.deviation.DeviationUnit;
+import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.deviation.DeviationUnitDetail;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.Process;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.MonitorDataType.DEVIATION;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PACKING;
@@ -55,7 +59,7 @@ class MonitorControllerTest {
     private AuthorizeUser authorizeUser;
 
     @Test
-    void testSaveSimulation() throws Exception {
+    void testGetMonitors() throws Exception {
         // GIVEN
         when(getMonitor.execute(any()))
                 .thenReturn(mockCurrentStatus());
@@ -102,10 +106,37 @@ class MonitorControllerTest {
                 .subtitle1("Estado Actual")
                 .subtitle2("Última actualización: Today...")
                 .monitorData(List.of(
-                        new DeviationData(),
+                        getDeviationData(),
                         CurrentStatusData.builder().processes(processes).build()
                 ))
                 .build();
+    }
+    
+    private DeviationData getDeviationData() {
+        DeviationData deviationData = DeviationData.builder().metrics(DeviationMetric.builder()
+                .deviationPercentage(Metric.builder()
+                        .title("% Desviación FCST / Ventas")
+                        .value("-5.1%")
+                        .icon("arrow_down")
+                        .build())
+                    .deviationUnits(DeviationUnit.builder()
+                        .title("Desviación en unidades")
+                        .value("137 uds.")
+                        .detail(DeviationUnitDetail.builder()
+                            .forecastUnits(Metric.builder()
+                                .title("Cantidad Forecast")
+                                .value("1042 uds.")
+                                .build())
+                            .currentUnits(Metric.builder()
+                                .title("Cantidad Real")
+                                .value("905 uds.")
+                                .build())
+                            .build())
+                        .build())
+                    .build())
+                .build();
+        deviationData.setType(DEVIATION.getType());
+        return deviationData;
     }
 
 }
