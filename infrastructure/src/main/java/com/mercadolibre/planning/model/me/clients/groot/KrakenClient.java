@@ -7,10 +7,11 @@ import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGa
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
 
 public class KrakenClient implements AuthorizationGateway {
 
@@ -39,10 +40,10 @@ public class KrakenClient implements AuthorizationGateway {
                         getPermissions(permissions));
             } else {
                 return new UserAuthorization(userId,
-                        Collections.emptyList(), Collections.emptyList());
+                        emptyList(), emptyList());
             }
         } catch (KrakenClientException kce) {
-            return new UserAuthorization(userId, Collections.emptyList(), Collections.emptyList());
+            return new UserAuthorization(userId, emptyList(), emptyList());
         }
     }
 
@@ -51,7 +52,7 @@ public class KrakenClient implements AuthorizationGateway {
     }
 
     private List<String> getWarehouses(Map warehouseAttribute) {
-        return (List<String>) warehouseAttribute.getOrDefault("value", Collections.emptyList());
+        return (List<String>) warehouseAttribute.getOrDefault("value", emptyList());
     }
 
     private List<UserPermission> getPermissions(List<Map> permissions) {
