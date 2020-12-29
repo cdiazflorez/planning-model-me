@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_FORECAST;
 import static org.springframework.http.ResponseEntity.ok;
 
 @Slf4j
@@ -55,7 +55,7 @@ public class ForecastController {
 
         log.info("Uploading forecast. [warehouse_id:{}][workflow:{}][filename:{}][user_id:{}]",
                 warehouseId, workflow, file.getOriginalFilename(),callerId);
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_FORECAST)));
 
         final byte[] bytes = getFileBytes(file);
 

@@ -20,7 +20,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -72,7 +72,7 @@ public class ForecastControllerTest {
         result.andExpect(status().isOk());
         verify(parseForecastFromFile).execute(fileUploadDto);
         verify(createForecast).execute(any(ForecastDto.class));
-        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_FORECAST)));
     }
 
     @Test
