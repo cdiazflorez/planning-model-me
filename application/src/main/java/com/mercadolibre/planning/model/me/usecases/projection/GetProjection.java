@@ -273,7 +273,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             return "0%";
         }
         final double totalDeviation = (((double) totalRealSales / totalForecast) - 1) * 100;
-        return String.format("%.1f%s", Math.round(totalDeviation * 100.00) / 100.00, "%");
+        return String.format("%.2f%s", totalDeviation, "%");
     }
 
     private boolean hasSimulatedResults(List<ProjectionResult> projectionResults) {
