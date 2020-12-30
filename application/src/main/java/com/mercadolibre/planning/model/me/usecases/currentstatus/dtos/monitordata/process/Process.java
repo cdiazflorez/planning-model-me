@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitorda
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.List;
@@ -9,7 +10,15 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @Getter
-public class Process {
+@EqualsAndHashCode
+public class Process implements Comparable<Process> {
     private final String title;
     private final List<Metric> metrics;
+
+    @Override
+    public int compareTo(Process other) {
+        final Integer thisIndex = ProcessInfo.fromTitle(this.title).getIndex();
+        final Integer otherIndex = ProcessInfo.fromTitle(other.getTitle()).getIndex();
+        return Integer.compare(thisIndex, otherIndex);
+    }
 }
