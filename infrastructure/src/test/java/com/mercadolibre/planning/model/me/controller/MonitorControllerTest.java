@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
@@ -87,7 +88,7 @@ class MonitorControllerTest {
         processMap.put(PACKING, "1.442 uds.");
         processMap.put(WALL_IN, "725 uds.");
 
-        List<Process> processes = processMap.entrySet().stream().map(entry -> {
+        TreeSet<Process> processes = processMap.entrySet().stream().map(entry -> {
                     final Metric metric = Metric.builder()
                             .type(BACKLOG.getType())
                             .title(BACKLOG.getTitle())
@@ -99,7 +100,7 @@ class MonitorControllerTest {
                             .title(entry.getKey().getTitle())
                             .build();
                 }
-        ).collect(Collectors.toList());
+        ).collect(Collectors.toCollection(TreeSet::new));
 
         return Monitor.builder()
                 .title("Modelo de Priorización")

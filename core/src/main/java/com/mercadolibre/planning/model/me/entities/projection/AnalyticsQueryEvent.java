@@ -19,4 +19,5 @@ public enum AnalyticsQueryEvent {
     public static AnalyticsQueryEvent fromString(final String process) {
         return valueOf(process.toUpperCase());
     }
+    
 }

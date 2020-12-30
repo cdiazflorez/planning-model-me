@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.currentstatus;
 
-import com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
@@ -11,8 +10,13 @@ import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatew
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.Monitor;
@@ -23,20 +27,23 @@ import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordat
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.deviation.DeviationUnit;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.deviation.DeviationUnitDetail;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.Metric;
+import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.Process;
 import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
-
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
 
 import java.text.NumberFormat;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,10 +51,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeSet;
 
 import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_FINISH;
 import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PICKUP_FINISH;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo.PACKING;
@@ -56,30 +65,25 @@ import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.mon
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static java.util.Arrays.asList;
 
+@Slf4j
 @Named
 @AllArgsConstructor
 public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     
     private static final int HOURS_OFFSET = 1;
-
-    private static final String ICON_ATTRIBUTE = "icon";
-
     private static final String STATUS_ATTRIBUTE = "status";
-
     private static final String UNITS_DEFAULT_STRING = "%d uds.";
-
     private static final int SELLING_PERIOD_HOURS = 28;
-
-    final BacklogGatewayProvider backlogGatewayProvider;
-    
+    private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
+            List.of(ProcessingType.ACTIVE_WORKERS);
+    protected static final List<ProcessName> PROJECTION_PROCESS_NAMES = 
+            List.of(ProcessName.PICKING, ProcessName.PACKING);
+    private final BacklogGatewayProvider backlogGatewayProvider;
     protected final LogisticCenterGateway logisticCenterGateway;
-    
     protected final AnalyticsGateway analyticsClient;
+    private final GetSales getSales;
+    private final PlanningModelGateway planningModelGateway;
     
-    private GetSales getSales;
-
-    private PlanningModelGateway planningModelGateway;
-
     @Override
     public Monitor execute(GetMonitorInput input) {
         final List<MonitorData> monitorDataList = getMonitorData(input);
@@ -108,63 +112,48 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private DeviationData getDeviationData(GetMonitorInput input) {
-        final List<PlanningDistributionResponse> plannedBacklogs = getPlannedBacklog(input);
-
-        final List<Backlog> realSales = getSales(input);
+        final long totalPlanned = getPlannedBacklog(input).stream()
+                .mapToLong(PlanningDistributionResponse::getTotal).sum();
+        final int totalSales = getSales(input).stream().mapToInt(Backlog::getQuantity).sum();
+        final double totalDeviation = getDeviationPercentage(totalPlanned, totalSales);
         
-        final long totalPlanned = plannedBacklogs.stream()
-                .mapToLong(planned -> planned.getTotal()).sum();
-        
-        final int totalSales = realSales.stream()
-                .mapToInt(realSale -> realSale.getQuantity()).sum();
-        
-        final long difference = Math.abs(totalPlanned - totalSales);
-        
-        final double totalDeviation = getTotalDeviation(totalPlanned, totalSales);
-        
-        return buildDeviationData(totalDeviation, totalPlanned, totalSales, difference);
-    }
-
-    private double getTotalDeviation(final long totalBacklog,
-            final int totalSales) {
-        final double totalDeviation = (((double) totalSales / totalBacklog) - 1) * 100;
-        return Math.round(totalDeviation * 100.00) / 100.00;
-    }
-
-    private DeviationData buildDeviationData(final double totalDeviation, final long totalPlanned,
-            final int totalSales, final long difference) {
-        DeviationData deviationData = new DeviationData(DeviationMetric.builder()
+        return new DeviationData(DeviationMetric.builder()
                 .deviationPercentage(Metric.builder()
                         .title("% Desviación FCST / Ventas")
-                        .value(String.format("%.1f%s",totalDeviation,"%"))
-                        .status(getStyleForDeviation(totalDeviation,STATUS_ATTRIBUTE))
-                        .icon(getStyleForDeviation(totalDeviation, ICON_ATTRIBUTE))
+                        .value(String.format("%.2f%s", totalDeviation, "%"))
+                        .status(getStatusForDeviation(totalDeviation))
+                        .icon(getIconForDeviation(totalDeviation))
                         .build())
-                    .deviationUnits(DeviationUnit.builder()
+                .deviationUnits(DeviationUnit.builder()
                         .title("Desviación en unidades")
-                        .value(String.format(UNITS_DEFAULT_STRING, difference))
+                        .value(String.format(UNITS_DEFAULT_STRING, 
+                                Math.abs(totalPlanned - totalSales)))
                         .detail(DeviationUnitDetail.builder()
-                            .forecastUnits(Metric.builder()
-                                .title("Cantidad Forecast")
-                                .value(String.format(UNITS_DEFAULT_STRING, totalPlanned))
-                                .build())
-                            .currentUnits(Metric.builder()
-                                .title("Cantidad Real")
-                                .value(String.format(UNITS_DEFAULT_STRING, totalSales))
-                                .build())
+                                .forecastUnits(Metric.builder()
+                                        .title("Cantidad Forecast")
+                                        .value(String.format(UNITS_DEFAULT_STRING, totalPlanned))
+                                        .build())
+                                .currentUnits(Metric.builder()
+                                        .title("Cantidad Real")
+                                        .value(String.format(UNITS_DEFAULT_STRING, totalSales))
+                                        .build())
                             .build())
                         .build())
                     .build());
-        return deviationData;
     }
 
-    private String getStyleForDeviation(double totalDeviation, String attribute) {
-        if (Objects.equals(attribute, ICON_ATTRIBUTE)) {
-            return totalDeviation > 0 ? "arrow_up" : "arrow_down";
-        } else if (Objects.equals(attribute, STATUS_ATTRIBUTE)) {
-            return totalDeviation > 0 ? "warning" : null;
-        }
-        return null;
+    private double getDeviationPercentage(final long totalPlanned, final int totalSold) {
+        return totalSold != 0 && totalPlanned != 0 
+                ? (((double) totalSold / totalPlanned) - 1) * 100 
+                        : 0;
+    }
+
+    private String getIconForDeviation(double totalDeviation) {
+        return totalDeviation > 0 ? "arrow_up" : "arrow_down";
+    }
+    
+    private String getStatusForDeviation(double totalDeviation) {
+        return totalDeviation > 0 ? "warning" : null;
     }
 
     private List<Backlog> getSales(GetMonitorInput input) {
@@ -183,19 +172,16 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                         input.getDateFrom(),
                         input.getDateFrom(),
                         input.getDateTo()));
-        
     }
     
     private CurrentStatusData getCurrentStatusData(GetMonitorInput input) {
-        final ArrayList<Process> processes = new ArrayList<>();
-        addMetricBacklog(input, processes);
-        addThroughputMetric(input, processes);
-        addProductivityMetric();
+        TreeSet<Process> processes = getProcessesAndMetrics(input);
         return CurrentStatusData.builder().processes(processes).build();
     }
 
-    private void addMetricBacklog(GetMonitorInput input, ArrayList<Process> processes) {
+    private TreeSet<Process> getProcessesAndMetrics(GetMonitorInput input) {
         final String status = STATUS_ATTRIBUTE;
+        final TreeSet<Process> processes = new TreeSet<>();
         List<Map<String, String>> statuses = List.of(
                 Map.of(status, OUTBOUND_PLANNING.getStatus()),
                 Map.of(status, PACKING.getStatus())
@@ -215,57 +201,169 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                 input.getDateFrom(),
                 input.getDateTo());
         processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog));
-
+        final List<UnitsResume> processedUnitsLastHour = getUnitsResumes(input);
         processBacklogs.forEach(processBacklog ->
-                addProcessIfExist(processes, processBacklog)
+                addProcessIfExist(processes, processBacklog, input, processedUnitsLastHour)
         );
         completeProcess(processes);
+        return processes;
     }
 
-    private void addThroughputMetric(final GetMonitorInput input, 
-            final ArrayList<Process> processes) {
-        final List<UnitsResume> unitsLastHour = analyticsClient
-                .getUnitsInInterval(input.getWarehouseId(), 
-                        HOURS_OFFSET, asList(PACKING_FINISH, PICKUP_FINISH));
-        unitsLastHour.forEach(unitLastHour -> addMetricToProcess(unitLastHour, processes));
-        
-    }
-
-    private void addMetricToProcess(final UnitsResume unitLastHour, 
-            final ArrayList<Process> processes) {
-        final AnalyticsQueryEvent eventType = unitLastHour.getProcess();
-        final Process relatedProcess = processes.stream().filter(process 
-                -> Objects.equals(process.getTitle(), 
-                        eventType.getRelatedProcess()))
-                .findFirst()
-                .orElse(null);
-        
-        if (Objects.nonNull(relatedProcess)) {
-            final Metric metric = Metric.builder()
-                    .title(THROUGHPUT_PER_HOUR.getTitle())
-                    .type(THROUGHPUT_PER_HOUR.getType())
-                    .subtitle(ProcessInfo.getByTitle(eventType
-                           .getRelatedProcess())
-                           .getSubtitle())
-                    .value(unitLastHour.getUnitCount() + " uds./h")                   
-                    .build();
-            relatedProcess.getMetrics().add(metric);                    
+    private Metric getThroughputMetric(final ProcessInfo processInfo,
+                                     final UnitsResume processedUnitLastHour) {
+        if (processedUnitLastHour == null) {
+            return createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo);
         }
+        return createMetric(processInfo,
+                processedUnitLastHour.getUnitCount() + " uds./h",
+                        THROUGHPUT_PER_HOUR);
     }
 
-    private void addProductivityMetric() {
-        //TODO Get and add productivity metric
+    private Metric createEmptyMetric(final MetricType metricType, final ProcessInfo process) {
+        return createMetric(process, "-", metricType);
     }
 
-    private void addProcessIfExist(ArrayList<Process> processes,
-                                   final ProcessBacklog processBacklog) {
-        getProcessBy(processBacklog, OUTBOUND_PLANNING)
+    private List<UnitsResume> getUnitsResumes(final GetMonitorInput input) {
+        try {
+            return analyticsClient
+                    .getUnitsInInterval(input.getWarehouseId(), 
+                            HOURS_OFFSET, asList(PACKING_FINISH, PICKUP_FINISH)
+            );
+        } catch (Exception e) {
+            log.error(String
+                    .format("An error occurred while trying to invoke analytics service: %s",
+                            e.getMessage()));
+        }
+        return null;
+    }
+
+    private Metric createMetric(ProcessInfo process, 
+                                    final String value, 
+                                    MetricType metricType) {
+        return Metric.builder()
+                    .title(metricType.getTitle())
+                    .type(metricType.getType())
+                    .subtitle(metricType == MetricType.BACKLOG 
+                            ? process.getSubtitle() : metricType.getSubtitle())
+                    .value(value)                   
+                    .build();
+           
+    }
+
+    private Metric getProductivityMetric(final GetMonitorInput input,
+                                       final UnitsResume processedUnitLastHour,
+                                       final ProcessInfo processInfo) {
+        if (processedUnitLastHour == null) {
+            return createEmptyMetric(PRODUCTIVITY, processInfo);
+        }
+        final ZonedDateTime current = ZonedDateTime.now(ZoneOffset.UTC).withSecond(0).withNano(0);
+        final ZonedDateTime utcDateTo = current.with(ChronoField.MINUTE_OF_HOUR, 0);
+        final ZonedDateTime utcDateFrom = utcDateTo.minusHours(1);
+
+        final List<Entity> headcount = planningModelGateway.getEntities(
+                createRequest(input, utcDateFrom, utcDateTo
+                ));
+
+        return calculateMetric(current, List.of(utcDateTo,
+                current.minusHours(1).withSecond(0).withNano(0)), headcount,
+                processedUnitLastHour, processInfo);
+    }
+
+    private Metric calculateMetric(final ZonedDateTime current, 
+                                final List<ZonedDateTime> dates,
+                                final List<Entity> headcount, 
+                                final UnitsResume unit,
+                                ProcessInfo processInfo) {
+        final List<Double> productivities = getProductivities(current, dates, headcount, unit);
+
+        final double productivity = calculateProductivity(productivities);
+
+        return createMetric(processInfo, 
+                String.format("%.1f %s", productivity, "uds./h"), 
+                PRODUCTIVITY);
+    }
+
+    private List<Double> getProductivities(final ZonedDateTime current,
+                                            final List<ZonedDateTime> dates, 
+                                            final List<Entity> headcount, 
+                                            final UnitsResume unit) {
+        ZonedDateTime toDate = current;
+        final List<Double> productivities = new LinkedList<>();
+        for (ZonedDateTime utcDate : dates) {
+            long timeFromCurrentHour = utcDate.until(toDate, ChronoUnit.MINUTES);
+            productivities.add(calculateProductivityForHour(utcDate.withMinute(0), headcount, unit,
+                    timeFromCurrentHour));
+            toDate = utcDate;
+        }
+        return productivities;
+    }
+
+    private double calculateProductivity(final List<Double> productivities) {
+        double productivitySum = productivities.stream().reduce(0d, Double::sum);
+        double productivityCount = productivities.stream().filter(prod -> prod > 0).count();
+        return productivitySum != 0 && productivityCount != 0 
+                ? productivitySum / productivityCount 
+                        : 0;               
+    }
+
+    private double calculateProductivityForHour(final ZonedDateTime utcDateTo,
+                                                final List<Entity> headcount,
+                                                UnitsResume unit, long timeFromCurrentHour) {
+        final int unitsLastHour = unit.getUnitCount();
+        final double percentageCurrentHour = (100.00 * timeFromCurrentHour) / 60;
+        final double quantityFromPercentageCurrentHour =
+                (unitsLastHour / 100.00) * percentageCurrentHour;
+        final int headCountCurrentHour = getProcessHeadcount(utcDateTo, headcount, unit);
+        return headCountCurrentHour == 0 
+                ? 0 : quantityFromPercentageCurrentHour / headCountCurrentHour;
+    }
+
+    private int getProcessHeadcount(final ZonedDateTime utcDateFrom, final List<Entity> headcount,
+                                    final UnitsResume unit) {
+        final Entity headcountForHour = headcount.stream()
+                .filter(hCount -> Objects.equals(utcDateFrom, hCount.getDate())
+                        && Objects.equals(unit.getProcess().getRelatedProcess().toLowerCase(),
+                                hCount.getProcessName().getName())).findFirst().orElse(null);
+        if (Objects.nonNull(headcountForHour)) {
+            return headcountForHour.getValue();
+        }
+        return 0;
+    }
+    
+    private EntityRequest createRequest(final GetMonitorInput input,
+                                        final ZonedDateTime dateFrom,
+                                        final ZonedDateTime dateTo) {
+        return EntityRequest.builder()
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
+                .entityType(EntityType.HEADCOUNT)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .processName(PROJECTION_PROCESS_NAMES)
+                .processingType(GetMonitor.PROJECTION_PROCESSING_TYPES)
+                .build();
+    }
+
+    private void addProcessIfExist(final TreeSet<Process> processes,
+                                   final ProcessBacklog processBacklog,
+                                   final GetMonitorInput input,
+                                   final List<UnitsResume> processedUnitsLastHour) {
+        getProcessBy(processBacklog, OUTBOUND_PLANNING, input, 
+                getUnitResumeForProcess(OUTBOUND_PLANNING,
+                processedUnitsLastHour))
                 .ifPresentOrElse(processes::add,
-                        () -> getProcessBy(processBacklog, PICKING)
+                        () -> getProcessBy(processBacklog, PICKING, input, 
+                                getUnitResumeForProcess(PICKING,
+                                processedUnitsLastHour))
                                 .ifPresentOrElse(processes::add,
-                                        () -> getProcessBy(processBacklog, PACKING)
+                                        () -> getProcessBy(processBacklog, PACKING, input, 
+                                                getUnitResumeForProcess(PACKING,
+                                                processedUnitsLastHour))
                                                 .ifPresentOrElse(processes::add,
-                                                        () -> getProcessBy(processBacklog, WALL_IN)
+                                                        () -> getProcessBy(processBacklog, WALL_IN,
+                                                                input, 
+                                                                getUnitResumeForProcess(WALL_IN,
+                                                                        processedUnitsLastHour))
                                                                 .ifPresent(processes::add)
                                                 )
                                 )
@@ -273,44 +371,75 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private Optional<Process> getProcessBy(final ProcessBacklog processBacklog,
-                                           final ProcessInfo processInfo) {
+                                           final ProcessInfo processInfo,
+                                           final GetMonitorInput input,
+                                           final UnitsResume unitResume) {
         if (processBacklog.getProcess().equalsIgnoreCase(processInfo.getStatus())) {
-            final String quantity = NumberFormat.getNumberInstance(Locale.GERMAN)
-                            .format(processBacklog.getQuantity());
-            final Metric backlogMetric = Metric.builder()
-                    .type(BACKLOG.getType())
-                    .title(BACKLOG.getTitle())
-                    .subtitle(processInfo.getSubtitle())
-                    .value(quantity + " uds.")
-                    .build();
             final Process process = Process.builder()
                     .title(processInfo.getTitle())
-                    .metrics(new LinkedList<>())
+                    .metrics(createMetricsList(processBacklog, processInfo, input, unitResume))
                     .build();
-            process.getMetrics().add(backlogMetric);
             return Optional.of(process);
         }
         return Optional.empty();
     }
 
-    private void completeProcess(ArrayList<Process> processes) {
-        List<ProcessInfo> processList = List.of(OUTBOUND_PLANNING, PACKING);
+    private List<Metric> createMetricsList(final ProcessBacklog processBacklog,
+            final ProcessInfo processInfo, final GetMonitorInput input,
+            final UnitsResume unitResume) {
+        return processInfo == OUTBOUND_PLANNING || processInfo == WALL_IN
+                ? List.of(getBacklogMetric(processBacklog, processInfo))
+                        : List.of(getBacklogMetric(processBacklog, processInfo),
+                                getThroughputMetric(processInfo, unitResume),
+                                getProductivityMetric(input, unitResume, processInfo));
+    }
+
+    private Metric getBacklogMetric(final ProcessBacklog processBacklog,
+            final ProcessInfo processInfo) {
+        final String quantity = NumberFormat.getNumberInstance(Locale.GERMAN)
+                        .format(processBacklog.getQuantity());
+        return createMetric(processInfo, quantity + " uds.", BACKLOG);
+    }
+
+    private UnitsResume getUnitResumeForProcess(final ProcessInfo processInfo,
+            final List<UnitsResume> processedUnitsLastHour) {
+        if (processedUnitsLastHour == null) {
+            return null;
+        }
+        return processedUnitsLastHour.stream().filter(unitsLastHour 
+                -> Objects.equals(processInfo.getTitle(), 
+                        unitsLastHour.getProcess().getRelatedProcess()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void completeProcess(final TreeSet<Process> processes) {
+        final List<ProcessInfo> processList = List.of(OUTBOUND_PLANNING, PACKING);
         processList.stream().filter(t -> processes.stream()
                 .noneMatch(current -> current.getTitle().equalsIgnoreCase(t.getTitle()))
         ).forEach(noneMatchProcess -> {
-                    final Metric metric = Metric.builder()
-                            .type(BACKLOG.getType())
-                            .title(BACKLOG.getTitle())
-                            .subtitle(noneMatchProcess.getSubtitle())
-                            .value("0 uds.")
-                            .build();
-                    processes.add(Process.builder()
-                            .metrics(List.of(metric))
+                    Process process = Process.builder()
+                            .metrics(createEmptyMetricList(noneMatchProcess))
                             .title(noneMatchProcess.getTitle())
-                            .build()
-                    );
+                            .build();
+                    processes.add(process);
         }
         );
+    }
+
+    private List<Metric> createEmptyMetricList(ProcessInfo processInfo) {
+        final Metric metric = Metric.builder()
+                .type(BACKLOG.getType())
+                .title(BACKLOG.getTitle())
+                .subtitle(processInfo.getSubtitle())
+                .value("0 uds.")
+                .build();
+        Map<ProcessInfo, List<Metric>> emptyMetrics = Map.of(OUTBOUND_PLANNING, List.of(metric),
+                PACKING, List.of(metric,
+                        createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo),
+                        createEmptyMetric(PRODUCTIVITY, processInfo)));
+        return emptyMetrics.get(processInfo);
+
     }
 
 }
