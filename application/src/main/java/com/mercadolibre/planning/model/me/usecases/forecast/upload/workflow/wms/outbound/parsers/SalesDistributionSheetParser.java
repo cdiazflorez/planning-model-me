@@ -13,6 +13,7 @@ import com.mercadolibre.spreadsheet.MeliCell;
 import com.mercadolibre.spreadsheet.MeliRow;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.Range;
 
 import javax.inject.Named;
 
@@ -30,6 +31,7 @@ import static java.util.stream.Collectors.toList;
 @AllArgsConstructor
 public class SalesDistributionSheetParser implements SheetParser {
 
+    private static final Range COLUMN_RANGE = Range.between(1, 6);
     private LogisticCenterGateway logisticCenterGateway;
 
     @Override
@@ -56,13 +58,14 @@ public class SalesDistributionSheetParser implements SheetParser {
 
     private boolean rowIsNotEmpty(final MeliRow row) {
         return row.getCells().stream()
+                .filter(meliCell -> COLUMN_RANGE.contains(meliCell.getColumnIndex()))
                 .map(MeliCell::getValue)
                 .filter(Objects::nonNull)
                 .anyMatch(value -> !value.isEmpty());
     }
 
     private PlanningDistribution createPlanningDistributionFrom(final String warehouseId,
-                                                                final MeliRow row, 
+                                                                final MeliRow row,
                                                                 final MeliSheet sheet) {
         final LogisticCenterConfiguration configuration =
                 logisticCenterGateway.getConfiguration(warehouseId);
