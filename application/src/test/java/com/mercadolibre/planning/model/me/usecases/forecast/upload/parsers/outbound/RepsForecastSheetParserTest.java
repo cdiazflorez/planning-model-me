@@ -24,7 +24,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workfl
 
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastSheet.WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFromTestFile;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFrom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class RepsForecastSheetParserTest {
 
+    private static final String VALID_FILE_PATH = "forecast_example.xlsx";
     private static final String INVALID_FILE_PATH = "forecast_example_invalid_date.xlsx";
 
     @InjectMocks
@@ -71,7 +72,7 @@ class RepsForecastSheetParserTest {
     }
 
     private void givenAnCorrectConfigurationAndMeliSheetBy() {
-        repsSheet = getMeliSheetFromTestFile(WORKERS.getName());
+        repsSheet = getMeliSheetFrom(WORKERS.getName(), VALID_FILE_PATH);
     }
 
     private void whenExcelIsParsedBy(String warehouseId) {
@@ -97,7 +98,7 @@ class RepsForecastSheetParserTest {
     private void givenAnExcelFileWithInvalidDate() {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
-        repsSheet = getMeliSheetFromTestFile(WORKERS.getName(), INVALID_FILE_PATH);
+        repsSheet = getMeliSheetFrom(WORKERS.getName(), INVALID_FILE_PATH);
 
     }
 

@@ -4,6 +4,8 @@ import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
+import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.CreateForecast;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.ParseForecastFromFile;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.FileUploadDto;
@@ -24,9 +26,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.validation.constraints.NotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_FORECAST;
 import static org.springframework.http.ResponseEntity.ok;
 
 @Slf4j
@@ -35,6 +41,7 @@ import static org.springframework.http.ResponseEntity.ok;
 @RequestMapping("/planning/model/middleend/workflows/{workflow}/forecasts")
 public class ForecastController {
 
+    private final AuthorizeUser authorizeUser;
     private final ParseForecastFromFile parseForecastFromFile;
     private final CreateForecast createForecast;
 
@@ -43,10 +50,12 @@ public class ForecastController {
     public ResponseEntity<ForecastResponse> upload(
             @PathVariable final Workflow workflow,
             @RequestParam final String warehouseId,
+            @RequestParam("caller.id") @NotNull final Long callerId,
             @RequestPart("file") final MultipartFile file) {
 
-        log.info("Uploading forecast. [warehouse_id:{}][workflow:{}][filename:{}]",
-                warehouseId, workflow, file.getOriginalFilename());
+        log.info("Uploading forecast. [warehouse_id:{}][workflow:{}][filename:{}][user_id:{}]",
+                warehouseId, workflow, file.getOriginalFilename(),callerId);
+        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_FORECAST)));
 
         final byte[] bytes = getFileBytes(file);
 
