@@ -104,10 +104,9 @@ public class RestClientConfig {
     @ConfigurationProperties("restclient.pool.authorization")
     public static class AuthorizationClientProperties extends RestClientProperties {
     }
-    
+
     @ConfigurationProperties("restclient.pool.analytics")
     public static class AnalyticsClientProperties extends RestClientProperties {
-        
     }
 
     @ConfigurationProperties("restclient.pool.planning-model-forecast")
