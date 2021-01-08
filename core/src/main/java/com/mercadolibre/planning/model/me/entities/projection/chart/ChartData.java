@@ -6,6 +6,7 @@ import lombok.Value;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip.createChartTooltip;
 import static java.time.format.DateTimeFormatter.ofPattern;
 
 @Value
@@ -18,13 +19,19 @@ public class ChartData {
     private String title;
     private String cpt;
     private String projectedEndTime;
+    private ChartTooltip tooltip;
 
     public static ChartData fromProjection(final ZonedDateTime cpt,
-                                           final ZonedDateTime projectedEndDate) {
+                                           final ZonedDateTime projectedEndDate,
+                                           final ZonedDateTime dateTo,
+                                           final int remainingQuantity) {
+
+
         return ChartData.builder()
                 .title(cpt.format(HOUR_FORMAT))
                 .cpt(cpt.format(DATE_FORMATTER))
                 .projectedEndTime(projectedEndDate.format(DATE_FORMATTER))
+                .tooltip(createChartTooltip(cpt, projectedEndDate, dateTo, remainingQuantity))
                 .build();
     }
 }
