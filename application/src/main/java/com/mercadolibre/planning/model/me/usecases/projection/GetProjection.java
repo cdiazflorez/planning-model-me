@@ -245,14 +245,14 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
 
     private Map<String, Object> addTotalsRow(final List<Backlog> backlogs,
-            final List<Backlog> realSales, 
+            final List<Backlog> realSales,
             final List<PlanningDistributionResponse> planningDistribution) {
         return Map.of("style", "none",
                 "column_1", "Total",
                 "column_2", String.valueOf(
                         calculateTotalFromBacklog(backlogs)),
                 "column_3", calculateDeviationTotal(
-                        calculateTotalForecast(planningDistribution), 
+                        calculateTotalForecast(planningDistribution),
                         calculateTotalFromBacklog(realSales)),
                 "column_4","",
                 "column_5","");
@@ -560,10 +560,13 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                     final ZonedDateTime projectedEndDate = hasSimulatedResults
                             ? projection.getSimulatedEndDate()
                             : projection.getProjectedEndDate();
+
                     return ChartData.fromProjection(
                             convertToTimeZone(zoneId, projection.getDate()),
                             convertToTimeZone(zoneId, projectedEndDate == null
-                                    ? dateTo : projectedEndDate));
+                                    ? dateTo : projectedEndDate),
+                            convertToTimeZone(zoneId, dateTo),
+                            projection.getRemainingQuantity());
                 })
                 .collect(Collectors.toList());
     }

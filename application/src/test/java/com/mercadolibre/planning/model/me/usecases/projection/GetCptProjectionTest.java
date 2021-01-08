@@ -8,6 +8,7 @@ import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -251,8 +252,7 @@ public class GetCptProjectionTest {
         assertEquals("Excede las 24hs", cpt5.get("column_4"));
 
         assertEquals("none", cpt0.get("style"));
-        assertEquals("Total",
-                cpt0.get("column_1"));
+        assertEquals("Total", cpt0.get("column_1"));
         assertEquals("805", cpt0.get("column_2"));
         assertEquals("-13.15%", cpt0.get("column_3"));
         assertEquals("", cpt0.get("column_4"));
@@ -269,36 +269,78 @@ public class GetCptProjectionTest {
 
         assertEquals(60, chart.getProcessingTime().getValue());
         assertEquals(5, chartData.size());
+        final ZonedDateTime cpt1 = convertToTimeZone(zoneId, CPT_1);
+        final ZonedDateTime projectedEndDate1 = convertToTimeZone(zoneId,
+                getCurrentUtcDate()).plusHours(3).plusMinutes(30);
 
-        assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
-                chartData1.getTitle());
-        assertEquals(convertToTimeZone(zoneId, CPT_1).format(DATE_FORMATTER), chartData1.getCpt());
-        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusHours(3).plusMinutes(30)
-                        .format(DATE_FORMATTER), chartData1.getProjectedEndTime());
+        assertEquals(cpt1.format(HOUR_MINUTES_FORMAT), chartData1.getTitle());
+        assertEquals(cpt1.format(DATE_FORMATTER), chartData1.getCpt());
+        assertEquals(projectedEndDate1.format(DATE_FORMATTER), chartData1.getProjectedEndTime());
+        assertChartTooltip(
+                chartData1.getTooltip(),
+                cpt1.format(HOUR_MINUTES_FORMAT),
+                "-",
+                projectedEndDate1.format(HOUR_MINUTES_FORMAT));
 
-        assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
-                chartData2.getTitle());
-        assertEquals(convertToTimeZone(zoneId, CPT_2).format(DATE_FORMATTER), chartData2.getCpt());
-        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusHours(3)
-                        .format(DATE_FORMATTER), chartData2.getProjectedEndTime());
+        final ZonedDateTime cpt2 = convertToTimeZone(zoneId, CPT_2);
+        final ZonedDateTime projectedEndDate2 = convertToTimeZone(zoneId,
+                getCurrentUtcDate()).plusHours(3);
+        assertEquals(cpt2.format(HOUR_MINUTES_FORMAT), chartData2.getTitle());
+        assertEquals(cpt2.format(DATE_FORMATTER), chartData2.getCpt());
+        assertEquals(projectedEndDate2.format(DATE_FORMATTER), chartData2.getProjectedEndTime());
+        assertChartTooltip(
+                chartData2.getTooltip(),
+                cpt2.format(HOUR_MINUTES_FORMAT),
+                "-",
+                projectedEndDate2.format(HOUR_MINUTES_FORMAT));
 
-        assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
-                chartData3.getTitle());
-        assertEquals(convertToTimeZone(zoneId, CPT_3).format(DATE_FORMATTER), chartData3.getCpt());
-        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusHours(3).plusMinutes(25)
-                        .format(DATE_FORMATTER), chartData3.getProjectedEndTime());
+        final ZonedDateTime cpt3 = convertToTimeZone(zoneId, CPT_3);
+        final ZonedDateTime projectedEndDate3 = convertToTimeZone(zoneId,
+                getCurrentUtcDate()).plusHours(3).plusMinutes(25);
+        assertEquals(cpt3.format(HOUR_MINUTES_FORMAT), chartData3.getTitle());
+        assertEquals(cpt3.format(DATE_FORMATTER), chartData3.getCpt());
+        assertEquals(projectedEndDate3.format(DATE_FORMATTER), chartData3.getProjectedEndTime());
+        assertChartTooltip(
+                chartData3.getTooltip(),
+                cpt3.format(HOUR_MINUTES_FORMAT),
+                "100",
+                projectedEndDate3.format(HOUR_MINUTES_FORMAT));
 
-        assertEquals(convertToTimeZone(zoneId, CPT_4).toLocalTime().format(HOUR_MINUTES_FORMAT),
-                chartData4.getTitle());
-        assertEquals(convertToTimeZone(zoneId, CPT_4).format(DATE_FORMATTER), chartData4.getCpt());
-        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusHours(8).plusMinutes(10)
-                        .format(DATE_FORMATTER), chartData4.getProjectedEndTime());
+        final ZonedDateTime cpt4 = convertToTimeZone(zoneId, CPT_4);
+        final ZonedDateTime projectedEndDate4 = convertToTimeZone(zoneId,
+                getCurrentUtcDate()).plusHours(8).plusMinutes(10);
+        assertEquals(cpt4.format(HOUR_MINUTES_FORMAT), chartData4.getTitle());
+        assertEquals(cpt4.format(DATE_FORMATTER), chartData4.getCpt());
+        assertEquals(projectedEndDate4.format(DATE_FORMATTER), chartData4.getProjectedEndTime());
+        assertChartTooltip(
+                chartData4.getTooltip(),
+                cpt4.format(HOUR_MINUTES_FORMAT),
+                "180",
+                projectedEndDate4.format(HOUR_MINUTES_FORMAT));
 
-        assertEquals(convertToTimeZone(zoneId, CPT_5).toLocalTime().format(HOUR_MINUTES_FORMAT),
-                chartData5.getTitle());
-        assertEquals(convertToTimeZone(zoneId, CPT_5).format(DATE_FORMATTER), chartData5.getCpt());
-        assertEquals(convertToTimeZone(zoneId, getCurrentUtcDate()).plusDays(1)
-                        .format(DATE_FORMATTER), chartData5.getProjectedEndTime());
+        final ZonedDateTime cpt5 = convertToTimeZone(zoneId, CPT_5);
+        final ZonedDateTime projectedEndDate5 = convertToTimeZone(zoneId,
+                getCurrentUtcDate().plusDays(1));
+        assertEquals(cpt5.format(HOUR_MINUTES_FORMAT), chartData5.getTitle());
+        assertEquals(cpt5.format(DATE_FORMATTER), chartData5.getCpt());
+        assertEquals(projectedEndDate5.format(DATE_FORMATTER), chartData5.getProjectedEndTime());
+        assertChartTooltip(
+                chartData5.getTooltip(),
+                cpt5.format(HOUR_MINUTES_FORMAT),
+                "100",
+                "Excede las 24hs");
+    }
+
+    private void assertChartTooltip(final ChartTooltip tooltip,
+                                    final String subtitle1,
+                                    final String subtitle2,
+                                    final String subtitle3) {
+        assertEquals("CPT:", tooltip.getTitle1());
+        assertEquals(subtitle1, tooltip.getSubtitle1());
+        assertEquals("Desviación:", tooltip.getTitle2());
+        assertEquals(subtitle2, tooltip.getSubtitle2());
+        assertEquals("Cierre proyectado:", tooltip.getTitle3());
+        assertEquals(subtitle3, tooltip.getSubtitle3());
     }
 
     private void assertComplexTable(final ComplexTable complexTable) {
