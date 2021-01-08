@@ -10,6 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
@@ -60,7 +61,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetMonitorTest {
-    
+
     private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
     private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
     private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
@@ -78,7 +79,7 @@ class GetMonitorTest {
 
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
-    
+
     @Mock
     private GetSales getSales;
 
@@ -87,7 +88,10 @@ class GetMonitorTest {
 
     @Mock
     private AnalyticsGateway analyticsGateway;
-    
+
+    @Mock
+    private OutboundWaveGateway outboundWaveGateway;
+
     private static final TimeZone TIME_ZONE = getDefault();
 
     @Test
@@ -102,7 +106,7 @@ class GetMonitorTest {
                 .build();
 
         commonMocks(utcCurrentTime, input);
-        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1, 
+        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
                 Arrays.asList(AnalyticsQueryEvent.PACKING_FINISH,
                         AnalyticsQueryEvent.PICKUP_FINISH)
         )).thenReturn(
@@ -115,10 +119,10 @@ class GetMonitorTest {
                         .process(AnalyticsQueryEvent.PICKUP_FINISH)
                         .eventCount(2020)
                         .unitCount(3020)
-                        .build()) 
+                        .build())
         );
-        
-        
+
+
 
         // WHEN
         final Monitor monitor = getMonitor.execute(input);
@@ -171,7 +175,7 @@ class GetMonitorTest {
         assertEquals(THROUGHPUT_PER_HOUR.getTitle(), packingThroughputMetric.getTitle());
         assertEquals(THROUGHPUT_PER_HOUR.getType(), packingThroughputMetric.getType());
         assertEquals("150 uds./h", packingThroughputMetric.getValue());
-        
+
         Metric packingProductivityMetric = packing.getMetrics().get(2);
         assertEquals(PRODUCTIVITY.getSubtitle(), packingProductivityMetric.getSubtitle());
         assertEquals(PRODUCTIVITY.getTitle(), packingProductivityMetric.getTitle());
@@ -192,7 +196,14 @@ class GetMonitorTest {
         assertEquals(BACKLOG.getTitle(), planningBacklogMetric.getTitle());
         assertEquals(BACKLOG.getType(), planningBacklogMetric.getType());
         assertEquals("0 uds.", planningBacklogMetric.getValue());
-        
+
+        Metric outboundPlanningThroughputMetric = outboundPlanning.getMetrics().get(1);
+        assertEquals(THROUGHPUT_PER_HOUR.getSubtitle(),
+                outboundPlanningThroughputMetric.getSubtitle());
+        assertEquals(THROUGHPUT_PER_HOUR.getTitle(), outboundPlanningThroughputMetric.getTitle());
+        assertEquals(THROUGHPUT_PER_HOUR.getType(), outboundPlanningThroughputMetric.getType());
+        assertEquals("54 uds./h", outboundPlanningThroughputMetric.getValue());
+
         assertTrue(monitorDataList.get(0) instanceof DeviationData);
         DeviationData deviationData = (DeviationData) monitorDataList.get(0);
         assertEquals("-13.15%", deviationData.getMetrics().getDeviationPercentage().getValue());
@@ -202,13 +213,12 @@ class GetMonitorTest {
                 .getDetail().getCurrentUnits().getValue());
         assertEquals("1042 uds.", deviationData.getMetrics().getDeviationUnits()
                 .getDetail().getForecastUnits().getValue());
-        
+
     }
 
     private void commonMocks(final ZonedDateTime utcCurrentTime, final GetMonitorInput input) {
         final String status = "status";
         List<Map<String, String>> statuses = List.of(
-                Map.of(status, OUTBOUND_PLANNING.getStatus()),
                 Map.of(status, PACKING.getStatus())
         );
 
@@ -241,11 +251,22 @@ class GetMonitorTest {
                         .quantity(725)
                         .build()
         );
-        
+
+        when(backlogGateway.getUnitBacklog(OUTBOUND_PLANNING.getStatus(),
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo()
+        )).thenReturn(
+                ProcessBacklog.builder()
+                        .process(OUTBOUND_PLANNING.getStatus())
+                        .quantity(0)
+                        .build()
+        );
+
         when(getSales.execute(new GetSalesInputDto(
                 FBM_WMS_OUTBOUND, WAREHOUSE_ID, utcCurrentTime.minusHours(28)))
         ).thenReturn(mockSales());
-        
+
         when(planningModelGateway.getPlanningDistribution(Mockito.any()
         )).thenReturn(mockPlanningDistribution(utcCurrentTime));
         when(backlogGateway.getUnitBacklog(WALL_IN.getStatus(),
@@ -258,10 +279,16 @@ class GetMonitorTest {
                         .quantity(2232)
                         .build()
         );
-        
-        
+
+        when(outboundWaveGateway.getUnitsCount(
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo(),
+                "ORDER"
+        )).thenReturn(54L);
+
     }
-    
+
     private List<Backlog> mockSales() {
         return List.of(
                 Backlog.builder()
@@ -282,7 +309,7 @@ class GetMonitorTest {
                         .build()
         );
     }
-    
+
     private List<PlanningDistributionResponse> mockPlanningDistribution(
             final ZonedDateTime utcCurrentTime) {
         return List.of(
@@ -314,7 +341,7 @@ class GetMonitorTest {
 
         // THEN
     }
-    
+
     @Test
     public void testErrorOnAnalytics() {
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
@@ -326,13 +353,13 @@ class GetMonitorTest {
                 .build();
 
         commonMocks(utcCurrentTime, input);
-        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1, 
+        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
                 Arrays.asList(AnalyticsQueryEvent.PACKING_FINISH,
                         AnalyticsQueryEvent.PICKUP_FINISH)
-        )).thenThrow(RuntimeException.class); 
-        
+        )).thenThrow(RuntimeException.class);
+
         final Monitor monitor = getMonitor.execute(input);
-        
+
         final List<MonitorData> monitorDataList = monitor.getMonitorData();
 
         final CurrentStatusData currentStatusData = (CurrentStatusData) monitorDataList.get(1);
@@ -346,26 +373,26 @@ class GetMonitorTest {
         assertEquals("Procesamiento", pickingThroughputMetric.getTitle());
         assertEquals("throughput_per_hour", pickingThroughputMetric.getType());
         assertEquals("-", pickingThroughputMetric.getValue());
-        
+
         final Metric pickingProductivityMetric = picking.getMetrics().get(2);
         assertEquals(PRODUCTIVITY.getSubtitle(), pickingProductivityMetric.getSubtitle());
         assertEquals(PRODUCTIVITY.getTitle(), pickingProductivityMetric.getTitle());
         assertEquals(PRODUCTIVITY.getType(), pickingProductivityMetric.getType());
         assertEquals("-", pickingProductivityMetric.getValue());
-        
+
         final Optional<Process> optionalPacking = currentStatusData.getProcesses().stream()
                 .filter(t -> PACKING.getTitle().equals(t.getTitle()))
                 .findFirst();
         assertTrue(optionalPacking.isPresent());
         final Process packing = optionalPacking.get();
-        
-        
+
+
         final Metric packingThroughputMetric = packing.getMetrics().get(1);
         assertEquals(THROUGHPUT_PER_HOUR.getSubtitle(), packingThroughputMetric.getSubtitle());
         assertEquals(THROUGHPUT_PER_HOUR.getTitle(), packingThroughputMetric.getTitle());
         assertEquals(THROUGHPUT_PER_HOUR.getType(), packingThroughputMetric.getType());
         assertEquals("-", packingThroughputMetric.getValue());
-        
+
         final Metric packingProductivityMetric = packing.getMetrics().get(2);
         assertEquals(PRODUCTIVITY.getSubtitle(), packingProductivityMetric.getSubtitle());
         assertEquals(PRODUCTIVITY.getTitle(), packingProductivityMetric.getTitle());
