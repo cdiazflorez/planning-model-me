@@ -67,7 +67,7 @@ public class SpreadsheetUtilsTest {
 
         assertEquals(0, result);
     }
-    
+
     @Test
     void testGetIntValueAtOnError() {
         // GIVEN
@@ -75,9 +75,28 @@ public class SpreadsheetUtilsTest {
         sheet.addRow().addCell().setValue("AWord");
 
         // WHEN
-        
+
         try {
             SpreadsheetUtils.getIntValueAt(sheet, 0, 0);
+        } catch (Exception e) {
+            exception = e;
+        }
+
+        assertNotNull(exception);
+        assertTrue(exception instanceof ForecastParsingException);
+    }
+
+    @Test
+    void testGetIntValueAtOnErrorMeliRow() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        final MeliRow row = sheet.addRow();
+        row.addCell().setValue("AWord");
+
+        // WHEN
+
+        try {
+            SpreadsheetUtils.getIntValueAt(sheet, row, 0);
         } catch (Exception e) {
             exception = e;
         }
@@ -120,12 +139,53 @@ public class SpreadsheetUtilsTest {
         try {
             SpreadsheetUtils.getLongValueAt(sheet, 0, 0);
         } catch (Exception e) {
-            exception = e;        
+            exception = e;
         }
         assertNotNull(exception);
         assertTrue(exception instanceof ForecastParsingException);
     }
-    
+
+    @Test
+    void testGetLongValueAtErrorMeliRow() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        MeliRow row = sheet.addRow();
+        row.addCell().setValue("AWord");
+
+        // WHEN
+        try {
+            SpreadsheetUtils.getLongValueAt(sheet, row, 0);
+        } catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertTrue(exception instanceof ForecastParsingException);
+    }
+
+    @Test
+    void testGetDoubleValueAtDotObject() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("50.3");
+
+        // WHEN
+        final double result = SpreadsheetUtils.getDoubleValueAt(sheet, 0, 0);
+
+        assertEquals(50.3, result);
+    }
+
+    @Test
+    void testGetDoubleValueAtCommaObject() {
+        // GIVEN
+        final MeliSheet sheet = createMeliDocument(List.of("Test")).getSheetByName("Test");
+        sheet.addRow().addCell().setValue("50,3");
+
+        // WHEN
+        final double result = SpreadsheetUtils.getDoubleValueAt(sheet, 0, 0);
+
+        assertEquals(50.3, result);
+    }
+
     @Test
     void testGetDoubleValueAtOnEmptySheetRowAndColumn() {
         // GIVEN
@@ -137,7 +197,7 @@ public class SpreadsheetUtilsTest {
 
         assertEquals(0.00, result);
     }
-    
+
     @Test
     void testGetDoubleValueAtError() {
         // GIVEN
@@ -185,7 +245,7 @@ public class SpreadsheetUtilsTest {
             exception = e;
         }
     }
-    
+
     @Test
     void testGetDurationValueSuccess() {
         // GIVEN
@@ -244,7 +304,7 @@ public class SpreadsheetUtilsTest {
         assertNotNull(exception);
         assertTrue(exception instanceof ForecastParsingException);
     }
-    
+
     @Test
     void testGetStringValueSuccess() {
         // GIVEN
@@ -256,7 +316,7 @@ public class SpreadsheetUtilsTest {
 
         assertEquals("01:18", result);
     }
-    
+
     @Test
     void testGetStringValueFailed() {
         // GIVEN
@@ -272,7 +332,7 @@ public class SpreadsheetUtilsTest {
         assertNotNull(exception);
         assertTrue(exception instanceof ForecastParsingException);
     }
-    
+
     @Test
     void testGetStringValueFromIntRowAndCellSuccess() {
         // GIVEN
@@ -283,6 +343,6 @@ public class SpreadsheetUtilsTest {
         final String result = SpreadsheetUtils.getStringValueAt(sheet, sheet.getRowAt(0), 0);
 
         assertEquals("01:18", result);
-    }   
-   
+    }
+
 }
