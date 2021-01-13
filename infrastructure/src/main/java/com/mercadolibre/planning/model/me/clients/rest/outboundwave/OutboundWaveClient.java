@@ -4,6 +4,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
+import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
 import com.mercadolibre.restclient.RestClient;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +30,10 @@ public class OutboundWaveClient extends HttpClient implements OutboundWaveGatewa
     }
 
     @Override
-    public int getUnitsCount(final String warehouseId,
-                              final ZonedDateTime dateFrom,
-                              final ZonedDateTime dateTo,
-                              final String unitGroupType) {
+    public UnitsResume getUnitsCount(final String warehouseId,
+                                     final ZonedDateTime dateFrom,
+                                     final ZonedDateTime dateTo,
+                                     final String unitGroupType) {
         final Map<String, String> params = new HashMap<>();
         params.put("warehouse_id", warehouseId);
         params.put("date_from", dateFrom.format(ISO_OFFSET_DATE_TIME));
@@ -45,7 +46,9 @@ public class OutboundWaveClient extends HttpClient implements OutboundWaveGatewa
                 .queryParams(params)
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
-        return send(request, response ->
-                response.getData(new TypeReference<>() {}));
+        return UnitsResume.builder()
+                .unitCount(send(request, response ->
+                response.getData(new TypeReference<>() {})))
+                .build();
     }
 }

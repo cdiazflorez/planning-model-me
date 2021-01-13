@@ -217,23 +217,16 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private Metric getThroughputMetric(final ProcessInfo processInfo,
-                                       final UnitsResume processedUnitLastHour,
-                                       final GetMonitorInput input) {
-        if (processInfo == OUTBOUND_PLANNING) {
-            return createMetric(processInfo,
-                    getUnitsCountWaves(input) + " uds./h",
-                    THROUGHPUT_PER_HOUR);
-        } else {
-            if (processedUnitLastHour == null) {
-                return createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo);
-            }
-            return createMetric(processInfo,
-                    processedUnitLastHour.getUnitCount() + " uds./h",
-                    THROUGHPUT_PER_HOUR);
+                                       final UnitsResume processedUnitLastHour) {
+        if (processedUnitLastHour == null) {
+            return createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo);
         }
+        return createMetric(processInfo,
+                processedUnitLastHour.getUnitCount() + " uds./h",
+                THROUGHPUT_PER_HOUR);
     }
 
-    private int getUnitsCountWaves(GetMonitorInput input) {
+    private UnitsResume getUnitsCountWaves(GetMonitorInput input) {
         return outboundWaveGateway.getUnitsCount(
                 input.getWarehouseId(),
                 input.getDateFrom(),
@@ -371,8 +364,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                                    final GetMonitorInput input,
                                    final List<UnitsResume> processedUnitsLastHour) {
         getProcessBy(processBacklog, OUTBOUND_PLANNING, input,
-                getUnitResumeForProcess(OUTBOUND_PLANNING,
-                processedUnitsLastHour))
+                getUnitsCountWaves(input))
                 .ifPresentOrElse(processes::add,
                         () -> getProcessBy(processBacklog, PICKING, input,
                                 getUnitResumeForProcess(PICKING,
@@ -417,7 +409,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                     metrics.add(getBacklogMetric(processBacklog, processInfo));
                     break;
                 case THROUGHPUT_PER_HOUR:
-                    metrics.add(getThroughputMetric(processInfo, unitResume, input));
+                    metrics.add(getThroughputMetric(processInfo, unitResume));
                     break;
                 case PRODUCTIVITY:
                     metrics.add(getProductivityMetric(input, unitResume, processInfo));

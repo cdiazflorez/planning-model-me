@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.clients.rest.outboundwave;
 
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
+import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.restclient.MockResponse;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,13 +54,13 @@ public class OutboundWaveClientTest extends BaseClientTest {
             givenMockGetCountUnitsWaves("9");
 
             //WHEN
-            final long result =
+            final UnitsResume result =
                     whenGetUnitsCount(
                             WAREHOUSE_ID, dateFrom, dateTo, unitGroupType
                     );
 
             //THEN
-            assertEquals(9L, result);
+            assertEquals(9, result.getUnitCount());
         }
 
         @Test
@@ -76,14 +77,14 @@ public class OutboundWaveClientTest extends BaseClientTest {
             givenMockGetCountUnitsWaves("0");
 
             //WHEN
-            final long result =
+            final UnitsResume result =
                     whenGetUnitsCount(
                             warehouseId, dateFrom, dateTo, unitGroupType
                     );
 
             //THEN
             assertNotNull(result);
-            assertEquals(0L, result);
+            assertEquals(0, result.getUnitCount());
         }
 
         @Test
@@ -104,10 +105,10 @@ public class OutboundWaveClientTest extends BaseClientTest {
             ));
         }
 
-        private long whenGetUnitsCount(final String warehouseId,
-                                       final ZonedDateTime dateFrom,
-                                       final ZonedDateTime dateTo,
-                                       final String unitGroupType) {
+        private UnitsResume whenGetUnitsCount(final String warehouseId,
+                                              final ZonedDateTime dateFrom,
+                                              final ZonedDateTime dateTo,
+                                              final String unitGroupType) {
             return outboundWaveClient.getUnitsCount(
                     warehouseId, dateFrom, dateTo, unitGroupType);
         }

@@ -285,7 +285,7 @@ class GetMonitorTest {
                 input.getDateFrom(),
                 input.getDateTo(),
                 "ORDER"
-        )).thenReturn(54);
+        )).thenReturn(UnitsResume.builder().unitCount(54).build());
 
     }
 
