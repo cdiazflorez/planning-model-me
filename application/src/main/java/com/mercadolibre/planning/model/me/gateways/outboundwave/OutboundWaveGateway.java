@@ -4,7 +4,7 @@ import java.time.ZonedDateTime;
 
 public interface OutboundWaveGateway {
 
-    long getUnitsCount(final String warehouseId,
+    int getUnitsCount(final String warehouseId,
                        final ZonedDateTime dateFrom,
                        final ZonedDateTime dateTo,
                        final String unitGroupType);

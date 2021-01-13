@@ -198,10 +198,10 @@ class GetMonitorTest {
         assertEquals("0 uds.", planningBacklogMetric.getValue());
 
         Metric outboundPlanningThroughputMetric = outboundPlanning.getMetrics().get(1);
-        assertEquals(THROUGHPUT_PER_HOUR.getSubtitle(),
+        assertEquals("última hora",
                 outboundPlanningThroughputMetric.getSubtitle());
-        assertEquals(THROUGHPUT_PER_HOUR.getTitle(), outboundPlanningThroughputMetric.getTitle());
-        assertEquals(THROUGHPUT_PER_HOUR.getType(), outboundPlanningThroughputMetric.getType());
+        assertEquals("Procesamiento", outboundPlanningThroughputMetric.getTitle());
+        assertEquals("throughput_per_hour", outboundPlanningThroughputMetric.getType());
         assertEquals("54 uds./h", outboundPlanningThroughputMetric.getValue());
 
         assertTrue(monitorDataList.get(0) instanceof DeviationData);
@@ -285,7 +285,7 @@ class GetMonitorTest {
                 input.getDateFrom(),
                 input.getDateTo(),
                 "ORDER"
-        )).thenReturn(54L);
+        )).thenReturn(54);
 
     }
 

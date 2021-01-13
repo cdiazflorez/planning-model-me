@@ -45,7 +45,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -193,7 +193,8 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                 input.getWarehouseId(),
                 input.getDateFrom(),
                 input.getDateTo());
-        final ProcessBacklog outboundBacklog = backlogGateway.getUnitBacklog(
+
+        final ProcessBacklog planningBacklog = backlogGateway.getUnitBacklog(
                 OUTBOUND_PLANNING.getStatus(),
                 input.getWarehouseId(),
                 input.getDateFrom(),
@@ -206,7 +207,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                 input.getWarehouseId(),
                 input.getDateFrom(),
                 input.getDateTo());
-        processBacklogs.addAll(Arrays.asList(outboundBacklog, pickingBacklog, wallInBacklog));
+        processBacklogs.addAll(asList(planningBacklog, pickingBacklog, wallInBacklog));
         final List<UnitsResume> processedUnitsLastHour = getUnitsResumes(input);
         processBacklogs.forEach(processBacklog ->
                 addProcessIfExist(processes, processBacklog, input, processedUnitsLastHour)
@@ -215,25 +216,25 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         return processes;
     }
 
-    private Metric getThroughputMetricOutboundPlanning(final ProcessInfo processInfo,
-                                       final GetMonitorInput input) {
-        return createMetric(processInfo,
-                getUnitsCountWaves(input) + " uds./h",
-                THROUGHPUT_PER_HOUR);
-    }
-
     private Metric getThroughputMetric(final ProcessInfo processInfo,
-                                     final UnitsResume processedUnitLastHour) {
-        if (processedUnitLastHour == null) {
-            return createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo);
+                                       final UnitsResume processedUnitLastHour,
+                                       final GetMonitorInput input) {
+        if (processInfo == OUTBOUND_PLANNING) {
+            return createMetric(processInfo,
+                    getUnitsCountWaves(input) + " uds./h",
+                    THROUGHPUT_PER_HOUR);
+        } else {
+            if (processedUnitLastHour == null) {
+                return createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo);
+            }
+            return createMetric(processInfo,
+                    processedUnitLastHour.getUnitCount() + " uds./h",
+                    THROUGHPUT_PER_HOUR);
         }
-        return createMetric(processInfo,
-                processedUnitLastHour.getUnitCount() + " uds./h",
-                        THROUGHPUT_PER_HOUR);
     }
 
     private int getUnitsCountWaves(GetMonitorInput input) {
-        return (int) outboundWaveGateway.getUnitsCount(
+        return outboundWaveGateway.getUnitsCount(
                 input.getWarehouseId(),
                 input.getDateFrom(),
                 input.getDateTo(),
@@ -406,29 +407,37 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private List<Metric> createMetricsList(final ProcessBacklog processBacklog,
-            final ProcessInfo processInfo, final GetMonitorInput input,
-            final UnitsResume unitResume) {
-        if (processInfo == OUTBOUND_PLANNING) {
-            return List.of(getBacklogMetric(processBacklog, processInfo),
-                    getThroughputMetricOutboundPlanning(processInfo, input));
-        } else if (processInfo == WALL_IN) {
-            return List.of(getBacklogMetric(processBacklog, processInfo));
-        } else {
-            return List.of(getBacklogMetric(processBacklog, processInfo),
-                    getThroughputMetric(processInfo, unitResume),
-                    getProductivityMetric(input, unitResume, processInfo));
-        }
+                                           final ProcessInfo processInfo,
+                                           final GetMonitorInput input,
+                                           final UnitsResume unitResume) {
+        List<Metric> metrics = new ArrayList<>();
+        processInfo.getMetricTypes().forEach(metricType -> {
+            switch (metricType) {
+                case BACKLOG:
+                    metrics.add(getBacklogMetric(processBacklog, processInfo));
+                    break;
+                case THROUGHPUT_PER_HOUR:
+                    metrics.add(getThroughputMetric(processInfo, unitResume, input));
+                    break;
+                case PRODUCTIVITY:
+                    metrics.add(getProductivityMetric(input, unitResume, processInfo));
+                    break;
+                default:
+                    metrics.add(getBacklogMetric(processBacklog, processInfo));
+            }
+        });
+        return metrics;
     }
 
     private Metric getBacklogMetric(final ProcessBacklog processBacklog,
-            final ProcessInfo processInfo) {
+                                    final ProcessInfo processInfo) {
         final String quantity = NumberFormat.getNumberInstance(Locale.GERMAN)
                         .format(processBacklog.getQuantity());
         return createMetric(processInfo, quantity + " uds.", BACKLOG);
     }
 
     private UnitsResume getUnitResumeForProcess(final ProcessInfo processInfo,
-            final List<UnitsResume> processedUnitsLastHour) {
+                                                final List<UnitsResume> processedUnitsLastHour) {
         if (processedUnitsLastHour == null) {
             return null;
         }

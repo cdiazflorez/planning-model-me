@@ -29,7 +29,7 @@ public class OutboundWaveClient extends HttpClient implements OutboundWaveGatewa
     }
 
     @Override
-    public long getUnitsCount(final String warehouseId,
+    public int getUnitsCount(final String warehouseId,
                               final ZonedDateTime dateFrom,
                               final ZonedDateTime dateTo,
                               final String unitGroupType) {
