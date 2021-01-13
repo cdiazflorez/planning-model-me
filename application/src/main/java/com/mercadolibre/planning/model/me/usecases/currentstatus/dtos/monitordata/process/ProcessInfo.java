@@ -10,18 +10,40 @@ import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.mon
 import static com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
+import static java.util.Collections.singletonList;
 
 @AllArgsConstructor
 @Getter
 public enum ProcessInfo {
-    OUTBOUND_PLANNING("pending", "Ready to Wave", "Outbound Planning", 0,
+
+    OUTBOUND_PLANNING(
+            "pending",
+            "Ready to Wave",
+            "Outbound Planning",
+            0,
             asList(BACKLOG, THROUGHPUT_PER_HOUR)),
-    PICKING("to_pick", "Ready to Pick", "Picking", 1,
+
+    PICKING(
+            "to_pick",
+            "Ready to Pick",
+            "Picking",
+            1,
             asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
-    PACKING("to_pack", "Ready to Pack", "Packing", 2,
+
+    PACKING(
+            "to_pack",
+            "Ready to Pack",
+            "Packing",
+            2,
             asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
-    WALL_IN("to_sort,sorted,to_group", "Ready to Group", "Wall In", 3,
-            asList(BACKLOG));
+
+    WALL_IN(
+            "to_sort,sorted,to_group",
+            "Ready to Group",
+            "Wall In",
+            3,
+            singletonList(BACKLOG));
+
     private final String status;
     private final String subtitle;
     private final String title;

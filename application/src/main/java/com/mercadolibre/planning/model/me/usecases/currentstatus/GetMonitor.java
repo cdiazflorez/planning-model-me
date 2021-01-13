@@ -423,7 +423,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                     metrics.add(getProductivityMetric(input, unitResume, processInfo));
                     break;
                 default:
-                    metrics.add(getBacklogMetric(processBacklog, processInfo));
+                    break;
             }
         });
         return metrics;
