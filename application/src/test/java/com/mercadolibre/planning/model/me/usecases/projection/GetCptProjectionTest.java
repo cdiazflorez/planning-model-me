@@ -15,17 +15,14 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
@@ -53,12 +50,15 @@ import java.util.stream.IntStream;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
@@ -110,15 +110,31 @@ public class GetCptProjectionTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        when(planningModelGateway.getEntities(
-                createRequest(HEADCOUNT, utcCurrentTime, List.of(ProcessingType.ACTIVE_WORKERS))))
-                .thenReturn(mockHeadcountEntities(utcCurrentTime));
-
-        when(planningModelGateway.getProductivity(createProductivityRequest(utcCurrentTime)))
-                .thenReturn(mockProductivityEntities(utcCurrentTime));
-
-        when(planningModelGateway.getEntities(createRequest(THROUGHPUT, utcCurrentTime)))
-                .thenReturn(mockThroughputEntities());
+        when(planningModelGateway.searchEntities(SearchEntitiesRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(FBM_WMS_OUTBOUND)
+                .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
+                .dateFrom(utcCurrentTime)
+                .dateTo(utcCurrentTime.plusDays(1))
+                .processName(List.of(PICKING, PACKING))
+                .entityFilters(Map.of(
+                        HEADCOUNT, Map.of(
+                                PROCESSING_TYPE.toJson(),
+                                List.of(ACTIVE_WORKERS.getName())
+                        ),
+                        PRODUCTIVITY, Map.of(
+                                ABILITY_LEVEL.toJson(),
+                                List.of("1","2")
+                        ))
+                )
+                .build())
+        ).thenReturn(
+                Map.of(
+                        HEADCOUNT, mockHeadcountEntities(utcCurrentTime),
+                        PRODUCTIVITY, mockProductivityEntities(utcCurrentTime),
+                        THROUGHPUT, new ArrayList<>()
+                )
+        );
 
         when(planningModelGateway.getConfiguration(createConfigurationRequest()))
                 .thenReturn(mockProcessingTimeConfiguration());
@@ -388,37 +404,6 @@ public class GetCptProjectionTest {
         assertFalse(throughput.getContent().isEmpty());
     }
 
-    private EntityRequest createRequest(final EntityType entityType,
-                                        final ZonedDateTime currentTime) {
-        return createRequest(entityType, currentTime, null);
-    }
-
-    private EntityRequest createRequest(final EntityType entityType,
-                                        final ZonedDateTime currentTime,
-                                        final List<ProcessingType> processingType) {
-        return EntityRequest.builder()
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId(WAREHOUSE_ID)
-                .entityType(entityType)
-                .processName(List.of(PICKING, PACKING))
-                .dateFrom(currentTime)
-                .dateTo(currentTime.plusDays(1))
-                .processingType(processingType)
-                .build();
-    }
-
-    private ProductivityRequest createProductivityRequest(final ZonedDateTime currentTime) {
-        return ProductivityRequest.builder()
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId(WAREHOUSE_ID)
-                .entityType(PRODUCTIVITY)
-                .processName(List.of(PICKING, PACKING))
-                .dateFrom(currentTime)
-                .dateTo(currentTime.plusDays(1))
-                .abilityLevel(List.of(1,2))
-                .build();
-    }
-
     private ProjectionRequest createProjectionRequest(final List<Backlog> backlogs,
                                                       final ZonedDateTime currentTime) {
         return ProjectionRequest.builder()
@@ -541,7 +526,7 @@ public class GetCptProjectionTest {
         );
     }
 
-    private List<Productivity> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
+    private List<Entity> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
         return List.of(
                 Productivity.builder()
                         .date(utcCurrentTime)
@@ -600,10 +585,6 @@ public class GetCptProjectionTest {
                         .abilityLevel(2)
                         .build()
         );
-    }
-
-    private List<Entity> mockThroughputEntities() {
-        return new ArrayList<>();
     }
 
     private Optional<ConfigurationResponse> mockProcessingTimeConfiguration() {
