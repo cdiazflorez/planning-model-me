@@ -1,9 +1,11 @@
 package com.mercadolibre.planning.model.me.exception;
 
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -13,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
  * Handles exceptions thrown by the application and converts it into a proper API response.
  * Every exception thrown must be registered here with a proper handler.
  */
+@Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
@@ -35,6 +38,8 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(
             Exception exception,
             HttpServletRequest request) {
+
+        log.error(exception.getMessage(), exception);
         return getBadRequestResponseEntity(exception, request);
     }
 
@@ -42,7 +47,42 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnmatchedWarehouseException(
             Exception exception,
             HttpServletRequest request) {
+
+        log.error(exception.getMessage(), exception);
         return getBadRequestResponseEntity(exception, request);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameterException(
+            final MissingServletRequestParameterException exception,
+            final HttpServletRequest request) {
+
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST)
+                .message(exception.getMessage())
+                .error("missing_parameter")
+                .build();
+
+        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+        log.error(exception.getMessage(), exception);
+        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(
+            final Exception exception,
+            final HttpServletRequest request) {
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .message(exception.getMessage())
+                .error("unknown_error")
+                .build();
+
+        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+
+        log.error(exception.getMessage(), exception);
+        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }
 
     private ResponseEntity<ErrorResponse> getBadRequestResponseEntity(
