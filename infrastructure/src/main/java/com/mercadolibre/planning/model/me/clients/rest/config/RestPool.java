@@ -6,5 +6,6 @@ public enum RestPool {
     OUTBOUND_UNIT,
     LOGISTIC_CENTER,
     AUTHORIZATION,
-    ANALYTICS;
+    ANALYTICS,
+    OUTBOUND_WAVE;
 }

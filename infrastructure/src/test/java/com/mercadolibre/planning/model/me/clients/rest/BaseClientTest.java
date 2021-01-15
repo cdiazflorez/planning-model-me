@@ -31,7 +31,7 @@ public class BaseClientTest {
         final AuthorizationClientProperties authorizationClientProperties =
                 new AuthorizationClientProperties();
         authorizationClientProperties.setBaseUrl(BASE_URL);
-        
+
         final AnalyticsClientProperties analyticsClientProperties =
                 new AnalyticsClientProperties();
         analyticsClientProperties.setBaseUrl(BASE_URL);
@@ -41,13 +41,18 @@ public class BaseClientTest {
                 .PlanningModelForecastClientProperties();
         planningModelForecastClientProperties.setBaseUrl(BASE_URL);
 
+        final RestClientConfig.OutboundWaveClientProperties outboundWaveRestClientProperties =
+                new RestClientConfig.OutboundWaveClientProperties();
+        outboundWaveRestClientProperties.setBaseUrl(BASE_URL);
+
         return new RestClientConfig(
                 planningModelClientProperties,
                 outboundUnitRestClientProperties,
                 logisticCenterClientProperties,
                 authorizationClientProperties,
                 analyticsClientProperties,
-                planningModelForecastClientProperties
+                planningModelForecastClientProperties,
+                outboundWaveRestClientProperties
         ).restClient();
     }
 

@@ -9,6 +9,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
@@ -44,7 +45,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -69,21 +70,22 @@ import static java.util.Arrays.asList;
 @Named
 @AllArgsConstructor
 public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
-    
+
     private static final int HOURS_OFFSET = 1;
     private static final String STATUS_ATTRIBUTE = "status";
     private static final String UNITS_DEFAULT_STRING = "%d uds.";
     private static final int SELLING_PERIOD_HOURS = 28;
     private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
             List.of(ProcessingType.ACTIVE_WORKERS);
-    protected static final List<ProcessName> PROJECTION_PROCESS_NAMES = 
+    protected static final List<ProcessName> PROJECTION_PROCESS_NAMES =
             List.of(ProcessName.PICKING, ProcessName.PACKING);
     private final BacklogGatewayProvider backlogGatewayProvider;
     protected final LogisticCenterGateway logisticCenterGateway;
     protected final AnalyticsGateway analyticsClient;
     private final GetSales getSales;
     private final PlanningModelGateway planningModelGateway;
-    
+    private final OutboundWaveGateway outboundWaveGateway;
+
     @Override
     public Monitor execute(GetMonitorInput input) {
         final List<MonitorData> monitorDataList = getMonitorData(input);
@@ -116,7 +118,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                 .mapToLong(PlanningDistributionResponse::getTotal).sum();
         final int totalSales = getSales(input).stream().mapToInt(Backlog::getQuantity).sum();
         final double totalDeviation = getDeviationPercentage(totalPlanned, totalSales);
-        
+
         return new DeviationData(DeviationMetric.builder()
                 .deviationPercentage(Metric.builder()
                         .title("% Desviación FCST / Ventas")
@@ -126,7 +128,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                         .build())
                 .deviationUnits(DeviationUnit.builder()
                         .title("Desviación en unidades")
-                        .value(String.format(UNITS_DEFAULT_STRING, 
+                        .value(String.format(UNITS_DEFAULT_STRING,
                                 Math.abs(totalPlanned - totalSales)))
                         .detail(DeviationUnitDetail.builder()
                                 .forecastUnits(Metric.builder()
@@ -143,15 +145,15 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private double getDeviationPercentage(final long totalPlanned, final int totalSold) {
-        return totalSold != 0 && totalPlanned != 0 
-                ? (((double) totalSold / totalPlanned) - 1) * 100 
+        return totalSold != 0 && totalPlanned != 0
+                ? (((double) totalSold / totalPlanned) - 1) * 100
                         : 0;
     }
 
     private String getIconForDeviation(double totalDeviation) {
         return totalDeviation > 0 ? "arrow_up" : "arrow_down";
     }
-    
+
     private String getStatusForDeviation(double totalDeviation) {
         return totalDeviation > 0 ? "warning" : null;
     }
@@ -173,7 +175,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                         input.getDateFrom(),
                         input.getDateTo()));
     }
-    
+
     private CurrentStatusData getCurrentStatusData(GetMonitorInput input) {
         TreeSet<Process> processes = getProcessesAndMetrics(input);
         return CurrentStatusData.builder().processes(processes).build();
@@ -183,12 +185,17 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         final String status = STATUS_ATTRIBUTE;
         final TreeSet<Process> processes = new TreeSet<>();
         List<Map<String, String>> statuses = List.of(
-                Map.of(status, OUTBOUND_PLANNING.getStatus()),
                 Map.of(status, PACKING.getStatus())
         );
         final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
         List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo());
+
+        final ProcessBacklog planningBacklog = backlogGateway.getUnitBacklog(
+                OUTBOUND_PLANNING.getStatus(),
                 input.getWarehouseId(),
                 input.getDateFrom(),
                 input.getDateTo());
@@ -200,7 +207,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                 input.getWarehouseId(),
                 input.getDateFrom(),
                 input.getDateTo());
-        processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog));
+        processBacklogs.addAll(asList(planningBacklog, pickingBacklog, wallInBacklog));
         final List<UnitsResume> processedUnitsLastHour = getUnitsResumes(input);
         processBacklogs.forEach(processBacklog ->
                 addProcessIfExist(processes, processBacklog, input, processedUnitsLastHour)
@@ -210,13 +217,21 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private Metric getThroughputMetric(final ProcessInfo processInfo,
-                                     final UnitsResume processedUnitLastHour) {
+                                       final UnitsResume processedUnitLastHour) {
         if (processedUnitLastHour == null) {
             return createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo);
         }
         return createMetric(processInfo,
                 processedUnitLastHour.getUnitCount() + " uds./h",
-                        THROUGHPUT_PER_HOUR);
+                THROUGHPUT_PER_HOUR);
+    }
+
+    private UnitsResume getUnitsCountWaves(GetMonitorInput input) {
+        return outboundWaveGateway.getUnitsCount(
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo(),
+                "ORDER");
     }
 
     private Metric createEmptyMetric(final MetricType metricType, final ProcessInfo process) {
@@ -226,7 +241,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     private List<UnitsResume> getUnitsResumes(final GetMonitorInput input) {
         try {
             return analyticsClient
-                    .getUnitsInInterval(input.getWarehouseId(), 
+                    .getUnitsInInterval(input.getWarehouseId(),
                             HOURS_OFFSET, asList(PACKING_FINISH, PICKUP_FINISH)
             );
         } catch (Exception e) {
@@ -237,17 +252,17 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         return null;
     }
 
-    private Metric createMetric(ProcessInfo process, 
-                                    final String value, 
+    private Metric createMetric(ProcessInfo process,
+                                    final String value,
                                     MetricType metricType) {
         return Metric.builder()
                     .title(metricType.getTitle())
                     .type(metricType.getType())
-                    .subtitle(metricType == MetricType.BACKLOG 
+                    .subtitle(metricType == MetricType.BACKLOG
                             ? process.getSubtitle() : metricType.getSubtitle())
-                    .value(value)                   
+                    .value(value)
                     .build();
-           
+
     }
 
     private Metric getProductivityMetric(final GetMonitorInput input,
@@ -269,23 +284,23 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                 processedUnitLastHour, processInfo);
     }
 
-    private Metric calculateMetric(final ZonedDateTime current, 
+    private Metric calculateMetric(final ZonedDateTime current,
                                 final List<ZonedDateTime> dates,
-                                final List<Entity> headcount, 
+                                final List<Entity> headcount,
                                 final UnitsResume unit,
                                 ProcessInfo processInfo) {
         final List<Double> productivities = getProductivities(current, dates, headcount, unit);
 
         final double productivity = calculateProductivity(productivities);
 
-        return createMetric(processInfo, 
-                String.format("%.1f %s", productivity, "uds./h"), 
+        return createMetric(processInfo,
+                String.format("%.1f %s", productivity, "uds./h"),
                 PRODUCTIVITY);
     }
 
     private List<Double> getProductivities(final ZonedDateTime current,
-                                            final List<ZonedDateTime> dates, 
-                                            final List<Entity> headcount, 
+                                            final List<ZonedDateTime> dates,
+                                            final List<Entity> headcount,
                                             final UnitsResume unit) {
         ZonedDateTime toDate = current;
         final List<Double> productivities = new LinkedList<>();
@@ -301,9 +316,9 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     private double calculateProductivity(final List<Double> productivities) {
         double productivitySum = productivities.stream().reduce(0d, Double::sum);
         double productivityCount = productivities.stream().filter(prod -> prod > 0).count();
-        return productivitySum != 0 && productivityCount != 0 
-                ? productivitySum / productivityCount 
-                        : 0;               
+        return productivitySum != 0 && productivityCount != 0
+                ? productivitySum / productivityCount
+                        : 0;
     }
 
     private double calculateProductivityForHour(final ZonedDateTime utcDateTo,
@@ -314,7 +329,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         final double quantityFromPercentageCurrentHour =
                 (unitsLastHour / 100.00) * percentageCurrentHour;
         final int headCountCurrentHour = getProcessHeadcount(utcDateTo, headcount, unit);
-        return headCountCurrentHour == 0 
+        return headCountCurrentHour == 0
                 ? 0 : quantityFromPercentageCurrentHour / headCountCurrentHour;
     }
 
@@ -329,7 +344,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
         }
         return 0;
     }
-    
+
     private EntityRequest createRequest(final GetMonitorInput input,
                                         final ZonedDateTime dateFrom,
                                         final ZonedDateTime dateTo) {
@@ -348,20 +363,19 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                                    final ProcessBacklog processBacklog,
                                    final GetMonitorInput input,
                                    final List<UnitsResume> processedUnitsLastHour) {
-        getProcessBy(processBacklog, OUTBOUND_PLANNING, input, 
-                getUnitResumeForProcess(OUTBOUND_PLANNING,
-                processedUnitsLastHour))
+        getProcessBy(processBacklog, OUTBOUND_PLANNING, input,
+                getUnitsCountWaves(input))
                 .ifPresentOrElse(processes::add,
-                        () -> getProcessBy(processBacklog, PICKING, input, 
+                        () -> getProcessBy(processBacklog, PICKING, input,
                                 getUnitResumeForProcess(PICKING,
                                 processedUnitsLastHour))
                                 .ifPresentOrElse(processes::add,
-                                        () -> getProcessBy(processBacklog, PACKING, input, 
+                                        () -> getProcessBy(processBacklog, PACKING, input,
                                                 getUnitResumeForProcess(PACKING,
                                                 processedUnitsLastHour))
                                                 .ifPresentOrElse(processes::add,
                                                         () -> getProcessBy(processBacklog, WALL_IN,
-                                                                input, 
+                                                                input,
                                                                 getUnitResumeForProcess(WALL_IN,
                                                                         processedUnitsLastHour))
                                                                 .ifPresent(processes::add)
@@ -385,29 +399,42 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private List<Metric> createMetricsList(final ProcessBacklog processBacklog,
-            final ProcessInfo processInfo, final GetMonitorInput input,
-            final UnitsResume unitResume) {
-        return processInfo == OUTBOUND_PLANNING || processInfo == WALL_IN
-                ? List.of(getBacklogMetric(processBacklog, processInfo))
-                        : List.of(getBacklogMetric(processBacklog, processInfo),
-                                getThroughputMetric(processInfo, unitResume),
-                                getProductivityMetric(input, unitResume, processInfo));
+                                           final ProcessInfo processInfo,
+                                           final GetMonitorInput input,
+                                           final UnitsResume unitResume) {
+        List<Metric> metrics = new ArrayList<>();
+        processInfo.getMetricTypes().forEach(metricType -> {
+            switch (metricType) {
+                case BACKLOG:
+                    metrics.add(getBacklogMetric(processBacklog, processInfo));
+                    break;
+                case THROUGHPUT_PER_HOUR:
+                    metrics.add(getThroughputMetric(processInfo, unitResume));
+                    break;
+                case PRODUCTIVITY:
+                    metrics.add(getProductivityMetric(input, unitResume, processInfo));
+                    break;
+                default:
+                    break;
+            }
+        });
+        return metrics;
     }
 
     private Metric getBacklogMetric(final ProcessBacklog processBacklog,
-            final ProcessInfo processInfo) {
+                                    final ProcessInfo processInfo) {
         final String quantity = NumberFormat.getNumberInstance(Locale.GERMAN)
                         .format(processBacklog.getQuantity());
         return createMetric(processInfo, quantity + " uds.", BACKLOG);
     }
 
     private UnitsResume getUnitResumeForProcess(final ProcessInfo processInfo,
-            final List<UnitsResume> processedUnitsLastHour) {
+                                                final List<UnitsResume> processedUnitsLastHour) {
         if (processedUnitsLastHour == null) {
             return null;
         }
-        return processedUnitsLastHour.stream().filter(unitsLastHour 
-                -> Objects.equals(processInfo.getTitle(), 
+        return processedUnitsLastHour.stream().filter(unitsLastHour
+                -> Objects.equals(processInfo.getTitle(),
                         unitsLastHour.getProcess().getRelatedProcess()))
                 .findFirst()
                 .orElse(null);
