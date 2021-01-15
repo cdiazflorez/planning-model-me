@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -17,6 +18,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
@@ -728,6 +730,48 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(2200, packingValues.get(1).getQuantity());
         assertEquals(ZonedDateTime.parse("2020-01-01T12:00:00Z"), packingValues.get(2).getDate());
         assertEquals(3200, packingValues.get(2).getQuantity());
+    }
+
+    @Test
+    void testSearchEntities() throws IOException {
+        // Given
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(format(BASE_URL + ENTITIES_URL, "search"))
+                .withStatusCode(HttpStatus.OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(getResourceAsString("search_entities_response.json"))
+                .build();
+
+        // When
+        final Map<EntityType, List<Entity>> entities = client.searchEntities(
+                SearchEntitiesRequest.builder()
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .entityTypes(List.of(HEADCOUNT, PRODUCTIVITY))
+                        .processName(List.of(PICKING, PACKING))
+                        .entityFilters(Map.of(PRODUCTIVITY, Map.of("ability_level", List.of("1"))))
+                        .build());
+
+        // Then
+        assertEquals(2, entities.size());
+        assertEquals(6, entities.get(HEADCOUNT).size());
+        assertEquals(2, entities.get(PRODUCTIVITY).size());
+
+        final Entity headcount = entities.get(HEADCOUNT).get(0);
+        final Productivity productivity = (Productivity)entities.get(PRODUCTIVITY).get(0);
+
+        assertEquals(FBM_WMS_OUTBOUND, headcount.getWorkflow());
+        assertEquals(PACKING, headcount.getProcessName());
+        assertEquals(Source.FORECAST, headcount.getSource());
+        assertEquals("2021-01-10T00:00Z", headcount.getDate().toString());
+        assertEquals(23, headcount.getValue());
+
+        assertEquals(FBM_WMS_OUTBOUND, productivity.getWorkflow());
+        assertEquals(PACKING, productivity.getProcessName());
+        assertEquals(Source.FORECAST, productivity.getSource());
+        assertEquals("2021-01-10T00:00Z", productivity.getDate().toString());
+        assertEquals(50, productivity.getValue());
+        assertEquals(1, productivity.getAbilityLevel());
     }
 
     private static Stream<Arguments> entityRequests() {
