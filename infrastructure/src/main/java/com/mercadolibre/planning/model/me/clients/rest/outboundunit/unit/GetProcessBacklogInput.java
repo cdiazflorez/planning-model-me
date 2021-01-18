@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.GetMonitorInput;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 

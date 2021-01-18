@@ -44,8 +44,8 @@ class AnalyticsClientTest extends BaseClientTest {
         // GIVEN
         final int hoursOffset = 1;
         final List<AnalyticsQueryEvent> eventType = List.of(
-                AnalyticsQueryEvent.PACKING_FINISH,
-                AnalyticsQueryEvent.PICKUP_FINISH
+                AnalyticsQueryEvent.PACKING_NO_WALL,
+                AnalyticsQueryEvent.PICKING
                 );
 
         MockResponse.builder()
@@ -64,11 +64,11 @@ class AnalyticsClientTest extends BaseClientTest {
 
         //THEN
         assertNotNull(unitsResume);
-        assertEquals(2, unitsResume.size());
+        assertEquals(3, unitsResume.size());
         assertNotNull(unitsResume.stream().filter(unit -> Objects.equals(unit.getProcess(), 
-                AnalyticsQueryEvent.PACKING_FINISH)).findFirst().orElse(null));
+                AnalyticsQueryEvent.PACKING_WALL)).findFirst().orElse(null));
         assertNotNull(unitsResume.stream().filter(unit -> Objects.equals(unit.getProcess(), 
-                AnalyticsQueryEvent.PICKUP_FINISH)).findFirst().orElse(null));
+                AnalyticsQueryEvent.PICKING)).findFirst().orElse(null));
     }
 
     

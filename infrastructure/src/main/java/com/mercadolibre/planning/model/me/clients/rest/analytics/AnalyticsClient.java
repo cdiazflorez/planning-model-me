@@ -58,7 +58,7 @@ public class AnalyticsClient extends HttpClient implements AnalyticsGateway {
             List<AnalyticsQueryEvent> eventType) {
         final Map<String, String> defaultParams = new HashMap<>();
         defaultParams.put("hoursOffset", String.valueOf(hoursOffset));
-        defaultParams.put("eventType", eventType.stream().map(event -> event.getName())
+        defaultParams.put("processNames", eventType.stream().map(AnalyticsQueryEvent::getName)
                 .collect(Collectors.joining(",")));
         return defaultParams;
     }

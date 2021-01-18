@@ -1,0 +1,36 @@
+package com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get;
+
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@ExtendWith(MockitoExtension.class)
+public class GetBacklogMetricUseCaseTest {
+
+    @InjectMocks
+    private GetBacklogMetricUseCase getBacklogMetricUseCase;
+
+    @Test
+    public void testExecuteOk() {
+        // GIVEN
+        final BacklogMetricInput input = BacklogMetricInput.builder()
+                .processInfo(PACKING)
+                .quantity(10)
+                .build();
+
+        // WHEN
+        Metric metric = getBacklogMetricUseCase.execute(input);
+
+        // THEN
+        assertEquals(PACKING.getSubtitle(), metric.getSubtitle());
+        assertEquals(BACKLOG.getTitle(), metric.getTitle());
+        assertEquals(BACKLOG.getType(), metric.getType());
+        assertEquals("10 uds.", metric.getValue());
+    }
+}
