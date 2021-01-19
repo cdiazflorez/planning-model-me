@@ -1,6 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
-import com.mercadolibre.planning.model.me.entities.projection.*;
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.Content;
+import com.mercadolibre.planning.model.me.entities.projection.Data;
+import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
