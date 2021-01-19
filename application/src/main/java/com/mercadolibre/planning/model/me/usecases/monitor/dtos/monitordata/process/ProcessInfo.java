@@ -29,27 +29,24 @@ public enum ProcessInfo {
             "Picking",
             1,
             asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
-
+    WALL_IN(
+            "sorted,to_group",
+            "Ready to Group",
+            "Wall",
+            2,
+            singletonList(BACKLOG)),
     PACKING(
             "to_pack",
             "Ready to Pack",
             "Packing normal",
             3,
             asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
-
     PACKING_WALL(
-            "packing_wall",
+            "to_pack",
             "Ready to Pack",
             "Packing de wall",
             4,
-            asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
-
-    WALL_IN(
-            "to_sort,sorted,to_group",
-            "Ready to Group",
-            "Wall In",
-            2,
-            singletonList(BACKLOG));
+            asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY));
 
     private final String status;
     private final String subtitle;

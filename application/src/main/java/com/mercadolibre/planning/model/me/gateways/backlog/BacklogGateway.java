@@ -24,6 +24,7 @@ public interface BacklogGateway {
     ProcessBacklog getUnitBacklog(final String statuses,
                                   final String warehouseId,
                                   final ZonedDateTime dateFrom,
-                                  final ZonedDateTime dateTo);
+                                  final ZonedDateTime dateTo,
+                                  final String area);
 
 }

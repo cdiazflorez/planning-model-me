@@ -89,6 +89,28 @@ class GetCurrentStatusTest {
                 .dateTo(getCurrentUtcDate().plusHours(25))
                 .build();
         isAnalyticsError = false;
+        final String status = "status";
+        final List<Map<String, String>> statuses = List.of(
+                Map.of(status, OUTBOUND_PLANNING.getStatus()),
+                Map.of(status, PACKING.getStatus())
+        );
+        when(backlogGateway.getBacklog(statuses,
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo()
+        )).thenReturn(
+                new ArrayList<>(
+                        List.of(
+                                ProcessBacklog.builder()
+                                        .process(OUTBOUND_PLANNING.getStatus())
+                                        .quantity(1442)
+                                        .build(),
+                                ProcessBacklog.builder()
+                                        .process(PACKING.getStatus())
+                                        .quantity(1442)
+                                        .build()
+                        ))
+        );
         commonMocks(input);
 
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
@@ -137,7 +159,7 @@ class GetCurrentStatusTest {
                 outboundPlanningThroughputMetric.getSubtitle());
         assertEquals("Procesamiento", outboundPlanningThroughputMetric.getTitle());
         assertEquals("throughput_per_hour", outboundPlanningThroughputMetric.getType());
-        assertEquals("-", outboundPlanningThroughputMetric.getValue());
+        assertEquals("145 uds./h", outboundPlanningThroughputMetric.getValue());
 
         final Process picking = processList.get(PICKING.getIndex());
         assertEquals(PICKING.getTitle(), picking.getTitle());
@@ -159,7 +181,6 @@ class GetCurrentStatusTest {
         assertEquals(PRODUCTIVITY.getType(), pickingProductivityMetric.getType());
         assertEquals("270 uds./h", pickingProductivityMetric.getValue());
 
-
         final Process packing = processList.get(PACKING.getIndex());
         assertEquals(PACKING.getTitle(), packing.getTitle());
         final Metric packingBacklogMetric = packing.getMetrics().get(0);
@@ -179,6 +200,7 @@ class GetCurrentStatusTest {
         assertEquals(PRODUCTIVITY.getTitle(), packingProductivityMetric.getTitle());
         assertEquals(PRODUCTIVITY.getType(), packingProductivityMetric.getType());
         assertEquals("145 uds./h", packingProductivityMetric.getValue());
+
 
         final Process packingWall = processList.get(PACKING_WALL.getIndex());
         assertEquals(PACKING_WALL.getTitle(), packingWall.getTitle());
@@ -252,28 +274,9 @@ class GetCurrentStatusTest {
     }
 
     private void commonMocks(final GetMonitorInput input) {
-        final String status = "status";
-        List<Map<String, String>> statuses = List.of(
-                Map.of(status, OUTBOUND_PLANNING.getStatus()),
-                Map.of(status, PACKING.getStatus())
-        );
 
         when(backlogGatewayProvider.getBy(input.getWorkflow()))
                 .thenReturn(Optional.of(backlogGateway));
-
-        when(backlogGateway.getBacklog(statuses,
-                input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo()
-        )).thenReturn(
-                new ArrayList<>(
-                        List.of(
-                                ProcessBacklog.builder()
-                                        .process(PACKING.getStatus())
-                                        .quantity(1442)
-                                        .build()
-                        ))
-        );
 
         final ProcessBacklog pickingProcessBacklog = ProcessBacklog.builder()
                 .process(PICKING.getStatus())
@@ -282,7 +285,7 @@ class GetCurrentStatusTest {
         when(backlogGateway.getUnitBacklog(PICKING.getStatus(),
                 input.getWarehouseId(),
                 input.getDateFrom(),
-                input.getDateTo()
+                input.getDateTo(), null
         )).thenReturn(
                 pickingProcessBacklog
         );
@@ -290,11 +293,23 @@ class GetCurrentStatusTest {
         when(backlogGateway.getUnitBacklog(WALL_IN.getStatus(),
                 input.getWarehouseId(),
                 input.getDateFrom(),
-                input.getDateTo()
+                input.getDateTo(), null
         )).thenReturn(
                 ProcessBacklog.builder()
                         .process(WALL_IN.getStatus())
                         .quantity(725)
+                        .build()
+        );
+
+        when(backlogGateway.getUnitBacklog(PACKING.getStatus(),
+                input.getWarehouseId(),
+                input.getDateFrom(),
+                input.getDateTo(), "PW"
+        )).thenReturn(
+                ProcessBacklog.builder()
+                        .process(PACKING.getStatus())
+                        .quantity(725)
+                        .area("PW")
                         .build()
         );
 
@@ -332,18 +347,19 @@ class GetCurrentStatusTest {
     private void mockGetProductivityMetric() {
         when(getProductivityMetric.execute(any(ProductivityInput.class))).thenAnswer(invocation -> {
             ProductivityInput productivityInput = invocation.getArgument(0);
-            if (productivityInput.getProcessInfo().equals(OUTBOUND_PLANNING)) {
-                return createMetric(PRODUCTIVITY, OUTBOUND_PLANNING, "20 uds./h");
-            } else if (productivityInput.getProcessInfo().equals(PICKING)) {
-                return createMetric(PRODUCTIVITY, PICKING, "270 uds./h");
-            } else if (productivityInput.getProcessInfo().equals(PACKING_WALL)) {
-                return createMetric(PRODUCTIVITY, PACKING_WALL, "33 uds./h");
-            } else if (productivityInput.getProcessInfo().equals(PACKING)) {
-                return createMetric(PRODUCTIVITY, PACKING, "145 uds./h");
-            } else if (productivityInput.getProcessInfo().equals(WALL_IN)) {
-                return createMetric(PRODUCTIVITY, WALL_IN, "176 uds./h");
-            } else {
-                throw new IllegalArgumentException();
+            switch (productivityInput.getProcessInfo()) {
+                case  OUTBOUND_PLANNING:
+                    return createMetric(PRODUCTIVITY, OUTBOUND_PLANNING, "20 uds./h");
+                case PICKING:
+                    return createMetric(PRODUCTIVITY, PICKING, "270 uds./h");
+                case PACKING_WALL:
+                    return createMetric(PRODUCTIVITY, PACKING_WALL, "33 uds./h");
+                case PACKING:
+                    return createMetric(PRODUCTIVITY, PACKING, "145 uds./h");
+                case WALL_IN:
+                    return createMetric(PRODUCTIVITY, WALL_IN, "176 uds./h");
+                default:
+                    throw new IllegalArgumentException();
             }
         });
     }
@@ -351,18 +367,19 @@ class GetCurrentStatusTest {
     private void mockGetThroughputMetric() {
         when(getThroughputMetric.execute(any(ThroughputInput.class))).thenAnswer(invocation -> {
             ThroughputInput throughputInput = invocation.getArgument(0);
-            if (throughputInput.getProcessInfo().equals(OUTBOUND_PLANNING)) {
-                return createMetric(THROUGHPUT_PER_HOUR, OUTBOUND_PLANNING, "145 uds./h");
-            } else if (throughputInput.getProcessInfo().equals(PICKING)) {
-                return createMetric(THROUGHPUT_PER_HOUR, PICKING, "33 uds./h");
-            } else if (throughputInput.getProcessInfo().equals(PACKING_WALL)) {
-                return createMetric(THROUGHPUT_PER_HOUR, PACKING_WALL, "176 uds./h");
-            } else if (throughputInput.getProcessInfo().equals(PACKING)) {
-                return createMetric(THROUGHPUT_PER_HOUR, PACKING, "20 uds./h");
-            } else if (throughputInput.getProcessInfo().equals(WALL_IN)) {
-                return createMetric(THROUGHPUT_PER_HOUR, WALL_IN, "270 uds./h");
-            } else {
-                throw new IllegalArgumentException();
+            switch (throughputInput.getProcessInfo()) {
+                case OUTBOUND_PLANNING:
+                    return createMetric(THROUGHPUT_PER_HOUR, OUTBOUND_PLANNING, "145 uds./h");
+                case PICKING:
+                    return createMetric(THROUGHPUT_PER_HOUR, PICKING, "33 uds./h");
+                case PACKING_WALL:
+                    return createMetric(THROUGHPUT_PER_HOUR, PACKING_WALL, "176 uds./h");
+                case PACKING:
+                    return createMetric(THROUGHPUT_PER_HOUR, PACKING, "20 uds./h");
+                case WALL_IN:
+                    return createMetric(THROUGHPUT_PER_HOUR, WALL_IN, "270 uds./h");
+                default:
+                    throw new IllegalArgumentException();
             }
         });
     }

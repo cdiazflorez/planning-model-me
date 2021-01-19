@@ -82,13 +82,13 @@ public class GetBacklogProjectionTest {
                         ))
         );
 
-        when(backlogGateway.getUnitBacklog("to_pick", WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25)))
-                .thenReturn(
+        when(backlogGateway.getUnitBacklog("to_pick", WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25),
+                null)).thenReturn(
                         ProcessBacklog.builder()
                                 .process(ProcessInfo.PICKING.getStatus())
                                 .quantity(2232)
                                 .build()
-            );
+        );
 
         final ZonedDateTime firstDate = getNextHour(A_DATE);
 

@@ -8,11 +8,11 @@ import lombok.Getter;
 public enum AnalyticsQueryEvent {
 
     PICKING("Picking"),
-    PACKING_WALL("Packing Wall"),
-    PACKING_NO_WALL("Packing");
-    
+    PACKING_WALL("Packing de wall"),
+    PACKING_NO_WALL("Packing normal");
+
     private final String relatedProcess;
-    
+
     public String getName() {
         return name().toUpperCase();
     }
@@ -20,5 +20,5 @@ public enum AnalyticsQueryEvent {
     public static AnalyticsQueryEvent fromString(final String process) {
         return valueOf(process.toUpperCase());
     }
-    
+
 }

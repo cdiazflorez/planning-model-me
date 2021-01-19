@@ -69,6 +69,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
     private TreeSet<Process> getProcessesAndMetrics(GetMonitorInput input) {
         final TreeSet<Process> processes = new TreeSet<>();
         final List<ProcessBacklog> processBacklogs = getProcessBacklogs(input);
+        completeBacklogs(processBacklogs);
         final List<UnitsResume> processedUnitsLastHour = getUnitsResumes(input);
         processBacklogs.forEach(processBacklog ->
                 addProcessIfExist(processes, processBacklog, input, processedUnitsLastHour)
@@ -92,19 +93,28 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
         final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(PICKING.getStatus(),
                 input.getWarehouseId(),
                 input.getDateFrom(),
-                input.getDateTo());
+                input.getDateTo(), null);
         final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(WALL_IN.getStatus(),
                 input.getWarehouseId(),
                 input.getDateFrom(),
-                input.getDateTo());
-        //TODO Aqui se debe colocar el get que obtiene el backlog real de packing wall
-        final ProcessBacklog packingWall = ProcessBacklog.builder()
-                .process(ProcessInfo.PACKING_WALL.getStatus())
-                .quantity(0)
-                .build();
+                input.getDateTo(), null);
+        final ProcessBacklog packingWall = backlogGateway
+                .getUnitBacklog(ProcessInfo.PACKING_WALL.getStatus(),
+                        input.getWarehouseId(),
+                        input.getDateFrom(),
+                        input.getDateTo(), "PW");
+        recalculatePackingNoWallUnits(processBacklogs, packingWall);
 
         processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog, packingWall));
         return processBacklogs;
+    }
+
+    private void recalculatePackingNoWallUnits(List<ProcessBacklog> processBacklogs,
+            ProcessBacklog packingWall) {
+        processBacklogs.stream().filter(backlog
+                -> backlog.getProcess().equals(PACKING.getTitle()))
+                .forEach(backlog
+                        -> backlog.setQuantity(backlog.getQuantity() - packingWall.getQuantity()));
     }
 
     private List<UnitsResume> getUnitsResumes(final GetMonitorInput input) {
@@ -124,6 +134,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                                    final ProcessBacklog processBacklog,
                                    final GetMonitorInput input,
                                    final List<UnitsResume> processedUnitsLastHour) {
+
         final Runnable packingWallIsNotPresent = getRunnableProcessToAdd(
                 processes, processBacklog, input, processedUnitsLastHour, () -> { }, WALL_IN
         );
@@ -133,9 +144,10 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
         final Runnable pickingIsNotPresent = getRunnableProcessToAdd(processes, processBacklog,
                 input, processedUnitsLastHour, packingIsNotPresent, PACKING
         );
-        final Runnable outboundPlanningIsNotPresent = getRunnableProcessToAdd(processes,
+        final Runnable outboundPlanningIsNotPresent  = getRunnableProcessToAdd(processes,
                 processBacklog, input, processedUnitsLastHour, pickingIsNotPresent, PICKING
         );
+
         getProcessBy(processBacklog, OUTBOUND_PLANNING, input, getUnitsCountWaves(input)
         ).ifPresentOrElse(processes::add, outboundPlanningIsNotPresent);
     }
@@ -153,6 +165,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
 
     private void completeProcess(final TreeSet<Process> processes) {
         final List<ProcessInfo> processList = List.of(OUTBOUND_PLANNING, PACKING);
+
         processList.stream().filter(t -> processes.stream()
                 .noneMatch(current -> current.getTitle().equalsIgnoreCase(t.getTitle()))
         ).forEach(noneMatchProcess -> {
@@ -169,7 +182,10 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                                            final ProcessInfo processInfo,
                                            final GetMonitorInput input,
                                            final UnitsResume unitResume) {
-        if (processBacklog.getProcess().equalsIgnoreCase(processInfo.getStatus())) {
+
+        if (processBacklog.getProcess().equalsIgnoreCase(processInfo.getStatus())
+                && Objects.equals(processBacklog.getArea(), getProcessInfoArea(processInfo))) {
+
             final Process process = Process.builder()
                     .title(processInfo.getTitle())
                     .metrics(createMetricsList(processBacklog, processInfo, input, unitResume))
@@ -177,6 +193,12 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
             return Optional.of(process);
         }
         return Optional.empty();
+    }
+
+
+    private String getProcessInfoArea(ProcessInfo processInfo) {
+        Map<ProcessInfo,String> processAreas = Map.of(ProcessInfo.PACKING_WALL, "PW");
+        return processAreas.get(processInfo);
     }
 
     private UnitsResume getUnitResumeForProcess(final ProcessInfo processInfo,
@@ -256,4 +278,20 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
         return emptyMetrics.get(processInfo);
     }
 
+    private void completeBacklogs(List<ProcessBacklog> processBacklogs) {
+        final List<ProcessInfo> processList = List.of(OUTBOUND_PLANNING, PACKING);
+
+        processList.stream().filter(t -> processBacklogs.stream()
+                .noneMatch(current -> current.getProcess().equalsIgnoreCase(t.getStatus())
+                        && current.getArea() == null)
+        ).forEach(noneMatchProcess -> {
+                    ProcessBacklog process = ProcessBacklog.builder()
+                            .process(noneMatchProcess.getStatus())
+                            .quantity(0)
+                            .build();
+                    processBacklogs.add(process);
+        }
+        );
+    }
 }
+

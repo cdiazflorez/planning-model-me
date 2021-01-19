@@ -90,7 +90,8 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
                         ProcessInfo.PICKING.getStatus(),
                         input.getWarehouseId(),
                         dateFrom,
-                        dateFrom.plusHours(HOURS_TO_SHOW)
+                        dateFrom.plusHours(HOURS_TO_SHOW),
+                        null
                 );
         return List.of(
                 new CurrentBacklog(WAVING, backlogs.stream()

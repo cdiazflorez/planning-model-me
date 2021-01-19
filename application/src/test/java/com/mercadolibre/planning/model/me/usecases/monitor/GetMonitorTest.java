@@ -4,7 +4,6 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
-import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
@@ -165,6 +164,8 @@ class GetMonitorTest {
         assertEquals(BACKLOG.getType(), wallInBacklogMetric.getType());
         assertEquals("725 uds.", wallInBacklogMetric.getValue());
 
+
+
         final Process outboundPlanning = processList.get(OUTBOUND_PLANNING.getIndex());
         assertEquals(OUTBOUND_PLANNING.getTitle(), outboundPlanning.getTitle());
         Metric planningBacklogMetric = outboundPlanning.getMetrics().get(0);
@@ -258,7 +259,7 @@ class GetMonitorTest {
         when(getSales.execute(new GetSalesInputDto(
                 FBM_WMS_OUTBOUND, WAREHOUSE_ID, utcCurrentTime.minusHours(28)))
         ).thenReturn(mockSales());
-        
+
         when(planningModelGateway.getPlanningDistribution(Mockito.any()
         )).thenReturn(mockPlanningDistribution(utcCurrentTime));
     }
@@ -271,7 +272,7 @@ class GetMonitorTest {
                 .value(value)
                 .build();
     }
-    
+
     private List<Backlog> mockSales() {
         return List.of(
                 Backlog.builder()
@@ -292,7 +293,7 @@ class GetMonitorTest {
                         .build()
         );
     }
-    
+
     private List<PlanningDistributionResponse> mockPlanningDistribution(
             final ZonedDateTime utcCurrentTime) {
         return List.of(

@@ -13,11 +13,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PICKING;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
+
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -65,11 +69,16 @@ class AnalyticsClientTest extends BaseClientTest {
         //THEN
         assertNotNull(unitsResume);
         assertEquals(3, unitsResume.size());
-        assertNotNull(unitsResume.stream().filter(unit -> Objects.equals(unit.getProcess(), 
+        assertNotNull(unitsResume.stream().filter(unit -> Objects.equals(unit.getProcess(),
                 AnalyticsQueryEvent.PACKING_WALL)).findFirst().orElse(null));
-        assertNotNull(unitsResume.stream().filter(unit -> Objects.equals(unit.getProcess(), 
+        assertNotNull(unitsResume.stream().filter(unit -> Objects.equals(unit.getProcess(),
                 AnalyticsQueryEvent.PICKING)).findFirst().orElse(null));
+
+        assertEquals(PICKING.getTitle(), AnalyticsQueryEvent.PICKING.getRelatedProcess());
+        assertEquals(PACKING.getTitle(), AnalyticsQueryEvent.PACKING_NO_WALL.getRelatedProcess());
+        assertEquals(PACKING_WALL.getTitle(),
+                AnalyticsQueryEvent.PACKING_WALL.getRelatedProcess());
     }
 
-    
+
 }

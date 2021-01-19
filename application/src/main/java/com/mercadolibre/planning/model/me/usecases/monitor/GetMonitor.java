@@ -21,6 +21,7 @@ import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import lombok.AllArgsConstructor;
+
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
@@ -75,7 +76,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                 .mapToLong(PlanningDistributionResponse::getTotal).sum();
         final int totalSales = getSales(input).stream().mapToInt(Backlog::getQuantity).sum();
         final double totalDeviation = getDeviationPercentage(totalPlanned, totalSales);
-        
+
         return new DeviationData(DeviationMetric.builder()
                 .deviationPercentage(Metric.builder()
                         .title("% Desviación FCST / Ventas")
@@ -85,7 +86,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                         .build())
                 .deviationUnits(DeviationUnit.builder()
                         .title("Desviación en unidades")
-                        .value(String.format(UNITS_DEFAULT_STRING, 
+                        .value(String.format(UNITS_DEFAULT_STRING,
                                 Math.abs(totalPlanned - totalSales)))
                         .detail(DeviationUnitDetail.builder()
                                 .forecastUnits(Metric.builder()
@@ -102,15 +103,15 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private double getDeviationPercentage(final long totalPlanned, final int totalSold) {
-        return totalSold != 0 && totalPlanned != 0 
-                ? (((double) totalSold / totalPlanned) - 1) * 100 
+        return totalSold != 0 && totalPlanned != 0
+                ? (((double) totalSold / totalPlanned) - 1) * 100
                         : 0;
     }
 
     private String getIconForDeviation(double totalDeviation) {
         return totalDeviation > 0 ? "arrow_up" : "arrow_down";
     }
-    
+
     private String getStatusForDeviation(double totalDeviation) {
         return totalDeviation > 0 ? "warning" : null;
     }

@@ -549,7 +549,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
             final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(PICKING.getStatus(),
                     TestUtils.WAREHOUSE_ID,
                     utcDateFrom,
-                    utcDateTo);
+                    utcDateTo, null);
 
             // THEN
             assertEquals(PICKING.getStatus(), backlogs.getProcess());
