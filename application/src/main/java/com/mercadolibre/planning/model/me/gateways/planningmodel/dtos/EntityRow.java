@@ -8,6 +8,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 
 @Builder
@@ -33,10 +34,19 @@ public class EntityRow {
 
     public static EntityRow fromEntity(final Entity response) {
         RowName rowName = null;
-        if (response.getProcessName() == PACKING) {
-            rowName = RowName.PACKING;
-        } else if (response.getProcessName() == PICKING) {
-            rowName = RowName.PICKING;
+
+        switch (response.getProcessName()) {
+            case PACKING:
+                rowName = RowName.PACKING;
+                break;
+            case PACKING_WALL:
+                rowName = RowName.PACKING_WALL;
+                break;
+            case PICKING:
+                rowName = RowName.PICKING;
+                break;
+            default:
+                break;
         }
         return EntityRow.builder()
                 .date(response.getDate())

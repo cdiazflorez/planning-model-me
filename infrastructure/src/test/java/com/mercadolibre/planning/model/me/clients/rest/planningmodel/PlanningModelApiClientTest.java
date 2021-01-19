@@ -55,6 +55,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
@@ -218,7 +219,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .dateFrom(ZonedDateTime.now())
                 .dateTo(ZonedDateTime.now().plusDays(1))
                 .source(Source.FORECAST)
-                .processName(List.of(PICKING, PACKING))
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .abilityLevel(List.of(1,2))
                 .build();
 

@@ -19,6 +19,7 @@ import java.util.List;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 
@@ -80,7 +81,7 @@ public class TestUtils {
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .entityType(PRODUCTIVITY)
-                .processName(List.of(PICKING, PACKING))
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .dateFrom(currentTime)
                 .dateTo(currentTime.plusDays(1))
                 .abilityLevel(List.of(1,2))

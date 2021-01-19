@@ -10,7 +10,8 @@ import java.util.stream.Stream;
 public enum ForecastProductivityProcessName {
     PICKING(2),
     PACKING(3),
-    EXPEDITION(4);
+    PACKING_WALL(4),
+    EXPEDITION(5);
 
     private final int columnIndex;
 

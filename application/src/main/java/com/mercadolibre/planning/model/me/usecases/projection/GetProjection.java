@@ -60,6 +60,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName.DEVIATION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
@@ -93,7 +94,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     private static final int MAIN_ABILITY_LEVEL = 1;
     private static final int POLYVALENT_ABILITY_LEVEL = 2;
 
-    protected static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
+    protected static final List<ProcessName> PROJECTION_PROCESS_NAMES =
+            List.of(PICKING, PACKING, PACKING_WALL);
 
     protected final PlanningModelGateway planningModelGateway;
     protected final LogisticCenterGateway logisticCenterGateway;

@@ -15,10 +15,14 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
@@ -57,6 +61,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
@@ -116,7 +121,7 @@ public class GetCptProjectionTest {
                 .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
                 .dateFrom(utcCurrentTime)
                 .dateTo(utcCurrentTime.plusDays(1))
-                .processName(List.of(PICKING, PACKING))
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .entityFilters(Map.of(
                         HEADCOUNT, Map.of(
                                 PROCESSING_TYPE.toJson(),
@@ -404,10 +409,22 @@ public class GetCptProjectionTest {
         assertFalse(throughput.getContent().isEmpty());
     }
 
+    private ProductivityRequest createProductivityRequest(final ZonedDateTime currentTime) {
+        return ProductivityRequest.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .entityType(PRODUCTIVITY)
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
+                .dateFrom(currentTime)
+                .dateTo(currentTime.plusDays(1))
+                .abilityLevel(List.of(1,2))
+                .build();
+    }
+
     private ProjectionRequest createProjectionRequest(final List<Backlog> backlogs,
                                                       final ZonedDateTime currentTime) {
         return ProjectionRequest.builder()
-                .processName(List.of(PICKING, PACKING))
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .dateFrom(currentTime)
@@ -522,6 +539,18 @@ public class GetCptProjectionTest {
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(30)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime.plusHours(3))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(79)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime.plusDays(3))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(32)
                         .build()
         );
     }
@@ -583,6 +612,20 @@ public class GetCptProjectionTest {
                         .source(Source.FORECAST)
                         .value(65)
                         .abilityLevel(2)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusDays(1))
+                        .processName(PACKING)
+                        .source(Source.FORECAST)
+                        .value(98)
+                        .abilityLevel(1)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusDays(1))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(14)
+                        .abilityLevel(3)
                         .build()
         );
     }

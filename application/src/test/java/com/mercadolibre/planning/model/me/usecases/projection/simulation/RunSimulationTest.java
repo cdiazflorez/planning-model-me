@@ -51,6 +51,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
@@ -299,7 +300,7 @@ public class RunSimulationTest {
     private SimulationRequest createSimulationRequest(final List<Backlog> backlogs,
                                                       final ZonedDateTime currentTime) {
         return SimulationRequest.builder()
-                .processName(List.of(PICKING, PACKING))
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .dateFrom(currentTime)
@@ -356,11 +357,11 @@ public class RunSimulationTest {
     private SearchEntitiesRequest createRequest(final ZonedDateTime currentTime) {
         return SearchEntitiesRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .workflow(FBM_WMS_OUTBOUND)
                 .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
                 .dateFrom(currentTime)
                 .dateTo(currentTime.plusDays(1))
-                .processName(List.of(PICKING, PACKING))
                 .simulations(List.of(new Simulation(PICKING,
                         List.of(new SimulationEntity(
                                 HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
@@ -406,6 +407,18 @@ public class RunSimulationTest {
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(30)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime.plusHours(3))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(79)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime.plusDays(3))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(32)
                         .build()
         );
     }
@@ -439,6 +452,20 @@ public class RunSimulationTest {
                         .source(Source.FORECAST)
                         .value(75)
                         .abilityLevel(1)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusDays(1))
+                        .processName(PACKING)
+                        .source(Source.FORECAST)
+                        .value(98)
+                        .abilityLevel(1)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusDays(1))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(14)
+                        .abilityLevel(3)
                         .build()
         );
     }
