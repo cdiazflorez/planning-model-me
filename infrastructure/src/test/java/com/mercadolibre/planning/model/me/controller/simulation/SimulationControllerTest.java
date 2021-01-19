@@ -9,7 +9,6 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
-import com.mercadolibre.planning.model.me.entities.projection.complexTable.ComplexTableAction;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
