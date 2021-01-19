@@ -67,7 +67,10 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Sou
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.*;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ofPattern;
