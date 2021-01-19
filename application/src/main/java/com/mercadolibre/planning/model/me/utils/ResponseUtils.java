@@ -2,11 +2,10 @@ package com.mercadolibre.planning.model.me.utils;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Tab;
-import com.mercadolibre.planning.model.me.entities.projection.complexTable.ComplexTableAction;
-import com.mercadolibre.planning.model.me.entities.projection.simulationMode.ErrorMessage;
-import com.mercadolibre.planning.model.me.entities.projection.simulationMode.SimulationMode;
-import com.mercadolibre.planning.model.me.entities.projection.simulationMode.Snackbar;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ErrorMessage;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.SimulationMode;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.Snackbar;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -14,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ofPattern;

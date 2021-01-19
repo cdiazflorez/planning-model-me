@@ -1,4 +1,4 @@
-package com.mercadolibre.planning.model.me.entities.projection.simulationMode;
+package com.mercadolibre.planning.model.me.entities.projection.simulationmode;
 
 import lombok.Value;
 

@@ -1,4 +1,4 @@
-package com.mercadolibre.planning.model.me.entities.projection.complexTable;
+package com.mercadolibre.planning.model.me.entities.projection.complextable;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
