@@ -2,6 +2,8 @@ package com.mercadolibre.planning.model.me.entities.projection;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
+import com.mercadolibre.planning.model.me.entities.projection.complexTable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.simulationMode.SimulationMode;
 import lombok.Value;
 
 import java.util.List;
@@ -23,5 +25,7 @@ public class Projection {
     private Chart chart;
 
     List<Tab> tabs;
+
+    SimulationMode simulationMode;
 
 }

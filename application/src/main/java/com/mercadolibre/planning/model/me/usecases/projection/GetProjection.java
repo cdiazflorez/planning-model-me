@@ -1,15 +1,14 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
-import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
-import com.mercadolibre.planning.model.me.entities.projection.Content;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
-import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.entities.projection.*;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
+import com.mercadolibre.planning.model.me.entities.projection.complexTable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complexTable.ComplexTableAction;
+import com.mercadolibre.planning.model.me.entities.projection.simulationMode.ErrorMessage;
+import com.mercadolibre.planning.model.me.entities.projection.simulationMode.SimulationMode;
+import com.mercadolibre.planning.model.me.entities.projection.simulationMode.Snackbar;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -67,8 +66,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Sou
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.*;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -200,7 +198,9 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         List.of(createData(config, HEADCOUNT, headcount, headers, emptyList()),
                                 createData(config, PRODUCTIVITY, mainProductivities,
                                         headers, polyvalentProductivities),
-                                createData(config, THROUGHPUT, throughputs, headers, emptyList()))
+                                createData(config, THROUGHPUT, throughputs, headers, emptyList())),
+                                action,
+                                "Headcount / Throughput"
                 ),
                 createProjectionDetailsTable(
                         backlogs,
@@ -213,7 +213,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         processingTime,
                         toChartData(projections, config.getZoneId(), utcDateTo)
                 ),
-                createTabs()
+                createTabs(),
+                simulationMode
         );
     }
 

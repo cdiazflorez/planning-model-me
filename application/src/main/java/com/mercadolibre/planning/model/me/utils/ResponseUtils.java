@@ -2,6 +2,10 @@ package com.mercadolibre.planning.model.me.utils;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Tab;
+import com.mercadolibre.planning.model.me.entities.projection.complexTable.ComplexTableAction;
+import com.mercadolibre.planning.model.me.entities.projection.simulationMode.ErrorMessage;
+import com.mercadolibre.planning.model.me.entities.projection.simulationMode.SimulationMode;
+import com.mercadolibre.planning.model.me.entities.projection.simulationMode.Snackbar;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 
 import java.time.ZonedDateTime;
@@ -43,4 +47,23 @@ public class ResponseUtils {
                 new Tab("cpt", "Cumplimiento de CPTs"),
                 new Tab("backlog", "Backlogs"));
     }
+
+    public static ComplexTableAction action = new ComplexTableAction(
+            "Aplicar",
+            "Cancelar",
+            "Editar"
+    );
+
+    public static SimulationMode simulationMode = new SimulationMode(
+            "Iniciar Simulación",
+            new Snackbar(
+                    "Simulación en curso",
+                    "Guardar",
+                    "Cancelar"
+            ),
+            new ErrorMessage(
+                    "No pudimos aplicar la simulacion",
+                    "No pudimos guardar la simulacion"
+            )
+    );
 }
