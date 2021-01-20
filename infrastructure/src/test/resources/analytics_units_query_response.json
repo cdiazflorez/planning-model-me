@@ -2,11 +2,16 @@
     {
         "unit_count": 148,
         "event_count": 111,
-        "process": "packing_finish"
+        "process": "PACKING_NO_WALL"
+    },
+    {
+        "unit_count": 736,
+        "event_count": 342,
+        "process": "PACKING_WALL"
     },
     {
         "unit_count": 148,
         "event_count": 111,
-        "process": "pickup_finish"
+        "process": "PICKING"
     }
 ]

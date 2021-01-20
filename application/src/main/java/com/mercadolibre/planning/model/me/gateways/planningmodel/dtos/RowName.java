@@ -8,7 +8,8 @@ import lombok.Getter;
 public enum RowName {
     PICKING(1, "Picking"),
     PACKING(2, "Packing"),
-    DEVIATION(3, "Desviación");
+    PACKING_WALL(3, "Wall"),
+    DEVIATION(4, "Desviación");
 
     private final Integer index;
     private final String title;

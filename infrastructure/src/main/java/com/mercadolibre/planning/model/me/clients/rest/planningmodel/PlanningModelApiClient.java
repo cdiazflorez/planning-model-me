@@ -13,6 +13,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
@@ -23,6 +24,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
@@ -35,6 +37,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.stream.Collectors.joining;
@@ -136,6 +140,35 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         params.put(DATE_TO, dateTo.format(ISO_OFFSET_DATE_TIME));
         return params;
     }
+
+    @Override
+    public Map<EntityType, List<Entity>> searchEntities(final SearchEntitiesRequest request) {
+        final HttpRequest httpRequest = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL + "/entities/search", request.getWorkflow().getName()))
+                .POST(requestSupplier(request))
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .build();
+
+        final Map<String, List<Object>> apiResponse = send(httpRequest, response ->
+                response.getData(new TypeReference<>() {})
+        );
+
+        final Map<EntityType, List<Entity>> response = new HashMap<>();
+        apiResponse.forEach((key, value) -> {
+            if (PRODUCTIVITY.getName().equals(key)) {
+                response.put(PRODUCTIVITY, value.stream()
+                        .map(o -> toProductivity(objectMapper.convertValue(
+                                o, ProductivityResponse.class)))
+                        .collect(toList()));
+            } else {
+                response.put(EntityType.from(key), value.stream()
+                        .map(o -> toEntity(objectMapper.convertValue(o, EntityResponse.class)))
+                        .collect(toList()));
+            }
+        });
+        return response;
+    }
+
 
     @Override
     public List<ProjectionResult> runProjection(final ProjectionRequest projectionRequest) {

@@ -1,0 +1,82 @@
+{
+    "headcount" : [
+        {
+            "workflow": "fbm-wms-outbound",
+            "date": "2021-01-10T00:00:00Z",
+            "process_name": "packing",
+            "type": "workers",
+            "metric_unit": "workers",
+            "source": "forecast",
+            "value": 23
+        },
+        {
+            "workflow": "fbm-wms-outbound",
+            "date": "2021-01-10T00:00:00Z",
+            "process_name": "picking",
+            "type": "remaining_processing",
+            "metric_unit": "minutes",
+            "source": "forecast",
+            "value": 1167
+        },
+        {
+            "workflow": "fbm-wms-outbound",
+            "date": "2021-01-10T00:00:00Z",
+            "process_name": "packing",
+            "type": "remaining_processing",
+            "metric_unit": "minutes",
+            "source": "forecast",
+            "value": 60
+        },
+        {
+            "workflow": "fbm-wms-outbound",
+            "date": "2021-01-10T00:00:00Z",
+            "process_name": "picking",
+            "type": "workers",
+            "metric_unit": "workers",
+            "source": "forecast",
+            "value": 0
+        },
+        {
+            "workflow": "fbm-wms-outbound",
+            "date": "2021-01-10T00:00:00Z",
+            "process_name": "picking",
+            "type": "active_workers",
+            "metric_unit": "workers",
+            "source": "forecast",
+            "value": 0
+        },
+        {
+            "workflow": "fbm-wms-outbound",
+            "date": "2021-01-10T00:00:00Z",
+            "process_name": "packing",
+            "type": "active_workers",
+            "metric_unit": "workers",
+            "source": "forecast",
+            "value": 0
+        }
+    ],
+    "productivity" : [
+        {
+            "workflow": "fbm-wms-outbound",
+            "date": "2021-01-10T00:00:00Z",
+            "process_name": "packing",
+            "metric_unit": "units_per_hour",
+            "source": "forecast",
+            "value": 50,
+            "ability_level": 1,
+            "main_productivity": true,
+            "polyvalent_productivity": false
+            }, {
+            "workflow": "fbm-wms-outbound",
+            "date": "2021-01-10T00:00:00Z",
+            "process_name": "picking",
+            "metric_unit": "units_per_hour",
+            "source": "forecast",
+            "value": 0,
+            "ability_level": 1,
+            "main_productivity": true,
+            "polyvalent_productivity": false
+        }
+    ]
+}
+

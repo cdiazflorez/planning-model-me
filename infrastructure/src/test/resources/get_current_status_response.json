@@ -53,7 +53,7 @@
           ]
         },
         {
-          "title": "Packing",
+          "title": "Packing normal",
           "metrics": [
             {
               "type": "backlog",
@@ -64,7 +64,7 @@
           ]
         },
         {
-          "title": "Wall In",
+          "title": "Wall",
           "metrics": [
             {
               "type": "backlog",

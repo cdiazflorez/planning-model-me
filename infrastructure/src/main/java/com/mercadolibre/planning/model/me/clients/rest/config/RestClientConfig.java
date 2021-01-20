@@ -17,6 +17,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AN
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AUTHORIZATION;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_WAVE;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_FORECAST;
 
@@ -28,7 +29,8 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PL
         RestClientConfig.LogisticCenterClientProperties.class,
         RestClientConfig.AuthorizationClientProperties.class,
         RestClientConfig.AnalyticsClientProperties.class,
-        RestClientConfig.PlanningModelForecastClientProperties.class
+        RestClientConfig.PlanningModelForecastClientProperties.class,
+        RestClientConfig.OutboundWaveClientProperties.class
 })
 public class RestClientConfig {
     private PlanningModelClientProperties planningModelClientProperties;
@@ -37,6 +39,7 @@ public class RestClientConfig {
     private AuthorizationClientProperties authorizationClientProperties;
     private AnalyticsClientProperties analyticsClientProperties;
     private PlanningModelForecastClientProperties planningModelForecastClientProperties;
+    private OutboundWaveClientProperties outboundWaveClientProperties;
 
     @Bean
     public RestClient restClient() throws IOException {
@@ -55,7 +58,9 @@ public class RestClientConfig {
                                 analyticsClientProperties, localCache(
                                         "analytics", 200)),
                         restPool(PLANNING_MODEL_FORECAST.name(),
-                                planningModelForecastClientProperties)
+                                planningModelForecastClientProperties),
+                        restPool(OUTBOUND_WAVE.name(),
+                                outboundWaveClientProperties)
                 )
                 .build();
     }
@@ -111,5 +116,9 @@ public class RestClientConfig {
 
     @ConfigurationProperties("restclient.pool.planning-model-forecast")
     public static class PlanningModelForecastClientProperties extends RestClientProperties {
+    }
+
+    @ConfigurationProperties("restclient.pool.outbound-wave")
+    public static class OutboundWaveClientProperties extends RestClientProperties {
     }
 }

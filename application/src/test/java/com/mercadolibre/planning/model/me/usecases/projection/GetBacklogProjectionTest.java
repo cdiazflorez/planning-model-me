@@ -14,7 +14,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
-import com.mercadolibre.planning.model.me.usecases.currentstatus.dtos.monitordata.process.ProcessInfo;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -82,13 +82,13 @@ public class GetBacklogProjectionTest {
                         ))
         );
 
-        when(backlogGateway.getUnitBacklog("to_pick", WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25)))
-                .thenReturn(
+        when(backlogGateway.getUnitBacklog("to_pick", WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25),
+                null)).thenReturn(
                         ProcessBacklog.builder()
                                 .process(ProcessInfo.PICKING.getStatus())
                                 .quantity(2232)
                                 .build()
-            );
+        );
 
         final ZonedDateTime firstDate = getNextHour(A_DATE);
 

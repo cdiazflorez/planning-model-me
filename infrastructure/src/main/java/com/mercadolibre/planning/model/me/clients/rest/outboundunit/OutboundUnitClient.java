@@ -7,7 +7,6 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
-import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.Paging;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.Unit;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.UnitGroup;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationFilterRequest;
@@ -24,7 +23,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import com.newrelic.api.agent.Trace;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -48,7 +46,6 @@ import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static java.lang.String.format;
 
-@Slf4j
 @Component
 public class OutboundUnitClient extends HttpClient implements BacklogGateway {
 
@@ -152,7 +149,8 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     public ProcessBacklog getUnitBacklog(final String statuses,
                                          final String warehouseId,
                                          final ZonedDateTime dateFrom,
-                                         final ZonedDateTime dateTo) {
+                                         final ZonedDateTime dateTo,
+                                         final String area) {
 
         final Map<String, String> defaultParams = defaultParams();
         defaultParams.put(WAREHOUSE_ID.toJson(), warehouseId);
@@ -160,10 +158,16 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         defaultParams.put("group.etd_to", dateTo.toString());
         defaultParams.put(STATUS.toJson(), statuses);
         defaultParams.put(LIMIT.toJson(), "1");
+        defaultParams.put("address.area", area);
+
 
         final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams);
         int quantity = Objects.nonNull(response) ? response.getPaging().getTotal() : 0;
-        return ProcessBacklog.builder().process(statuses).quantity(quantity).build();
+        return ProcessBacklog.builder()
+                .process(statuses)
+                .quantity(quantity)
+                .area(area)
+                .build();
     }
 
     private boolean workingCpts(final Backlog backlog) {

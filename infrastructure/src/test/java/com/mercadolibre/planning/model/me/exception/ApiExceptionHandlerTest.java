@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -53,6 +54,41 @@ class ApiExceptionHandlerTest {
 
         // WHEN
         response = apiExceptionHandler.handleUnmatchedWarehouseException(exception, request);
+
+        // THEN
+        thenThrow(exception, expectedResponse);
+    }
+
+    @Test
+    @DisplayName("Handle MissingServletRequestParameterException")
+    void handleMissingServletRequestParameterException() {
+        // GIVEN
+        final MissingServletRequestParameterException exception =
+                new MissingServletRequestParameterException("warehouseId", "string");
+        final ErrorResponse expectedResponse = ErrorResponse.builder()
+                .error("missing_parameter")
+                .message(exception.getMessage())
+                .status(HttpStatus.BAD_REQUEST).build();
+
+        // WHEN
+        response = apiExceptionHandler.handleMissingParameterException(exception, request);
+
+        // THEN
+        thenThrow(exception, expectedResponse);
+    }
+
+    @Test
+    @DisplayName("Handle Exception")
+    void handleGenericException() {
+        // GIVEN
+        final Exception exception = new Exception("Unknown error");
+        final ErrorResponse expectedResponse = ErrorResponse.builder()
+                .error("unknown_error")
+                .message(exception.getMessage())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
+        // WHEN
+        response = apiExceptionHandler.handleGenericException(exception, request);
 
         // THEN
         thenThrow(exception, expectedResponse);

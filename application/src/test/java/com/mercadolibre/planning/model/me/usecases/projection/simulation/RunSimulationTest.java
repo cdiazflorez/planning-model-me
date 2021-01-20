@@ -11,13 +11,11 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
@@ -47,15 +45,18 @@ import java.util.stream.IntStream;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.createProductivityRequest;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -100,15 +101,12 @@ public class RunSimulationTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        when(planningModelGateway.getEntities(createRequest(HEADCOUNT, utcCurrentTime,
-                List.of(ProcessingType.ACTIVE_WORKERS))))
-                .thenReturn(mockHeadcountEntities(utcCurrentTime));
-
-        when(planningModelGateway.getProductivity(createProductivityRequest(utcCurrentTime)))
-                .thenReturn(mockProductivityEntities(utcCurrentTime));
-
-        when(planningModelGateway.getEntities(createRequest(THROUGHPUT, utcCurrentTime, null)))
-                .thenReturn(mockThroughputEntities());
+        when(planningModelGateway.searchEntities(createRequest(utcCurrentTime)))
+                .thenReturn(Map.of(
+                        HEADCOUNT, mockHeadcountEntities(utcCurrentTime),
+                        PRODUCTIVITY, mockProductivityEntities(utcCurrentTime),
+                        THROUGHPUT, new ArrayList<>()
+                ));
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
@@ -302,7 +300,7 @@ public class RunSimulationTest {
     private SimulationRequest createSimulationRequest(final List<Backlog> backlogs,
                                                       final ZonedDateTime currentTime) {
         return SimulationRequest.builder()
-                .processName(List.of(PICKING, PACKING))
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .dateFrom(currentTime)
@@ -356,19 +354,27 @@ public class RunSimulationTest {
         );
     }
 
-    private EntityRequest createRequest(final EntityType entityType,
-                                        final ZonedDateTime currentTime,
-                                        final List<ProcessingType> processingTypes) {
-        return EntityRequest.builder()
-                .workflow(FBM_WMS_OUTBOUND)
+    private SearchEntitiesRequest createRequest(final ZonedDateTime currentTime) {
+        return SearchEntitiesRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
-                .entityType(entityType)
-                .processName(List.of(PICKING, PACKING))
+                .processName(List.of(PICKING, PACKING, PACKING_WALL))
+                .workflow(FBM_WMS_OUTBOUND)
+                .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
                 .dateFrom(currentTime)
                 .dateTo(currentTime.plusDays(1))
-                .processingType(processingTypes)
-                .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
-                        HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
+                .simulations(List.of(new Simulation(PICKING,
+                        List.of(new SimulationEntity(
+                                HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
+                .entityFilters(Map.of(
+                        HEADCOUNT, Map.of(
+                                PROCESSING_TYPE.toJson(),
+                                List.of(ACTIVE_WORKERS.getName())
+                        ),
+                        PRODUCTIVITY, Map.of(
+                                ABILITY_LEVEL.toJson(),
+                                List.of("1","2")
+                        ))
+                )
                 .build();
     }
 
@@ -401,11 +407,23 @@ public class RunSimulationTest {
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(30)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime.plusHours(3))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(79)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime.plusDays(3))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(32)
                         .build()
         );
     }
 
-    private List<Productivity> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
+    private List<Entity> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
         return List.of(
                 Productivity.builder()
                         .date(utcCurrentTime)
@@ -434,6 +452,20 @@ public class RunSimulationTest {
                         .source(Source.FORECAST)
                         .value(75)
                         .abilityLevel(1)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusDays(1))
+                        .processName(PACKING)
+                        .source(Source.FORECAST)
+                        .value(98)
+                        .abilityLevel(1)
+                        .build(),
+                Productivity.builder()
+                        .date(utcCurrentTime.plusDays(1))
+                        .processName(PACKING_WALL)
+                        .source(Source.FORECAST)
+                        .value(14)
+                        .abilityLevel(3)
                         .build()
         );
     }
@@ -470,7 +502,4 @@ public class RunSimulationTest {
         return new SimpleTable(title, columnHeaders, data);
     }
 
-    private List<Entity> mockThroughputEntities() {
-        return new ArrayList<>();
-    }
 }

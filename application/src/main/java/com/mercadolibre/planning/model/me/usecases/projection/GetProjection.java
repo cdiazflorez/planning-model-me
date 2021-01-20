@@ -15,6 +15,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
@@ -26,6 +27,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
@@ -51,11 +53,14 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName.DEVIATION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
@@ -84,12 +89,13 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     private static final int HOURS_TO_SHOW = 25;
     private static final int SELLING_PERIOD_HOURS = 28;
     private static final String PROCESSING_TIME = "processing_time";
-    private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
-            List.of(ProcessingType.ACTIVE_WORKERS);
+    private static final List<String> PROJECTION_PROCESSING_TYPES =
+            List.of(ProcessingType.ACTIVE_WORKERS.getName());
     private static final int MAIN_ABILITY_LEVEL = 1;
     private static final int POLYVALENT_ABILITY_LEVEL = 2;
 
-    protected static final List<ProcessName> PROJECTION_PROCESS_NAMES = List.of(PICKING, PACKING);
+    protected static final List<ProcessName> PROJECTION_PROCESS_NAMES =
+            List.of(PICKING, PACKING, PACKING_WALL);
 
     protected final PlanningModelGateway planningModelGateway;
     protected final LogisticCenterGateway logisticCenterGateway;
@@ -102,15 +108,35 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final ZonedDateTime utcDateFrom = getCurrentUtcDate();
         final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
-        final List<EntityRow> headcount = planningModelGateway.getEntities(
-                createRequest(input, HEADCOUNT, utcDateFrom, utcDateTo,
-                        PROJECTION_PROCESSING_TYPES))
-                .stream()
+        final Map<EntityType, List<Entity>> entities = planningModelGateway.searchEntities(
+                SearchEntitiesRequest.builder()
+                        .warehouseId(input.getWarehouseId())
+                        .workflow(input.getWorkflow())
+                        .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
+                        .dateFrom(utcDateFrom)
+                        .dateTo(utcDateTo)
+                        .processName(PROJECTION_PROCESS_NAMES)
+                        .simulations(input.getSimulations())
+                        .entityFilters(Map.of(
+                                HEADCOUNT, Map.of(
+                                        PROCESSING_TYPE.toJson(), PROJECTION_PROCESSING_TYPES
+                                ),
+                                PRODUCTIVITY, Map.of(ABILITY_LEVEL.toJson(), List.of(
+                                        String.valueOf(MAIN_ABILITY_LEVEL),
+                                        String.valueOf(POLYVALENT_ABILITY_LEVEL))
+                                )
+                        ))
+                        .build()
+        );
+
+        final List<EntityRow> headcount = entities.get(HEADCOUNT).stream()
                 .map(EntityRow::fromEntity)
                 .collect(toList());
 
-        final List<Productivity> productivities = planningModelGateway.getProductivity(
-                createProductivityRequest(input, utcDateFrom, utcDateTo));
+        final List<Productivity> productivities = entities.get(PRODUCTIVITY).stream()
+                .filter(entity -> entity instanceof Productivity)
+                .map(entity -> Productivity.class.cast(entity))
+                .collect(toList());
 
         final List<EntityRow> mainProductivities = productivities.stream()
                 .filter(productivity -> productivity.getAbilityLevel() == MAIN_ABILITY_LEVEL
@@ -123,8 +149,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 .map(EntityRow::fromEntity)
                 .collect(toList());
 
-        List<EntityRow> throughputs = planningModelGateway.getEntities(
-                createRequest(input, THROUGHPUT, utcDateFrom, utcDateTo, null))
+        List<EntityRow> throughputs = entities.get(THROUGHPUT)
                 .stream()
                 .map(EntityRow::fromEntity)
                 .collect(toList());

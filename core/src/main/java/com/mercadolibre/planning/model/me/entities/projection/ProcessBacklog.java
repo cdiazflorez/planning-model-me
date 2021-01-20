@@ -1,11 +1,14 @@
 package com.mercadolibre.planning.model.me.entities.projection;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
+import lombok.Setter;
 
-@Value
+@Getter
 @Builder
 public class ProcessBacklog {
     String process;
+    @Setter
     int quantity;
+    String area;
 }
