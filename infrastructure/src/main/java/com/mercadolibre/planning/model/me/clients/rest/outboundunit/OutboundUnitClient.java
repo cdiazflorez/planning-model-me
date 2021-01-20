@@ -158,8 +158,9 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         defaultParams.put("group.etd_to", dateTo.toString());
         defaultParams.put(STATUS.toJson(), statuses);
         defaultParams.put(LIMIT.toJson(), "1");
-        defaultParams.put("address.area", area);
-
+        if (area != null) {
+            defaultParams.put("address.area", area);
+        }
 
         final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams);
         int quantity = Objects.nonNull(response) ? response.getPaging().getTotal() : 0;

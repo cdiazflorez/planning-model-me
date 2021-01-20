@@ -557,6 +557,47 @@ public class OutboundUnitClientTest extends BaseClientTest {
         }
 
         @Test
+        @DisplayName("Units API returns OK by Unit Process Backlog with area")
+        public void testGetUnitProcessBacklogWithArea()
+                throws JsonProcessingException, JSONException {
+            // GIVEN
+            final ZonedDateTime utcDateFrom = getCurrentUtcDate();
+            final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
+
+            final Map<String, String> requestParam = ImmutableMap.<String, String>builder()
+                    .put("limit", "1")
+                    .put("group.etd_from", utcDateFrom.toString())
+                    .put("group.etd_to", utcDateTo.toString())
+                    .put("status", PACKING.getStatus())
+                    .put("client.id", CLIENT_ID)
+                    .put("warehouse_id", TestUtils.WAREHOUSE_ID)
+                    .put("address.area", "PW")
+                    .build();
+
+            final JSONObject responseBody = new JSONObject()
+                    .put("paging", new JSONObject().put("total", "100"))
+                    .put("results", new JSONArray())
+                    ;
+
+            successfulResponse(
+                    GET,
+                    searchUnitUrl(requestParam),
+                    null,
+                    responseBody.toString()
+            );
+
+            // WHEN
+            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(PACKING.getStatus(),
+                    TestUtils.WAREHOUSE_ID,
+                    utcDateFrom,
+                    utcDateTo, "PW");
+
+            // THEN
+            assertEquals(PACKING.getStatus(), backlogs.getProcess());
+            assertEquals(100, backlogs.getQuantity());
+        }
+
+        @Test
         @DisplayName("OU returns quantities grouped by CPT OK")
         public void testGetSales() throws JsonProcessingException, JSONException {
             // GIVEN
