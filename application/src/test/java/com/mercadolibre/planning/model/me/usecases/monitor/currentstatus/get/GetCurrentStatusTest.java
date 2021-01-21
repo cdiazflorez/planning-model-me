@@ -6,7 +6,13 @@ import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
@@ -23,13 +29,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.TreeSet;
 
 import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_NO_WALL;
@@ -45,6 +55,7 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.ZONE_ARGENTINA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,6 +89,12 @@ class GetCurrentStatusTest {
 
     @Mock
     private OutboundWaveGateway outboundWaveGateway;
+
+    @Mock
+    private PlanningModelGateway planningModelGateway;
+
+    @Mock
+    private LogisticCenterGateway logisticCenterGateway;
 
     @Test
     public void testExecuteOk() {
@@ -274,7 +291,9 @@ class GetCurrentStatusTest {
     }
 
     private void commonMocks(final GetMonitorInput input) {
-
+        when(
+                planningModelGateway.getEntities(Mockito.any())
+        ).thenReturn(mockHeadcountEntities(getCurrentUtcDate()));
         when(backlogGatewayProvider.getBy(input.getWorkflow()))
                 .thenReturn(Optional.of(backlogGateway));
 
@@ -313,16 +332,52 @@ class GetCurrentStatusTest {
                         .build()
         );
 
+        final ZonedDateTime currentTime = ZonedDateTime.now()
+                .withSecond(0).withNano(0).withZoneSameInstant(ZONE_ARGENTINA);
+
         when(outboundWaveGateway.getUnitsCount(
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo(),
+                currentTime.minusHours(1).withZoneSameLocal(ZoneId.of("Z")),
+                currentTime.withZoneSameLocal(ZoneId.of("Z")),
                 "ORDER"
         )).thenReturn(UnitsResume.builder().unitCount(54).build());
+
+        when(logisticCenterGateway.getConfiguration(
+                input.getWarehouseId()
+        )).thenReturn(new LogisticCenterConfiguration(TimeZone.getTimeZone(ZONE_ARGENTINA)));
 
         mockGetBacklogMetric();
         mockGetProductivityMetric();
         mockGetThroughputMetric();
+    }
+
+    private List<Entity> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
+        return List.of(
+                Entity.builder()
+                        .date(utcCurrentTime)
+                        .processName(ProcessName.PICKING)
+                        .source(Source.FORECAST)
+                        .value(10)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime)
+                        .processName(ProcessName.PICKING)
+                        .source(Source.SIMULATION)
+                        .value(20)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime.plusHours(2))
+                        .processName(ProcessName.PACKING)
+                        .source(Source.FORECAST)
+                        .value(15)
+                        .build(),
+                Entity.builder()
+                        .date(utcCurrentTime.plusDays(1))
+                        .processName(ProcessName.PICKING)
+                        .source(Source.FORECAST)
+                        .value(30)
+                        .build()
+        );
     }
 
     private void mockGetBacklogMetric() {
