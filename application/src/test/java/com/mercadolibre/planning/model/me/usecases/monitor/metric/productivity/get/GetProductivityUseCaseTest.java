@@ -27,6 +27,7 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,10 +50,6 @@ public class GetProductivityUseCaseTest {
                 .dateTo(utcCurrentTime.plusHours(25))
                 .build();
 
-        when(
-                planningModelGateway.getEntities(Mockito.any())
-        ).thenReturn(mockHeadcountEntities(utcCurrentTime));
-
         final ProductivityInput productivityInput = ProductivityInput.builder()
                 .processInfo(PACKING)
                 .monitorInput(input)
@@ -62,6 +59,7 @@ public class GetProductivityUseCaseTest {
                         .unitCount(3020)
                         .build()
                 )
+                .headcounts(mockHeadcountEntities(utcCurrentTime))
                 .build();
 
         // WHEN
@@ -71,6 +69,7 @@ public class GetProductivityUseCaseTest {
         assertEquals(PRODUCTIVITY.getSubtitle(), metric.getSubtitle());
         assertEquals(PRODUCTIVITY.getTitle(), metric.getTitle());
         assertEquals(PRODUCTIVITY.getType(), metric.getType());
+        assertNotEquals("0 uds./h",metric.getValue());
     }
 
     private List<Entity> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {

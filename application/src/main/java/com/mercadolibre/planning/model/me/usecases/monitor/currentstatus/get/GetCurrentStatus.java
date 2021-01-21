@@ -8,6 +8,12 @@ import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
@@ -20,11 +26,14 @@ import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.G
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.ProductivityInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.GetThroughput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.ThroughputInput;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_NO_WALL;
 import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_WALL;
@@ -51,6 +61,9 @@ import static java.util.Collections.emptyList;
 @AllArgsConstructor
 public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusData> {
 
+    private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
+            List.of(ProcessingType.ACTIVE_WORKERS);
+
     private static final String STATUS_ATTRIBUTE = "status";
     private static final int HOURS_OFFSET = 1;
     private final AnalyticsGateway analyticsClient;
@@ -59,6 +72,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
     private final GetThroughput getThroughputMetric;
     private final GetProductivity getProductivityMetric;
     private final OutboundWaveGateway outboundWaveGateway;
+    private final PlanningModelGateway planningModelGateway;
 
     @Override
     public CurrentStatusData execute(GetMonitorInput input) {
@@ -71,11 +85,50 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
         final List<ProcessBacklog> processBacklogs = getProcessBacklogs(input);
         completeBacklogs(processBacklogs);
         final List<UnitsResume> processedUnitsLastHour = getUnitsResumes(input);
+        final List<Entity> productivityHeadCounts =
+                getHeadcountForProductivity(input, processedUnitsLastHour);
+
         processBacklogs.forEach(processBacklog ->
-                addProcessIfExist(processes, processBacklog, input, processedUnitsLastHour)
+                addProcessIfExist(processes, CurrentStatusMetricInputs.builder()
+                        .input(input)
+                        .processBacklog(processBacklog)
+                        .processedUnitsLastHour(processedUnitsLastHour)
+                        .productivityHeadCounts(productivityHeadCounts)
+                        .build())
         );
+
         completeProcess(processes);
         return processes;
+    }
+
+    private List<Entity> getHeadcountForProductivity(final GetMonitorInput input,
+                         final List<UnitsResume> processedUnitsLastHour) {
+        final ZonedDateTime utcDateTo = DateUtils.getCurrentUtcDateTime()
+                .with(ChronoField.MINUTE_OF_HOUR, 0);
+        final ZonedDateTime utcDateFrom = utcDateTo.minusHours(1);
+        return planningModelGateway.getEntities(
+                createHeadcountRequest(input,
+                        utcDateFrom,
+                        utcDateTo,
+                        processedUnitsLastHour
+                ));
+    }
+
+    private EntityRequest createHeadcountRequest(final GetMonitorInput input,
+                                                 final ZonedDateTime dateFrom,
+                                                 final ZonedDateTime dateTo,
+                                                 final List<UnitsResume> unitsResumes) {
+        return EntityRequest.builder()
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
+                .entityType(EntityType.HEADCOUNT)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .processName(unitsResumes.stream().map(unitResume
+                        -> ProcessName.from(unitResume.getProcess().getRelatedProcessName()))
+                        .collect(Collectors.toList()))
+                .processingType(PROJECTION_PROCESSING_TYPES)
+                .build();
     }
 
     private List<ProcessBacklog> getProcessBacklogs(GetMonitorInput input) {
@@ -131,35 +184,33 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
     }
 
     private void addProcessIfExist(final TreeSet<Process> processes,
-                                   final ProcessBacklog processBacklog,
-                                   final GetMonitorInput input,
-                                   final List<UnitsResume> processedUnitsLastHour) {
+                                   CurrentStatusMetricInputs inputs) {
 
         final Runnable packingWallIsNotPresent = getRunnableProcessToAdd(
-                processes, processBacklog, input, processedUnitsLastHour, () -> { }, WALL_IN
+                processes, inputs, () -> { }, WALL_IN
         );
-        final Runnable packingIsNotPresent = getRunnableProcessToAdd(processes, processBacklog,
-                input, processedUnitsLastHour, packingWallIsNotPresent, ProcessInfo.PACKING_WALL
+        final Runnable packingIsNotPresent = getRunnableProcessToAdd(processes,
+                inputs, packingWallIsNotPresent, ProcessInfo.PACKING_WALL
         );
-        final Runnable pickingIsNotPresent = getRunnableProcessToAdd(processes, processBacklog,
-                input, processedUnitsLastHour, packingIsNotPresent, PACKING
+        final Runnable pickingIsNotPresent = getRunnableProcessToAdd(processes,
+                inputs, packingIsNotPresent, PACKING
         );
         final Runnable outboundPlanningIsNotPresent  = getRunnableProcessToAdd(processes,
-                processBacklog, input, processedUnitsLastHour, pickingIsNotPresent, PICKING
+                inputs, pickingIsNotPresent, PICKING
         );
 
-        getProcessBy(processBacklog, OUTBOUND_PLANNING, input, getUnitsCountWaves(input)
+        getProcessBy(inputs, OUTBOUND_PLANNING,
+                getUnitsCountWaves(inputs.getInput())
         ).ifPresentOrElse(processes::add, outboundPlanningIsNotPresent);
     }
 
     private Runnable getRunnableProcessToAdd(final TreeSet<Process> processes,
-                                             final ProcessBacklog processBacklog,
-                                             final GetMonitorInput input,
-                                             final List<UnitsResume> processedUnitsLastHour,
+                                             final CurrentStatusMetricInputs inputs,
                                              final Runnable runnableOrElseMethod,
                                              final ProcessInfo processInfo) {
-        return () -> getProcessBy(processBacklog,
-                processInfo, input, getUnitResumeForProcess(processInfo, processedUnitsLastHour)
+        return () -> getProcessBy(inputs,
+                processInfo,getUnitResumeForProcess(processInfo,
+                        inputs.getProcessedUnitsLastHour())
         ).ifPresentOrElse(processes::add, runnableOrElseMethod);
     }
 
@@ -178,17 +229,17 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
         );
     }
 
-    private Optional<Process> getProcessBy(final ProcessBacklog processBacklog,
+    private Optional<Process> getProcessBy(final CurrentStatusMetricInputs inputs,
                                            final ProcessInfo processInfo,
-                                           final GetMonitorInput input,
                                            final UnitsResume unitResume) {
 
-        if (processBacklog.getProcess().equalsIgnoreCase(processInfo.getStatus())
-                && Objects.equals(processBacklog.getArea(), getProcessInfoArea(processInfo))) {
+        if (inputs.getProcessBacklog().getProcess().equalsIgnoreCase(processInfo.getStatus())
+                && Objects.equals(inputs.getProcessBacklog().getArea(),
+                getProcessInfoArea(processInfo))) {
 
             final Process process = Process.builder()
                     .title(processInfo.getTitle())
-                    .metrics(createMetricsList(processBacklog, processInfo, input, unitResume))
+                    .metrics(createMetricsList(inputs, processInfo, unitResume))
                     .build();
             return Optional.of(process);
         }
@@ -221,16 +272,15 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                 "ORDER");
     }
 
-    private List<Metric> createMetricsList(final ProcessBacklog processBacklog,
+    private List<Metric> createMetricsList(final CurrentStatusMetricInputs inputs,
                                            final ProcessInfo processInfo,
-                                           final GetMonitorInput input,
                                            final UnitsResume unitResume) {
         List<Metric> metrics = new ArrayList<>();
         processInfo.getMetricTypes().forEach(metricType -> {
             switch (metricType) {
                 case BACKLOG:
                     metrics.add(getBacklogMetric.execute(BacklogMetricInput.builder()
-                            .quantity(processBacklog.getQuantity())
+                            .quantity(inputs.getProcessBacklog().getQuantity())
                             .processInfo(processInfo)
                             .build()
                     ));
@@ -248,9 +298,10 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                     metrics.add(
                             getProductivityMetric.execute(
                                     ProductivityInput.builder()
-                                            .monitorInput(input)
+                                            .monitorInput(inputs.getInput())
                                             .processedUnitLastHour(unitResume)
                                             .processInfo(processInfo)
+                                            .headcounts(inputs.getProductivityHeadCounts())
                                             .build()
                             )
                     );

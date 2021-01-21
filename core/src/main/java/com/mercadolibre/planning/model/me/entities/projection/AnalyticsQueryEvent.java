@@ -7,11 +7,12 @@ import lombok.Getter;
 @Getter
 public enum AnalyticsQueryEvent {
 
-    PICKING("Picking"),
-    PACKING_WALL("Packing de wall"),
-    PACKING_NO_WALL("Packing normal");
+    PICKING("Picking","picking"),
+    PACKING_WALL("Packing de wall","packing_wall"),
+    PACKING_NO_WALL("Packing normal","packing");
 
     private final String relatedProcess;
+    private final String relatedProcessName;
 
     public String getName() {
         return name().toUpperCase();
