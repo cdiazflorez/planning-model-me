@@ -32,6 +32,7 @@ public class TestUtils {
     public static final String PROCESSING_TIME = "processing_time";
     public static final Long USER_ID = 1234L;
     private static final String FORECAST_EXAMPLE_FILE = "forecast_example.xlsx";
+    public static final ZoneId ZONE_ARGENTINA = ZoneId.of("America/Argentina/Buenos_Aires");
 
     private static MeliDocumentFactory meliDocumentFactory = new PoiMeliDocumentFactory();
 
