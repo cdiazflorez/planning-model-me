@@ -33,10 +33,4 @@ public class DateUtils {
         return dateTime.truncatedTo(HOURS).plusHours(1);
     }
 
-    public static ZonedDateTime getCurrentTimeZone(final ZoneId zoneId) {
-        final ZonedDateTime now = ZonedDateTime.now();
-        return convertToTimeZone(zoneId,
-                now.withSecond(0).withNano(0)).withZoneSameLocal(ZoneId.of("Z"));
-    }
-
 }
