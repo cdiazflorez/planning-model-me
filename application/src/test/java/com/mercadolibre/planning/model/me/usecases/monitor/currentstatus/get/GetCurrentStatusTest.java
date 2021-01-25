@@ -6,8 +6,6 @@ import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
@@ -32,14 +30,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TimeZone;
 import java.util.TreeSet;
 
 import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_NO_WALL;
@@ -55,7 +51,7 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.ZONE_ARGENTINA;
+import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,9 +88,6 @@ class GetCurrentStatusTest {
 
     @Mock
     private PlanningModelGateway planningModelGateway;
-
-    @Mock
-    private LogisticCenterGateway logisticCenterGateway;
 
     @Test
     public void testExecuteOk() {
@@ -332,19 +325,14 @@ class GetCurrentStatusTest {
                         .build()
         );
 
-        final ZonedDateTime currentTime = ZonedDateTime.now()
-                .withSecond(0).withNano(0).withZoneSameInstant(ZONE_ARGENTINA);
+        final ZonedDateTime currentTime = ZonedDateTime.now(UTC).withSecond(0).withNano(0);
 
         when(outboundWaveGateway.getUnitsCount(
                 input.getWarehouseId(),
-                currentTime.minusHours(1).withZoneSameLocal(ZoneId.of("Z")),
-                currentTime.withZoneSameLocal(ZoneId.of("Z")),
+                currentTime.minusHours(1),
+                currentTime,
                 "ORDER"
         )).thenReturn(UnitsResume.builder().unitCount(54).build());
-
-        when(logisticCenterGateway.getConfiguration(
-                input.getWarehouseId()
-        )).thenReturn(new LogisticCenterConfiguration(TimeZone.getTimeZone(ZONE_ARGENTINA)));
 
         mockGetBacklogMetric();
         mockGetProductivityMetric();
