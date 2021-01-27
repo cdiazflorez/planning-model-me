@@ -46,6 +46,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -195,7 +196,8 @@ public class SimulationControllerTest {
                         new Data(HEADCOUNT.getName(), "Headcount", true,
                                 List.of(
                                         Map.of(
-                                                "column_1", new Content("Picking", null, null),
+                                                "column_1", new Content("Picking",
+                                                        null, null, "picking"),
                                                 "column_2", new Content(
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
@@ -204,46 +206,56 @@ public class SimulationControllerTest {
                                                                 "subtitle_1", "11:00 - 12:00",
                                                                 "title_2", "Cantidad de reps FCST",
                                                                 "subtitle_2", "30"
-                                                        )
+                                                        ),
+                                                        null
                                                 )
                                         ),
                                         Map.of(
-                                                "column_1", new Content("Packing", null, null),
+                                                "column_1", new Content("Packing",
+                                                        null, null, "packing"),
                                                 "column_2", new Content(
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
-                                                        null)
+                                                        null, null)
                                         )
                                 )
                         ),
                         new Data(PRODUCTIVITY.getName(), "Productividad regular", true,
                                 List.of(
                                         Map.of(
-                                                "column_1", new Content("Picking", null, null),
+                                                "column_1", new Content("Picking",
+                                                        null, null, "picking"),
                                                 "column_2", new Content("30", null,
                                                         Map.of(
                                                                 "title_1",
                                                                 "Productividad polivalente",
                                                                 "subtitle_1",
                                                                 "30,4 uds/h"
-                                                        )
+                                                        ),
+                                                        null
                                                 )
                                         ),
                                         Map.of(
-                                                "column_1", new Content("Packing", null, null),
-                                                "column_2", new Content("30", null, null)
+                                                "column_1", new Content("Packing",
+                                                        null, null, "packing"),
+                                                "column_2", new Content("30",
+                                                        null, null, null)
                                         )
                                 )
                         ),
                         new Data(THROUGHPUT.getName(), "Throughput", true,
                                 List.of(
                                         Map.of(
-                                                "column_1", new Content("Picking", null, null),
-                                                "column_2", new Content("1600", null, null)
+                                                "column_1", new Content("Picking",
+                                                        null, null, "picking"),
+                                                "column_2", new Content("1600",
+                                                        null, null, null)
                                         ),
                                         Map.of(
-                                                "column_1", new Content("Packing", null, null),
-                                                "column_2", new Content("1600", null, null)
+                                                "column_1", new Content("Packing",
+                                                        null, null, "packing"),
+                                                "column_2", new Content("1600",
+                                                        null, null, null)
                                         )
                                 )
                         )

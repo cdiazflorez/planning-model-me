@@ -531,7 +531,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         headers.forEach(header -> {
             if ("column_1".equals(header.getId())) {
                 content.put(header.getId(),
-                        new Content(capitalize(processName.getTitle()), null, null));
+                        new Content(capitalize(processName.getTitle()), null, null,
+                                processName.getName()));
             } else {
                 final Map<Source, EntityRow> entityBySource = entitiesByHour.get(header.getValue());
 
@@ -544,14 +545,15 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                     entityBySource.get(FORECAST),
                                     polyvalentProductivityByHour.getOrDefault(
                                             header.getValue(), "-")
-                                    )));
+                                    ), null));
                 } else if (entityBySource != null && entityBySource.containsKey(FORECAST)) {
                     content.put(header.getId(), new Content(
                             valueOf(entityBySource.get(FORECAST).getValue()),
                             entityBySource.get(FORECAST).getDate(),
-                            null));
+                            null, null));
                 } else {
-                    content.put(header.getId(), new Content("-", null, null));
+                    content.put(header.getId(),
+                            new Content("-", null, null, null));
                 }
             }
         });
