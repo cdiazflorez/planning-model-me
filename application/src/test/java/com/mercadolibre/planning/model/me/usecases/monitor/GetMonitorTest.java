@@ -1,27 +1,24 @@
 package com.mercadolibre.planning.model.me.usecases.monitor;
 
-import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get.GetCurrentStatus;
+import com.mercadolibre.planning.model.me.usecases.monitor.deviation.GetDeviation;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.Monitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorData;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationMetric;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnit;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
-import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
@@ -54,12 +51,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class GetMonitorTest {
 
-    private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
-    private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
-    private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
-    private static final ZonedDateTime CPT_4 = getCurrentUtcDate().plusHours(6);
-    private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
-
     @InjectMocks
     private GetMonitor getMonitor;
 
@@ -67,10 +58,7 @@ class GetMonitorTest {
     private LogisticCenterGateway logisticCenterGateway;
 
     @Mock
-    private GetSales getSales;
-
-    @Mock
-    private PlanningModelGateway planningModelGateway;
+    private GetDeviation getDeviation;
 
     @Mock
     private GetCurrentStatus getCurrentStatus;
@@ -80,7 +68,6 @@ class GetMonitorTest {
     @Test
     public void testExecuteOk() {
         // GIVEN
-        final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
         final GetMonitorInput input = GetMonitorInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
@@ -88,7 +75,7 @@ class GetMonitorTest {
                 .dateTo(getCurrentUtcDate().plusHours(25))
                 .build();
 
-        commonMocks(utcCurrentTime, input);
+        commonMocks(input);
 
         // WHEN
         final Monitor monitor = getMonitor.execute(input);
@@ -188,7 +175,7 @@ class GetMonitorTest {
 
     }
 
-    private void commonMocks(final ZonedDateTime utcCurrentTime, final GetMonitorInput input) {
+    private void commonMocks(final GetMonitorInput input) {
         when(getCurrentStatus.execute(input))
                 .thenReturn(CurrentStatusData.builder().processes(
                         new TreeSet<>(List.of(
@@ -256,12 +243,33 @@ class GetMonitorTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        when(getSales.execute(new GetSalesInputDto(
-                FBM_WMS_OUTBOUND, WAREHOUSE_ID, utcCurrentTime.minusHours(28)))
-        ).thenReturn(mockSales());
+        when(getDeviation.execute(input))
+                .thenReturn(mockDeviation());
+    }
 
-        when(planningModelGateway.getPlanningDistribution(Mockito.any()
-        )).thenReturn(mockPlanningDistribution(utcCurrentTime));
+    private DeviationData mockDeviation() {
+        return new DeviationData(DeviationMetric.builder()
+                .deviationPercentage(Metric.builder()
+                        .title("% Desviación FCST / Ventas")
+                        .value("-13.15%")
+                        .status(null)
+                        .icon("arrow_down")
+                        .build())
+                .deviationUnits(DeviationUnit.builder()
+                        .title("Desviación en unidades")
+                        .value("137 uds.")
+                        .detail(DeviationUnitDetail.builder()
+                                .forecastUnits(Metric.builder()
+                                        .title("Cantidad Forecast")
+                                        .value("1042 uds.")
+                                        .build())
+                                .currentUnits(Metric.builder()
+                                        .title("Cantidad Real")
+                                        .value("905 uds.")
+                                        .build())
+                                .build())
+                        .build())
+                .build());
     }
 
     private Metric createMetric(final String title, final String type, final String subtitle,
@@ -271,40 +279,6 @@ class GetMonitorTest {
                 .subtitle(subtitle)
                 .value(value)
                 .build();
-    }
-
-    private List<Backlog> mockSales() {
-        return List.of(
-                Backlog.builder()
-                        .date(CPT_1)
-                        .quantity(350)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_2)
-                        .quantity(235)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_3)
-                        .quantity(200)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_4)
-                        .quantity(120)
-                        .build()
-        );
-    }
-
-    private List<PlanningDistributionResponse> mockPlanningDistribution(
-            final ZonedDateTime utcCurrentTime) {
-        return List.of(
-                new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 281),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 128),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_2, MetricUnit.UNITS, 200),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_3, MetricUnit.UNITS, 207),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 44),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 82),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_5, MetricUnit.UNITS, 100)
-        );
     }
 
     @Test
