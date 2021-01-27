@@ -23,6 +23,7 @@ import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.G
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.ProductivityInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.GetThroughput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.ThroughputInput;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -92,6 +93,7 @@ class GetCurrentStatusTest {
     @Test
     public void testExecuteOk() {
         // GIVEN
+        final ZonedDateTime dateFromForBacklogs = DateUtils.getCurrentUtcDateTime().minusDays(7);
         final GetMonitorInput input = GetMonitorInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
@@ -106,8 +108,8 @@ class GetCurrentStatusTest {
         );
         when(backlogGateway.getBacklog(statuses,
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo()
+                dateFromForBacklogs,
+                null
         )).thenReturn(
                 new ArrayList<>(
                         List.of(
@@ -121,7 +123,7 @@ class GetCurrentStatusTest {
                                         .build()
                         ))
         );
-        commonMocks(input);
+        commonMocks(input, dateFromForBacklogs);
 
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
                 Arrays.asList(AnalyticsQueryEvent.PACKING_WALL, AnalyticsQueryEvent.PICKING,
@@ -233,6 +235,7 @@ class GetCurrentStatusTest {
 
     @Test
     public void testErrorOnAnalytics() {
+        final ZonedDateTime dateFromForBacklogs = DateUtils.getCurrentUtcDateTime().minusDays(7);
         final GetMonitorInput input = GetMonitorInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
@@ -240,7 +243,7 @@ class GetCurrentStatusTest {
                 .dateTo(getCurrentUtcDate().plusHours(25))
                 .build();
         isAnalyticsError = true;
-        commonMocks(input);
+        commonMocks(input, dateFromForBacklogs);
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
                 Arrays.asList(AnalyticsQueryEvent.PACKING_WALL, AnalyticsQueryEvent.PICKING,
                         PACKING_NO_WALL)
@@ -283,7 +286,8 @@ class GetCurrentStatusTest {
         assertEquals("-", packingProductivityMetric.getValue());
     }
 
-    private void commonMocks(final GetMonitorInput input) {
+    private void commonMocks(final GetMonitorInput input,
+                             final ZonedDateTime dateFromForBacklogs) {
         when(
                 planningModelGateway.getEntities(Mockito.any())
         ).thenReturn(mockHeadcountEntities(getCurrentUtcDate()));
@@ -296,16 +300,16 @@ class GetCurrentStatusTest {
                 .build();
         when(backlogGateway.getUnitBacklog(PICKING.getStatus(),
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo(), null
+                dateFromForBacklogs,
+                null, null
         )).thenReturn(
                 pickingProcessBacklog
         );
 
         when(backlogGateway.getUnitBacklog(WALL_IN.getStatus(),
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo(), null
+                dateFromForBacklogs,
+                null, null
         )).thenReturn(
                 ProcessBacklog.builder()
                         .process(WALL_IN.getStatus())
@@ -315,8 +319,8 @@ class GetCurrentStatusTest {
 
         when(backlogGateway.getUnitBacklog(PACKING.getStatus(),
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo(), "PW"
+                dateFromForBacklogs,
+                null, "PW"
         )).thenReturn(
                 ProcessBacklog.builder()
                         .process(PACKING.getStatus())

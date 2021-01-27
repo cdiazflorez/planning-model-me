@@ -134,6 +134,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
 
     private List<ProcessBacklog> getProcessBacklogs(GetMonitorInput input) {
         final String status = STATUS_ATTRIBUTE;
+        ZonedDateTime dateFromForBacklogs = DateUtils.getCurrentUtcDateTime().minusDays(7);
         final List<Map<String, String>> statuses = List.of(
                 Map.of(status, OUTBOUND_PLANNING.getStatus()),
                 Map.of(status, PACKING.getStatus())
@@ -142,21 +143,21 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
         List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo());
+                dateFromForBacklogs,
+                null);
         final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(PICKING.getStatus(),
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo(), null);
+                dateFromForBacklogs,
+                null, null);
         final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(WALL_IN.getStatus(),
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo(), null);
+                dateFromForBacklogs,
+                null, null);
         final ProcessBacklog packingWall = backlogGateway
                 .getUnitBacklog(ProcessInfo.PACKING_WALL.getStatus(),
                         input.getWarehouseId(),
-                        input.getDateFrom(),
-                        input.getDateTo(), "PW");
+                        dateFromForBacklogs,
+                        null, "PW");
         recalculatePackingNoWallUnits(processBacklogs, packingWall);
 
         processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog, packingWall));
