@@ -3,7 +3,7 @@ package com.mercadolibre.planning.model.me.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
@@ -39,7 +39,9 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -80,7 +82,8 @@ public class ProjectionControllerTest {
                         mockComplexTable(),
                         mockProjectionDetailTable(),
                         mockProjectionChart(),
-                        createTabs()));
+                        createTabs(),
+                        simulationMode));
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -234,7 +237,9 @@ public class ProjectionControllerTest {
                                         )
                                 )
                         )
-                )
+                ),
+                action,
+                "Headcount / Throughput"
         );
     }
 
