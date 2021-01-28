@@ -7,8 +7,6 @@ import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedEx
 import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
@@ -55,7 +53,7 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PICKING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.monitor.metric.GetMetric.createEmptyMetric;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentTimeZone;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
@@ -76,7 +74,6 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
     private final GetProductivity getProductivityMetric;
     private final OutboundWaveGateway outboundWaveGateway;
     private final PlanningModelGateway planningModelGateway;
-    private final LogisticCenterGateway logisticCenterGateway;
 
     @Override
     public CurrentStatusData execute(GetMonitorInput input) {
@@ -137,6 +134,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
 
     private List<ProcessBacklog> getProcessBacklogs(GetMonitorInput input) {
         final String status = STATUS_ATTRIBUTE;
+        ZonedDateTime dateFromForBacklogs = DateUtils.getCurrentUtcDateTime().minusDays(7);
         final List<Map<String, String>> statuses = List.of(
                 Map.of(status, OUTBOUND_PLANNING.getStatus()),
                 Map.of(status, PACKING.getStatus())
@@ -145,21 +143,21 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
         List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo());
+                dateFromForBacklogs,
+                null);
         final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(PICKING.getStatus(),
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo(), null);
+                dateFromForBacklogs,
+                null, null);
         final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(WALL_IN.getStatus(),
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo(), null);
+                dateFromForBacklogs,
+                null, null);
         final ProcessBacklog packingWall = backlogGateway
                 .getUnitBacklog(ProcessInfo.PACKING_WALL.getStatus(),
                         input.getWarehouseId(),
-                        input.getDateFrom(),
-                        input.getDateTo(), "PW");
+                        dateFromForBacklogs,
+                        null, "PW");
         recalculatePackingNoWallUnits(processBacklogs, packingWall);
 
         processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog, packingWall));
@@ -269,18 +267,12 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
     }
 
     private UnitsResume getUnitsCountWaves(GetMonitorInput input) {
-        ZonedDateTime currentTime = getCurrentTime(input);
+        ZonedDateTime currentTime = getCurrentUtcDateTime();
         return outboundWaveGateway.getUnitsCount(
                 input.getWarehouseId(),
                 currentTime.minusHours(1),
                 currentTime,
                 "ORDER");
-    }
-
-    private ZonedDateTime getCurrentTime(GetMonitorInput input) {
-        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
-                input.getWarehouseId());
-        return getCurrentTimeZone(config.getZoneId());
     }
 
     private List<Metric> createMetricsList(final CurrentStatusMetricInputs inputs,

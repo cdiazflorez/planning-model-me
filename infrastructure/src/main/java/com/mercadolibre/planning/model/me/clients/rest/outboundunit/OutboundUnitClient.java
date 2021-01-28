@@ -7,6 +7,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
+import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.BacklogFilters;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.Unit;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.UnitGroup;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationFilterRequest;
@@ -27,11 +28,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
+
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -73,11 +77,11 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         final SearchUnitRequest request = SearchUnitRequest.builder()
                 .limit(0)
                 .offset(0)
-                .filter(new SearchUnitAggregationFilterRequest(List.of(
-                        Map.of(WAREHOUSE_ID.toJson(), warehouseId),
-                        Map.of(GROUP_TYPE.toJson(), ORDER_VALUE),
-                        Map.of(STATUS.toJson(), "pending")
-                )))
+                .filter(createFilters(BacklogFilters.builder()
+                        .groupType(ORDER_VALUE)
+                        .warehouseId(warehouseId)
+                        .statuses("pending")
+                        .build(), STATUS.toJson()))
                 .aggregations(List.of(
                         SearchUnitAggregationRequest.builder()
                                 .name(AGGREGATION_BY_ETD)
@@ -114,13 +118,13 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         final SearchUnitRequest request = SearchUnitRequest.builder()
                 .limit(1)
                 .offset(0)
-                .filter(new SearchUnitAggregationFilterRequest(List.of(
-                        Map.of(WAREHOUSE_ID.toJson(), warehouseId),
-                        Map.of(GROUP_TYPE.toJson(), ORDER_VALUE),
-                        Map.of(ETD_FROM.toJson(), dateFrom),
-                        Map.of(ETD_TO.toJson(), dateTo),
-                        Map.of("or", statuses)
-                )))
+                .filter(createFilters(BacklogFilters.builder()
+                        .dateFrom(dateFrom)
+                        .dateTo(dateTo)
+                        .statuses(statuses)
+                        .warehouseId(warehouseId)
+                        .groupType(ORDER_VALUE)
+                        .build(),"or"))
                 .aggregations(List.of(
                         SearchUnitAggregationRequest.builder()
                                 .name(STATUS.toJson())
@@ -145,22 +149,37 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .collect(Collectors.toList());
     }
 
+    private SearchUnitAggregationFilterRequest createFilters(
+            final BacklogFilters filters,
+            final String statusLabel) {
+        final List<Map<String,Object>> filtersList = new LinkedList<>();
+        addFilter(WAREHOUSE_ID.toJson(), filters.getWarehouseId(), filtersList);
+        addFilter(GROUP_TYPE.toJson(), filters.getGroupType(), filtersList);
+        addFilter(ETD_FROM.toJson(), filters.getDateFrom(), filtersList);
+        addFilter(ETD_TO.toJson(), filters.getDateFrom(), filtersList);
+        addFilter(statusLabel, filters.getStatuses(), filtersList);
+        return new SearchUnitAggregationFilterRequest(filtersList);
+    }
+
+    private void addFilter(final String filterLabel,
+                           final Object filter,
+                           List<Map<String, Object>> filters) {
+        Optional.ofNullable(filter).ifPresent(currentFilter ->
+                filters.add(Map.of(filterLabel, currentFilter)));
+    }
+
     @Override
     public ProcessBacklog getUnitBacklog(final String statuses,
                                          final String warehouseId,
                                          final ZonedDateTime dateFrom,
                                          final ZonedDateTime dateTo,
                                          final String area) {
-
         final Map<String, String> defaultParams = defaultParams();
-        defaultParams.put(WAREHOUSE_ID.toJson(), warehouseId);
-        defaultParams.put("group.etd_from", dateFrom.toString());
-        defaultParams.put("group.etd_to", dateTo.toString());
-        defaultParams.put(STATUS.toJson(), statuses);
-        defaultParams.put(LIMIT.toJson(), "1");
-        if (area != null) {
-            defaultParams.put("address.area", area);
-        }
+        addUnitParam(WAREHOUSE_ID.toJson(), warehouseId, defaultParams);
+        addUnitParam("group.etd_from", dateFrom.toString(), defaultParams);
+        addUnitParam("group.etd_to", dateTo, defaultParams);
+        addUnitParam(LIMIT.toJson(), "1", defaultParams);
+        addUnitParam("address.area", area, defaultParams);
 
         final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams);
         int quantity = Objects.nonNull(response) ? response.getPaging().getTotal() : 0;
@@ -169,6 +188,13 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .quantity(quantity)
                 .area(area)
                 .build();
+    }
+
+    public void addUnitParam(final String paramLabel,
+            final Object param,
+            final Map<String, String> defaultParams) {
+        Optional.ofNullable(param)
+                .ifPresent(date -> defaultParams.put(paramLabel, date.toString()));
     }
 
     private boolean workingCpts(final Backlog backlog) {

@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.controller.simulation;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
@@ -16,7 +16,6 @@ import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.User
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
-import com.mercadolibre.planning.model.me.utils.DateUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,12 +38,15 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -78,7 +80,8 @@ public class SimulationControllerTest {
                         mockComplexTable(),
                         null,
                         mockProjectionChart(),
-                        createTabs()));
+                        createTabs(),
+                        simulationMode));
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -127,7 +130,8 @@ public class SimulationControllerTest {
                         mockComplexTable(),
                         null,
                         mockProjectionChart(),
-                        createTabs()));
+                        createTabs(),
+                        simulationMode));
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -192,7 +196,8 @@ public class SimulationControllerTest {
                         new Data(HEADCOUNT.getName(), "Headcount", true,
                                 List.of(
                                         Map.of(
-                                                "column_1", new Content("Picking", null, null),
+                                                "column_1", new Content("Picking",
+                                                        null, null, "picking"),
                                                 "column_2", new Content(
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
@@ -201,50 +206,62 @@ public class SimulationControllerTest {
                                                                 "subtitle_1", "11:00 - 12:00",
                                                                 "title_2", "Cantidad de reps FCST",
                                                                 "subtitle_2", "30"
-                                                        )
+                                                        ),
+                                                        null
                                                 )
                                         ),
                                         Map.of(
-                                                "column_1", new Content("Packing", null, null),
+                                                "column_1", new Content("Packing",
+                                                        null, null, "packing"),
                                                 "column_2", new Content(
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
-                                                        null)
+                                                        null, null)
                                         )
                                 )
                         ),
                         new Data(PRODUCTIVITY.getName(), "Productividad regular", true,
                                 List.of(
                                         Map.of(
-                                                "column_1", new Content("Picking", null, null),
+                                                "column_1", new Content("Picking",
+                                                        null, null, "picking"),
                                                 "column_2", new Content("30", null,
                                                         Map.of(
                                                                 "title_1",
                                                                 "Productividad polivalente",
                                                                 "subtitle_1",
                                                                 "30,4 uds/h"
-                                                        )
+                                                        ),
+                                                        null
                                                 )
                                         ),
                                         Map.of(
-                                                "column_1", new Content("Packing", null, null),
-                                                "column_2", new Content("30", null, null)
+                                                "column_1", new Content("Packing",
+                                                        null, null, "packing"),
+                                                "column_2", new Content("30",
+                                                        null, null, null)
                                         )
                                 )
                         ),
                         new Data(THROUGHPUT.getName(), "Throughput", true,
                                 List.of(
                                         Map.of(
-                                                "column_1", new Content("Picking", null, null),
-                                                "column_2", new Content("1600", null, null)
+                                                "column_1", new Content("Picking",
+                                                        null, null, "picking"),
+                                                "column_2", new Content("1600",
+                                                        null, null, null)
                                         ),
                                         Map.of(
-                                                "column_1", new Content("Packing", null, null),
-                                                "column_2", new Content("1600", null, null)
+                                                "column_1", new Content("Packing",
+                                                        null, null, "packing"),
+                                                "column_2", new Content("1600",
+                                                        null, null, null)
                                         )
                                 )
                         )
-                )
+                ),
+                action,
+                "Headcount / Throughput"
         );
     }
 

@@ -13,4 +13,6 @@ public class Content {
     private ZonedDateTime date;
 
     private Map<String, String> tooltip;
+
+    private String id;
 }
