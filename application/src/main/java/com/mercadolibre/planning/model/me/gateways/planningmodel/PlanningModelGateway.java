@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
@@ -19,6 +20,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedW
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DeviationInput;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -54,4 +56,7 @@ public interface PlanningModelGateway {
                                           final ZonedDateTime dateFrom,
                                           final ZonedDateTime dateTo,
                                           final Integer backlog);
+
+    DeviationResponse saveDeviation(final DeviationInput deviationInput);
+
 }
