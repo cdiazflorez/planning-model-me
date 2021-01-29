@@ -21,10 +21,6 @@ public interface BacklogGateway {
 
     List<Backlog> getSalesByCpt(final String warehouseId, final String dateCreatedFrom);
 
-    ProcessBacklog getUnitBacklog(final String statuses,
-                                  final String warehouseId,
-                                  final ZonedDateTime dateFrom,
-                                  final ZonedDateTime dateTo,
-                                  final String area);
+    ProcessBacklog getUnitBacklog(final UnitProcessBacklogInput input);
 
 }

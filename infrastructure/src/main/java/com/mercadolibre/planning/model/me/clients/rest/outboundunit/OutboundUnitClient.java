@@ -19,6 +19,7 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
@@ -146,28 +147,23 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     }
 
     @Override
-    public ProcessBacklog getUnitBacklog(final String statuses,
-                                         final String warehouseId,
-                                         final ZonedDateTime dateFrom,
-                                         final ZonedDateTime dateTo,
-                                         final String area) {
-
+    public ProcessBacklog getUnitBacklog(final UnitProcessBacklogInput input) {
         final Map<String, String> defaultParams = defaultParams();
-        defaultParams.put(WAREHOUSE_ID.toJson(), warehouseId);
-        defaultParams.put("group.etd_from", dateFrom.toString());
-        defaultParams.put("group.etd_to", dateTo.toString());
-        defaultParams.put(STATUS.toJson(), statuses);
+        defaultParams.put(WAREHOUSE_ID.toJson(), input.getWarehouseId());
+        defaultParams.put("group.etd_from", input.getDateFrom().toString());
+        defaultParams.put("group.etd_to", input.getDateTo().toString());
+        defaultParams.put(STATUS.toJson(), input.getStatuses());
         defaultParams.put(LIMIT.toJson(), "1");
-        if (area != null) {
-            defaultParams.put("address.area", area);
+        if (input.getArea() != null) {
+            defaultParams.put("address.area", input.getArea());
         }
 
         final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams);
         int quantity = Objects.nonNull(response) ? response.getPaging().getTotal() : 0;
         return ProcessBacklog.builder()
-                .process(statuses)
+                .process(input.getStatuses())
                 .quantity(quantity)
-                .area(area)
+                .area(input.getArea())
                 .build();
     }
 

@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -82,12 +83,13 @@ public class GetBacklogProjectionTest {
                         ))
         );
 
-        when(backlogGateway.getUnitBacklog("to_pick", WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25),
-                null)).thenReturn(
-                        ProcessBacklog.builder()
-                                .process(ProcessInfo.PICKING.getStatus())
-                                .quantity(2232)
-                                .build()
+        when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput("to_pick",
+                WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25), null))
+        ).thenReturn(
+                ProcessBacklog.builder()
+                        .process(ProcessInfo.PICKING.getStatus())
+                        .quantity(2232)
+                        .build()
         );
 
         final ZonedDateTime firstDate = getNextHour(A_DATE);

@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.
 import com.mercadolibre.planning.model.me.config.JsonUtilsConfiguration;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.utils.TestUtils;
 import com.mercadolibre.restclient.MockResponse;
@@ -546,10 +547,11 @@ public class OutboundUnitClientTest extends BaseClientTest {
             );
 
             // WHEN
-            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(PICKING.getStatus(),
+            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(
+                    new UnitProcessBacklogInput(PICKING.getStatus(),
                     TestUtils.WAREHOUSE_ID,
                     utcDateFrom,
-                    utcDateTo, null);
+                    utcDateTo, null));
 
             // THEN
             assertEquals(PICKING.getStatus(), backlogs.getProcess());
@@ -576,8 +578,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             final JSONObject responseBody = new JSONObject()
                     .put("paging", new JSONObject().put("total", "100"))
-                    .put("results", new JSONArray())
-                    ;
+                    .put("results", new JSONArray());
 
             successfulResponse(
                     GET,
@@ -587,10 +588,12 @@ public class OutboundUnitClientTest extends BaseClientTest {
             );
 
             // WHEN
-            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(PACKING.getStatus(),
-                    TestUtils.WAREHOUSE_ID,
-                    utcDateFrom,
-                    utcDateTo, "PW");
+            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(
+                    new UnitProcessBacklogInput(PACKING.getStatus(),
+                            TestUtils.WAREHOUSE_ID,
+                            utcDateFrom,
+                            utcDateTo, "PW")
+            );
 
             // THEN
             assertEquals(PACKING.getStatus(), backlogs.getProcess());

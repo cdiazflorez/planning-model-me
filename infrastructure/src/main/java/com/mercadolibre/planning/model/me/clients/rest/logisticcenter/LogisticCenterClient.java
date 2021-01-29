@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 import java.util.TimeZone;
 
+import static java.util.Objects.nonNull;
+
 @Component
 public class LogisticCenterClient extends HttpClient implements LogisticCenterGateway {
 
@@ -35,8 +37,10 @@ public class LogisticCenterClient extends HttpClient implements LogisticCenterGa
     }
 
     private LogisticCenterConfiguration toLcConfiguration(final LogisticCenterResponse response) {
+        boolean hasPutToWall = nonNull(response.getOutbound())
+                && response.getOutbound().isPutToWall();
         return new LogisticCenterConfiguration(response.getTimeZone() == null
-                ? TimeZone.getTimeZone("UTC")
-                : TimeZone.getTimeZone(response.getTimeZone()));
+                ? TimeZone.getTimeZone("UTC") : TimeZone.getTimeZone(response.getTimeZone()),
+                hasPutToWall);
     }
 }
