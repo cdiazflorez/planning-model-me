@@ -29,7 +29,6 @@ import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.G
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.ProductivityInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.GetThroughput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.ThroughputInput;
-import com.mercadolibre.planning.model.me.utils.DateUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -114,7 +113,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
 
     private List<Entity> getHeadcountForProductivity(final GetMonitorInput input,
                          final List<UnitsResume> processedUnitsLastHour) {
-        final ZonedDateTime utcDateTo = DateUtils.getCurrentUtcDateTime()
+        final ZonedDateTime utcDateTo = getCurrentUtcDateTime()
                 .with(ChronoField.MINUTE_OF_HOUR, 0);
         final ZonedDateTime utcDateFrom = utcDateTo.minusHours(1);
         return planningModelGateway.getEntities(
@@ -145,33 +144,34 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
     private List<ProcessBacklog> getProcessBacklogs(final GetMonitorInput input,
                                                     final boolean warehouseHasWall) {
         final String status = STATUS_ATTRIBUTE;
+        final ZonedDateTime dateFromForBacklogs = getCurrentUtcDateTime().minusDays(7);
         final List<Map<String, String>> statuses = List.of(
                 Map.of(status, OUTBOUND_PLANNING.getStatus()),
                 Map.of(status, PACKING.getStatus())
         );
         final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
-        List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
+        final List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
                 input.getWarehouseId(),
-                input.getDateFrom(),
-                input.getDateTo());
-        final ProcessBacklog pickingBacklog =
-                backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(PICKING.getStatus(),
-                        input.getWarehouseId(),
-                        input.getDateFrom(),
-                        input.getDateTo(), null));
+                dateFromForBacklogs,
+                null);
+        final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(
+                new UnitProcessBacklogInput(PICKING.getStatus(),
+                input.getWarehouseId(),
+                dateFromForBacklogs,
+                null, null));
         if (warehouseHasWall) {
             final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(),
-                            input.getWarehouseId(),
-                            input.getDateFrom(),
-                            input.getDateTo(), null));
+                    input.getWarehouseId(),
+                    dateFromForBacklogs,
+                    null, null));
             final ProcessBacklog packingWall = backlogGateway
-                    .getUnitBacklog(new UnitProcessBacklogInput(
-                            ProcessInfo.PACKING_WALL.getStatus(),
+                    .getUnitBacklog(
+                            new UnitProcessBacklogInput(ProcessInfo.PACKING_WALL.getStatus(),
                             input.getWarehouseId(),
-                            input.getDateFrom(),
-                            input.getDateTo(), "PW"));
+                            dateFromForBacklogs,
+                            null, "PW"));
             recalculatePackingNoWallUnits(processBacklogs, packingWall);
             processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog, packingWall));
         } else {

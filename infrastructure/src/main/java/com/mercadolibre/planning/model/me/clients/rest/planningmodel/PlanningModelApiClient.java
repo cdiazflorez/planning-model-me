@@ -33,6 +33,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -48,9 +49,11 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PL
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
+@Slf4j
 @Component
 public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway {
 
@@ -221,7 +224,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         final ConfigurationResponse configurationResponse =
                 send(request, response -> response.getData(new TypeReference<>() {}));
 
-        return Optional.ofNullable(configurationResponse);
+        return ofNullable(configurationResponse);
     }
 
     @Override
@@ -273,11 +276,27 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private Map<String, String> createPlanningDistributionParams(
             final PlanningDistributionRequest request) {
         final Map<String, String> params = new LinkedHashMap<>();
-        params.put(WAREHOUSE_ID, request.getWarehouseId());
-        params.put("date_in_to", request.getDateInTo().format(ISO_OFFSET_DATE_TIME));
-        params.put("date_out_from", request.getDateOutFrom().format(ISO_OFFSET_DATE_TIME));
-        params.put("date_out_to", request.getDateOutTo().format(ISO_OFFSET_DATE_TIME));
+        addParameter(request.getWarehouseId(),
+                () -> params.put(WAREHOUSE_ID,
+                        request.getWarehouseId()));
+        addParameter(request.getDateInFrom(),
+                () -> params.put("date_in_from",
+                        request.getDateInFrom().format(ISO_OFFSET_DATE_TIME)));
+        addParameter(request.getDateInTo(),
+                () -> params.put("date_in_to",
+                        request.getDateInTo().format(ISO_OFFSET_DATE_TIME)));
+        addParameter(request.getDateOutFrom(),
+                () -> params.put("date_out_from",
+                        request.getDateOutFrom().format(ISO_OFFSET_DATE_TIME)));
+        addParameter(request.getDateOutTo(),
+                () -> params.put("date_out_to",
+                        request.getDateOutTo().format(ISO_OFFSET_DATE_TIME)));
         return params;
+    }
+
+    private void addParameter(Object parameter,
+                             Runnable valueCallable) {
+        ofNullable(parameter).ifPresent(t -> valueCallable.run());
     }
 
     private <T> RequestBodyHandler requestSupplier(final T requestBody) {
