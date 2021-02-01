@@ -15,6 +15,7 @@ public enum SearchUnitFilterRequestStringValue {
     SERVICE_NAME,
     SERVICE_ID,
     DATE_CREATED_FROM,
+    DATE_CREATED_TO,
     ETD_FROM,
     ETD_TO,
     VOLUME_FROM,

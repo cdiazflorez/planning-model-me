@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.gateways.backlog;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 
 import java.time.ZonedDateTime;
@@ -19,12 +20,8 @@ public interface BacklogGateway {
                                     final ZonedDateTime dateFrom,
                                     final ZonedDateTime dateTo);
 
-    List<Backlog> getSalesByCpt(final String warehouseId, final String dateCreatedFrom);
+    List<Backlog> getSalesByCpt(final BacklogFilters filters);
 
-    ProcessBacklog getUnitBacklog(final String statuses,
-                                  final String warehouseId,
-                                  final ZonedDateTime dateFrom,
-                                  final ZonedDateTime dateTo,
-                                  final String area);
+    ProcessBacklog getUnitBacklog(final UnitProcessBacklogInput input);
 
 }

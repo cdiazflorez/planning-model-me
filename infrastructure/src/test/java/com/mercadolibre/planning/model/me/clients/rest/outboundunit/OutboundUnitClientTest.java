@@ -16,8 +16,9 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.
 import com.mercadolibre.planning.model.me.config.JsonUtilsConfiguration;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
-import com.mercadolibre.planning.model.me.utils.TestUtils;
 import com.mercadolibre.restclient.MockResponse;
 import com.mercadolibre.restclient.http.HttpMethod;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
@@ -51,6 +52,7 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PICKING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
@@ -409,7 +411,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
             );
 
             // WHEN
-            final List<Backlog> backlogs = outboundUnitClient.getBacklog(TestUtils.WAREHOUSE_ID);
+            final List<Backlog> backlogs = outboundUnitClient.getBacklog(WAREHOUSE_ID);
 
             // THEN
             assertEquals(3, backlogs.size());
@@ -493,7 +495,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
 
             GetMonitorInput input = GetMonitorInput.builder()
-                    .warehouseId(TestUtils.WAREHOUSE_ID)
+                    .warehouseId(WAREHOUSE_ID)
                     .dateTo(utcDateTo)
                     .dateFrom(utcDateFrom)
                     .build();
@@ -530,7 +532,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .put("group.etd_to", utcDateTo.toString())
                     .put("status", PICKING.getStatus())
                     .put("client.id", CLIENT_ID)
-                    .put("warehouse_id", TestUtils.WAREHOUSE_ID)
+                    .put("warehouse_id", WAREHOUSE_ID)
                     .build();
 
             final JSONObject responseBody = new JSONObject()
@@ -546,10 +548,11 @@ public class OutboundUnitClientTest extends BaseClientTest {
             );
 
             // WHEN
-            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(PICKING.getStatus(),
-                    TestUtils.WAREHOUSE_ID,
+            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(
+                    new UnitProcessBacklogInput(PICKING.getStatus(),
+                    WAREHOUSE_ID,
                     utcDateFrom,
-                    utcDateTo, null);
+                    utcDateTo, null));
 
             // THEN
             assertEquals(PICKING.getStatus(), backlogs.getProcess());
@@ -570,14 +573,13 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .put("group.etd_to", utcDateTo.toString())
                     .put("status", PACKING.getStatus())
                     .put("client.id", CLIENT_ID)
-                    .put("warehouse_id", TestUtils.WAREHOUSE_ID)
+                    .put("warehouse_id", WAREHOUSE_ID)
                     .put("address.area", "PW")
                     .build();
 
             final JSONObject responseBody = new JSONObject()
                     .put("paging", new JSONObject().put("total", "100"))
-                    .put("results", new JSONArray())
-                    ;
+                    .put("results", new JSONArray());
 
             successfulResponse(
                     GET,
@@ -587,10 +589,11 @@ public class OutboundUnitClientTest extends BaseClientTest {
             );
 
             // WHEN
-            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(PACKING.getStatus(),
-                    TestUtils.WAREHOUSE_ID,
-                    utcDateFrom,
-                    utcDateTo, "PW");
+            final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(
+                    new UnitProcessBacklogInput(PACKING.getStatus(),
+                            WAREHOUSE_ID,
+                            utcDateFrom,
+                            utcDateTo, "PW"));
 
             // THEN
             assertEquals(PACKING.getStatus(), backlogs.getProcess());
@@ -690,7 +693,10 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             // WHEN
             final List<Backlog> backlogs =
-                    outboundUnitClient.getSalesByCpt(TestUtils.WAREHOUSE_ID, dateCreatedFrom);
+                    outboundUnitClient.getSalesByCpt(BacklogFilters.builder()
+                            .warehouseId(WAREHOUSE_ID)
+                            .dateCreatedFrom(dateCreatedFrom)
+                            .build());
 
             // THEN
             assertEquals(3, backlogs.size());

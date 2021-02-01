@@ -8,6 +8,7 @@ import com.mercadolibre.planning.model.me.entities.projection.Selections;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -87,11 +88,11 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
                 );
         final ProcessBacklog pickingBacklog =
                 backlogGateway.getUnitBacklog(
-                        ProcessInfo.PICKING.getStatus(),
-                        input.getWarehouseId(),
-                        dateFrom,
-                        dateFrom.plusHours(HOURS_TO_SHOW),
-                        null
+                        new UnitProcessBacklogInput(ProcessInfo.PICKING.getStatus(),
+                                input.getWarehouseId(),
+                                dateFrom,
+                                dateFrom.plusHours(HOURS_TO_SHOW),
+                                null)
                 );
         return List.of(
                 new CurrentBacklog(WAVING, backlogs.stream()

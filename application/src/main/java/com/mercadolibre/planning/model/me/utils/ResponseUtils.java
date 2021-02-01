@@ -46,13 +46,13 @@ public class ResponseUtils {
                 new Tab("backlog", "Backlogs"));
     }
 
-    public static ComplexTableAction action = new ComplexTableAction(
+    public static final ComplexTableAction action = new ComplexTableAction(
             "Aplicar",
             "Cancelar",
             "Editar"
     );
 
-    public static SimulationMode simulationMode = new SimulationMode(
+    public static final SimulationMode simulationMode = new SimulationMode(
             "Iniciar Simulación",
             new Snackbar(
                     "Simulación en curso",

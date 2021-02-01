@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.usecases.sales;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +21,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,8 +59,8 @@ public class GetSalesTest {
 
         when(backlogGatewayProvider.getBy(input.getWorkflow()))
                 .thenReturn(Optional.of(backlogGateway));
-        when(backlogGateway.getSalesByCpt(input.getWarehouseId(),
-                input.getDateFrom().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)))
+        when(backlogGateway.getSalesByCpt(any(BacklogFilters.class))
+                )
                 .thenReturn(List.of(
                         Backlog.builder()
                                 .date(currentTime)

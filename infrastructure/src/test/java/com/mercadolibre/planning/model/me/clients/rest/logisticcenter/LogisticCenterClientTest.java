@@ -52,6 +52,26 @@ public class LogisticCenterClientTest extends BaseClientTest {
     }
 
     @Test
+    @DisplayName("get logisticCenter configuration should return a configuration with put to wall")
+    public void testGetLogisticCenterConfigurationOkWhenHavePutToWall() throws JSONException {
+        // GIVEN
+        final JSONObject body = new JSONObject().put("time_zone", "CST")
+                .put("outbound", new JSONObject().put("put_to_wall", "true"));
+
+        mockGetLogisticCenterConfiguration(WAREHOUSE_ID, body);
+
+        final LogisticCenterConfiguration logisticCenterConfiguration =
+                new LogisticCenterConfiguration(getTimeZone("CST"), true);
+
+        // WHEN
+        final LogisticCenterConfiguration response =
+                client.getConfiguration(WAREHOUSE_ID);
+
+        // THEN
+        assertEquals(logisticCenterConfiguration, response);
+    }
+
+    @Test
     @DisplayName("get logisticCenter configuration empty should return a configuration")
     public void testGetLogisticCenterConfigurationEmpty() {
         // GIVEN
