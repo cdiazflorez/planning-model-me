@@ -4,7 +4,9 @@ import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedEx
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get.GetCurrentStatus;
+import com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get.GetCurrentStatusInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.deviation.GetDeviation;
+import com.mercadolibre.planning.model.me.usecases.monitor.deviation.GetDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.Monitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
@@ -78,7 +80,7 @@ class GetMonitorTest {
                 .dateTo(utcCurrentTime.plusHours(25))
                 .build();
 
-        commonMocks(input);
+        commonMocks();
 
         // WHEN
         final Monitor monitor = getMonitor.execute(input);
@@ -154,8 +156,6 @@ class GetMonitorTest {
         assertEquals(BACKLOG.getType(), wallInBacklogMetric.getType());
         assertEquals("725 uds.", wallInBacklogMetric.getValue());
 
-
-
         final Process outboundPlanning = processList.get(OUTBOUND_PLANNING.getIndex());
         assertEquals(OUTBOUND_PLANNING.getTitle(), outboundPlanning.getTitle());
         Metric planningBacklogMetric = outboundPlanning.getMetrics().get(0);
@@ -178,8 +178,8 @@ class GetMonitorTest {
 
     }
 
-    private void commonMocks(final GetMonitorInput input) {
-        when(getCurrentStatus.execute(input))
+    private void commonMocks() {
+        when(getCurrentStatus.execute(any(GetCurrentStatusInput.class)))
                 .thenReturn(CurrentStatusData.builder().processes(
                         new TreeSet<>(List.of(
                                 Process.builder().title(OUTBOUND_PLANNING.getTitle())
@@ -246,7 +246,7 @@ class GetMonitorTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        when(getDeviation.execute(any(GetMonitorInput.class))
+        when(getDeviation.execute(any(GetDeviationInput.class))
         ).thenReturn(mockDeviation());
     }
 
@@ -294,12 +294,14 @@ class GetMonitorTest {
                 .dateTo(getCurrentUtcDate().plusHours(25))
                 .build();
 
-        when(getCurrentStatus.execute(input)).thenThrow(BacklogGatewayNotSupportedException.class);
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+                .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        // WHEN
+        when(getCurrentStatus.execute(any(GetCurrentStatusInput.class)))
+                .thenThrow(BacklogGatewayNotSupportedException.class);
+
+        // WHEN - THEN
         assertThrows(BacklogGatewayNotSupportedException.class, () -> getMonitor.execute(input));
-
-        // THEN
     }
 
     private String getCurrentTime() {

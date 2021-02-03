@@ -2,7 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity;
 
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
+import com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get.GetCurrentStatusInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 public class ProductivityInput {
 
-    final GetMonitorInput monitorInput;
+    final GetCurrentStatusInput monitorInput;
     final UnitsResume processedUnitLastHour;
     final ProcessInfo processInfo;
     final List<Entity> headcounts;

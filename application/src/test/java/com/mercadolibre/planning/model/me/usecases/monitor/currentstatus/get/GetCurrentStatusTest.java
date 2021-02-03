@@ -15,7 +15,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType;
@@ -55,14 +54,17 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
+import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.TimeZone.getTimeZone;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
-
 
 @ExtendWith(MockitoExtension.class)
 class GetCurrentStatusTest {
@@ -102,58 +104,48 @@ class GetCurrentStatusTest {
     @Test
     public void testExecuteOkWhenHavePutToWall() {
         // GIVEN
-        final ZonedDateTime dateFromForBacklogs = getCurrentUtcDateTime().minusDays(7);
-        final GetMonitorInput input = GetMonitorInput.builder()
+        final GetCurrentStatusInput input = GetCurrentStatusInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
                 .dateFrom(getCurrentUtcDate())
                 .dateTo(getCurrentUtcDate().plusHours(25))
+                .currentTime(A_DATE)
                 .build();
+
+        final ZonedDateTime cptFrom = A_DATE.truncatedTo(DAYS)
+                .minusDays(7)
+                .withZoneSameInstant(UTC);
+
         isAnalyticsError = false;
-        final String status = "status";
+
         final List<Map<String, String>> statuses = List.of(
-                Map.of(status, OUTBOUND_PLANNING.getStatus()),
-                Map.of(status, PACKING.getStatus())
+                Map.of("status", OUTBOUND_PLANNING.getStatus()),
+                Map.of("status", PACKING.getStatus())
         );
-        when(backlogGateway.getBacklog(statuses,
-                input.getWarehouseId(),
-                dateFromForBacklogs,
-                null
-        )).thenReturn(
-                new ArrayList<>(
-                        List.of(
-                                ProcessBacklog.builder()
-                                        .process(OUTBOUND_PLANNING.getStatus())
-                                        .quantity(1442)
-                                        .build(),
-                                ProcessBacklog.builder()
-                                        .process(PACKING.getStatus())
-                                        .quantity(1442)
-                                        .build()
-                        ))
-        );
-        commonMocks(input, dateFromForBacklogs, true);
+
+        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, null))
+                .thenReturn(
+                        new ArrayList<>(
+                                List.of(
+                                        ProcessBacklog.builder()
+                                                .process(OUTBOUND_PLANNING.getStatus())
+                                                .quantity(1442)
+                                                .build(),
+                                        ProcessBacklog.builder()
+                                                .process(PACKING.getStatus())
+                                                .quantity(1442)
+                                                .build())));
+
+        commonMocks(input, cptFrom, true);
 
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
-                asList(AnalyticsQueryEvent.PACKING_WALL, AnalyticsQueryEvent.PICKING,
-                        PACKING_NO_WALL)
-        )).thenReturn(List.of(
-                UnitsResume.builder()
-                        .process(AnalyticsQueryEvent.PACKING_WALL)
-                        .eventCount(120)
-                        .unitCount(150)
-                        .build(),
-                UnitsResume.builder()
-                        .process(AnalyticsQueryEvent.PICKING)
-                        .eventCount(2020)
-                        .unitCount(3020)
-                        .build(),
-                UnitsResume.builder()
-                        .process(PACKING_NO_WALL)
-                        .eventCount(102)
-                        .unitCount(2030)
-                        .build())
-        );
+                asList(AnalyticsQueryEvent.PACKING_WALL,
+                        AnalyticsQueryEvent.PICKING,
+                        PACKING_NO_WALL)))
+                .thenReturn(List.of(
+                        new UnitsResume(150, 120, AnalyticsQueryEvent.PACKING_WALL),
+                        new UnitsResume(3020, 2020, AnalyticsQueryEvent.PICKING),
+                        new UnitsResume(2030, 102, PACKING_NO_WALL)));
 
         // WHEN
         final CurrentStatusData currentStatusData = getCurrentStatus.execute(input);
@@ -224,47 +216,45 @@ class GetCurrentStatusTest {
     @Test
     public void testExecuteOkWhenDoesntHavePutToWall() {
         // GIVEN
-        final ZonedDateTime dateFromForBacklogs = getCurrentUtcDateTime().minusDays(7);
-        final GetMonitorInput input = GetMonitorInput.builder()
+        final GetCurrentStatusInput input = GetCurrentStatusInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
                 .dateFrom(getCurrentUtcDate())
                 .dateTo(getCurrentUtcDate().plusHours(25))
+                .currentTime(A_DATE)
                 .build();
+
+
+        final ZonedDateTime cptFrom = A_DATE.truncatedTo(DAYS)
+                .minusDays(7)
+                .withZoneSameInstant(UTC);
+
         isAnalyticsError = false;
-        final String status = "status";
+
         final List<Map<String, String>> statuses = List.of(
-                Map.of(status, OUTBOUND_PLANNING.getStatus()),
-                Map.of(status, PACKING.getStatus())
+                Map.of("status", OUTBOUND_PLANNING.getStatus()),
+                Map.of("status", PACKING.getStatus())
         );
-        when(backlogGateway.getBacklog(statuses,
-                input.getWarehouseId(),
-                dateFromForBacklogs,
-                null
-        )).thenReturn(
-                new ArrayList<>(
-                        List.of(
-                                ProcessBacklog.builder()
-                                        .process(OUTBOUND_PLANNING.getStatus())
-                                        .quantity(1442)
-                                        .build(),
-                                ProcessBacklog.builder()
-                                        .process(PACKING.getStatus())
-                                        .quantity(1442)
-                                        .build()
-                        ))
-        );
-        commonMocks(input, dateFromForBacklogs, false);
+
+        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, null))
+                .thenReturn(
+                        new ArrayList<>(
+                                List.of(
+                                        ProcessBacklog.builder()
+                                                .process(OUTBOUND_PLANNING.getStatus())
+                                                .quantity(1442)
+                                                .build(),
+                                        ProcessBacklog.builder()
+                                                .process(PACKING.getStatus())
+                                                .quantity(1442)
+                                                .build())));
+
+        commonMocks(input, cptFrom, false);
 
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
-                Collections.singletonList(AnalyticsQueryEvent.PICKING)
-        )).thenReturn(List.of(
-                UnitsResume.builder()
-                        .process(AnalyticsQueryEvent.PICKING)
-                        .eventCount(2020)
-                        .unitCount(3020)
-                        .build()
-        ));
+                singletonList(AnalyticsQueryEvent.PICKING)))
+                .thenReturn(
+                        singletonList(new UnitsResume(3020, 2020, AnalyticsQueryEvent.PICKING)));
 
         // WHEN
         final CurrentStatusData currentStatusData = getCurrentStatus.execute(input);
@@ -319,56 +309,65 @@ class GetCurrentStatusTest {
 
     @Test
     public void testErrorOnAnalytics() {
-        final ZonedDateTime dateFromForBacklogs = getCurrentUtcDateTime().minusDays(7);
-        final GetMonitorInput input = GetMonitorInput.builder()
+        final GetCurrentStatusInput input = GetCurrentStatusInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
                 .dateFrom(getCurrentUtcDate())
                 .dateTo(getCurrentUtcDate().plusHours(25))
+                .currentTime(A_DATE)
                 .build();
+
+        final ZonedDateTime cptFrom = A_DATE.truncatedTo(DAYS)
+                .minusDays(7)
+                .withZoneSameInstant(UTC);
+
         isAnalyticsError = true;
-        commonMocks(input, dateFromForBacklogs, true);
+
+        commonMocks(input, cptFrom, true);
 
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
-                asList(AnalyticsQueryEvent.PACKING_WALL, AnalyticsQueryEvent.PICKING,
-                        PACKING_NO_WALL)
-        )).thenThrow(RuntimeException.class);
+                asList(AnalyticsQueryEvent.PACKING_WALL,
+                        AnalyticsQueryEvent.PICKING, PACKING_NO_WALL)))
+                .thenThrow(RuntimeException.class);
 
         final CurrentStatusData currentStatusData = getCurrentStatus.execute(input);
 
         final Optional<Process> optionalPicking = currentStatusData.getProcesses().stream()
                 .filter(t -> PICKING.getTitle().equals(t.getTitle()))
                 .findFirst();
+
+        assertTrue(optionalPicking.isPresent());
         final Process picking = optionalPicking.get();
         final Metric pickingThroughputMetric = picking.getMetrics().get(1);
         assertMetric(pickingThroughputMetric, THROUGHPUT_PER_HOUR.getSubtitle(),
                 "Procesamiento", "throughput_per_hour", "-");
 
-        final Metric pickingProductivityMetric = picking.getMetrics().get(2);
+        final Metric pickingProductivityMetric = optionalPicking.get().getMetrics().get(2);
         assertMetric(pickingProductivityMetric, PRODUCTIVITY.getSubtitle(), PRODUCTIVITY.getTitle(),
                 PRODUCTIVITY.getType(), "-");
 
         final Optional<Process> optionalPacking = currentStatusData.getProcesses().stream()
                 .filter(t -> PACKING.getTitle().equals(t.getTitle()))
                 .findFirst();
-        assertTrue(optionalPacking.isPresent());
-        final Process packing = optionalPacking.get();
 
-        final Metric packingThroughputMetric = packing.getMetrics().get(1);
+        assertTrue(optionalPacking.isPresent());
+
+        final Metric packingThroughputMetric = optionalPacking.get().getMetrics().get(1);
         assertMetric(packingThroughputMetric, THROUGHPUT_PER_HOUR.getSubtitle(),
                 THROUGHPUT_PER_HOUR.getTitle(), THROUGHPUT_PER_HOUR.getType(), "-");
 
-        final Metric packingProductivityMetric = packing.getMetrics().get(2);
+        final Metric packingProductivityMetric = optionalPacking.get().getMetrics().get(2);
         assertMetric(packingProductivityMetric, PRODUCTIVITY.getSubtitle(),
                 PRODUCTIVITY.getTitle(), PRODUCTIVITY.getType(), "-");
     }
 
-    private void commonMocks(final GetMonitorInput input,
-                             final ZonedDateTime dateFromForBacklogs,
+    private void commonMocks(final GetCurrentStatusInput input,
+                             final ZonedDateTime cptFrom,
                              final boolean hasPutToWall) {
-        when(
-                planningModelGateway.getEntities(any(EntityRequest.class))
-        ).thenReturn(mockHeadcountEntities(getCurrentUtcDate()));
+
+        when(planningModelGateway.getEntities(any(EntityRequest.class)))
+                .thenReturn(mockHeadcountEntities(getCurrentUtcDate()));
+
         when(backlogGatewayProvider.getBy(input.getWorkflow()))
                 .thenReturn(Optional.of(backlogGateway));
 
@@ -376,61 +375,49 @@ class GetCurrentStatusTest {
                 .process(PICKING.getStatus())
                 .quantity(725)
                 .build();
-        when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(PICKING.getStatus(),
+
+        when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(
+                PICKING.getStatus(),
                 input.getWarehouseId(),
-                dateFromForBacklogs,
-                null, null
-        ))).thenReturn(
-                pickingProcessBacklog
-        );
+                cptFrom,
+                null,
+                null)))
+                .thenReturn(pickingProcessBacklog);
 
         if (hasPutToWall) {
             when(backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(WALL_IN.getStatus(),
-                            input.getWarehouseId(),
-                            dateFromForBacklogs,
-                            null, null)
-            )).thenReturn(
-                    ProcessBacklog.builder()
+                    new UnitProcessBacklogInput(
+                            WALL_IN.getStatus(), input.getWarehouseId(), cptFrom, null, null)))
+                    .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
-                            .build()
-            );
+                            .build());
 
             when(backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(PACKING.getStatus(),
-                            input.getWarehouseId(),
-                            dateFromForBacklogs,
-                            null, "PW")
-            )).thenReturn(
-                    ProcessBacklog.builder()
+                    new UnitProcessBacklogInput(
+                            PACKING.getStatus(), input.getWarehouseId(), cptFrom, null, "PW")))
+                    .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
                             .area("PW")
-                            .build()
-            );
-            when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(WALL_IN.getStatus(),
-                    input.getWarehouseId(),
-                    dateFromForBacklogs,
-                    null, null)
-            )).thenReturn(
-                    ProcessBacklog.builder()
+                            .build());
+
+            when(backlogGateway.getUnitBacklog(
+                    new UnitProcessBacklogInput(
+                            WALL_IN.getStatus(), input.getWarehouseId(), cptFrom, null, null)))
+                    .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
-                            .build()
-            );
+                            .build());
 
-            when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(PACKING_WALL.getStatus(),
-                    input.getWarehouseId(),
-                    dateFromForBacklogs,
-                    null, "PW")
-            )).thenReturn(
-                    ProcessBacklog.builder()
+            when(backlogGateway.getUnitBacklog(
+                    new UnitProcessBacklogInput(
+                            PACKING_WALL.getStatus(), input.getWarehouseId(), cptFrom, null, "PW")))
+                    .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
                             .area("PW")
-                            .build()
-            );
+                            .build());
         }
 
         final ZonedDateTime currentTime = ZonedDateTime.now(UTC).withSecond(0).withNano(0);
@@ -439,13 +426,13 @@ class GetCurrentStatusTest {
                 input.getWarehouseId(),
                 currentTime.minusHours(1),
                 currentTime,
-                "ORDER"
-        )).thenReturn(UnitsResume.builder().unitCount(54).build());
+                "ORDER"))
+                .thenReturn(UnitsResume.builder()
+                        .unitCount(54)
+                        .build());
 
-        when(logisticCenterGateway.getConfiguration(
-                input.getWarehouseId()
-        )).thenReturn(new LogisticCenterConfiguration(TimeZone.getTimeZone(UTC),
-                hasPutToWall));
+        when(logisticCenterGateway.getConfiguration(input.getWarehouseId()))
+                .thenReturn(new LogisticCenterConfiguration(getTimeZone(UTC), hasPutToWall));
 
         mockGetBacklogMetric();
         mockGetProductivityMetric();
@@ -552,10 +539,15 @@ class GetCurrentStatusTest {
     private Metric createMetric(final MetricType metricType,
                                 final ProcessInfo processInfo,
                                 final String value) {
-        final String subtitle = metricType.equals(BACKLOG) ? processInfo.getSubtitle() :
-                metricType.getSubtitle();
-        final String finalValue = isAnalyticsError && (metricType.equals(THROUGHPUT_PER_HOUR)
+
+        final String subtitle = metricType.equals(BACKLOG)
+                ? processInfo.getSubtitle()
+                : metricType.getSubtitle();
+
+        final String finalValue = isAnalyticsError
+                && (metricType.equals(THROUGHPUT_PER_HOUR)
                 || metricType.equals(PRODUCTIVITY)) ? "-" : value;
+
         return Metric.builder().title(metricType.getTitle())
                 .type(metricType.getType())
                 .subtitle(subtitle)

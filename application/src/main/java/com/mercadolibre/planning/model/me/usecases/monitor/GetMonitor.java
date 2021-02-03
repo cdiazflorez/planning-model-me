@@ -4,7 +4,9 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get.GetCurrentStatus;
+import com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get.GetCurrentStatusInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.deviation.GetDeviation;
+import com.mercadolibre.planning.model.me.usecases.monitor.deviation.GetDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.Monitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
@@ -20,8 +22,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-
 @Slf4j
 @Named
 @AllArgsConstructor
@@ -33,28 +33,46 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
 
     @Override
     public Monitor execute(GetMonitorInput input) {
-        final List<MonitorData> monitorDataList = getMonitorData(input);
-        final String currentTime = getCurrentTime(input);
+        final ZonedDateTime currentTime = getCurrentTime(input.getWarehouseId());
+
         return Monitor.builder()
                 .title("Modelo de Priorización")
                 .subtitle1("Estado Actual")
-                .subtitle2("Última actualización: Hoy - " + currentTime)
-                .monitorData(monitorDataList)
+                .subtitle2("Última actualización: Hoy - " + getPrettyTime(currentTime))
+                .monitorData(getMonitorData(input, currentTime))
                 .build();
     }
 
-    private List<MonitorData> getMonitorData(GetMonitorInput input) {
-        final DeviationData deviationData = getDeviation.execute(input);
-        final CurrentStatusData currentStatusData = getCurrentStatus.execute(input);
+    private List<MonitorData> getMonitorData(GetMonitorInput input, ZonedDateTime currentTime) {
+        final DeviationData deviationData = getDeviation.execute(
+                GetDeviationInput.builder()
+                        .warehouseId(input.getWarehouseId())
+                        .workflow(input.getWorkflow())
+                        .dateFrom(input.getDateFrom())
+                        .dateTo(input.getDateTo())
+                        .currentTime(currentTime)
+                        .build());
+
+        final CurrentStatusData currentStatusData = getCurrentStatus.execute(
+                GetCurrentStatusInput.builder()
+                        .warehouseId(input.getWarehouseId())
+                        .workflow(input.getWorkflow())
+                        .dateFrom(input.getDateFrom())
+                        .dateTo(input.getDateTo())
+                        .currentTime(currentTime)
+                        .build());
+
         return List.of(deviationData, currentStatusData);
     }
 
-    private String getCurrentTime(GetMonitorInput input) {
-        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
-                input.getWarehouseId());
-        final ZonedDateTime now = ZonedDateTime.now();
-        final ZonedDateTime currentDate = convertToTimeZone(config.getZoneId(), now);
-        final DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("HH:mm");
-        return currentDate.format(formatter2);
+    private String getPrettyTime(ZonedDateTime date) {
+        return date.format(DateTimeFormatter.ofPattern("HH:mm"));
+    }
+
+    private ZonedDateTime getCurrentTime(String warehouseId) {
+        final LogisticCenterConfiguration config =
+                logisticCenterGateway.getConfiguration(warehouseId);
+
+        return ZonedDateTime.now().withZoneSameInstant(config.getZoneId());
     }
 }
