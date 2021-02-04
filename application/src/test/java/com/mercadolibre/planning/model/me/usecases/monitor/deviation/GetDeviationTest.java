@@ -5,7 +5,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
+import com.mercadolibre.planning.model.me.usecases.monitor.deviation.GetDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
@@ -20,8 +20,10 @@ import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 
+import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
@@ -48,18 +50,20 @@ public class GetDeviationTest {
     @Test
     public void getDeviationTestOk() {
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
-        final GetMonitorInput input = GetMonitorInput.builder()
+        final GetDeviationInput input = GetDeviationInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
-                .dateFrom(getCurrentUtcDate())
-                .dateTo(getCurrentUtcDate().plusHours(25))
+                .dateFrom(utcCurrentTime)
+                .dateTo(utcCurrentTime.plusHours(25))
+                .currentTime(A_DATE)
                 .build();
-        when(getSales.execute(any(GetSalesInputDto.class))
-        ).thenReturn(mockSales(new int []{350, 235, 200, 120}));
 
-        when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)
-        )).thenReturn(mockPlanningDistribution(utcCurrentTime,
-                new int[] {281, 128, 200, 207, 44, 82, 100}));
+        when(getSales.execute(any(GetSalesInputDto.class)))
+                .thenReturn(mockSales(new int []{350, 235, 200, 120}));
+
+        when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)))
+                .thenReturn(mockPlanningDistribution(utcCurrentTime,
+                        new int[] {281, 128, 200, 207, 44, 82, 100}));
 
         final DeviationData deviationData = getDeviation.execute(input);
 
@@ -132,12 +136,15 @@ public class GetDeviationTest {
     @Test
     public void getDeviationTestOkStatusWarning() {
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
-        final GetMonitorInput input = GetMonitorInput.builder()
+
+        final GetDeviationInput input = GetDeviationInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
                 .dateFrom(utcCurrentTime)
                 .dateTo(utcCurrentTime.plusHours(25))
+                .currentTime(A_DATE)
                 .build();
+
         when(getSales.execute(any(GetSalesInputDto.class))
         ).thenReturn(mockSales(new int []{350, 235, 200, 120}));
 
@@ -161,18 +168,20 @@ public class GetDeviationTest {
     @Test
     public void getDeviationTestOkZeroForecast() {
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
-        final GetMonitorInput input = GetMonitorInput.builder()
+        final GetDeviationInput input = GetDeviationInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
-                .dateFrom(getCurrentUtcDate())
-                .dateTo(getCurrentUtcDate().plusHours(25))
+                .dateFrom(utcCurrentTime)
+                .dateTo(utcCurrentTime.plusHours(25))
+                .currentTime(A_DATE)
                 .build();
-        when(getSales.execute(any(GetSalesInputDto.class))
-        ).thenReturn(mockSales(new int []{350, 235, 200, 120}));
 
-        when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)
-        )).thenReturn(mockPlanningDistribution(utcCurrentTime,
-                new int[] {0, 0, 0, 0, 0, 0, 0}));
+        when(getSales.execute(any(GetSalesInputDto.class)))
+                .thenReturn(mockSales(new int []{350, 235, 200, 120}));
+
+        when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)))
+                .thenReturn(mockPlanningDistribution(utcCurrentTime,
+                        new int[] {0, 0, 0, 0, 0, 0, 0}));
 
         final DeviationData deviationData = getDeviation.execute(input);
 
@@ -190,18 +199,20 @@ public class GetDeviationTest {
     @Test
     public void getDeviationTestOkZeroSales() {
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
-        final GetMonitorInput input = GetMonitorInput.builder()
+        final GetDeviationInput input = GetDeviationInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
-                .dateFrom(getCurrentUtcDate())
-                .dateTo(getCurrentUtcDate().plusHours(25))
+                .dateFrom(utcCurrentTime)
+                .dateTo(utcCurrentTime.plusHours(25))
+                .currentTime(A_DATE)
                 .build();
-        when(getSales.execute(any(GetSalesInputDto.class))
-        ).thenReturn(mockSales(new int []{0, 0, 0, 0}));
 
-        when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)
-        )).thenReturn(mockPlanningDistribution(utcCurrentTime,
-                new int[] {100, 100, 120, 100, 44, 82, 100}));
+        when(getSales.execute(any(GetSalesInputDto.class)))
+                .thenReturn(mockSales(new int []{0, 0, 0, 0}));
+
+        when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)))
+                .thenReturn(mockPlanningDistribution(utcCurrentTime,
+                        new int[] {100, 100, 120, 100, 44, 82, 100}));
 
         final DeviationData deviationData = getDeviation.execute(input);
 

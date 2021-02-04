@@ -11,6 +11,7 @@ import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.Pr
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
@@ -31,10 +32,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedW
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DeviationInput;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -52,6 +53,8 @@ import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 
 @Slf4j
 @Component
@@ -61,6 +64,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String SIMULATIONS_PREFIX_URL = "/simulations";
     private static final String PROJECTION_URL = "/projections/%s";
+    private static final String DEVIATIONS_URL = "/deviations";
     private static final String WAREHOUSE_ID = "warehouse_id";
     private static final String DATE_FROM = "date_from";
     private static final String DATE_TO = "date_to";
@@ -79,7 +83,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                         entityRequest.getEntityType().getName()))
                 .POST(requestSupplier(entityRequest))
                 .queryParams(createEntityParams(entityRequest))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         final List<EntityResponse> apiResponse = send(request, response ->
@@ -96,7 +100,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .url(format(WORKFLOWS_URL, workflow) + "/metadata")
                 .GET()
                 .queryParams(createForecastMetadataParams(forecastMetadataRequest))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {}));
@@ -114,7 +118,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                         productivityRequest.getWorkflow().getName()))
                 .POST(requestSupplier(productivityRequest))
                 .queryParams(createEntityParams(productivityRequest))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         final List<ProductivityResponse> apiResponse = send(request, response ->
@@ -149,7 +153,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         final HttpRequest httpRequest = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL + "/entities/search", request.getWorkflow().getName()))
                 .POST(requestSupplier(request))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         final Map<String, List<Object>> apiResponse = send(httpRequest, response ->
@@ -178,7 +182,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL, projectionRequest.getWorkflow()) + "/projections")
                 .POST(requestSupplier(projectionRequest))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {}));
@@ -190,7 +194,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
                         + SIMULATIONS_PREFIX_URL + "/run")
                 .POST(requestSupplier(simulationRequest))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {}));
@@ -202,7 +206,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
                         + SIMULATIONS_PREFIX_URL + "/save")
                 .POST(requestSupplier(simulationRequest))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {}));
@@ -218,7 +222,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .url(CONFIGURATION_URL)
                 .GET()
                 .queryParams(params)
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         final ConfigurationResponse configurationResponse =
@@ -235,7 +239,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                         planningDistributionRequest.getWorkflow().getName()))
                 .GET()
                 .queryParams(createPlanningDistributionParams(planningDistributionRequest))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {
@@ -254,7 +258,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .url(format(WORKFLOWS_URL + "/projections/suggested_waves", workflow))
                 .GET()
                 .queryParams(params)
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
         return send(request, response -> response.getData(new TypeReference<>() {
         }));
@@ -267,7 +271,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         final HttpRequest httpRequest = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL + PROJECTION_URL, request.getWorkflow(), "backlogs"))
                 .POST(requestSupplier(request))
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         return send(httpRequest, response -> response.getData(new TypeReference<>() {}));
@@ -336,4 +340,17 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .abilityLevel(response.getAbilityLevel())
                 .build();
     }
+
+    @Override
+    public DeviationResponse saveDeviation(final DeviationInput deviationInput) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, deviationInput.getWorkflow())
+                        + DEVIATIONS_URL + "/save")
+                .POST(requestSupplier(deviationInput))
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
 }

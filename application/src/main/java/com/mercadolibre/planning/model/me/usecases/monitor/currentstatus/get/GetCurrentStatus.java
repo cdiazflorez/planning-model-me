@@ -18,7 +18,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
@@ -34,8 +33,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
 
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -56,6 +58,8 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.monitor.metric.GetMetric.createEmptyMetric;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
+import static java.time.ZoneOffset.UTC;
+import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -64,7 +68,7 @@ import static java.util.Objects.nonNull;
 @Slf4j
 @Named
 @AllArgsConstructor
-public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusData> {
+public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentStatusData> {
 
     private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
             List.of(ProcessingType.ACTIVE_WORKERS);
@@ -81,12 +85,12 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
     private final LogisticCenterGateway logisticCenterGateway;
 
     @Override
-    public CurrentStatusData execute(GetMonitorInput input) {
+    public CurrentStatusData execute(GetCurrentStatusInput input) {
         TreeSet<Process> processes = getProcessesAndMetrics(input);
         return CurrentStatusData.builder().processes(processes).build();
     }
 
-    private TreeSet<Process> getProcessesAndMetrics(GetMonitorInput input) {
+    private TreeSet<Process> getProcessesAndMetrics(GetCurrentStatusInput input) {
         final TreeSet<Process> processes = new TreeSet<>();
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getWarehouseId());
@@ -111,10 +115,11 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
         return processes;
     }
 
-    private List<Entity> getHeadcountForProductivity(final GetMonitorInput input,
-                         final List<UnitsResume> processedUnitsLastHour) {
-        final ZonedDateTime utcDateTo = getCurrentUtcDateTime()
-                .with(ChronoField.MINUTE_OF_HOUR, 0);
+    private List<Entity> getHeadcountForProductivity(
+            final GetCurrentStatusInput input,
+            final List<UnitsResume> processedUnitsLastHour) {
+
+        final ZonedDateTime utcDateTo = getCurrentUtcDateTime().with(ChronoField.MINUTE_OF_HOUR, 0);
         final ZonedDateTime utcDateFrom = utcDateTo.minusHours(1);
         return planningModelGateway.getEntities(
                 createHeadcountRequest(input,
@@ -124,7 +129,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                 ));
     }
 
-    private EntityRequest createHeadcountRequest(final GetMonitorInput input,
+    private EntityRequest createHeadcountRequest(final GetCurrentStatusInput input,
                                                  final ZonedDateTime dateFrom,
                                                  final ZonedDateTime dateTo,
                                                  final List<UnitsResume> unitsResumes) {
@@ -141,36 +146,43 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                 .build();
     }
 
-    private List<ProcessBacklog> getProcessBacklogs(final GetMonitorInput input,
+    private List<ProcessBacklog> getProcessBacklogs(final GetCurrentStatusInput input,
                                                     final boolean warehouseHasWall) {
-        final String status = STATUS_ATTRIBUTE;
-        final ZonedDateTime dateFromForBacklogs = getCurrentUtcDateTime().minusDays(7);
+
+        final ZonedDateTime cptFrom = input.getCurrentTime().truncatedTo(DAYS)
+                .minusDays(7)
+                .withZoneSameInstant(UTC);
+
         final List<Map<String, String>> statuses = List.of(
-                Map.of(status, OUTBOUND_PLANNING.getStatus()),
-                Map.of(status, PACKING.getStatus())
+                Map.of(STATUS_ATTRIBUTE, OUTBOUND_PLANNING.getStatus()),
+                Map.of(STATUS_ATTRIBUTE, PACKING.getStatus())
         );
+
         final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
+
         final List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
                 input.getWarehouseId(),
-                dateFromForBacklogs,
+                cptFrom,
                 null);
+
         final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(
                 new UnitProcessBacklogInput(PICKING.getStatus(),
                 input.getWarehouseId(),
-                dateFromForBacklogs,
+                cptFrom,
                 null, null));
+
         if (warehouseHasWall) {
             final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(),
                     input.getWarehouseId(),
-                    dateFromForBacklogs,
+                    cptFrom,
                     null, null));
             final ProcessBacklog packingWall = backlogGateway
                     .getUnitBacklog(
                             new UnitProcessBacklogInput(ProcessInfo.PACKING_WALL.getStatus(),
                             input.getWarehouseId(),
-                            dateFromForBacklogs,
+                            cptFrom,
                             null, "PW"));
             recalculatePackingNoWallUnits(processBacklogs, packingWall);
             processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog, packingWall));
@@ -196,7 +208,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                 });
     }
 
-    private List<UnitsResume> getUnitsResumes(final GetMonitorInput input,
+    private List<UnitsResume> getUnitsResumes(final GetCurrentStatusInput input,
                                               final boolean havePutToWall) {
         try {
             final List<AnalyticsQueryEvent> queryEvents = havePutToWall
@@ -294,7 +306,7 @@ public class GetCurrentStatus implements UseCase<GetMonitorInput, CurrentStatusD
                 .orElse(null);
     }
 
-    private UnitsResume getUnitsCountWaves(GetMonitorInput input) {
+    private UnitsResume getUnitsCountWaves(GetCurrentStatusInput input) {
         ZonedDateTime currentTime = getCurrentUtcDateTime();
         return outboundWaveGateway.getUnitsCount(
                 input.getWarehouseId(),

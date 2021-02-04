@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
+import com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get.GetCurrentStatusInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.GetProductivity;
@@ -43,7 +44,7 @@ public class GetProductivityUseCaseTest {
     public void testExecuteOk() {
         // GIVEN
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
-        final GetMonitorInput input = GetMonitorInput.builder()
+        final GetCurrentStatusInput input = GetCurrentStatusInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
                 .dateFrom(utcCurrentTime)

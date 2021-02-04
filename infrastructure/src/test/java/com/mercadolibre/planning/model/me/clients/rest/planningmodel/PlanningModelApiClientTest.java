@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
@@ -28,17 +29,19 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DeviationInput;
 import com.mercadolibre.restclient.MockResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -59,6 +62,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.objectMapper;
@@ -67,6 +71,7 @@ import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
 import static com.mercadolibre.restclient.http.HttpMethod.POST;
 import static java.lang.String.format;
+import static java.time.ZonedDateTime.now;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -74,6 +79,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.OK;
 
 class PlanningModelApiClientTest extends BaseClientTest {
 
@@ -91,6 +98,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
             "/planning/model/workflows/%s/planning_distributions";
     private static final String SUGGESTED_WAVES_URL =
             "/planning/model/workflows/%s/projections/suggested_waves";
+    private static final String DEVIATION_URL =
+            "/planning/model/workflows/%s/deviations/save";
 
     private PlanningModelApiClient client;
 
@@ -152,14 +161,14 @@ class PlanningModelApiClientTest extends BaseClientTest {
         // GIVEN
         final ForecastMetadataRequest request = ForecastMetadataRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
-                .dateFrom(ZonedDateTime.now())
-                .dateTo(ZonedDateTime.now().plusDays(1))
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
                 .build();
 
         MockResponse.builder()
                 .withMethod(GET)
                 .withURL(BASE_URL + format(GET_FORECAST_METADATA_URL, FBM_WMS_OUTBOUND))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(
                         getResourceAsString("forecast_metadata_response.json"))
@@ -190,8 +199,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
         // GIVEN
         final ForecastMetadataRequest request = ForecastMetadataRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
-                .dateFrom(ZonedDateTime.now())
-                .dateTo(ZonedDateTime.now().plusDays(1))
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
                 .build();
         // WHEN
         Map<String, String> forecastMetadataParams =  client.createForecastMetadataParams(request);
@@ -216,8 +225,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .entityType(HEADCOUNT)
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId("ARTW01")
-                .dateFrom(ZonedDateTime.now())
-                .dateTo(ZonedDateTime.now().plusDays(1))
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
                 .source(Source.FORECAST)
                 .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .abilityLevel(List.of(1,2))
@@ -273,8 +282,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .entityType(HEADCOUNT)
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId("ARTW01")
-                .dateFrom(ZonedDateTime.now())
-                .dateTo(ZonedDateTime.now().plusDays(1))
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
                 .source(Source.FORECAST)
                 .processName(List.of(PICKING, PACKING))
                 .build();
@@ -296,8 +305,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .warehouseId(WAREHOUSE_ID)
                 .type(ProjectionType.CPT)
                 .processName(List.of(PICKING, PACKING))
-                .dateFrom(ZonedDateTime.now())
-                .dateTo(ZonedDateTime.now().plusDays(1))
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
                 .backlog(List.of(
                         Backlog.builder()
                                 .date(parse("2020-09-29T10:00:00Z"))
@@ -334,7 +343,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(apiResponse.toString())
                 .build();
@@ -395,7 +404,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + RUN_SIMULATIONS_URL, FBM_WMS_OUTBOUND))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(apiResponse.toString())
                 .build();
@@ -474,7 +483,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + SAVE_SIMULATIONS_URL, FBM_WMS_OUTBOUND))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(apiResponse.toString())
                 .build();
@@ -537,7 +546,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(GET)
                 .withURL(BASE_URL + CONFIGURATION_URL)
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(response.toString())
                 .build();
@@ -555,7 +564,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     void testGetPlanningDistributionOk() throws JSONException {
         // GIVEN
         final ZonedDateTime currentTime =
-                ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
+                now().withMinute(0).withSecond(0).withNano(0);
         final ZonedDateTime cpt1 = currentTime.plusHours(4);
         final ZonedDateTime cpt2 = currentTime.plusHours(5);
         final ZonedDateTime cpt3 = currentTime.plusHours(6);
@@ -591,7 +600,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(GET)
                 .withURL(format(BASE_URL + PLANNING_DISTRIBUTION_URL, FBM_WMS_OUTBOUND.getName()))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(response.toString())
                 .build();
@@ -633,7 +642,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     void testGetSuggestedWaves() throws JSONException {
         // GIVEN
         final ZonedDateTime currentTime =
-                ZonedDateTime.now().withMinute(0).withSecond(0).withNano(0);
+                now().withMinute(0).withSecond(0).withNano(0);
         final JSONArray response = new JSONArray()
                 .put(new JSONObject()
                         .put("quantity", "100")
@@ -651,7 +660,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(GET)
                 .withURL(BASE_URL + format(SUGGESTED_WAVES_URL, FBM_WMS_OUTBOUND))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(response.toString())
                 .build();
@@ -677,8 +686,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
         // GIVEN
         final BacklogProjectionRequest request = BacklogProjectionRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
-                .dateFrom(ZonedDateTime.now())
-                .dateTo(ZonedDateTime.now().plusDays(1))
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
                 .workflow(FBM_WMS_OUTBOUND)
                 .processName(List.of(WAVING, PICKING, PACKING))
                 .currentBacklog(List.of(
@@ -690,7 +699,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + RUN_PROJECTIONS_URL + "/backlogs", FBM_WMS_OUTBOUND))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(getResourceAsString("get_backlog_projection_api_response.json"))
                 .build();
@@ -739,7 +748,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + ENTITIES_URL, "search"))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(getResourceAsString("search_entities_response.json"))
                 .build();
@@ -782,8 +791,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
                                 .entityType(HEADCOUNT)
                                 .workflow(FBM_WMS_OUTBOUND)
                                 .warehouseId("ARTW01")
-                                .dateFrom(ZonedDateTime.now())
-                                .dateTo(ZonedDateTime.now().plusDays(1))
+                                .dateFrom(now())
+                                .dateTo(now().plusDays(1))
                                 .source(Source.FORECAST)
                                 .processName(List.of(PICKING, PACKING))
                                 .build()
@@ -793,8 +802,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
                                 .entityType(HEADCOUNT)
                                 .workflow(FBM_WMS_OUTBOUND)
                                 .warehouseId("ARTW01")
-                                .dateFrom(ZonedDateTime.now())
-                                .dateTo(ZonedDateTime.now().plusDays(1))
+                                .dateFrom(now())
+                                .dateTo(now().plusDays(1))
                                 .source(Source.FORECAST)
                                 .processName(List.of(PICKING, PACKING))
                                 .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
@@ -807,7 +816,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + ENTITIES_URL, "headcount"))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(response.toString())
                 .build();
@@ -817,7 +826,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + ENTITIES_URL, "productivity"))
-                .withStatusCode(HttpStatus.OK.value())
+                .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(response.toString())
                 .build();
@@ -857,5 +866,70 @@ class PlanningModelApiClientTest extends BaseClientTest {
                                 )))
                         )))
                 .build();
+    }
+
+    @Nested
+    @DisplayName("Test save deviation")
+    class SaveDeviation {
+
+        @Test
+        void testSaveDeviationOk() throws Exception {
+            // Given
+            final DeviationInput deviationInput = DeviationInput.builder()
+                    .workflow(FBM_WMS_OUTBOUND)
+                    .warehouseId(WAREHOUSE_ID)
+                    .dateFrom(now())
+                    .dateTo(now().plusDays(1))
+                    .value(5.9)
+                    .userId(USER_ID)
+                    .build();
+
+            MockResponse.builder()
+                    .withMethod(POST)
+                    .withURL(format(BASE_URL + DEVIATION_URL, FBM_WMS_OUTBOUND))
+                    .withStatusCode(OK.value())
+                    .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                    .withResponseBody(new JSONObject()
+                            .put("status", OK.value())
+                            .toString())
+                    .build();
+
+            // When
+            final DeviationResponse deviationResponse = client.saveDeviation(deviationInput);
+
+            // Then
+            assertNotNull(deviationResponse);
+            assertEquals(200, deviationResponse.getStatus());
+        }
+
+        @Test
+        void testSaveDeviationError() throws Exception {
+            // Given
+            final DeviationInput deviationInput = DeviationInput.builder()
+                    .workflow(FBM_WMS_OUTBOUND)
+                    .warehouseId(WAREHOUSE_ID)
+                    .dateFrom(now())
+                    .dateTo(now().plusDays(1))
+                    .value(5.9)
+                    .userId(USER_ID)
+                    .build();
+
+            MockResponse.builder()
+                    .withMethod(POST)
+                    .withURL(format(BASE_URL + DEVIATION_URL, FBM_WMS_OUTBOUND))
+                    .withStatusCode(OK.value())
+                    .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                    .withResponseBody(new JSONObject()
+                            .put("status", BAD_REQUEST.value())
+                            .toString())
+                    .build();
+
+            // When
+            final DeviationResponse deviationResponse = client.saveDeviation(deviationInput);
+
+            // Then
+            assertNotNull(deviationResponse);
+            assertEquals(400, deviationResponse.getStatus());
+        }
     }
 }

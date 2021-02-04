@@ -3,7 +3,6 @@ package com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,7 +13,7 @@ import java.util.List;
 public class CurrentStatusMetricInputs {
 
     final ProcessBacklog processBacklog;
-    final GetMonitorInput input;
+    final GetCurrentStatusInput input;
     final List<UnitsResume> processedUnitsLastHour;
     final List<Entity> productivityHeadCounts;
 }
