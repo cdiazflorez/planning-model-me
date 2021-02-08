@@ -32,7 +32,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedW
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
-import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DeviationInput;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import lombok.extern.slf4j.Slf4j;
@@ -342,14 +343,25 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public DeviationResponse saveDeviation(final DeviationInput deviationInput) {
+    public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, deviationInput.getWorkflow())
+                .url(format(WORKFLOWS_URL, saveDeviationInput.getWorkflow())
                         + DEVIATIONS_URL + "/save")
-                .POST(requestSupplier(deviationInput))
+                .POST(requestSupplier(saveDeviationInput))
                 .acceptedHttpStatuses(Set.of(OK, CREATED))
                 .build();
 
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public DeviationResponse disableDeviation(DisableDeviationInput disableDeviationInput) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, disableDeviationInput.getWorkflow())
+                        + DEVIATIONS_URL + "/disable")
+                .POST(requestSupplier(disableDeviationInput))
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
         return send(request, response -> response.getData(new TypeReference<>() {}));
     }
 

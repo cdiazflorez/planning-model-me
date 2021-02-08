@@ -29,7 +29,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
-import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DeviationInput;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.mercadolibre.restclient.MockResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -99,7 +100,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     private static final String SUGGESTED_WAVES_URL =
             "/planning/model/workflows/%s/projections/suggested_waves";
     private static final String DEVIATION_URL =
-            "/planning/model/workflows/%s/deviations/save";
+            "/planning/model/workflows/%s/deviations/";
 
     private PlanningModelApiClient client;
 
@@ -875,7 +876,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         @Test
         void testSaveDeviationOk() throws Exception {
             // Given
-            final DeviationInput deviationInput = DeviationInput.builder()
+            final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
                     .workflow(FBM_WMS_OUTBOUND)
                     .warehouseId(WAREHOUSE_ID)
                     .dateFrom(now())
@@ -886,7 +887,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             MockResponse.builder()
                     .withMethod(POST)
-                    .withURL(format(BASE_URL + DEVIATION_URL, FBM_WMS_OUTBOUND))
+                    .withURL(format(BASE_URL + DEVIATION_URL + "save", FBM_WMS_OUTBOUND))
                     .withStatusCode(OK.value())
                     .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                     .withResponseBody(new JSONObject()
@@ -895,7 +896,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                     .build();
 
             // When
-            final DeviationResponse deviationResponse = client.saveDeviation(deviationInput);
+            final DeviationResponse deviationResponse = client.saveDeviation(saveDeviationInput);
 
             // Then
             assertNotNull(deviationResponse);
@@ -905,7 +906,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         @Test
         void testSaveDeviationError() throws Exception {
             // Given
-            final DeviationInput deviationInput = DeviationInput.builder()
+            final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
                     .workflow(FBM_WMS_OUTBOUND)
                     .warehouseId(WAREHOUSE_ID)
                     .dateFrom(now())
@@ -916,7 +917,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             MockResponse.builder()
                     .withMethod(POST)
-                    .withURL(format(BASE_URL + DEVIATION_URL, FBM_WMS_OUTBOUND))
+                    .withURL(format(BASE_URL + DEVIATION_URL + "save", FBM_WMS_OUTBOUND))
                     .withStatusCode(OK.value())
                     .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                     .withResponseBody(new JSONObject()
@@ -925,7 +926,62 @@ class PlanningModelApiClientTest extends BaseClientTest {
                     .build();
 
             // When
-            final DeviationResponse deviationResponse = client.saveDeviation(deviationInput);
+            final DeviationResponse deviationResponse = client.saveDeviation(saveDeviationInput);
+
+            // Then
+            assertNotNull(deviationResponse);
+            assertEquals(400, deviationResponse.getStatus());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test disable deviation")
+    class DisableDeviation {
+
+        @Test
+        void testDisableDeviationOk() throws Exception {
+            // Given
+            final DisableDeviationInput disableDeviationInput =
+                    new DisableDeviationInput(WAREHOUSE_ID,FBM_WMS_OUTBOUND);
+
+            MockResponse.builder()
+                    .withMethod(POST)
+                    .withURL(format(BASE_URL + DEVIATION_URL + "disable", FBM_WMS_OUTBOUND))
+                    .withStatusCode(OK.value())
+                    .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                    .withResponseBody(new JSONObject()
+                            .put("status", OK.value())
+                            .toString())
+                    .build();
+
+            // When
+            final DeviationResponse deviationResponse =
+                    client.disableDeviation(disableDeviationInput);
+
+            // Then
+            assertNotNull(deviationResponse);
+            assertEquals(200, deviationResponse.getStatus());
+        }
+
+        @Test
+        void testDisableDeviationError() throws Exception {
+            // Given
+            final DisableDeviationInput disableDeviationInput =
+                    new DisableDeviationInput(WAREHOUSE_ID,FBM_WMS_OUTBOUND);
+
+            MockResponse.builder()
+                    .withMethod(POST)
+                    .withURL(format(BASE_URL + DEVIATION_URL + "disable", FBM_WMS_OUTBOUND))
+                    .withStatusCode(OK.value())
+                    .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                    .withResponseBody(new JSONObject()
+                            .put("status", BAD_REQUEST.value())
+                            .toString())
+                    .build();
+
+            // When
+            final DeviationResponse deviationResponse =
+                    client.disableDeviation(disableDeviationInput);
 
             // Then
             assertNotNull(deviationResponse);
