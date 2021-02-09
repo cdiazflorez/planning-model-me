@@ -50,6 +50,7 @@ public class RunSimulation extends GetProjection {
                                 .collect(toList()))
                         .simulations(input.getSimulations())
                         .userId(input.getUserId())
+                        .applyDeviation(true)
                         .build());
     }
 

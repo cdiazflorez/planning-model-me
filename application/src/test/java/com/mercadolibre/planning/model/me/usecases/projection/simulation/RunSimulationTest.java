@@ -313,6 +313,7 @@ public class RunSimulationTest {
                 .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
                         HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
                 )))))
+                .applyDeviation(true)
                 .build();
     }
 

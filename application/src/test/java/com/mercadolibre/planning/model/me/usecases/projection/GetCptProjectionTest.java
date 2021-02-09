@@ -423,6 +423,7 @@ public class GetCptProjectionTest {
                 .dateTo(currentTime.plusDays(1))
                 .type(ProjectionType.CPT)
                 .backlog(backlogs)
+                .applyDeviation(true)
                 .build();
     }
 

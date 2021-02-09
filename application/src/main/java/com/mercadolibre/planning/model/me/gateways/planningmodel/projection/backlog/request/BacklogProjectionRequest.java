@@ -27,6 +27,8 @@ public class BacklogProjectionRequest {
 
     List<CurrentBacklog> currentBacklog;
 
+    boolean applyDeviation;
+
     public static BacklogProjectionRequest fromInput(final BacklogProjectionInput input,
                                                      final List<CurrentBacklog> currentBacklogs) {
         return BacklogProjectionRequest.builder()
@@ -36,6 +38,7 @@ public class BacklogProjectionRequest {
                 .dateFrom(input.getDateFrom())
                 .dateTo(getNextHour(input.getDateTo()))
                 .currentBacklog(currentBacklogs)
+                .applyDeviation(true)
                 .build();
     }
 }

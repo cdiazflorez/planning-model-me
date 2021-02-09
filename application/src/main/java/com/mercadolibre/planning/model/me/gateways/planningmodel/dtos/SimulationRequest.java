@@ -17,4 +17,5 @@ public class SimulationRequest {
     private List<QuantityByDate> backlog;
     private List<Simulation> simulations;
     private long userId;
+    private boolean applyDeviation;
 }

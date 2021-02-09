@@ -44,6 +44,7 @@ public class GetCptProjection extends GetProjection {
                         .dateTo(dateTo)
                         .backlog(backlogs)
                         .userId(input.getUserId())
+                        .applyDeviation(true)
                         .build());
     }
 
