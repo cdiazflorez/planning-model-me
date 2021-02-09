@@ -1,12 +1,17 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.deviation;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.monitor.deviation.GetDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationActions;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationAppliedData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationMetric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnit;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
@@ -17,9 +22,13 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
+import java.time.Period;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 
 import static java.time.ZoneOffset.UTC;
 
@@ -27,11 +36,13 @@ import static java.time.ZoneOffset.UTC;
 @AllArgsConstructor
 public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
 
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final String UNITS_DEFAULT_STRING = "%d uds.";
     private static final int DATE_OUT_LIMIT_HOURS = 24;
 
     private final GetSales getSales;
     private final PlanningModelGateway planningModelGateway;
+    private final LogisticCenterGateway logisticCenterGateway;
 
     @Override
     public DeviationData execute(GetDeviationInput input) {
@@ -39,6 +50,9 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
 
         final int totalSales = getTotalSales(input);
         final double totalDeviation = getDeviationPercentage(totalPlanned, totalSales);
+        final DeviationAppliedData deviationAppliedData = getCurrentDeviation(
+                input.getWarehouseId(),
+                input.getWorkflow());
 
         return new DeviationData(DeviationMetric.builder()
                 .deviationPercentage(Metric.builder()
@@ -62,7 +76,12 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                                         .build())
                                 .build())
                         .build())
-                .build());
+                .build(),
+                DeviationActions.builder()
+                        .applyLabel("Ajustar forecast")
+                        .unapplyLabel("Volver al forecast")
+                        .appliedData(deviationAppliedData)
+                        .build());
     }
 
     private double getDeviationPercentage(final long totalPlanned, final int totalSold) {
@@ -114,5 +133,34 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
         );
 
         return forecast.stream().mapToLong(PlanningDistributionResponse::getTotal).sum();
+    }
+
+    private DeviationAppliedData getCurrentDeviation(final String warehouseId,
+                                                     final Workflow workflow) {
+        final LogisticCenterConfiguration configuration =
+                logisticCenterGateway.getConfiguration(warehouseId);
+        DeviationAppliedData deviationAppliedData;
+        try {
+            final GetDeviationResponse deviationResponse =
+                    planningModelGateway.getDeviation(workflow, warehouseId);
+            final ZonedDateTime dateFrom = convertToTimeZone(configuration.getZoneId(),
+                    deviationResponse.getDateFrom());
+            final ZonedDateTime dateTo = convertToTimeZone(configuration.getZoneId(),
+                    deviationResponse.getDateTo());
+            final String title = String.format("Se ajustó el forecast %.2f%s de %s a %s",
+                    deviationResponse.getValue(),"%",
+                    dateFrom.format(DATE_FORMAT),
+                    dateTo.format(DATE_FORMAT)) + getDateCurrent(dateFrom, dateTo);
+
+            deviationAppliedData = new DeviationAppliedData(title, "info");
+        } catch (Exception e) {
+            deviationAppliedData = null;
+        }
+        return deviationAppliedData;
+    }
+
+    private String getDateCurrent(final ZonedDateTime dateFrom, final ZonedDateTime dateTo) {
+        final long days = ChronoUnit.DAYS.between(dateFrom.toLocalDate(), dateTo.toLocalDate());
+        return days > 0 ? String.format(" (+%d).", days) : "";
     }
 }

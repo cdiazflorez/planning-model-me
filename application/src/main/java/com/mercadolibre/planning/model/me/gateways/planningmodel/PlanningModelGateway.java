@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
@@ -61,5 +62,8 @@ public interface PlanningModelGateway {
     DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput);
 
     DeviationResponse disableDeviation(final DisableDeviationInput saveDeviationInput);
+
+    GetDeviationResponse getDeviation(final Workflow workflow,
+                                      final String warehouseId);
 
 }

@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 
+import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
@@ -9,6 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
@@ -45,6 +47,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +60,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.PERCENTAGE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
@@ -78,6 +82,7 @@ import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.of;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -100,7 +105,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     private static final String SUGGESTED_WAVES_URL =
             "/planning/model/workflows/%s/projections/suggested_waves";
     private static final String DEVIATION_URL =
-            "/planning/model/workflows/%s/deviations/";
+            "/planning/model/workflows/%s/deviations";
 
     private PlanningModelApiClient client;
 
@@ -887,7 +892,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             MockResponse.builder()
                     .withMethod(POST)
-                    .withURL(format(BASE_URL + DEVIATION_URL + "save", FBM_WMS_OUTBOUND))
+                    .withURL(format(BASE_URL + DEVIATION_URL + "/save", FBM_WMS_OUTBOUND))
                     .withStatusCode(OK.value())
                     .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                     .withResponseBody(new JSONObject()
@@ -917,7 +922,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             MockResponse.builder()
                     .withMethod(POST)
-                    .withURL(format(BASE_URL + DEVIATION_URL + "save", FBM_WMS_OUTBOUND))
+                    .withURL(format(BASE_URL + DEVIATION_URL + "/save", FBM_WMS_OUTBOUND))
                     .withStatusCode(OK.value())
                     .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                     .withResponseBody(new JSONObject()
@@ -946,7 +951,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             MockResponse.builder()
                     .withMethod(POST)
-                    .withURL(format(BASE_URL + DEVIATION_URL + "disable", FBM_WMS_OUTBOUND))
+                    .withURL(format(BASE_URL + DEVIATION_URL + "/disable", FBM_WMS_OUTBOUND))
                     .withStatusCode(OK.value())
                     .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                     .withResponseBody(new JSONObject()
@@ -971,7 +976,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             MockResponse.builder()
                     .withMethod(POST)
-                    .withURL(format(BASE_URL + DEVIATION_URL + "disable", FBM_WMS_OUTBOUND))
+                    .withURL(format(BASE_URL + DEVIATION_URL + "/disable", FBM_WMS_OUTBOUND))
                     .withStatusCode(OK.value())
                     .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                     .withResponseBody(new JSONObject()
@@ -986,6 +991,57 @@ class PlanningModelApiClientTest extends BaseClientTest {
             // Then
             assertNotNull(deviationResponse);
             assertEquals(400, deviationResponse.getStatus());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test get deviation")
+    class GetDeviation {
+
+        @Test
+        void testGetDeviationOk() throws Exception {
+            // Given
+            MockResponse.builder()
+                    .withMethod(GET)
+                    .withURL(format(BASE_URL + DEVIATION_URL, FBM_WMS_OUTBOUND))
+                    .withStatusCode(OK.value())
+                    .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                    .withResponseBody(getResourceAsString("get_deviation_response.json"))
+                    .build();
+
+            // When
+            final GetDeviationResponse getDeviationResponse =
+                    client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID);
+
+            // Then
+            assertNotNull(getDeviationResponse);
+            assertEquals(ZonedDateTime.of(2021, 01, 21, 15, 00,00,00, ZoneId.of("Z")),
+                    getDeviationResponse.getDateFrom());
+            assertEquals(ZonedDateTime.of(2021, 01, 21, 17, 00,00,00, ZoneId.of("Z")),
+                    getDeviationResponse.getDateTo());
+            assertEquals(5.8, getDeviationResponse.getValue());
+            assertEquals(PERCENTAGE, getDeviationResponse.getMetricUnit());
+        }
+
+        @Test
+        void testGetDeviationWhenNotExistDeviation() throws Exception {
+            // Given
+            MockResponse.builder()
+                    .withMethod(GET)
+                    .withURL(format(BASE_URL + DEVIATION_URL, FBM_WMS_OUTBOUND))
+                    .withStatusCode(BAD_REQUEST.value())
+                    .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                    .withResponseBody(new JSONObject()
+                            .put("status", "NOT_FOUND")
+                            .put("message",
+                                    "Entity CurrentForecastDeviation with id ARTW01 was not found")
+                            .put("error","entity_not_found")
+                            .toString())
+                    .build();
+
+            // Then
+            assertThrows(ClientException.class,
+                    () -> client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID));
         }
     }
 }

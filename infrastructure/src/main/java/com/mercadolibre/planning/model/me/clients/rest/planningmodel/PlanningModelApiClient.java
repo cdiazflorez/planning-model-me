@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -362,6 +363,24 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .POST(requestSupplier(disableDeviationInput))
                 .acceptedHttpStatuses(Set.of(OK, CREATED))
                 .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public GetDeviationResponse getDeviation(final Workflow workflow,
+                                             final String warehouseId) {
+        final Map<String, String> params = new HashMap<>();
+        params.put("warehouse_id", warehouseId);
+
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, workflow)
+                        + DEVIATIONS_URL)
+                .GET()
+                .queryParams(params)
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
         return send(request, response -> response.getData(new TypeReference<>() {}));
     }
 
