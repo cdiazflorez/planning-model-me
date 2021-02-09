@@ -129,7 +129,8 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                         dateInFrom.withZoneSameInstant(UTC),
                         dateInTo.withZoneSameInstant(UTC),
                         dateOutFrom.withZoneSameInstant(UTC),
-                        dateOutTo.withZoneSameInstant(UTC))
+                        dateOutTo.withZoneSameInstant(UTC),
+                        false)
         );
 
         return forecast.stream().mapToLong(PlanningDistributionResponse::getTotal).sum();

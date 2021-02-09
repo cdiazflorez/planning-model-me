@@ -15,16 +15,19 @@ public class PlanningDistributionRequest {
     private ZonedDateTime dateInTo;
     private ZonedDateTime dateOutFrom;
     private ZonedDateTime dateOutTo;
+    private boolean applyDeviation;
 
     public PlanningDistributionRequest(String warehouseId,
                                        Workflow workflow,
                                        ZonedDateTime dateInTo,
                                        ZonedDateTime dateOutFrom,
-                                       ZonedDateTime dateOutTo) {
+                                       ZonedDateTime dateOutTo,
+                                       boolean applyDeviation) {
         this.warehouseId = warehouseId;
         this.workflow = workflow;
         this.dateInTo = dateInTo;
         this.dateOutFrom = dateOutFrom;
         this.dateOutTo = dateOutTo;
+        this.applyDeviation = applyDeviation;
     }
 }

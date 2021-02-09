@@ -580,7 +580,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 FBM_WMS_OUTBOUND,
                 currentTime,
                 currentTime,
-                currentTime.plusDays(1)
+                currentTime.plusDays(1),
+                true
         );
 
         final JSONArray response = new JSONArray()
