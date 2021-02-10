@@ -27,6 +27,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -650,6 +651,17 @@ class PlanningModelApiClientTest extends BaseClientTest {
         // GIVEN
         final ZonedDateTime currentTime =
                 now().withMinute(0).withSecond(0).withNano(0);
+
+        final SuggestedWavesRequest request =
+                SuggestedWavesRequest.builder()
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .warehouseId(WAREHOUSE_ID)
+                        .dateFrom(currentTime)
+                        .dateTo(currentTime.plusHours(1))
+                        .backlog(20)
+                        .applyDeviation(true)
+                        .build();
+
         final JSONArray response = new JSONArray()
                 .put(new JSONObject()
                         .put("quantity", "100")
@@ -673,9 +685,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .build();
 
         // WHEN
-        final List<SuggestedWave> suggestedWaves =
-                client.getSuggestedWaves(FBM_WMS_OUTBOUND, WAREHOUSE_ID, currentTime,
-                        currentTime.plusHours(1), 20);
+        final List<SuggestedWave> suggestedWaves = client.getSuggestedWaves(request);
         // THEN
         assertNotNull(suggestedWaves);
         assertEquals(100, suggestedWaves.get(0).getQuantity());

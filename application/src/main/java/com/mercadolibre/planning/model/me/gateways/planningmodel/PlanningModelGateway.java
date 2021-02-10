@@ -18,6 +18,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -53,11 +54,7 @@ public interface PlanningModelGateway {
     List<PlanningDistributionResponse> getPlanningDistribution(
             final PlanningDistributionRequest request);
 
-    List<SuggestedWave> getSuggestedWaves(final Workflow workflow,
-                                          final String warehouseId,
-                                          final ZonedDateTime dateFrom,
-                                          final ZonedDateTime dateTo,
-                                          final Integer backlog);
+    List<SuggestedWave> getSuggestedWaves(final SuggestedWavesRequest suggestedWavesRequest);
 
     DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput);
 

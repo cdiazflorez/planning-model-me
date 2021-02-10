@@ -30,6 +30,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEnti
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -248,16 +249,14 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         }));
     }
 
-    public List<SuggestedWave> getSuggestedWaves(final Workflow workflow,
-                                                 final String warehouseId,
-                                                 final ZonedDateTime dateFrom,
-                                                 final ZonedDateTime dateTo,
-                                                 final Integer backlog) {
-        final Map<String, String> params = getBaseParam(warehouseId, dateFrom, dateTo);
-        params.put("backlog", backlog.toString());
+    @Override
+    public List<SuggestedWave> getSuggestedWaves(final SuggestedWavesRequest input) {
+        final Map<String, String> params =
+                getBaseParam(input.getWarehouseId(), input.getDateFrom(), input.getDateTo());
+        params.put("backlog", input.getBacklog().toString());
 
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL + "/projections/suggested_waves", workflow))
+                .url(format(WORKFLOWS_URL + "/projections/suggested_waves", input.getWorkflow()))
                 .GET()
                 .queryParams(params)
                 .acceptedHttpStatuses(Set.of(OK))
