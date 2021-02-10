@@ -52,6 +52,7 @@ import java.util.Set;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static java.lang.String.format;
+import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
@@ -254,6 +255,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         final Map<String, String> params =
                 getBaseParam(input.getWarehouseId(), input.getDateFrom(), input.getDateTo());
         params.put("backlog", input.getBacklog().toString());
+        params.put("apply_deviation", valueOf(input.isApplyDeviation()));
 
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL + "/projections/suggested_waves", input.getWorkflow()))
