@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -29,10 +30,12 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEnti
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
-import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DeviationInput;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +52,7 @@ import java.util.Set;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
 import static java.lang.String.format;
+import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
@@ -246,16 +250,15 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         }));
     }
 
-    public List<SuggestedWave> getSuggestedWaves(final Workflow workflow,
-                                                 final String warehouseId,
-                                                 final ZonedDateTime dateFrom,
-                                                 final ZonedDateTime dateTo,
-                                                 final Integer backlog) {
-        final Map<String, String> params = getBaseParam(warehouseId, dateFrom, dateTo);
-        params.put("backlog", backlog.toString());
+    @Override
+    public List<SuggestedWave> getSuggestedWaves(final SuggestedWavesRequest input) {
+        final Map<String, String> params =
+                getBaseParam(input.getWarehouseId(), input.getDateFrom(), input.getDateTo());
+        params.put("backlog", input.getBacklog().toString());
+        params.put("apply_deviation", valueOf(input.isApplyDeviation()));
 
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL + "/projections/suggested_waves", workflow))
+                .url(format(WORKFLOWS_URL + "/projections/suggested_waves", input.getWorkflow()))
                 .GET()
                 .queryParams(params)
                 .acceptedHttpStatuses(Set.of(OK))
@@ -342,11 +345,40 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public DeviationResponse saveDeviation(final DeviationInput deviationInput) {
+    public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, deviationInput.getWorkflow())
+                .url(format(WORKFLOWS_URL, saveDeviationInput.getWorkflow())
                         + DEVIATIONS_URL + "/save")
-                .POST(requestSupplier(deviationInput))
+                .POST(requestSupplier(saveDeviationInput))
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public DeviationResponse disableDeviation(DisableDeviationInput disableDeviationInput) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, disableDeviationInput.getWorkflow())
+                        + DEVIATIONS_URL + "/disable")
+                .POST(requestSupplier(disableDeviationInput))
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public GetDeviationResponse getDeviation(final Workflow workflow,
+                                             final String warehouseId) {
+        final Map<String, String> params = new HashMap<>();
+        params.put("warehouse_id", warehouseId);
+
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, workflow)
+                        + DEVIATIONS_URL)
+                .GET()
+                .queryParams(params)
                 .acceptedHttpStatuses(Set.of(OK, CREATED))
                 .build();
 

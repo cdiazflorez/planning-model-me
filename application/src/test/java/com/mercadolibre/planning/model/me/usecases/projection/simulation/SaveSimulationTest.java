@@ -415,6 +415,7 @@ public class SaveSimulationTest {
                         List.of(new SimulationEntity(
                                 HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
                         )))))
+                .applyDeviation(true)
                 .build();
     }
 

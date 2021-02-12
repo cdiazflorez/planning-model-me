@@ -8,7 +8,7 @@ import java.time.ZonedDateTime;
 
 @Value
 @Builder(toBuilder = true)
-public class DeviationInput {
+public class SaveDeviationInput {
 
     private Workflow workflow;
     private String warehouseId;

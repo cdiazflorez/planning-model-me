@@ -178,7 +178,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         input.getWorkflow(),
                         utcDateFrom,
                         utcDateFrom,
-                        utcDateTo));
+                        utcDateTo,
+                        true));
 
         final ProcessingTime processingTime = createProcessingTimeObject(
                 planningModelGateway.getConfiguration(

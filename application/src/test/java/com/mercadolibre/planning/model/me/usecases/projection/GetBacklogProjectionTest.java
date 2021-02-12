@@ -127,6 +127,7 @@ public class GetBacklogProjectionTest {
                         new CurrentBacklog(WAVING, 0),
                         new CurrentBacklog(PICKING, 2232),
                         new CurrentBacklog(PACKING, 1442)))
+                .applyDeviation(true)
                 .build())).thenReturn(List.of(
                         new BacklogProjectionResponse(WAVING, List.of(
                                 new ProjectionValue(firstDate, 100),

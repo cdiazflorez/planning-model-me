@@ -7,6 +7,8 @@ import com.mercadolibre.planning.model.me.usecases.monitor.GetMonitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.Monitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationActions;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationAppliedData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationMetric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnit;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
@@ -112,9 +114,9 @@ class MonitorControllerTest {
                 ))
                 .build();
     }
-    
+
     private DeviationData getDeviationData() {
-        DeviationData deviationData = DeviationData.builder().metrics(DeviationMetric.builder()
+        DeviationData deviationData = new DeviationData(DeviationMetric.builder()
                 .deviationPercentage(Metric.builder()
                         .title("% Desviación FCST / Ventas")
                         .value("-5.1%")
@@ -134,8 +136,15 @@ class MonitorControllerTest {
                                 .build())
                             .build())
                         .build())
-                    .build())
-                .build();
+                    .build(),
+                DeviationActions.builder()
+                        .applyLabel("Ajustar forecast")
+                        .unapplyLabel("Volver al forecast")
+                        .appliedData(DeviationAppliedData.builder()
+                                .title("Se ajustó el forecast 5.80%s de 02:30 a 12:30")
+                                .icon("info")
+                                .build())
+                        .build());
         deviationData.setType(DEVIATION.getType());
         return deviationData;
     }

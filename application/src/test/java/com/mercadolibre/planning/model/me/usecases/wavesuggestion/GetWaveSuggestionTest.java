@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,11 +56,14 @@ class GetWaveSuggestionTest {
         final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
 
         when(planningModelGateway.getSuggestedWaves(
-                FBM_WMS_OUTBOUND,
-                WAREHOUSE_ID,
-                utcDateTimeFrom,
-                utcDateTimeTo,
-                2232
+                SuggestedWavesRequest.builder()
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .warehouseId(WAREHOUSE_ID)
+                        .dateFrom(utcDateTimeFrom)
+                        .dateTo(utcDateTimeTo)
+                        .backlog(2232)
+                        .applyDeviation(true)
+                        .build()
         )).thenReturn(mockSuggestedWaveDistribution());
 
         when(backlogGatewayProvider.getBy(FBM_WMS_OUTBOUND))

@@ -8,6 +8,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatew
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import lombok.AllArgsConstructor;
@@ -60,12 +61,16 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                                 utcDateTimeFrom.plusHours(25))
                         .stream().findFirst().map(ProcessBacklog::getQuantity).orElse(0);
 
+
         return planningModelGateway
-                .getSuggestedWaves(input.getWorkflow(),
-                        input.getWarehouseId(),
-                        utcDateTimeFrom,
-                        utcDateTimeTo,
-                        readyToWaveBacklog
+                .getSuggestedWaves(SuggestedWavesRequest.builder()
+                        .workflow(input.getWorkflow())
+                        .warehouseId(input.getWarehouseId())
+                        .dateFrom(utcDateTimeFrom)
+                        .dateTo(utcDateTimeTo)
+                        .backlog(readyToWaveBacklog)
+                        .applyDeviation(true)
+                        .build()
                 );
     }
 

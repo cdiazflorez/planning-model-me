@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.controller.deviation.request;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DeviationInput;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import lombok.Builder;
 import lombok.Value;
 
@@ -25,8 +25,8 @@ public class DeviationRequest {
     @NotNull
     private long userId;
 
-    public DeviationInput toDeviationInput(final Workflow workflow) {
-        return DeviationInput.builder()
+    public SaveDeviationInput toDeviationInput(final Workflow workflow) {
+        return SaveDeviationInput.builder()
                 .workflow(workflow)
                 .warehouseId(warehouseId)
                 .dateFrom(dateFrom)
