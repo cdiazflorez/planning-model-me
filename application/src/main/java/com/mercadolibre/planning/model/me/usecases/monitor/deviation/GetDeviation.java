@@ -22,15 +22,15 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
-import java.time.Period;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 
 import static java.time.ZoneOffset.UTC;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 @Named
 @AllArgsConstructor
@@ -99,7 +99,7 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
     }
 
     private int getTotalSales(GetDeviationInput input) {
-        final ZonedDateTime dateInFrom = input.getCurrentTime().truncatedTo(ChronoUnit.DAYS);
+        final ZonedDateTime dateInFrom = input.getCurrentTime().truncatedTo(DAYS);
         final ZonedDateTime dateInTo = input.getCurrentTime();
         final ZonedDateTime dateOutFrom = input.getCurrentTime();
         final ZonedDateTime dateOutTo = dateOutFrom.plusHours(DATE_OUT_LIMIT_HOURS);
@@ -117,7 +117,7 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
     }
 
     private long getTotalPlannedBacklog(GetDeviationInput input) {
-        final ZonedDateTime dateInFrom = input.getCurrentTime().truncatedTo(ChronoUnit.DAYS);
+        final ZonedDateTime dateInFrom = input.getCurrentTime().truncatedTo(DAYS);
         final ZonedDateTime dateInTo = input.getCurrentTime();
         final ZonedDateTime dateOutFrom = input.getCurrentTime();
         final ZonedDateTime dateOutTo = dateOutFrom.plusHours(DATE_OUT_LIMIT_HOURS);
@@ -133,7 +133,20 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                         false)
         );
 
-        return forecast.stream().mapToLong(PlanningDistributionResponse::getTotal).sum();
+        return forecast.stream().mapToLong(this::getCorrectUnits).sum();
+    }
+
+    private Long getCorrectUnits(final PlanningDistributionResponse distributionResponse) {
+        final ZonedDateTime current = ZonedDateTime.now(UTC);
+        final ZonedDateTime currentDateIn = current.withMinute(0).withSecond(0).withNano(0);
+        if (currentDateIn
+                .isEqual(distributionResponse.getDateIn())) {
+            final long currentHourMinutes = currentDateIn.until(current, MINUTES);
+            final Double units = ((double)currentHourMinutes / 60)
+                    * distributionResponse.getTotal();
+            return units.longValue();
+        }
+        return distributionResponse.getTotal();
     }
 
     private DeviationAppliedData getCurrentDeviation(final String warehouseId,
@@ -161,7 +174,7 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
     }
 
     private String getDateCurrent(final ZonedDateTime dateFrom, final ZonedDateTime dateTo) {
-        final long days = ChronoUnit.DAYS.between(dateFrom.toLocalDate(), dateTo.toLocalDate());
+        final long days = DAYS.between(dateFrom.toLocalDate(), dateTo.toLocalDate());
         return days > 0 ? String.format(" (+%d).", days) : "";
     }
 }
