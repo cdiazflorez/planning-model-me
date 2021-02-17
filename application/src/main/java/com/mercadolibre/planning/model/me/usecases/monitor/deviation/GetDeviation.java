@@ -28,7 +28,9 @@ import java.util.List;
 
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static java.time.ZoneOffset.UTC;
+import static java.time.ZonedDateTime.now;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.MINUTES;
 
@@ -39,6 +41,7 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final String UNITS_DEFAULT_STRING = "%d uds.";
     private static final int DATE_OUT_LIMIT_HOURS = 24;
+    public static final int HOUR_IN_MINUTES = 60;
 
     private final GetSales getSales;
     private final PlanningModelGateway planningModelGateway;
@@ -133,20 +136,13 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                         false)
         );
 
-        return forecast.stream().mapToLong(this::getCorrectUnits).sum();
+        return forecast.stream().mapToLong(this::getCurrentDateUnits).sum();
     }
 
-    private Long getCorrectUnits(final PlanningDistributionResponse distributionResponse) {
-        final ZonedDateTime current = ZonedDateTime.now(UTC);
-        final ZonedDateTime currentDateIn = current.withMinute(0).withSecond(0).withNano(0);
-        if (currentDateIn
-                .isEqual(distributionResponse.getDateIn())) {
-            final long currentHourMinutes = currentDateIn.until(current, MINUTES);
-            final Double units = ((double)currentHourMinutes / 60)
-                    * distributionResponse.getTotal();
-            return units.longValue();
-        }
-        return distributionResponse.getTotal();
+    private Long getCurrentDateUnits(final PlanningDistributionResponse distributionResponse) {
+        return distributionResponse.getDateIn().isEqual(getCurrentUtcDate())
+                ? now(UTC).getMinute() / HOUR_IN_MINUTES * distributionResponse.getTotal()
+                : distributionResponse.getTotal();
     }
 
     private DeviationAppliedData getCurrentDeviation(final String warehouseId,
