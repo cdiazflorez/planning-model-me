@@ -27,11 +27,12 @@ dependencies {
     implementation 'com.mercadolibre:lockclient:2.1.0'
     implementation 'com.mercadolibre.metrics:datadog-metric-wrapper:0.0.13'
     implementation 'com.mercadolibre.fbm.wms.outbound:commons:1.1.0'
-    implementation 'com.mercadolibre.restclient:restclient-default:0.3.46'
+    implementation "com.mercadolibre.restclient:meli-restclient-default:0.3.46"
+    implementation "com.mercadolibre.resilience:resilience-core:1.1.1"
     implementation 'com.mercadolibre.library:kraken-client-java:1.0.2-beta'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.mercadolibre.restclient:restclient-core:0.3.46:tests'
+    testImplementation "com.mercadolibre.restclient:meli-restclient-core:0.3.52:tests"
 }
 
 configurations {

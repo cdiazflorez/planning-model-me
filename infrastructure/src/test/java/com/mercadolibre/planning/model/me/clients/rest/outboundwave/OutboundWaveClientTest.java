@@ -4,6 +4,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.restclient.MockResponse;
+import com.mercadolibre.restclient.http.HttpMethod;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,13 +18,17 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.mockCircuitBreaker;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @ExtendWith(SpringExtension.class)
 public class OutboundWaveClientTest extends BaseClientTest {
@@ -34,7 +39,7 @@ public class OutboundWaveClientTest extends BaseClientTest {
     @BeforeEach
     public void setUp() throws Exception {
         RequestMockHolder.clear();
-        outboundWaveClient = new OutboundWaveClient(getRestTestClient());
+        outboundWaveClient = new OutboundWaveClient(getRestTestClient(), mockCircuitBreaker());
     }
 
     @Nested
@@ -138,5 +143,37 @@ public class OutboundWaveClientTest extends BaseClientTest {
                     .withResponseBody(response.toString())
                     .build();
         }
+
+        @Test
+        @DisplayName("Outbound wave API returns 500")
+        public void unknownError() {
+            // GIVEN
+            final ZonedDateTime dateFrom = ZonedDateTime.now();
+            final ZonedDateTime dateTo = ZonedDateTime.now().plusHours(1);
+            final String unitGroupType = "ORDER";
+
+            MockResponse.builder()
+                    .withMethod(GET)
+                    .withURL(BASE_URL + OUTBOUND_WAVE_URL)
+                    .withStatusCode(INTERNAL_SERVER_ERROR.value())
+                    .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                    .build();
+
+            // WHEN
+            final ClientException exception = assertThrows(ClientException.class,
+                    () -> outboundWaveClient
+                            .getUnitsCount(WAREHOUSE_ID, dateFrom, dateTo, unitGroupType)
+            );
+
+            // THEN
+            assertEquals(0, exception.getResponseStatus().intValue());
+            assertTrue(exception.getOtherParams().containsKey("warehouse_id"));
+            assertNotNull(exception.getCause());
+            assertTrue(exception.getCause() instanceof ClientException);
+            assertEquals(500, ((ClientException) exception.getCause())
+                    .getResponseStatus().intValue());
+            assertNull(exception.getCause().getCause());
+        }
     }
 }
+
