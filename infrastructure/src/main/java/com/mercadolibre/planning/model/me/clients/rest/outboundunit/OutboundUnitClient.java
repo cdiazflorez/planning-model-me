@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
+import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.Unit;
@@ -16,15 +17,19 @@ import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.AggregationResponse;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.AggregationResponseBucket;
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response.OutboundUnitSearchResponse;
+import com.mercadolibre.planning.model.me.clients.rest.utils.FailOnExceptionAction;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.resilience.breaker.CircuitBreaker;
+import com.mercadolibre.restclient.Response;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import com.newrelic.api.agent.Trace;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
@@ -53,6 +59,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
+@Slf4j
 @Component
 public class OutboundUnitClient extends HttpClient implements BacklogGateway {
 
@@ -61,13 +68,17 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     public static final String CLIENT_ID = "9999";
     private static final String AGGREGATION_BY_ETD = "by_etd";
     private static final String ORDER_VALUE = "order";
+    private static final String API_NAME = "OUTBOUND_UNIT";
 
-
+    private final CircuitBreaker unitCircuitBreaker;
     private final ObjectMapper objectMapper;
 
-    protected OutboundUnitClient(final RestClient client, final ObjectMapper mapper) {
+    protected OutboundUnitClient(final RestClient client,
+                                 final ObjectMapper mapper,
+                                 final CircuitBreaker unitCircuitBreaker) {
         super(client, RestPool.OUTBOUND_UNIT.name());
         this.objectMapper = mapper;
+        this.unitCircuitBreaker = unitCircuitBreaker;
     }
 
     @Override
@@ -271,9 +282,15 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .queryParams(defaultParams())
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
-
-        return send(request, response -> response.getData(new TypeReference<>() {
-        }));
+        try {
+            return unitCircuitBreaker.run(
+                    (FailOnExceptionAction<OutboundUnitSearchResponse<UnitGroup>>)
+                    () -> send(request, response ->
+                                    response.getData(new TypeReference<>() {})));
+        } catch (ExecutionException e) {
+            log.error("An error has occurred on OutboundUnitClient - searchGroups: ", e);
+            throw new ClientException(API_NAME, request, e.getCause());
+        }
     }
 
     @Trace(metricName = "API/outboundUnit/searchUnits")
@@ -286,8 +303,15 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
 
-        return send(request, response -> response.getData(new TypeReference<>() {
-        }));
+        try {
+            return unitCircuitBreaker.run(
+                    (FailOnExceptionAction<OutboundUnitSearchResponse<Unit>>)
+                    () -> send(request, response ->
+                            response.getData(new TypeReference<>() {})));
+        } catch (ExecutionException e) {
+            log.error("An error has occurred on OutboundUnitClient - searchUnits: ", e);
+            throw new ClientException(API_NAME, request, e.getCause());
+        }
     }
 
     private Map<String, String> defaultParams() {

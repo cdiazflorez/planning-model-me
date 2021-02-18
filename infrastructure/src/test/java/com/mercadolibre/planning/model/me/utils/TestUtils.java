@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.json.JsonUtils;
 import com.mercadolibre.json_jackson.JsonJackson;
+import com.mercadolibre.resilience.breaker.CircuitBreaker;
+import com.mercadolibre.resilience.breaker.CircuitBreakers;
 import com.mercadolibre.restclient.MockResponse;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
@@ -52,6 +54,20 @@ public class TestUtils {
         } finally {
             resource.close();
         }
+    }
+
+    public static CircuitBreaker mockCircuitBreaker() {
+        return CircuitBreakers.newExponentialBreaker(
+                "UnitsBreaker",
+                100,
+                100,
+                0.5,
+                10,
+                100,
+                0.5,
+                100,
+                1
+        );
     }
 
 }

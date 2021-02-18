@@ -19,6 +19,8 @@ import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
+import com.mercadolibre.resilience.breaker.CircuitBreaker;
+import com.mercadolibre.resilience.breaker.CircuitBreakers;
 import com.mercadolibre.restclient.MockResponse;
 import com.mercadolibre.restclient.http.HttpMethod;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
@@ -53,6 +55,7 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PICKING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.mockCircuitBreaker;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
@@ -86,7 +89,9 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        outboundUnitClient = new OutboundUnitClient(getRestTestClient(), objectMapper);
+        outboundUnitClient = new OutboundUnitClient(getRestTestClient(),
+                objectMapper,
+                mockCircuitBreaker());
         new JsonUtilsConfiguration().run(null);
         RequestMockHolder.clear();
     }
@@ -130,9 +135,13 @@ public class OutboundUnitClientTest extends BaseClientTest {
             );
 
             // THEN
-            assertEquals(500, exception.getResponseStatus().intValue());
+            assertEquals(0, exception.getResponseStatus().intValue());
             assertTrue(exception.getOtherParams().containsKey("client.id"));
-            assertNull(exception.getCause());
+            assertNotNull(exception.getCause());
+            assertTrue(exception.getCause() instanceof ClientException);
+            assertEquals(500, ((ClientException) exception.getCause())
+                    .getResponseStatus().intValue());
+            assertNull(exception.getCause().getCause());
         }
 
         @Test
@@ -712,6 +721,43 @@ public class OutboundUnitClientTest extends BaseClientTest {
             final Backlog backlogCpt3 = backlogs.get(2);
             assertEquals(currentTime.plusHours(3), backlogCpt3.getDate());
             assertEquals(500, backlogCpt3.getQuantity());
+        }
+
+        @Test
+        @DisplayName("Search Units API returns 500")
+        public void unknownErrorUnits() {
+            // GIVEN
+            final ZonedDateTime utcDateFrom = getCurrentUtcDate();
+            final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
+
+            final Map<String, String> requestParam = ImmutableMap.<String, String>builder()
+                    .put("limit", "1")
+                    .put("group.etd_from", utcDateFrom.toString())
+                    .put("group.etd_to", utcDateTo.toString())
+                    .put("status", PACKING.getStatus())
+                    .put("client.id", CLIENT_ID)
+                    .put("warehouse_id", WAREHOUSE_ID)
+                    .put("address.area", "PW")
+                    .build();
+            unsuccessfulResponse(GET, searchUnitUrl(requestParam), INTERNAL_SERVER_ERROR);
+
+            // WHEN
+            final ClientException exception = assertThrows(ClientException.class,
+                    () -> outboundUnitClient.getUnitBacklog(
+                    new UnitProcessBacklogInput(PICKING.getStatus(),
+                            WAREHOUSE_ID,
+                            utcDateFrom,
+                            utcDateTo, null))
+            );
+
+            // THEN
+            assertEquals(0, exception.getResponseStatus().intValue());
+            assertTrue(exception.getOtherParams().containsKey("client.id"));
+            assertNotNull(exception.getCause());
+            assertTrue(exception.getCause() instanceof ClientException);
+            assertEquals(500, ((ClientException) exception.getCause())
+                    .getResponseStatus().intValue());
+            assertNull(exception.getCause().getCause());
         }
 
         private String searchGroupUrl(final String groupType) {
