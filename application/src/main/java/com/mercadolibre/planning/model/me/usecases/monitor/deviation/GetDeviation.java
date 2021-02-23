@@ -25,6 +25,8 @@ import javax.inject.Named;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 
@@ -32,7 +34,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.temporal.ChronoUnit.DAYS;
-import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.util.Map.Entry;
 
 @Named
 @AllArgsConstructor
@@ -41,7 +43,7 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final String UNITS_DEFAULT_STRING = "%d uds.";
     private static final int DATE_OUT_LIMIT_HOURS = 24;
-    public static final int HOUR_IN_MINUTES = 60;
+    public static final double HOUR_IN_MINUTES = 60;
 
     private final GetSales getSales;
     private final PlanningModelGateway planningModelGateway;
@@ -135,14 +137,27 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                         dateOutTo.withZoneSameInstant(UTC),
                         false)
         );
-
-        return forecast.stream().mapToLong(this::getCurrentDateUnits).sum();
+        final Map<ZonedDateTime, List<PlanningDistributionResponse>> accumulatedByEtd =
+                forecast.stream()
+                        .collect(Collectors.groupingBy(PlanningDistributionResponse::getDateIn));
+        return accumulatedByEtd.entrySet().stream()
+                .mapToLong(this::getCurrentDateUnits)
+                .sum();
     }
 
-    private Long getCurrentDateUnits(final PlanningDistributionResponse distributionResponse) {
-        return distributionResponse.getDateIn().isEqual(getCurrentUtcDate())
-                ? now(UTC).getMinute() / HOUR_IN_MINUTES * distributionResponse.getTotal()
-                : distributionResponse.getTotal();
+    private long getCurrentDateUnits(
+            final Entry<ZonedDateTime,
+                    List<PlanningDistributionResponse>> planningDistributions) {
+        return planningDistributions.getKey().isEqual(getCurrentUtcDate())
+                ? ((Double)(now(UTC).getMinute() / HOUR_IN_MINUTES
+                * sumTotals(planningDistributions.getValue()))).longValue()
+                : sumTotals(planningDistributions.getValue());
+    }
+
+    private long sumTotals(final List<PlanningDistributionResponse> distributionResponses) {
+        return distributionResponses.stream()
+                .mapToLong(PlanningDistributionResponse::getTotal)
+                .sum();
     }
 
     private DeviationAppliedData getCurrentDeviation(final String warehouseId,

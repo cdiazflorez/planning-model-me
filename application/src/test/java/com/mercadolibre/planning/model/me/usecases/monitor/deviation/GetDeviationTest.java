@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZoneId;
+
 import java.time.ZonedDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +30,8 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 
+import static java.time.ZoneOffset.UTC;
+import static java.time.ZonedDateTime.now;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -327,8 +330,13 @@ public class GetDeviationTest {
                 .getIcon());
         assertEquals("1005 uds.", deviationData.getMetrics().getDeviationUnits()
                 .getDetail().getCurrentUnits().getValue());
-        assertNotEquals("0 uds.", deviationData.getMetrics().getDeviationUnits()
-                .getDetail().getForecastUnits().getValue());
+        if (now(UTC).getMinute() != 0) {
+            assertNotEquals("1042 uds.", deviationData.getMetrics().getDeviationUnits()
+                    .getDetail().getForecastUnits().getValue());
+        } else {
+            assertEquals("1042 uds.", deviationData.getMetrics().getDeviationUnits()
+                    .getDetail().getForecastUnits().getValue());
+        }
     }
 
     private static GetDeviationResponse mockGetDeviationResponse(final ZonedDateTime dateFrom,
