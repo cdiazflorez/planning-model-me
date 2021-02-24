@@ -3,9 +3,7 @@ package com.mercadolibre.planning.model.me.utils;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
-import java.util.Locale;
 
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -13,7 +11,7 @@ import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.TemporalAdjusters.previous;
-import static java.time.temporal.WeekFields.ISO;
+import static java.time.temporal.WeekFields.SUNDAY_START;
 
 public class DateUtils {
 
@@ -56,7 +54,8 @@ public class DateUtils {
 
     private static ZonedDateTime firstDayOfYear(final int year) {
         final WeekFields fistDayRule =
-                WeekFields.of(ISO.getFirstDayOfWeek(),ISO.getMinimalDaysInFirstWeek());
+                WeekFields.of(SUNDAY_START.getFirstDayOfWeek(),
+                        SUNDAY_START.getMinimalDaysInFirstWeek());
         return ZonedDateTime.of(year, 1, 1, 0,0,0,0, ZoneId.of("UTC"))
                 .truncatedTo(DAYS)
                 .with(previous(fistDayRule.getFirstDayOfWeek()));
