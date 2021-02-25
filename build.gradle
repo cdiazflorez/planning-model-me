@@ -13,11 +13,8 @@ allprojects {
     apply plugin: 'com.github.spotbugs'
 
     repositories {
-        mavenCentral()
-        jcenter()
-        maven { url "http://git.ml.com:8081/nexus/content/repositories/MLGrailsPlugins" }
-        maven { url "http://git.ml.com:8081/nexus/content/groups/Arquitectura" }
-    }
+		maven { url "http://maven.artifacts.furycloud.io/repository/all" }
+	}
 }
 
 subprojects {
