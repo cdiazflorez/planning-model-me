@@ -8,7 +8,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelForecastGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PostForecastResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.exception.ParseException;
@@ -33,7 +33,7 @@ public class PlanningModelForecastClient extends HttpClient
     }
 
     @Override
-    public ForecastResponse postForecast(final Workflow workflow, final Forecast forecastDto) {
+    public PostForecastResponse postForecast(final Workflow workflow, final Forecast forecastDto) {
         final HttpRequest request = HttpRequest.builder()
                 .url(format(URL, workflow))
                 .POST(requestSupplier(forecastDto))

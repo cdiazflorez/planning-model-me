@@ -1,8 +1,8 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
-import lombok.Data;
+import lombok.Value;
 
-@Data
-public class ForecastResponse {
+@Value
+public class PostForecastResponse {
     private long forecastId;
 }
