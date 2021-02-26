@@ -370,9 +370,11 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
     @Override
     public GetDeviationResponse getDeviation(final Workflow workflow,
-                                             final String warehouseId) {
+                                             final String warehouseId,
+                                             final ZonedDateTime date) {
         final Map<String, String> params = new HashMap<>();
         params.put("warehouse_id", warehouseId);
+        params.put("date", date.withFixedOffsetZone().toString());
 
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL, workflow)

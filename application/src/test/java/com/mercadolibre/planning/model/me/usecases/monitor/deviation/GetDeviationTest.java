@@ -8,6 +8,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviati
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
@@ -82,8 +83,10 @@ public class GetDeviationTest {
                         List.of(CPT_1, CPT_1, CPT_2, CPT_3, CPT_4, CPT_4, CPT_5),
                         new int[] {281, 128, 200, 207, 44, 82, 100}));
 
-        when(planningModelGateway.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID)).thenReturn(
-                mockGetDeviationResponse(ZonedDateTime.of(2021,01,29,05,30,00,00, ZoneId.of("UTC")),
+        when(planningModelGateway
+                .getDeviation(any(Workflow.class), any(String.class), any(ZonedDateTime.class)))
+                .thenReturn(mockGetDeviationResponse(
+                        ZonedDateTime.of(2021,01,29,05,30,00,00, ZoneId.of("UTC")),
                         ZonedDateTime.of(2021,01,29,15,30,00,00, ZoneId.of("UTC"))));
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
@@ -272,8 +275,10 @@ public class GetDeviationTest {
                 List.of(CPT_1, CPT_1, CPT_2, CPT_3, CPT_4, CPT_4, CPT_5),
                 new int[] {281, 128, 200, 207, 44, 82, 100}));
 
-        when(planningModelGateway.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID)).thenReturn(
-                mockGetDeviationResponse(ZonedDateTime.of(2021,01,29,02,30,00,00, ZoneId.of("UTC")),
+        when(planningModelGateway
+                .getDeviation(any(Workflow.class), any(String.class), any(ZonedDateTime.class)))
+                .thenReturn(mockGetDeviationResponse(
+                        ZonedDateTime.of(2021,01,29,02,30,00,00, ZoneId.of("UTC")),
                         ZonedDateTime.of(2021,01,29,15,30,00,00, ZoneId.of("UTC"))));
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
@@ -311,8 +316,10 @@ public class GetDeviationTest {
                         List.of(CPT_1, CPT_1, CPT_2, CPT_3, CPT_4, CPT_4, CPT_5, CPT_0),
                         new int[] {281, 128, 200, 207, 44, 82, 100, 100}));
 
-        when(planningModelGateway.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID)).thenReturn(
-                mockGetDeviationResponse(ZonedDateTime.of(2021,01,29,05,30,00,00, ZoneId.of("UTC")),
+        when(planningModelGateway
+                .getDeviation(any(Workflow.class), any(String.class), any(ZonedDateTime.class)))
+                .thenReturn(mockGetDeviationResponse(
+                        ZonedDateTime.of(2021,01,29,05,30,00,00, ZoneId.of("UTC")),
                         ZonedDateTime.of(2021,01,29,15,30,00,00, ZoneId.of("UTC"))));
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))

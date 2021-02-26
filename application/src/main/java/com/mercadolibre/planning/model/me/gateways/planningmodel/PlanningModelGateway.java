@@ -61,6 +61,7 @@ public interface PlanningModelGateway {
     DeviationResponse disableDeviation(final DisableDeviationInput saveDeviationInput);
 
     GetDeviationResponse getDeviation(final Workflow workflow,
-                                      final String warehouseId);
+                                      final String warehouseId,
+                                      final ZonedDateTime date);
 
 }

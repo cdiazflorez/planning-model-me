@@ -68,6 +68,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
@@ -1022,7 +1023,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             // When
             final GetDeviationResponse getDeviationResponse =
-                    client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID);
+                    client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID, A_DATE);
 
             // Then
             assertNotNull(getDeviationResponse);
@@ -1052,7 +1053,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             // Then
             assertThrows(ClientException.class,
-                    () -> client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID));
+                    () -> client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID, A_DATE));
         }
     }
 }
