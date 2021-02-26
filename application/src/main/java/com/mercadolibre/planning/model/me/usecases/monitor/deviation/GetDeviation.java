@@ -164,23 +164,33 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                                                      final Workflow workflow) {
         final LogisticCenterConfiguration configuration =
                 logisticCenterGateway.getConfiguration(warehouseId);
-        DeviationAppliedData deviationAppliedData;
-        try {
-            final GetDeviationResponse deviationResponse =
-                    planningModelGateway.getDeviation(workflow, warehouseId);
-            final ZonedDateTime dateFrom = convertToTimeZone(configuration.getZoneId(),
-                    deviationResponse.getDateFrom());
-            final ZonedDateTime dateTo = convertToTimeZone(configuration.getZoneId(),
-                    deviationResponse.getDateTo());
-            final String title = String.format("Se ajustó el forecast %.2f%s de %s a %s",
-                    deviationResponse.getValue(),"%",
-                    dateFrom.format(DATE_FORMAT),
-                    dateTo.format(DATE_FORMAT)) + getDateCurrent(dateFrom, dateTo);
 
-            deviationAppliedData = new DeviationAppliedData(title, "info");
+        DeviationAppliedData deviationAppliedData = null;
+
+        try {
+            final ZonedDateTime currentDate = now().withZoneSameInstant(UTC);
+            final GetDeviationResponse deviationResponse =
+                    planningModelGateway.getDeviation(workflow, warehouseId, currentDate);
+
+            if (deviationResponse != null) {
+                final ZonedDateTime dateFrom = convertToTimeZone(configuration.getZoneId(),
+                        deviationResponse.getDateFrom());
+
+                final ZonedDateTime dateTo = convertToTimeZone(configuration.getZoneId(),
+                        deviationResponse.getDateTo());
+
+                final String title = String.format("Se ajustó el forecast %.2f%s de %s a %s",
+                        deviationResponse.getValue(), "%",
+                        dateFrom.format(DATE_FORMAT),
+                        dateTo.format(DATE_FORMAT)) + getDateCurrent(dateFrom, dateTo);
+
+                deviationAppliedData = new DeviationAppliedData(title, "info");
+            }
+
         } catch (Exception e) {
             deviationAppliedData = null;
         }
+
         return deviationAppliedData;
     }
 
