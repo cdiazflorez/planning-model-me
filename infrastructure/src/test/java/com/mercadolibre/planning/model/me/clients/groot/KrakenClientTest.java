@@ -66,7 +66,7 @@ public class KrakenClientTest {
 
         //THEN
         assertEquals(userId, userAuthorization.getUserId());
-        assertEquals( 2, userAuthorization.getPermissions().size());
+        assertEquals(2, userAuthorization.getPermissions().size());
         assertTrue(userAuthorization.getPermissions().contains(UserPermission.UNKNOWN));
         assertTrue(userAuthorization.getPermissions().contains(UserPermission.OUTBOUND_SIMULATION));
 
