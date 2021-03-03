@@ -9,7 +9,7 @@ import com.mercadolibre.planning.model.me.clients.rest.utils.FailOnExceptionActi
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
 import com.mercadolibre.resilience.breaker.CircuitBreaker;
-import com.mercadolibre.restclient.RestClient;
+import com.mercadolibre.restclient.MeliRestClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -31,7 +31,7 @@ public class OutboundWaveClient extends HttpClient implements OutboundWaveGatewa
     private static final String API_NAME = "OUTBOUND_WAVE";
     private final CircuitBreaker outboundWaveCircuitBreaker;
 
-    protected OutboundWaveClient(RestClient client, CircuitBreaker outboundWaveCircuitBreaker) {
+    protected OutboundWaveClient(MeliRestClient client, CircuitBreaker outboundWaveCircuitBreaker) {
         super(client, RestPool.OUTBOUND_WAVE.name());
         this.outboundWaveCircuitBreaker = outboundWaveCircuitBreaker;
     }

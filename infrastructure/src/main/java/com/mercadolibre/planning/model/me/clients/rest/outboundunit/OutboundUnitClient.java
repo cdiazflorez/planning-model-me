@@ -25,8 +25,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInp
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.resilience.breaker.CircuitBreaker;
-import com.mercadolibre.restclient.Response;
-import com.mercadolibre.restclient.RestClient;
+import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import com.newrelic.api.agent.Trace;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +72,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     private final CircuitBreaker unitCircuitBreaker;
     private final ObjectMapper objectMapper;
 
-    protected OutboundUnitClient(final RestClient client,
+    protected OutboundUnitClient(final MeliRestClient client,
                                  final ObjectMapper mapper,
                                  final CircuitBreaker unitCircuitBreaker) {
         super(client, RestPool.OUTBOUND_UNIT.name());

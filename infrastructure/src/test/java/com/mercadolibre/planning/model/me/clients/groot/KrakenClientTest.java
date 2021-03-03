@@ -5,14 +5,18 @@ import com.mercadolibre.kraken.client.clients.KrakenUserClient;
 import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGateway;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
+import com.mercadolibre.restclient.util.MeliContext;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class KrakenClientTest {
 
@@ -23,8 +27,8 @@ public class KrakenClientTest {
     private AuthorizationGateway krakenClient;
 
     public KrakenClientTest() {
-        krakenAttributesClient = Mockito.mock(KrakenAttributesClient.class);
-        krakenUserClient = Mockito.mock(KrakenUserClient.class);
+        krakenAttributesClient = mock(KrakenAttributesClient.class);
+        krakenUserClient = mock(KrakenUserClient.class);
         krakenClient = new KrakenClient(krakenAttributesClient, krakenUserClient);
     }
 
@@ -32,7 +36,8 @@ public class KrakenClientTest {
     public void testGetInactiveUser() {
         //GIVEN
         Long userId = 123L;
-        Mockito.when(krakenUserClient.getUser(userId)).thenReturn(getUserAnswer(userId, false));
+        when(krakenUserClient.getUser(eq(userId), any(MeliContext.class)))
+                .thenReturn(getUserAnswer(userId, false));
 
         //WHEN
         UserAuthorization userAuthorization = krakenClient.get(userId);
@@ -46,9 +51,14 @@ public class KrakenClientTest {
     public void testGetUser() {
         //GIVEN
         Long userId = 123L;
-        Mockito.when(krakenUserClient.getUser(userId)).thenReturn(getUserAnswer(userId, true));
-        Mockito.when(krakenUserClient.getAssignedPermissions(userId)).thenReturn(getPermissions());
-        Mockito.when(krakenAttributesClient.getUserAttribute(userId, "warehouse"))
+        when(krakenUserClient.getUser(eq(userId), any(MeliContext.class)))
+                .thenReturn(getUserAnswer(userId, true));
+
+        when(krakenUserClient.getAssignedPermissions(eq(userId), any(MeliContext.class)))
+                .thenReturn(getPermissions());
+
+        when(krakenAttributesClient.getUserAttribute(
+                eq(userId), eq("warehouse"), any(MeliContext.class)))
                 .thenReturn(getAttribute());
 
         //WHEN
@@ -56,7 +66,7 @@ public class KrakenClientTest {
 
         //THEN
         assertEquals(userId, userAuthorization.getUserId());
-        assertEquals(userAuthorization.getPermissions().size(), 2);
+        assertEquals( 2, userAuthorization.getPermissions().size());
         assertTrue(userAuthorization.getPermissions().contains(UserPermission.UNKNOWN));
         assertTrue(userAuthorization.getPermissions().contains(UserPermission.OUTBOUND_SIMULATION));
 

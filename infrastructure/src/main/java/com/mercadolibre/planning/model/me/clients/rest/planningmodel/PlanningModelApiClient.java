@@ -36,7 +36,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
-import com.mercadolibre.restclient.RestClient;
+import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -74,7 +74,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private static final String DATE_TO = "date_to";
     private final ObjectMapper objectMapper;
 
-    public PlanningModelApiClient(RestClient client, ObjectMapper objectMapper) {
+    public PlanningModelApiClient(MeliRestClient client, ObjectMapper objectMapper) {
         super(client, PLANNING_MODEL.name());
         this.objectMapper = objectMapper;
     }

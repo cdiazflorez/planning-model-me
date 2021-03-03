@@ -9,8 +9,6 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-
 @Named
 @AllArgsConstructor
 public class SaveDeviation implements UseCase<SaveDeviationInput, DeviationResponse> {

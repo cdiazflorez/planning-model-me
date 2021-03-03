@@ -1,7 +1,8 @@
 package com.mercadolibre.planning.model.me.clients.rest.config;
 
+import com.mercadolibre.restclient.MeliRESTPool;
+import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.RESTPool;
-import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.cache.local.RESTLocalCache;
 import com.mercadolibre.restclient.interceptor.AddTimeInterceptor;
 import com.mercadolibre.restclient.retry.SimpleRetryStrategy;
@@ -42,8 +43,8 @@ public class RestClientConfig {
     private OutboundWaveClientProperties outboundWaveClientProperties;
 
     @Bean
-    public RestClient restClient() throws IOException {
-        return RestClient
+    public MeliRestClient restClient() throws IOException {
+        return MeliRestClient
                 .builder()
                 .withPool(
                         restPool(PLANNING_MODEL.name(), planningModelClientProperties),
@@ -73,7 +74,7 @@ public class RestClientConfig {
                               final RestClientProperties properties,
                               final RESTLocalCache cache) {
 
-        return RESTPool.builder()
+        return MeliRESTPool.builder()
                 .withName(name)
                 .withBaseURL(properties.getBaseUrl())
                 .withConnectionTimeout(properties.getConnectionTimeout())

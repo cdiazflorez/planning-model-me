@@ -10,7 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelFo
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PostForecastResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.restclient.RestClient;
+import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -27,7 +27,7 @@ public class PlanningModelForecastClient extends HttpClient
     private static final String URL = "/planning/model/workflows/%s/forecasts";
     private final ObjectMapper objectMapper;
 
-    public PlanningModelForecastClient(RestClient client, ObjectMapper objectMapper) {
+    public PlanningModelForecastClient(MeliRestClient client, ObjectMapper objectMapper) {
         super(client, PLANNING_MODEL_FORECAST.name());
         this.objectMapper = objectMapper;
     }

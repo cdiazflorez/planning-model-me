@@ -2,7 +2,6 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @Data

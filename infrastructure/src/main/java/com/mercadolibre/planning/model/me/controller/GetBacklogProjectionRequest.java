@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.controller;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;

@@ -4,12 +4,9 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
-import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
-
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 
 @Named
 @AllArgsConstructor
