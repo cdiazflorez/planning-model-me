@@ -94,7 +94,7 @@ class GetWaveSuggestionTest {
                                    final ZonedDateTime utcDateTimeFrom,
                                    final ZonedDateTime utcDateTimeTo) {
         List<Map<String, Object>> data = simpleTable.getData();
-        assertEquals(3, data.size());
+        assertEquals(4, data.size());
         assertEquals("0 uds.", data.get(0).get("column_2"));
         final Map<String, Object> column1Mono = (Map<String, Object>) data.get(0).get("column_1");
         assertEquals(MONO_ORDER_DISTRIBUTION.getTitle(), column1Mono.get("subtitle"));
@@ -103,10 +103,15 @@ class GetWaveSuggestionTest {
         final Map<String, Object> column1Multi = (Map<String, Object>) data.get(1).get("column_1");
         assertEquals(MULTI_BATCH_DISTRIBUTION.getTitle(), column1Multi.get("subtitle"));
 
-        assertEquals("100 uds.", data.get(1).get("column_2"));
+        assertEquals("100 uds.", data.get(2).get("column_2"));
         final Map<String, Object> column1MultiBatch = (Map<String, Object>) data.get(2).get(
                 "column_1");
         assertEquals(MULTI_ORDER_DISTRIBUTION.getTitle(), column1MultiBatch.get("subtitle"));
+
+        assertEquals("200 uds.", data.get(3).get("column_2"));
+        final Map<String, Object> column1Total = (Map<String, Object>) data.get(3).get(
+                "column_1");
+        assertEquals("Total", column1Total.get("title"));
 
         final String title = simpleTable.getColumns().get(0).getTitle();
         final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())

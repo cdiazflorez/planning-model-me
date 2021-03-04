@@ -92,7 +92,8 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
         final List<Map<String, Object>> data = List.of(
                 createSuggestedWaveEntry(suggestedWaves, MONO_ORDER_DISTRIBUTION),
                 createSuggestedWaveEntry(suggestedWaves, MULTI_BATCH_DISTRIBUTION),
-                createSuggestedWaveEntry(suggestedWaves, MULTI_ORDER_DISTRIBUTION)
+                createSuggestedWaveEntry(suggestedWaves, MULTI_ORDER_DISTRIBUTION),
+                createTotalEntry(suggestedWaves)
         );
         return new SimpleTable(title, columnHeaders, data);
     }
@@ -109,6 +110,15 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                         .findAny()
                         .map(SuggestedWave::getQuantity)
                         .orElse(0) + " uds."
+        );
+    }
+
+    private Map<String, Object> createTotalEntry(List<SuggestedWave> suggestedWaves) {
+        return Map.of(
+                "column_1", Map.of("title", "Total"),
+                "column_2", suggestedWaves.stream()
+                .mapToInt(SuggestedWave::getQuantity)
+                .sum() + " uds."
         );
     }
 
