@@ -2,7 +2,6 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Value;
 
 import java.time.ZonedDateTime;
 

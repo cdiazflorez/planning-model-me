@@ -32,6 +32,7 @@ public enum RestClientLoggingInterceptor implements RequestResponseInterceptor {
                         + "%n\t\tMethod = %s"
                         + "%n\t\tURI = %s"
                         + "%n\t\tQuery = %s"
+                        + "%n\t\tHeaders = %s"
                         + "%n\t\tBody = %s"
                         + "%n\tResponse:"
                         + "%n\t\tStatus = %s"
@@ -43,6 +44,7 @@ public enum RestClientLoggingInterceptor implements RequestResponseInterceptor {
                 request.getMethod(),
                 request.getPlainURL(),
                 request.getParameters(),
+                request.getHeaders(),
                 request.getBody() == null
                         ? null : new String(request.getBody(), StandardCharsets.UTF_8),
                 HttpStatus.valueOf(response.getStatus()),

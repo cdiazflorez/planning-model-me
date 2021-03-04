@@ -6,11 +6,13 @@ import com.mercadolibre.kraken.client.exceptions.KrakenClientException;
 import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGateway;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
+import com.mercadolibre.restclient.util.MeliContext;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.util.MeliContextUtil.createOrRetrieveMeliContext;
 import static java.util.Collections.emptyList;
 
 public class KrakenClient implements AuthorizationGateway {
@@ -30,11 +32,15 @@ public class KrakenClient implements AuthorizationGateway {
     @Override
     public UserAuthorization get(Long userId) {
         try {
-            Map user = krakenUserClient.getUser(userId);
+            final MeliContext meliContext = createOrRetrieveMeliContext();
+            Map user = krakenUserClient.getUser(userId, meliContext);
             if (isUserActive(user)) {
-                Map warehouseAttribute
-                        = krakenAttributesClient.getUserAttribute(userId, WAREHOUSE_ATTRIBUTE);
-                List<Map> permissions = krakenUserClient.getAssignedPermissions(userId);
+                Map warehouseAttribute = krakenAttributesClient.getUserAttribute(
+                        userId, WAREHOUSE_ATTRIBUTE, meliContext);
+
+                List<Map> permissions =
+                        krakenUserClient.getAssignedPermissions(userId, meliContext);
+
                 return new UserAuthorization(userId,
                         getWarehouses(warehouseAttribute),
                         getPermissions(permissions));

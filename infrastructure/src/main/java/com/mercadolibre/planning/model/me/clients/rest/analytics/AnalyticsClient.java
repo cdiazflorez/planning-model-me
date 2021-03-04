@@ -8,7 +8,7 @@ import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
 import com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent;
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
-import com.mercadolibre.restclient.RestClient;
+import com.mercadolibre.restclient.MeliRestClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -25,14 +25,14 @@ public class AnalyticsClient extends HttpClient implements AnalyticsGateway {
 
     private static final String ANALYTICS_URL = "/wms/warehouses/%s/metric/count";
 
-    protected AnalyticsClient(RestClient client) {
+    protected AnalyticsClient(MeliRestClient client) {
         super(client, RestPool.ANALYTICS.name());
     }
 
     @Override
     public List<UnitsResume> getUnitsInInterval(String warehouseId, int hoursOffset,
             List<AnalyticsQueryEvent> eventType) {
-        
+
         final Map<String, String> defaultParams = createUnitQueryParameters(hoursOffset, eventType);
         final HttpRequest request = HttpRequest.builder()
                 .url(format(ANALYTICS_URL, warehouseId))
@@ -40,12 +40,12 @@ public class AnalyticsClient extends HttpClient implements AnalyticsGateway {
                 .queryParams(defaultParams)
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
                 .build();
-        final List<UnitsResumeResponse> unitsResponse = send(request, 
+        final List<UnitsResumeResponse> unitsResponse = send(request,
                 response -> response.getData(new TypeReference<>() {}));
-                    
+
         return unitsResponse.stream().map(this::toUnitsResume).collect(Collectors.toList());
     }
-    
+
     private UnitsResume toUnitsResume(UnitsResumeResponse unitResponse) {
         return UnitsResume.builder()
                 .eventCount(unitResponse.getEventCount())
@@ -62,5 +62,5 @@ public class AnalyticsClient extends HttpClient implements AnalyticsGateway {
                 .collect(Collectors.joining(",")));
         return defaultParams;
     }
-    
+
 }

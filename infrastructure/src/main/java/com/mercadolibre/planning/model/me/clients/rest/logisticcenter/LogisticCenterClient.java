@@ -7,7 +7,7 @@ import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
 import com.mercadolibre.planning.model.me.clients.rest.logisticcenter.response.LogisticCenterResponse;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
-import com.mercadolibre.restclient.RestClient;
+import com.mercadolibre.restclient.MeliRestClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +21,7 @@ public class LogisticCenterClient extends HttpClient implements LogisticCenterGa
 
     private static final String URL = "/logistic_centers/%s/configurations";
 
-    public LogisticCenterClient(final RestClient restClient) {
+    public LogisticCenterClient(final MeliRestClient restClient) {
         super(restClient, RestPool.LOGISTIC_CENTER.name());
     }
 

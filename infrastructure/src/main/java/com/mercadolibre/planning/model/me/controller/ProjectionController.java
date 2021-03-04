@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.controller;
 
-import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.GetProcessBacklogInput;
 import com.mercadolibre.planning.model.me.controller.editor.ProcessNameEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
@@ -20,15 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import java.time.ZonedDateTime;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;

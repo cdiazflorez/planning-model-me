@@ -2,8 +2,6 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
-import lombok.experimental.SuperBuilder;
 
 @Data
 @Builder

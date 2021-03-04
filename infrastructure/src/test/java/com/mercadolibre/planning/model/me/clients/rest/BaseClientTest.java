@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.A
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.AuthorizationClientProperties;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.LogisticCenterClientProperties;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.PlanningModelClientProperties;
+import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
 
@@ -14,7 +15,7 @@ public class BaseClientTest {
 
     protected static final String BASE_URL = "http://internal.mercadolibre.com";
 
-    protected RestClient getRestTestClient() throws IOException {
+    protected MeliRestClient getRestTestClient() throws IOException {
 
         final PlanningModelClientProperties planningModelClientProperties =
                 new PlanningModelClientProperties();
