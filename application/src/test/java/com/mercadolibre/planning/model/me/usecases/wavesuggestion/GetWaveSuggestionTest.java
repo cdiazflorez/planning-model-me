@@ -25,9 +25,10 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ import static org.mockito.Mockito.when;
 class GetWaveSuggestionTest {
 
     private static final TimeZone TIME_ZONE = getDefault();
+    private static final int NEXT_HOUR_WAVE_SUGGESTION_MINUTES = 40;
 
     @InjectMocks
     private GetWaveSuggestion getWaveSuggestion;
@@ -51,15 +53,16 @@ class GetWaveSuggestionTest {
 
     @Test
     void testExecute() {
-        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
-        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
+        // GIVEN
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDateTime();
+        final ZonedDateTime utcDateTimeFrom = getDateFrom(currentUtcDateTime);
+        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusHours(1);
 
         when(planningModelGateway.getSuggestedWaves(
                 SuggestedWavesRequest.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .warehouseId(WAREHOUSE_ID)
-                        .dateFrom(utcDateTimeFrom)
+                        .dateFrom(currentUtcDateTime)
                         .dateTo(utcDateTimeTo)
                         .backlog(2232)
                         .applyDeviation(true)
@@ -70,8 +73,8 @@ class GetWaveSuggestionTest {
                 .thenReturn(Optional.of(backlogGateway));
         when(backlogGateway.getBacklog(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus())),
                 WAREHOUSE_ID,
-                utcDateTimeFrom,
-                utcDateTimeFrom.plusHours(25)
+                utcDateTimeFrom.truncatedTo(HOURS),
+                utcDateTimeFrom.truncatedTo(HOURS).plusHours(25)
         )).thenReturn(List.of(
                 ProcessBacklog.builder()
                         .process(OUTBOUND_PLANNING.getStatus())
@@ -79,6 +82,7 @@ class GetWaveSuggestionTest {
                         .build()
         ));
 
+        // WHEN
         final SimpleTable simpleTable = getWaveSuggestion.execute(
                 GetWaveSuggestionInputDto.builder()
                 .zoneId(TIME_ZONE.toZoneId())
@@ -87,6 +91,7 @@ class GetWaveSuggestionTest {
                 .build()
         );
 
+        // THEN
         assertSimpleTable(simpleTable, utcDateTimeFrom, utcDateTimeTo);
     }
 
@@ -118,8 +123,8 @@ class GetWaveSuggestionTest {
                 .format(ofPattern("HH:mm")) + "-"
                 + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
                 .format(ofPattern("HH:mm"));
-        final String expextedTitle = "Sig. hora " + nextHour;
-        assertEquals(title, expextedTitle);
+        final String expectedTitle = "Sig. hora " + nextHour;
+        assertEquals(title, expectedTitle);
     }
 
     private List<SuggestedWave> mockSuggestedWaveDistribution() {
@@ -129,5 +134,11 @@ class GetWaveSuggestionTest {
                 SuggestedWave.builder().quantity(100).waveCardinality(MULTI_ORDER_DISTRIBUTION)
                         .build()
         );
+    }
+
+    private ZonedDateTime getDateFrom(final ZonedDateTime now) {
+        return now.getMinute() < NEXT_HOUR_WAVE_SUGGESTION_MINUTES
+                ? now.truncatedTo(HOURS)
+                : now.truncatedTo(HOURS).plusHours(1);
     }
 }
