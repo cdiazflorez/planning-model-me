@@ -69,7 +69,7 @@ public class OutboundUnitSearchClient extends HttpClient implements UnitSearchGa
 
         UnitReportAggregationResponse reportResponse = send(httpRequest,
                 response -> response.getData(new TypeReference<>() {}));
-        return reportResponse.mapToBacklog(AGGREGATION_BY_ETD, filters.getTimeZone());
+        return reportResponse.mapToBacklog(AGGREGATION_BY_ETD);
     }
 
     private Map<String, Object> createFilters(final BacklogFilters filters) {
