@@ -31,6 +31,8 @@ import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,10 +73,10 @@ class GetWaveSuggestionTest {
 
         when(backlogGatewayProvider.getBy(FBM_WMS_OUTBOUND))
                 .thenReturn(Optional.of(backlogGateway));
-        when(backlogGateway.getBacklog(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus())),
-                WAREHOUSE_ID,
-                utcDateTimeFrom.truncatedTo(HOURS),
-                utcDateTimeFrom.truncatedTo(HOURS).plusHours(25)
+        when(backlogGateway.getBacklog(eq(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus()))),
+                eq(WAREHOUSE_ID),
+                any(),
+                any()
         )).thenReturn(List.of(
                 ProcessBacklog.builder()
                         .process(OUTBOUND_PLANNING.getStatus())
