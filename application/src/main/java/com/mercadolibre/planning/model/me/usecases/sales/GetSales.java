@@ -41,7 +41,7 @@ public class GetSales implements UseCase<GetSalesInputDto, List<Backlog>> {
                 .getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()))
                 .getSalesByCpt(BacklogFilters.builder()
-                        .dateCreatedFrom(input.getDateOutFrom())
+                        .dateCreatedFrom(input.getDateCreatedFrom())
                         .dateCreatedTo(input.getDateCreatedTo())
                         .cptFrom(input.getDateOutFrom())
                         .cptTo(input.getDateOutTo())

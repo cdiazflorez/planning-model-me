@@ -165,7 +165,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
         final List<Backlog> sales = getSales.execute(GetSalesInputDto.builder()
                 .dateCreatedFrom(utcDateFrom.minusHours(SELLING_PERIOD_HOURS))
-                .dateCreatedTo(utcDateTo)
+                .dateCreatedTo(utcDateFrom)
                 .dateOutFrom(utcDateFrom)
                 .dateOutTo(utcDateTo)
                 .workflow(input.getWorkflow())
@@ -183,7 +183,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         .warehouseId(input.getWarehouseId())
                         .workflow(input.getWorkflow())
                         .dateInFrom(utcDateFrom.minusHours(SELLING_PERIOD_HOURS))
-                        .dateInTo(utcDateTo)
+                        .dateInTo(utcDateFrom)
                         .dateOutFrom(utcDateFrom)
                         .dateOutTo(utcDateTo)
                         .applyDeviation(true)
