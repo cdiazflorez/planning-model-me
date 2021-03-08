@@ -9,16 +9,20 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
 import static java.util.stream.Collectors.toMap;
 
 @Getter
 @AllArgsConstructor
 public enum ForecastProcessType {
-    PERFORMED_PROCESSING(0, MetricUnit.UNITS),
-    REMAINING_PROCESSING(0, MetricUnit.MINUTES),
+    PERFORMED_PROCESSING(0, UNITS),
+    REMAINING_PROCESSING(0, MINUTES),
     WORKERS(1, MetricUnit.WORKERS),
     ACTIVE_WORKERS(2, MetricUnit.WORKERS),
-    HEADCOUNT_PRODUCTIVITY(3, MetricUnit.UNITS_PER_HOUR);
+    HEADCOUNT_PRODUCTIVITY(3, UNITS_PER_HOUR),
+    MAX_CAPACITY(0, UNITS_PER_HOUR);
 
     private final int columnOrder;
     private final MetricUnit metricUnit;

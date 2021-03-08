@@ -98,7 +98,7 @@ public class RepsForecastSheetParser implements SheetParser {
 
     private RepsDistributionDto getProcessingDistribution(final LogisticCenterConfiguration config,
                                                           final MeliSheet sheet) {
-
+        // Columns
         final List<ProcessingDistribution> processingDistributions = new ArrayList<>();
         ForecastProcessName.stream().forEach(forecastProcessName
                 -> forecastProcessName.getProcessTypes().forEach(forecastProcessType
@@ -122,14 +122,16 @@ public class RepsForecastSheetParser implements SheetParser {
                 )
         );
 
+        final ZoneId zoneId = config.getZoneId();
+
+        // Parse data rows
         for (int i = 0; i < HOURS_PER_FORECAST_PERIOD; i++) {
             final int rowIndex = PROCESSING_DISTRIBUTION_STARTING_ROW + i;
-            final ZoneId zoneId = config.getZoneId();
 
             processingDistributions
                     .forEach(processingDistribution -> {
                         final int columnIndex = getColumnIndex(processingDistribution);
-                        
+
                         processingDistribution.getData().add(ProcessingDistributionData.builder()
                                 .date(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
                                 .quantity(getQuantity(sheet, rowIndex, processingDistribution,
@@ -156,16 +158,16 @@ public class RepsForecastSheetParser implements SheetParser {
 
     private int getQuantity(final MeliSheet sheet, final int rowIndex,
             ProcessingDistribution processingDistribution, final int columnIndex) {
-        
-        return isRemainingProcessing(processingDistribution) 
-                ? getIntValueAtFromDuration(sheet, rowIndex, columnIndex) 
+
+        return isRemainingProcessing(processingDistribution)
+                ? getIntValueAtFromDuration(sheet, rowIndex, columnIndex)
                         : getIntValueAt(sheet, rowIndex, columnIndex);
     }
 
     private boolean isRemainingProcessing(ProcessingDistribution processingDistribution) {
-        return ForecastProcessType.REMAINING_PROCESSING 
-                == ForecastProcessType.from(processingDistribution.getType()) 
-                && MetricUnit.MINUTES 
+        return ForecastProcessType.REMAINING_PROCESSING
+                == ForecastProcessType.from(processingDistribution.getType())
+                && MetricUnit.MINUTES
                 == MetricUnit.from(processingDistribution.getQuantityMetricUnit());
     }
 

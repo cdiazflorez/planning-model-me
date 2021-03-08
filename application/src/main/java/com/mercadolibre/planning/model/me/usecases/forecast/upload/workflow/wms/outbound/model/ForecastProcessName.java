@@ -11,6 +11,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessType.MAX_CAPACITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessType.PERFORMED_PROCESSING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessType.REMAINING_PROCESSING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessType.WORKERS;
@@ -23,7 +24,8 @@ public enum ForecastProcessName {
     PICKING(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 3),
     PACKING(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 7),
     PACKING_WALL(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 11),
-    EXPEDITION(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 15);
+    EXPEDITION(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 15),
+    GLOBAL(List.of(MAX_CAPACITY), 19);
 
     private final List<ForecastProcessType> processTypes;
     private final int startingColumn;
