@@ -18,6 +18,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AN
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AUTHORIZATION;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT_SEARCH;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_WAVE;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_FORECAST;
@@ -31,7 +32,8 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PL
         RestClientConfig.AuthorizationClientProperties.class,
         RestClientConfig.AnalyticsClientProperties.class,
         RestClientConfig.PlanningModelForecastClientProperties.class,
-        RestClientConfig.OutboundWaveClientProperties.class
+        RestClientConfig.OutboundWaveClientProperties.class,
+        RestClientConfig.OutboundUnitSearchClientProperties.class
 })
 public class RestClientConfig {
     private PlanningModelClientProperties planningModelClientProperties;
@@ -41,6 +43,7 @@ public class RestClientConfig {
     private AnalyticsClientProperties analyticsClientProperties;
     private PlanningModelForecastClientProperties planningModelForecastClientProperties;
     private OutboundWaveClientProperties outboundWaveClientProperties;
+    private OutboundUnitSearchClientProperties outboundUnitSearchClientProperties;
 
     @Bean
     public MeliRestClient restClient() throws IOException {
@@ -61,7 +64,9 @@ public class RestClientConfig {
                         restPool(PLANNING_MODEL_FORECAST.name(),
                                 planningModelForecastClientProperties),
                         restPool(OUTBOUND_WAVE.name(),
-                                outboundWaveClientProperties)
+                                outboundWaveClientProperties),
+                        restPool(OUTBOUND_UNIT_SEARCH.name(),
+                                outboundUnitSearchClientProperties)
                 )
                 .build();
     }
@@ -121,5 +126,9 @@ public class RestClientConfig {
 
     @ConfigurationProperties("restclient.pool.outbound-wave")
     public static class OutboundWaveClientProperties extends RestClientProperties {
+    }
+
+    @ConfigurationProperties("restclient.pool.unit-search")
+    public static class OutboundUnitSearchClientProperties extends RestClientProperties {
     }
 }

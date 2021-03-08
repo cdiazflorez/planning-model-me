@@ -160,26 +160,34 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
         );
 
-        final List<Backlog> sales = getSales.execute(new GetSalesInputDto(
-                input.getWorkflow(),
-                input.getWarehouseId(),
-                utcDateFrom.minusHours(SELLING_PERIOD_HOURS))
+        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
+                input.getWarehouseId());
+
+        final List<Backlog> sales = getSales.execute(GetSalesInputDto.builder()
+                .dateCreatedFrom(utcDateFrom.minusHours(SELLING_PERIOD_HOURS))
+                .dateCreatedTo(utcDateTo)
+                .dateOutFrom(utcDateFrom)
+                .dateOutTo(utcDateTo)
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
+                .timeZone(config.getZoneId())
+                .fromDS(true)
+                .build()
         );
 
         final List<ProjectionResult> projections = getProjection(
                 input, utcDateFrom, utcDateTo, backlogs);
 
-        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
-                input.getWarehouseId());
-
         final List<PlanningDistributionResponse> planningDistribution = planningModelGateway
-                .getPlanningDistribution(new PlanningDistributionRequest(
-                        input.getWarehouseId(),
-                        input.getWorkflow(),
-                        utcDateFrom,
-                        utcDateFrom,
-                        utcDateTo,
-                        true));
+                .getPlanningDistribution(PlanningDistributionRequest.builder()
+                        .warehouseId(input.getWarehouseId())
+                        .workflow(input.getWorkflow())
+                        .dateInFrom(utcDateFrom.minusHours(SELLING_PERIOD_HOURS))
+                        .dateInTo(utcDateTo)
+                        .dateOutFrom(utcDateFrom)
+                        .dateOutTo(utcDateTo)
+                        .applyDeviation(true)
+                        .build());
 
         final ProcessingTime processingTime = createProcessingTimeObject(
                 planningModelGateway.getConfiguration(

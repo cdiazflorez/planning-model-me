@@ -704,7 +704,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
             final List<Backlog> backlogs =
                     outboundUnitClient.getSalesByCpt(BacklogFilters.builder()
                             .warehouseId(WAREHOUSE_ID)
-                            .dateCreatedFrom(dateCreatedFrom)
+                            .dateCreatedFrom(currentTime.minusHours(28))
                             .build());
 
             // THEN

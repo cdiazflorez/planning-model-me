@@ -459,43 +459,19 @@ public class GetCptProjectionTest {
 
     private List<Backlog> mockBacklog() {
         return List.of(
-                Backlog.builder()
-                        .date(CPT_1)
-                        .quantity(150)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_2)
-                        .quantity(235)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_3)
-                        .quantity(300)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_4)
-                        .quantity(120)
-                        .build()
+                new Backlog(CPT_1, 150),
+                new Backlog(CPT_2, 235),
+                new Backlog(CPT_3, 300),
+                new Backlog(CPT_4, 120)
         );
     }
 
     private List<Backlog> mockSales() {
         return List.of(
-                Backlog.builder()
-                        .date(CPT_1)
-                        .quantity(350)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_2)
-                        .quantity(235)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_3)
-                        .quantity(200)
-                        .build(),
-                Backlog.builder()
-                        .date(CPT_4)
-                        .quantity(120)
-                        .build()
+                new Backlog(CPT_1, 350),
+                new Backlog(CPT_2, 235),
+                new Backlog(CPT_3, 200),
+                new Backlog(CPT_4, 120)
         );
     }
 

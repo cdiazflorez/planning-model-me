@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZoneId;
-
 import java.time.ZonedDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,7 +29,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -133,11 +131,7 @@ public class GetDeviationTest {
         for (int i = 0; i < cpts.size(); i++) {
             final ZonedDateTime cpt = cpts.get(i);
             final int units = values[i];
-            response.add(Backlog.builder()
-                    .date(cpt)
-                    .quantity(units)
-                    .build()
-            );
+            response.add(new Backlog(cpt, units));
         }
 
         return response;
