@@ -423,18 +423,9 @@ public class SaveSimulationTest {
         final ZonedDateTime currentTime = getCurrentTime();
 
         return List.of(
-                Backlog.builder()
-                        .date(currentTime.minusHours(1))
-                        .quantity(150)
-                        .build(),
-                Backlog.builder()
-                        .date(currentTime.plusHours(2))
-                        .quantity(235)
-                        .build(),
-                Backlog.builder()
-                        .date(currentTime.plusHours(3))
-                        .quantity(300)
-                        .build()
+                new Backlog(currentTime.minusHours(1), 150),
+                new Backlog(currentTime.plusHours(2), 235),
+                new Backlog(currentTime.plusHours(3), 300)
         );
     }
 
@@ -442,18 +433,9 @@ public class SaveSimulationTest {
         final ZonedDateTime currentTime = getCurrentTime();
 
         return List.of(
-                Backlog.builder()
-                        .date(currentTime.plusHours(1))
-                        .quantity(350)
-                        .build(),
-                Backlog.builder()
-                        .date(currentTime.plusHours(2))
-                        .quantity(235)
-                        .build(),
-                Backlog.builder()
-                        .date(currentTime.plusHours(3))
-                        .quantity(200)
-                        .build()
+                new Backlog(currentTime.plusHours(1), 350),
+                new Backlog(currentTime.plusHours(2), 235),
+                new Backlog(currentTime.plusHours(3), 200)
         );
     }
 

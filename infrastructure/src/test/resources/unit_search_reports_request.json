@@ -1,0 +1,20 @@
+{
+    "paging": {
+        "limit": "1"
+    },
+    "filters": {
+        "group.etd_from": "2021-02-02T12:00:00Z[UTC]",
+        "group.type": "order",
+        "group.etd_to": "2021-02-03T16:00:00Z[UTC]",
+        "group.warehouse_id": "ARTW01"
+    },
+    "aggregations": [
+        {
+            "name": "by_etd",
+            "key": "group_estimated_time_departure",
+            "totals": [
+                "total_units"
+            ]
+        }
+    ]
+}

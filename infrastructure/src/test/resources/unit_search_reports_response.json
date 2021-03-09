@@ -1,0 +1,256 @@
+{
+    "paging": {
+        "limit": 1,
+        "total": 87786,
+        "offset": 0
+    },
+    "aggregations": [
+        {
+            "name": "by_etd",
+            "totals": [
+                {
+                    "field_value": 1612335600000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612332000000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612321200000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612357200000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612324800000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612328400000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612270800000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612350000000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612342800000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612339200000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612364400000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612278000000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                },
+                {
+                    "field_value": 1612353600000,
+                    "totals": {
+                        "count_results_by_key": 300
+                    }
+                }
+            ]
+        }
+    ],
+    "filters": [
+        {
+            "id": "group.type",
+            "name": "Group Type",
+            "value": "[order]"
+        },
+        {
+            "id": "group.warehouse_id",
+            "name": "Group Warehouse Id",
+            "value": "ARBA01"
+        },
+        {
+            "id": "group.etd_from",
+            "name": "Group Etd From",
+            "value": "2021-02-02T12:00:00Z"
+        },
+        {
+            "id": "group.etd_to",
+            "name": "Group Etd To",
+            "value": "2021-02-03T16:00:00Z"
+        }
+    ],
+    "available_filters": [
+        {
+            "id": "warehouse_id",
+            "name": "Warehouse Id"
+        },
+        {
+            "id": "id",
+            "name": "Id"
+        },
+        {
+            "id": "status",
+            "name": "Status"
+        },
+        {
+            "id": "address.id",
+            "name": "Address Id"
+        },
+        {
+            "id": "address.area",
+            "name": "Address Area"
+        },
+        {
+            "id": "address.floor",
+            "name": "Address Floor"
+        },
+        {
+            "id": "address.aisle",
+            "name": "Address Aisle"
+        },
+        {
+            "id": "address.bay",
+            "name": "Address Bay"
+        },
+        {
+            "id": "address.level",
+            "name": "Address Level"
+        },
+        {
+            "id": "inventory_id",
+            "name": "Inventory Id"
+        },
+        {
+            "id": "date_created_from",
+            "name": "Date Created From"
+        },
+        {
+            "id": "date_created_to",
+            "name": "Date Created To"
+        },
+        {
+            "id": "last_updated_from",
+            "name": "Last Updated From"
+        },
+        {
+            "id": "last_updated_to",
+            "name": "Last Updated To"
+        },
+        {
+            "id": "group.id",
+            "name": "Group Id"
+        },
+        {
+            "id": "group.type",
+            "name": "Group Type"
+        },
+        {
+            "id": "group.status",
+            "name": "Group Status"
+        },
+        {
+            "id": "group.cardinality",
+            "name": "Group Cardinality"
+        },
+        {
+            "id": "group.warehouse_id",
+            "name": "Group Warehouse Id"
+        },
+        {
+            "id": "group.carrier_id",
+            "name": "Group Carrier Id"
+        },
+        {
+            "id": "group.date_created_from",
+            "name": "Group Date Created From"
+        },
+        {
+            "id": "group.date_created_to",
+            "name": "Group Date Created To"
+        },
+        {
+            "id": "group.last_updated_from",
+            "name": "Group Last Updated From"
+        },
+        {
+            "id": "group.last_updated_to",
+            "name": "Group Last Updated To"
+        },
+        {
+            "id": "group.handling_time_from",
+            "name": "Group Handling Time From"
+        },
+        {
+            "id": "group.handling_time_to",
+            "name": "Group Handling Time To"
+        },
+        {
+            "id": "group.requested_date_from",
+            "name": "Group Requested Date From"
+        },
+        {
+            "id": "group.requested_date_to",
+            "name": "Group Requested Date To"
+        },
+        {
+            "id": "group.etd_from",
+            "name": "Group Etd From"
+        },
+        {
+            "id": "group.etd_to",
+            "name": "Group Etd To"
+        },
+        {
+            "id": "group.etd",
+            "name": "Group Etd"
+        },
+        {
+            "id": "group.carrier_uuid",
+            "name": "Group Carrier Uuid"
+        },
+        {
+            "id": "volume_from",
+            "name": "Volume From"
+        },
+        {
+            "id": "volume_to",
+            "name": "Volume To"
+        },
+        {
+            "id": "quantity_etd_reestimations",
+            "name": "Quantity Etd Reestimations"
+        }
+    ]
+}

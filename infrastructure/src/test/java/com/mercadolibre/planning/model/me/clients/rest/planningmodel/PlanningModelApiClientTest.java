@@ -316,18 +316,9 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .dateFrom(now())
                 .dateTo(now().plusDays(1))
                 .backlog(List.of(
-                        Backlog.builder()
-                                .date(parse("2020-09-29T10:00:00Z"))
-                                .quantity(100)
-                                .build(),
-                        Backlog.builder()
-                                .date(parse("2020-09-29T11:00:00Z"))
-                                .quantity(200)
-                                .build(),
-                        Backlog.builder()
-                                .date(parse("2020-09-29T12:00:00Z"))
-                                .quantity(300)
-                                .build()
+                        new Backlog(parse("2020-09-29T10:00:00Z"), 100),
+                        new Backlog(parse("2020-09-29T11:00:00Z"), 200),
+                        new Backlog(parse("2020-09-29T12:00:00Z"), 300)
                 ))
                 .build();
 

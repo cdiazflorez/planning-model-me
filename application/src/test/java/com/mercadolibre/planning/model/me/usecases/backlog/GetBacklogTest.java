@@ -42,18 +42,9 @@ public class GetBacklogTest {
                 .thenReturn(Optional.of(backlogGateway));
         when(backlogGateway.getBacklog(input.getWarehouseId()))
                 .thenReturn(List.of(
-                        Backlog.builder()
-                                .date(ZonedDateTime.parse("2020-10-08T13:00Z[UTC]"))
-                                .quantity(2232)
-                                .build(),
-                        Backlog.builder()
-                                .date(ZonedDateTime.parse("2020-10-08T06:00Z[UTC]"))
-                                .quantity(1442)
-                                .build(),
-                        Backlog.builder()
-                                .date(ZonedDateTime.parse("2020-10-08T09:00Z[UTC]"))
-                                .quantity(725)
-                                .build()
+                        new Backlog(ZonedDateTime.parse("2020-10-08T13:00Z[UTC]"), 2232),
+                        new Backlog(ZonedDateTime.parse("2020-10-08T06:00Z[UTC]"), 1442),
+                        new Backlog(ZonedDateTime.parse("2020-10-08T09:00Z[UTC]"), 725)
                 ));
 
         // WHEN

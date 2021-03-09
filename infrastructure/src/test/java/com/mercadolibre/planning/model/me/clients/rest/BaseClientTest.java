@@ -46,6 +46,10 @@ public class BaseClientTest {
                 new RestClientConfig.OutboundWaveClientProperties();
         outboundWaveRestClientProperties.setBaseUrl(BASE_URL);
 
+        final RestClientConfig.OutboundUnitSearchClientProperties unitSearchClientProperties =
+                new RestClientConfig.OutboundUnitSearchClientProperties();
+        unitSearchClientProperties.setBaseUrl(BASE_URL);
+
         return new RestClientConfig(
                 planningModelClientProperties,
                 outboundUnitRestClientProperties,
@@ -53,7 +57,8 @@ public class BaseClientTest {
                 authorizationClientProperties,
                 analyticsClientProperties,
                 planningModelForecastClientProperties,
-                outboundWaveRestClientProperties
+                outboundWaveRestClientProperties,
+                unitSearchClientProperties
         ).restClient();
     }
 

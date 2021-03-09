@@ -224,10 +224,9 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     }
 
     private Backlog toBacklog(final AggregationResponseBucket bucket) {
-        return Backlog.builder()
-                .date(ZonedDateTime.parse(bucket.getKeys().get(0)))
-                .quantity(Math.toIntExact(bucket.getTotals().get(0).getResult()))
-                .build();
+        return new Backlog(
+                ZonedDateTime.parse(bucket.getKeys().get(0)),
+                Math.toIntExact(bucket.getTotals().get(0).getResult()));
     }
 
     private ProcessBacklog toProcessBacklog(final AggregationResponseBucket bucket) {
