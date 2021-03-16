@@ -2,34 +2,25 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import org.junit.jupiter.api.Test;
@@ -41,43 +32,33 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
-import java.util.stream.IntStream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PROCESSING_TIME;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class GetCptProjectionTest {
 
-    private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
     private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private static final TimeZone TIME_ZONE = getDefault();
@@ -97,47 +78,30 @@ public class GetCptProjectionTest {
     private LogisticCenterGateway logisticCenterGateway;
 
     @Mock
-    private GetBacklog getBacklog;
-
-    @Mock
-    private GetSales getSales;
-
-    @Mock
     private GetWaveSuggestion getWaveSuggestion;
+
+    @Mock
+    private GetEntities getEntities;
+
+    @Mock
+    private GetProjectionSummary getProjectionSummary;
+
+    @Mock
+    private GetBacklog getBacklog;
 
     @Test
     void testExecute() {
         // Given
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
 
+        final GetProjectionInputDto input = GetProjectionInputDto.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .build();
+
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        when(planningModelGateway.searchEntities(SearchEntitiesRequest.builder()
-                .warehouseId(WAREHOUSE_ID)
-                .workflow(FBM_WMS_OUTBOUND)
-                .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
-                .dateFrom(utcCurrentTime)
-                .dateTo(utcCurrentTime.plusDays(1))
-                .processName(List.of(PICKING, PACKING, PACKING_WALL))
-                .entityFilters(Map.of(
-                        HEADCOUNT, Map.of(
-                                PROCESSING_TYPE.toJson(),
-                                List.of(ACTIVE_WORKERS.getName())
-                        ),
-                        PRODUCTIVITY, Map.of(
-                                ABILITY_LEVEL.toJson(),
-                                List.of("1","2")
-                        ))
-                )
-                .build())
-        ).thenReturn(
-                Map.of(
-                        HEADCOUNT, mockHeadcountEntities(utcCurrentTime),
-                        PRODUCTIVITY, mockProductivityEntities(utcCurrentTime),
-                        THROUGHPUT, new ArrayList<>()
-                )
-        );
 
         when(planningModelGateway.getConfiguration(createConfigurationRequest()))
                 .thenReturn(mockProcessingTimeConfiguration());
@@ -146,15 +110,9 @@ public class GetCptProjectionTest {
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
                 .thenReturn(mockedBacklog);
 
-        when(getSales.execute(any(GetSalesInputDto.class))
-        ).thenReturn(mockSales());
-
         when(planningModelGateway.runProjection(
                 createProjectionRequest(mockedBacklog, utcCurrentTime)))
                 .thenReturn(mockProjections(utcCurrentTime));
-
-        when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)
-        )).thenReturn(mockPlanningDistribution(utcCurrentTime));
 
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
         final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
@@ -168,20 +126,20 @@ public class GetCptProjectionTest {
                 )
         )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
 
+        when(getEntities.execute(input)).thenReturn(mockComplexTable());
+        when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
+                .thenReturn(mockSimpleTable());
+
         // When
-        final Projection projection = getProjection.execute(GetProjectionInputDto.builder()
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId(WAREHOUSE_ID)
-                .build()
-        );
+        final Projection projection = getProjection.execute(input);
 
         // Then
         assertEquals("Proyecciones", projection.getTitle());
 
         assertSimpleTable(projection.getSimpleTable1(), utcDateTimeFrom, utcDateTimeTo);
-        assertComplexTable(projection.getComplexTable1());
+        assertEquals(mockComplexTable(), projection.getComplexTable1());
+        assertEquals(mockSimpleTable(), projection.getSimpleTable2());
         assertChart(projection.getChart());
-        assertProjectionDetailsTable(projection.getSimpleTable2());
     }
 
     private void assertSimpleTable(final SimpleTable simpleTable,
@@ -209,66 +167,6 @@ public class GetCptProjectionTest {
                 .format(ofPattern("HH:mm"));
         final String expextedTitle = "Sig. hora " + nextHour;
         assertEquals(title, expextedTitle);
-    }
-
-    private void assertProjectionDetailsTable(final SimpleTable projectionDetailsTable) {
-        final ZoneId zoneId = TIME_ZONE.toZoneId();
-        final ZonedDateTime currentTime = convertToTimeZone(zoneId, getCurrentUtcDate());
-
-        assertEquals("Resumen de Proyección", projectionDetailsTable.getTitle());
-        assertEquals(4, projectionDetailsTable.getColumns().size());
-        assertEquals(6, projectionDetailsTable.getData().size());
-
-        final Map<String, Object> cpt0 = projectionDetailsTable.getData().get(5);
-        final Map<String, Object> cpt1 = projectionDetailsTable.getData().get(4);
-        final Map<String, Object> cpt2 = projectionDetailsTable.getData().get(3);
-        final Map<String, Object> cpt3 = projectionDetailsTable.getData().get(2);
-        final Map<String, Object> cpt4 = projectionDetailsTable.getData().get(1);
-        final Map<String, Object> cpt5 = projectionDetailsTable.getData().get(0);
-
-        assertEquals("warning", cpt1.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
-                cpt1.get("column_1"));
-        assertEquals("150", cpt1.get("column_2"));
-        assertEquals("-14.4%", cpt1.get("column_3"));
-        assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMAT),
-                cpt1.get("column_4"));
-
-        assertEquals("none", cpt2.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
-                cpt2.get("column_1"));
-        assertEquals("235", cpt2.get("column_2"));
-        assertEquals("17.5%", cpt2.get("column_3"));
-        assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMAT), cpt2.get("column_4"));
-
-        assertEquals("none", cpt3.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
-                cpt3.get("column_1"));
-        assertEquals("300", cpt3.get("column_2"));
-        assertEquals("-3.4%", cpt3.get("column_3"));
-        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(HOUR_MINUTES_FORMAT),
-                cpt3.get("column_4"));
-
-        assertEquals("danger", cpt4.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_4).format(HOUR_MINUTES_FORMAT),
-                cpt4.get("column_1"));
-        assertEquals("120", cpt4.get("column_2"));
-        assertEquals("-4.8%", cpt4.get("column_3"));
-        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(HOUR_MINUTES_FORMAT),
-                cpt4.get("column_4"));
-
-        assertEquals("danger", cpt5.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMAT),
-                cpt5.get("column_1"));
-        assertEquals("0", cpt5.get("column_2"));
-        assertEquals("0.0%", cpt5.get("column_3"));
-        assertEquals("Excede las 24hs", cpt5.get("column_4"));
-
-        assertEquals("none", cpt0.get("style"));
-        assertEquals("Total", cpt0.get("column_1"));
-        assertEquals("805", cpt0.get("column_2"));
-        assertEquals("-13.15%", cpt0.get("column_3"));
-        assertEquals("", cpt0.get("column_4"));
     }
 
     private void assertChart(final Chart chart) {
@@ -356,63 +254,6 @@ public class GetCptProjectionTest {
         assertEquals(subtitle3, tooltip.getSubtitle3());
     }
 
-    private void assertComplexTable(final ComplexTable complexTable) {
-        final ZonedDateTime currentTime = getCurrentUtcDate()
-                .withZoneSameInstant(TIME_ZONE.toZoneId());
-        final List<ColumnHeader> columns = complexTable.getColumns();
-        final List<Data> data = complexTable.getData();
-
-        IntStream.range(0, 24).forEach(index -> {
-            assertEquals("column_" + (index + 2), columns.get(index + 1).getId());
-            assertEquals(currentTime.plusHours(index).format(HOUR_FORMAT),
-                    columns.get(index + 1).getTitle());
-        });
-        assertEquals(3, data.size());
-
-        final Data headcount = data.get(0);
-        final Data productivity = data.get(1);
-        final Data throughput = data.get(2);
-
-        assertEquals(HEADCOUNT.getName(), headcount.getId());
-        assertTrue(headcount.isOpen());
-        assertEquals(26, headcount.getContent().get(0).size());
-        assertEquals(26, headcount.getContent().get(1).size());
-        assertEquals("20", headcount.getContent().get(0).get("column_2").getTitle());
-        assertEquals(currentTime, headcount.getContent().get(0).get("column_2").getDate()
-                .withMinute(0).withSecond(0).withNano(0));
-        assertEquals("Cantidad de reps FCST", headcount.getContent().get(0).get("column_2")
-                .getTooltip().get("title_2"));
-        assertEquals("10", headcount.getContent().get(0).get("column_2")
-                .getTooltip().get("subtitle_2"));
-        assertEquals("15", headcount.getContent().get(1).get("column_4").getTitle());
-
-        assertEquals(PRODUCTIVITY.getName(), productivity.getId());
-        assertFalse(productivity.isOpen());
-        assertEquals(26, productivity.getContent().get(0).size());
-        assertEquals("30", productivity.getContent().get(0).get("column_3").getTitle());
-        assertEquals("Productividad polivalente", productivity.getContent()
-                .get(0).get("column_3")
-                .getTooltip().get("title_1"));
-        assertEquals("20 uds/h", productivity.getContent().get(0).get("column_3")
-                .getTooltip().get("subtitle_1"));
-
-        assertEquals(THROUGHPUT.getName(), throughput.getId());
-        assertFalse(throughput.isOpen());
-        assertFalse(throughput.getContent().isEmpty());
-    }
-
-    private ProductivityRequest createProductivityRequest(final ZonedDateTime currentTime) {
-        return ProductivityRequest.builder()
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId(WAREHOUSE_ID)
-                .entityType(PRODUCTIVITY)
-                .processName(List.of(PICKING, PACKING, PACKING_WALL))
-                .dateFrom(currentTime)
-                .dateTo(currentTime.plusDays(1))
-                .abilityLevel(List.of(1,2))
-                .build();
-    }
-
     private ProjectionRequest createProjectionRequest(final List<Backlog> backlogs,
                                                       final ZonedDateTime currentTime) {
         return ProjectionRequest.builder()
@@ -483,140 +324,11 @@ public class GetCptProjectionTest {
                 .build();
     }
 
-    private List<Entity> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
-        return List.of(
-                Entity.builder()
-                        .date(utcCurrentTime)
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(10)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime)
-                        .processName(PICKING)
-                        .source(Source.SIMULATION)
-                        .value(20)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime.plusHours(2))
-                        .processName(PACKING)
-                        .source(Source.FORECAST)
-                        .value(15)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(30)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime.plusHours(3))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(79)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime.plusDays(3))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(32)
-                        .build()
-        );
-    }
-
-    private List<Entity> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
-        return List.of(
-                Productivity.builder()
-                        .date(utcCurrentTime)
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(60)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusHours(1))
-                        .processName(PICKING)
-                        .source(Source.SIMULATION)
-                        .value(30)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusHours(2))
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(50)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(75)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime)
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(50)
-                        .abilityLevel(2)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusHours(1))
-                        .processName(PICKING)
-                        .source(Source.SIMULATION)
-                        .value(20)
-                        .abilityLevel(2)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusHours(2))
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(40)
-                        .abilityLevel(2)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(65)
-                        .abilityLevel(2)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PACKING)
-                        .source(Source.FORECAST)
-                        .value(98)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(14)
-                        .abilityLevel(3)
-                        .build()
-        );
-    }
-
     private Optional<ConfigurationResponse> mockProcessingTimeConfiguration() {
         return Optional.ofNullable(ConfigurationResponse.builder()
                 .metricUnit(MINUTES)
                 .value(60)
                 .build());
-    }
-
-    private List<PlanningDistributionResponse> mockPlanningDistribution(
-            final ZonedDateTime utcCurrentTime) {
-        return List.of(
-                new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 281),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_1, MetricUnit.UNITS, 128),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_2, MetricUnit.UNITS, 200),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_3, MetricUnit.UNITS, 207),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 44),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_4, MetricUnit.UNITS, 82),
-                new PlanningDistributionResponse(utcCurrentTime, CPT_5, MetricUnit.UNITS, 100)
-        );
     }
 
     private SimpleTable mockSuggestedWaves(final ZonedDateTime utcDateTimeFrom,
@@ -649,6 +361,23 @@ public class GetCptProjectionTest {
                 )
         );
         return new SimpleTable(title, columnHeaders, data);
+    }
+
+    private ComplexTable mockComplexTable() {
+        return new ComplexTable(
+                emptyList(),
+                emptyList(),
+                new ComplexTableAction("applyLabel", "cancelLabel", "editLabel"),
+                "title"
+        );
+    }
+
+    private SimpleTable mockSimpleTable() {
+        return new SimpleTable(
+                "title",
+                emptyList(),
+                emptyList()
+        );
     }
 }
 

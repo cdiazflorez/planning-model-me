@@ -7,9 +7,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
+import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 
 import javax.inject.Named;
@@ -24,11 +25,13 @@ public class SaveSimulation extends GetProjection {
 
     protected SaveSimulation(final PlanningModelGateway planningModelGateway,
                              final LogisticCenterGateway logisticCenterGateway,
-                             final GetBacklog getBacklog,
-                             final GetSales getSales,
-                             final GetWaveSuggestion getWaveSuggestion) {
-        super(planningModelGateway, logisticCenterGateway, getBacklog, getSales,
-                getWaveSuggestion);
+                             final GetWaveSuggestion getWaveSuggestion,
+                             final GetEntities getEntities,
+                             final GetProjectionSummary getProjectionSummary,
+                             final GetBacklog getBacklog) {
+
+        super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities,
+                getProjectionSummary, getBacklog);
     }
 
     @Override
