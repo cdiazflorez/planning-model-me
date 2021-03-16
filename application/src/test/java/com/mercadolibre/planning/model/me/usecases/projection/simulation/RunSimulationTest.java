@@ -2,77 +2,64 @@ package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
+import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
+import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.IntStream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class RunSimulationTest {
 
     private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
-    private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:00");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private static final TimeZone TIME_ZONE = getDefault();
 
@@ -86,13 +73,16 @@ public class RunSimulationTest {
     private LogisticCenterGateway logisticCenterGateway;
 
     @Mock
-    private GetBacklog getBacklog;
-
-    @Mock
-    private GetSales getSales;
-
-    @Mock
     private GetWaveSuggestion getWaveSuggestion;
+
+    @Mock
+    private GetEntities getEntities;
+
+    @Mock
+    private GetProjectionSummary getProjectionSummary;
+
+    @Mock
+    private GetBacklog getBacklog;
 
     @Test
     public void testExecute() {
@@ -102,19 +92,9 @@ public class RunSimulationTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        when(planningModelGateway.searchEntities(createRequest(utcCurrentTime)))
-                .thenReturn(Map.of(
-                        HEADCOUNT, mockHeadcountEntities(utcCurrentTime),
-                        PRODUCTIVITY, mockProductivityEntities(utcCurrentTime),
-                        THROUGHPUT, new ArrayList<>()
-                ));
-
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
                 .thenReturn(mockedBacklog);
-
-        when(getSales.execute(Mockito.any(GetSalesInputDto.class))
-        ).thenReturn(mockSales());
 
         when(planningModelGateway.runSimulation(
                 createSimulationRequest(mockedBacklog, utcCurrentTime)))
@@ -132,6 +112,10 @@ public class RunSimulationTest {
                 )
         )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
 
+        when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
+        when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
+                .thenReturn(mockSimpleTable());
+
         // When
         final Projection projection = runSimulation.execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
@@ -145,65 +129,6 @@ public class RunSimulationTest {
         // Then
         final ZonedDateTime currentTime = utcCurrentTime.withZoneSameInstant(TIME_ZONE.toZoneId());
         assertEquals("Proyecciones", projection.getTitle());
-
-        final List<ColumnHeader> columns = projection.getComplexTable1().getColumns();
-        final List<Data> data = projection.getComplexTable1().getData();
-
-        IntStream.range(0, 24).forEach(index -> {
-            assertEquals("column_" + (index + 2), columns.get(index + 1).getId());
-            assertEquals(currentTime.plusHours(index).format(HOUR_FORMAT),
-                    columns.get(index + 1).getTitle());
-        });
-        assertEquals(3, data.size());
-
-        final Data headcount = data.get(0);
-        final Data productivity = data.get(1);
-        final Data throughput = data.get(2);
-
-        assertEquals(HEADCOUNT.getName(), headcount.getId());
-        assertTrue(headcount.isOpen());
-        assertEquals(26, headcount.getContent().get(0).size());
-        assertEquals(26, headcount.getContent().get(1).size());
-        assertEquals("20", headcount.getContent().get(0).get("column_2").getTitle());
-        assertEquals(currentTime, headcount.getContent().get(0).get("column_2").getDate()
-                .withMinute(0).withSecond(0).withNano(0));
-        assertEquals("Cantidad de reps FCST", headcount.getContent().get(0).get("column_2")
-                .getTooltip().get("title_2"));
-        assertEquals("10", headcount.getContent().get(0).get("column_2")
-                .getTooltip().get("subtitle_2"));
-        assertEquals("15", headcount.getContent().get(1).get("column_4").getTitle());
-
-        assertEquals(PRODUCTIVITY.getName(), productivity.getId());
-        assertFalse(productivity.isOpen());
-        assertEquals(26, productivity.getContent().get(0).size());
-        assertEquals("30", productivity.getContent().get(0).get("column_3").getTitle());
-        assertEquals("Productividad polivalente", productivity.getContent().get(0).get("column_3")
-                .getTooltip().get("title_1"));
-        assertEquals("- uds/h", productivity.getContent().get(0).get("column_3")
-                .getTooltip().get("subtitle_1"));
-
-        assertEquals(THROUGHPUT.getName(), throughput.getId());
-        assertFalse(throughput.isOpen());
-        assertFalse(throughput.getContent().isEmpty());
-
-        data.stream().filter(t -> t.getId().equals("throughput"))
-                .findFirst()
-                .ifPresentOrElse(
-                        (value) ->
-                                Assertions.assertTrue(value.getContent().stream()
-                                        .anyMatch(t -> t.entrySet().stream()
-                                                .anyMatch(entry ->
-                                                        entry.getKey().equals("column_1")
-                                                                && entry.getValue()
-                                                                .getTitle()
-                                                                .equals(
-                                                                        RowName.DEVIATION.getTitle()
-                                                                )
-                                                )
-                                        )
-                                ),
-                        () -> Assertions.fail("Doesn't exists")
-        );
 
         final Chart chart = projection.getChart();
         final List<ChartData> chartData = chart.getData();
@@ -252,16 +177,8 @@ public class RunSimulationTest {
         assertEquals(currentTime.plusDays(1).format(DATE_FORMATTER),
                 chartData5.getProjectedEndTime());
 
-        final SimpleTable simpleTable = projection.getSimpleTable2();
-        assertEquals(5, simpleTable.getColumns().size());
-        assertEquals("Cierre actual", simpleTable.getColumns().get(3).getTitle());
-        assertTrue(simpleTable.getColumns().contains(
-                new ColumnHeader("column_5", "Cierre simulado", null))
-        );
-
-        final List<Map<String, Object>> simpleTableData = simpleTable.getData();
-        assertEquals(6, simpleTableData.size());
-        simpleTableData.forEach((dataRow) -> assertTrue(dataRow.containsKey("column_5")));
+        assertEquals(mockComplexTable(), projection.getComplexTable1());
+        assertEquals(mockSimpleTable(), projection.getSimpleTable2());
     }
 
     private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
@@ -327,130 +244,8 @@ public class RunSimulationTest {
         );
     }
 
-    private List<Backlog> mockSales() {
-        final ZonedDateTime currentTime = getCurrentTime();
-
-        return List.of(
-                new Backlog(currentTime.plusHours(1), 350),
-                new Backlog(currentTime.plusHours(2), 235),
-                new Backlog(currentTime.plusHours(3), 200)
-        );
-    }
-
-    private SearchEntitiesRequest createRequest(final ZonedDateTime currentTime) {
-        return SearchEntitiesRequest.builder()
-                .warehouseId(WAREHOUSE_ID)
-                .processName(List.of(PICKING, PACKING, PACKING_WALL))
-                .workflow(FBM_WMS_OUTBOUND)
-                .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
-                .dateFrom(currentTime)
-                .dateTo(currentTime.plusDays(1))
-                .simulations(List.of(new Simulation(PICKING,
-                        List.of(new SimulationEntity(
-                                HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
-                .entityFilters(Map.of(
-                        HEADCOUNT, Map.of(
-                                PROCESSING_TYPE.toJson(),
-                                List.of(ACTIVE_WORKERS.getName())
-                        ),
-                        PRODUCTIVITY, Map.of(
-                                ABILITY_LEVEL.toJson(),
-                                List.of("1","2")
-                        ))
-                )
-                .build();
-    }
-
     private ZonedDateTime getCurrentTime() {
         return now(UTC).withMinute(0).withSecond(0).withNano(0);
-    }
-
-    private List<Entity> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
-        return List.of(
-                Entity.builder()
-                        .date(utcCurrentTime)
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(10)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime)
-                        .processName(PICKING)
-                        .source(Source.SIMULATION)
-                        .value(20)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime.plusHours(2))
-                        .processName(PACKING)
-                        .source(Source.FORECAST)
-                        .value(15)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(30)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime.plusHours(3))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(79)
-                        .build(),
-                Entity.builder()
-                        .date(utcCurrentTime.plusDays(3))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(32)
-                        .build()
-        );
-    }
-
-    private List<Entity> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
-        return List.of(
-                Productivity.builder()
-                        .date(utcCurrentTime)
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(60)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusHours(1))
-                        .processName(PICKING)
-                        .source(Source.SIMULATION)
-                        .value(30)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusHours(2))
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(50)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PICKING)
-                        .source(Source.FORECAST)
-                        .value(75)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PACKING)
-                        .source(Source.FORECAST)
-                        .value(98)
-                        .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(14)
-                        .abilityLevel(3)
-                        .build()
-        );
     }
 
     private SimpleTable mockSuggestedWaves(final ZonedDateTime utcDateTimeFrom,
@@ -483,6 +278,23 @@ public class RunSimulationTest {
                 )
         );
         return new SimpleTable(title, columnHeaders, data);
+    }
+
+    private ComplexTable mockComplexTable() {
+        return new ComplexTable(
+                emptyList(),
+                emptyList(),
+                new ComplexTableAction("applyLabel", "cancelLabel", "editLabel"),
+                "title"
+        );
+    }
+
+    private SimpleTable mockSimpleTable() {
+        return new SimpleTable(
+                "title",
+                emptyList(),
+                emptyList()
+        );
     }
 
 }
