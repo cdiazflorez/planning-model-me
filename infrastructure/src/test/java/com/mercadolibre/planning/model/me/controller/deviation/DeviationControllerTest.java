@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.controller.deviation;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
+import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
@@ -56,6 +57,9 @@ public class DeviationControllerTest {
 
     @MockBean
     private AuthorizeUser authorizeUser;
+
+    @MockBean
+    private DatadogMetricService datadogMetricService;
 
     private ResultActions result;
 

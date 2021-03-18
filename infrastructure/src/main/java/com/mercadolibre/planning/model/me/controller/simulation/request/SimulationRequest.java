@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.controller.simulation.request;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
+import lombok.Builder;
 import lombok.Value;
 
 import javax.validation.Valid;
@@ -12,6 +13,7 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
+@Builder
 @Value
 public class SimulationRequest {
 

@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.controller.simulation.request.Simulati
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
@@ -41,6 +42,7 @@ public class SimulationController {
     private final RunSimulation runSimulation;
     private final SaveSimulation saveSimulation;
     private final AuthorizeUser authorizeUser;
+    private final DatadogMetricService datadogMetricService;
 
     @Trace
     @PostMapping("/run")
@@ -50,6 +52,8 @@ public class SimulationController {
             @RequestBody @Valid final RunSimulationRequest request) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_SIMULATION)));
+
+        datadogMetricService.trackSimulation(request.getWarehouseId(), request.getSimulations());
 
         return ResponseEntity.of(Optional.of(runSimulation.execute(GetProjectionInputDto.builder()
                 .workflow(workflow)
@@ -68,6 +72,8 @@ public class SimulationController {
             @RequestBody final SaveSimulationRequest request) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_SIMULATION)));
+
+        datadogMetricService.trackSimulation(request.getWarehouseId(), request.getSimulations());
 
         return ResponseEntity.of(Optional.of(saveSimulation.execute(GetProjectionInputDto.builder()
                 .workflow(workflow)

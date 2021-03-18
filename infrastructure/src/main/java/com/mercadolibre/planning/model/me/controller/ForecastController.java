@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastCreationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.CreateForecast;
@@ -44,6 +45,7 @@ public class ForecastController {
     private final AuthorizeUser authorizeUser;
     private final ParseForecastFromFile parseForecastFromFile;
     private final CreateForecast createForecast;
+    private final DatadogMetricService datadogMetricService;
 
     @Trace
     @PostMapping("/upload")
@@ -54,7 +56,8 @@ public class ForecastController {
             @RequestPart("file") final MultipartFile file) {
 
         log.info("Uploading forecast. [warehouse_id:{}][workflow:{}][filename:{}][user_id:{}]",
-                warehouseId, workflow, file.getOriginalFilename(),callerId);
+                warehouseId, workflow, file.getOriginalFilename(), callerId);
+
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_FORECAST)));
 
         final byte[] bytes = getFileBytes(file);
@@ -62,12 +65,15 @@ public class ForecastController {
         final Forecast forecast = parseForecastFromFile.execute(
                 new FileUploadDto(warehouseId, bytes)
         );
+
         final ForecastCreationResponse createdForecast =
                 createForecast.execute(ForecastDto.builder()
                     .workflow(workflow)
                     .forecast(forecast)
                     .build()
         );
+
+        datadogMetricService.trackForecastUpload(warehouseId);
 
         return ok(createdForecast);
     }

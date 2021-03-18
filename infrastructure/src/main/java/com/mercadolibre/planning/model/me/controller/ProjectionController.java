@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
@@ -39,6 +40,8 @@ public class ProjectionController {
     private final GetCptProjection getCptProjection;
     private final GetBacklogProjection getBacklogProjection;
 
+    private final DatadogMetricService datadogMetricService;
+
     @Trace
     @GetMapping("/projections/cpt")
     public ResponseEntity<Projection> getCptProjection(
@@ -47,6 +50,8 @@ public class ProjectionController {
             @RequestParam final String warehouseId) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+
+        datadogMetricService.trackProjection(warehouseId, workflow, "CPT");
 
         return ResponseEntity.of(of(getCptProjection.execute(GetProjectionInputDto.builder()
                 .workflow(workflow)
@@ -64,6 +69,10 @@ public class ProjectionController {
 
         authorizeUser
                 .execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+
+        datadogMetricService.trackProjection(request.getWarehouseId(),
+                workflow,
+                "Backlog");
 
         final BacklogProjectionInput input = request.getBacklogProjectionInput(workflow, callerId);
         return ResponseEntity.of(of(getBacklogProjection.execute(input)));

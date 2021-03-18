@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
+import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.CreateForecast;
@@ -27,6 +28,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,6 +48,9 @@ public class ForecastControllerTest {
 
     @MockBean
     private CreateForecast createForecast;
+
+    @MockBean
+    private DatadogMetricService datadogMetricService;
 
     @Test
     void testPostForecastOk() throws Exception {
@@ -73,6 +78,7 @@ public class ForecastControllerTest {
         verify(parseForecastFromFile).execute(fileUploadDto);
         verify(createForecast).execute(any(ForecastDto.class));
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_FORECAST)));
+        verify(datadogMetricService).trackForecastUpload(WAREHOUSE_ID);
     }
 
     @Test
@@ -93,6 +99,7 @@ public class ForecastControllerTest {
 
         // THEN
         result.andExpect(status().isBadRequest());
+        verifyNoInteractions(datadogMetricService);
     }
 
 }

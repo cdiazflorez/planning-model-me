@@ -10,6 +10,7 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
+import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
@@ -69,6 +70,9 @@ public class SimulationControllerTest {
 
     @MockBean
     private AuthorizeUser authorizeUser;
+
+    @MockBean
+    private DatadogMetricService datadogMetricService;
 
     @Test
     void testRunSimulation() throws Exception {
