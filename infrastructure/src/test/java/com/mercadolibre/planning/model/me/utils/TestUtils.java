@@ -4,6 +4,11 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.json.JsonUtils;
 import com.mercadolibre.json_jackson.JsonJackson;
+import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
+import com.mercadolibre.planning.model.me.controller.simulation.request.EntityRequest;
+import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimulationRequest;
+import com.mercadolibre.planning.model.me.controller.simulation.request.SimulationRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.resilience.breaker.CircuitBreaker;
 import com.mercadolibre.resilience.breaker.CircuitBreakers;
 import com.mercadolibre.restclient.MockResponse;
@@ -16,6 +21,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -70,4 +76,28 @@ public class TestUtils {
         );
     }
 
+    public static RunSimulationRequest mockRunSimulationRequest() {
+        return RunSimulationRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .simulations(List.of(SimulationRequest.builder()
+                        .processName("picking")
+                        .entities(List.of(EntityRequest.builder()
+                                .type("headcount")
+                                .build()))
+                        .build()))
+                .build();
+    }
+
+    public static DeviationRequest mockDeviationRequest(final long hours) {
+
+        final ZonedDateTime dateFrom = ZonedDateTime.now();
+        final ZonedDateTime dateTo = dateFrom.plusHours(hours);
+
+        return DeviationRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .value(10.0)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .build();
+    }
 }

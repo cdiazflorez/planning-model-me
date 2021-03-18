@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.controller.deviation.request.Deviation
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.deviation.DisableDeviation;
@@ -41,6 +42,8 @@ public class DeviationController {
     private final DisableDeviation disableDeviation;
     private final AuthorizeUser authorizeUser;
 
+    private final DatadogMetricService datadogMetricService;
+
     @Trace
     @PostMapping("/save")
     public ResponseEntity<DeviationResponse> save(
@@ -49,6 +52,8 @@ public class DeviationController {
 
         authorizeUser.execute(new AuthorizeUserDto(
                 deviationRequest.getUserId(), singletonList(OUTBOUND_SIMULATION)));
+
+        datadogMetricService.trackDeviationAdjustment(deviationRequest);
 
         DeviationResponse response;
 
