@@ -53,7 +53,7 @@ public class SimulationController {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_SIMULATION)));
 
-        datadogMetricService.trackSimulation(request.getWarehouseId(), request.getSimulations());
+        datadogMetricService.trackRunSimulation(request);
 
         return ResponseEntity.of(Optional.of(runSimulation.execute(GetProjectionInputDto.builder()
                 .workflow(workflow)
@@ -73,7 +73,7 @@ public class SimulationController {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_SIMULATION)));
 
-        datadogMetricService.trackSimulation(request.getWarehouseId(), request.getSimulations());
+        datadogMetricService.trackSaveSimulation(request);
 
         return ResponseEntity.of(Optional.of(saveSimulation.execute(GetProjectionInputDto.builder()
                 .workflow(workflow)
