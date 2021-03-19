@@ -7,8 +7,8 @@ import com.mercadolibre.json_jackson.JsonJackson;
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.EntityRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimulationRequest;
+import com.mercadolibre.planning.model.me.controller.simulation.request.SaveSimulationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.SimulationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.resilience.breaker.CircuitBreaker;
 import com.mercadolibre.resilience.breaker.CircuitBreakers;
 import com.mercadolibre.restclient.MockResponse;
@@ -78,6 +78,18 @@ public class TestUtils {
 
     public static RunSimulationRequest mockRunSimulationRequest() {
         return RunSimulationRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .simulations(List.of(SimulationRequest.builder()
+                        .processName("picking")
+                        .entities(List.of(EntityRequest.builder()
+                                .type("headcount")
+                                .build()))
+                        .build()))
+                .build();
+    }
+
+    public static SaveSimulationRequest mockSaveSimulationRequest() {
+        return SaveSimulationRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .simulations(List.of(SimulationRequest.builder()
                         .processName("picking")

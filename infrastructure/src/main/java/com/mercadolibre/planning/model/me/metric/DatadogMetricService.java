@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.metric;
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.EntityRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimulationRequest;
+import com.mercadolibre.planning.model.me.controller.simulation.request.SaveSimulationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.AllArgsConstructor;
@@ -24,23 +25,28 @@ public class DatadogMetricService {
 
     private final DatadogWrapper datadog;
 
-    public void trackSimulation(final String warehouseId,
-                                final List<SimulationRequest> simulationRequests) {
+    public void trackRunSimulation(final RunSimulationRequest request) {
 
-        final Tags tags = new Tags();
-
-        tags.add("warehouse_id", warehouseId);
-        simulationRequests.stream()
-                .forEach(simulation -> tags.add(simulation.getProcessName(),
-                        getLabelFromEntities(simulation.getEntities())));
-
-        tags.add("scope", getScope());
+        final Tags tags = createSimulationTags(request.getWarehouseId(), request.getSimulations());
 
         try {
-            datadog.incrementCounter("application.planning.model.simulation", tags);
+            datadog.incrementCounter("application.planning.model.simulation.run", tags);
         } catch (Exception e) {
             log.warn("[warehouse_id:{}] " + "Couldn't track run simulation metric",
-                    warehouseId,
+                    request.getWarehouseId(),
+                    e);
+        }
+    }
+
+    public void trackSaveSimulation(final SaveSimulationRequest request) {
+
+        final Tags tags = createSimulationTags(request.getWarehouseId(), request.getSimulations());
+
+        try {
+            datadog.incrementCounter("application.planning.model.simulation.save", tags);
+        } catch (Exception e) {
+            log.warn("[warehouse_id:{}] " + "Couldn't track save simulation metric",
+                    request.getWarehouseId(),
                     e);
         }
     }
@@ -100,6 +106,20 @@ public class DatadogMetricService {
             log.warn("[warehouse_id:{}] Couldn't track forecast upload metric",
                     warehouseId, e);
         }
+    }
+
+    private Tags createSimulationTags(String warehouseId,
+                                      List<SimulationRequest> simulationRequests) {
+        final Tags tags = new Tags();
+
+        tags.add("warehouse_id", warehouseId);
+        simulationRequests.stream()
+                .forEach(simulation -> tags.add(simulation.getProcessName(),
+                        getLabelFromEntities(simulation.getEntities())));
+
+        tags.add("scope", getScope());
+
+        return tags;
     }
 
     private String getLabelFromEntities(final List<EntityRequest> entities) {
