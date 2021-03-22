@@ -97,7 +97,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     private static final String GET_FORECAST_METADATA_URL =
             "/planning/model/workflows/%s/metadata";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
-    private static final String RUN_PROJECTIONS_URL = "/planning/model/workflows/%s/projections";
+    private static final String RUN_PROJECTIONS_URL = "/planning/model/workflows/%s/projections/%s";
     private static final String RUN_SIMULATIONS_URL = "/planning/model/"
             + "workflows/%s/simulations/run";
     private static final String SAVE_SIMULATIONS_URL = "/planning/model/"
@@ -341,7 +341,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
         MockResponse.builder()
                 .withMethod(POST)
-                .withURL(format(BASE_URL + RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND))
+                .withURL(format(BASE_URL + RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND, "cpts"))
                 .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(apiResponse.toString())
@@ -707,7 +707,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
         MockResponse.builder()
                 .withMethod(POST)
-                .withURL(format(BASE_URL + RUN_PROJECTIONS_URL + "/backlogs", FBM_WMS_OUTBOUND))
+                .withURL(format(BASE_URL + RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND, "backlogs"))
                 .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(getResourceAsString("get_backlog_projection_api_response.json"))
