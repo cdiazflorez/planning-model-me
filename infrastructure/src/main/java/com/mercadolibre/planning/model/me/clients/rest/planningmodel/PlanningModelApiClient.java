@@ -67,7 +67,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
     private static final String SIMULATIONS_PREFIX_URL = "/simulations";
-    private static final String PROJECTION_URL = "/projections/%s";
+    private static final String PROJECTION_URL = "/planning/model/workflows/%s/projections/%s";
     private static final String DEVIATIONS_URL = "/deviations";
     private static final String WAREHOUSE_ID = "warehouse_id";
     private static final String DATE_FROM = "date_from";
@@ -131,27 +131,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         return apiResponse.stream().map(this::toProductivity).collect(toList());
     }
 
-    protected Map<String, String> createEntityParams(final EntityRequest request) {
-        final Map<String, String> params = getBaseParam(request.getWarehouseId(),
-                request.getDateFrom(),
-                request.getDateTo());
-        params.put("process_name", getEnumNamesAsString(request.getProcessName()));
-        if (request.getProcessingType() != null) {
-            params.put("processing_type", getEnumNamesAsString(request.getProcessingType()));
-        }
-        return params;
-    }
-
-    private Map<String, String> getBaseParam(String warehouseId,
-                                             ZonedDateTime dateFrom,
-                                             ZonedDateTime dateTo) {
-        final Map<String, String> params = new LinkedHashMap<>();
-        params.put(WAREHOUSE_ID, warehouseId);
-        params.put(DATE_FROM, dateFrom.format(ISO_OFFSET_DATE_TIME));
-        params.put(DATE_TO, dateTo.format(ISO_OFFSET_DATE_TIME));
-        return params;
-    }
-
     @Override
     public Map<EntityType, List<Entity>> searchEntities(final SearchEntitiesRequest request) {
         final HttpRequest httpRequest = HttpRequest.builder()
@@ -184,7 +163,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     @Override
     public List<ProjectionResult> runProjection(final ProjectionRequest projectionRequest) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, projectionRequest.getWorkflow()) + "/projections")
+                .url(format(PROJECTION_URL, projectionRequest.getWorkflow(), "cpts"))
                 .POST(requestSupplier(projectionRequest))
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
@@ -272,12 +251,76 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
             final BacklogProjectionRequest request) {
 
         final HttpRequest httpRequest = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL + PROJECTION_URL, request.getWorkflow(), "backlogs"))
+                .url(format(PROJECTION_URL, request.getWorkflow(), "backlogs"))
                 .POST(requestSupplier(request))
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         return send(httpRequest, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public GetDeviationResponse getDeviation(final Workflow workflow,
+                                             final String warehouseId,
+                                             final ZonedDateTime date) {
+        final Map<String, String> params = new HashMap<>();
+        params.put("warehouse_id", warehouseId);
+        params.put("date", date.withFixedOffsetZone().toString());
+
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, workflow)
+                        + DEVIATIONS_URL)
+                .GET()
+                .queryParams(params)
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, saveDeviationInput.getWorkflow())
+                        + DEVIATIONS_URL + "/save")
+                .POST(requestSupplier(saveDeviationInput))
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public DeviationResponse disableDeviation(DisableDeviationInput disableDeviationInput) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, disableDeviationInput.getWorkflow())
+                        + DEVIATIONS_URL + "/disable")
+                .POST(requestSupplier(disableDeviationInput))
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    protected Map<String, String> createEntityParams(final EntityRequest request) {
+        final Map<String, String> params = getBaseParam(request.getWarehouseId(),
+                request.getDateFrom(),
+                request.getDateTo());
+        params.put("process_name", getEnumNamesAsString(request.getProcessName()));
+        if (request.getProcessingType() != null) {
+            params.put("processing_type", getEnumNamesAsString(request.getProcessingType()));
+        }
+        return params;
+    }
+
+    private Map<String, String> getBaseParam(String warehouseId,
+                                             ZonedDateTime dateFrom,
+                                             ZonedDateTime dateTo) {
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put(WAREHOUSE_ID, warehouseId);
+        params.put(DATE_FROM, dateFrom.format(ISO_OFFSET_DATE_TIME));
+        params.put(DATE_TO, dateTo.format(ISO_OFFSET_DATE_TIME));
+        return params;
     }
 
     private Map<String, String> createPlanningDistributionParams(
@@ -342,49 +385,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .metricUnit(MetricUnit.from(response.getMetricUnit()))
                 .abilityLevel(response.getAbilityLevel())
                 .build();
-    }
-
-    @Override
-    public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
-        final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, saveDeviationInput.getWorkflow())
-                        + DEVIATIONS_URL + "/save")
-                .POST(requestSupplier(saveDeviationInput))
-                .acceptedHttpStatuses(Set.of(OK, CREATED))
-                .build();
-
-        return send(request, response -> response.getData(new TypeReference<>() {}));
-    }
-
-    @Override
-    public DeviationResponse disableDeviation(DisableDeviationInput disableDeviationInput) {
-        final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, disableDeviationInput.getWorkflow())
-                        + DEVIATIONS_URL + "/disable")
-                .POST(requestSupplier(disableDeviationInput))
-                .acceptedHttpStatuses(Set.of(OK, CREATED))
-                .build();
-
-        return send(request, response -> response.getData(new TypeReference<>() {}));
-    }
-
-    @Override
-    public GetDeviationResponse getDeviation(final Workflow workflow,
-                                             final String warehouseId,
-                                             final ZonedDateTime date) {
-        final Map<String, String> params = new HashMap<>();
-        params.put("warehouse_id", warehouseId);
-        params.put("date", date.withFixedOffsetZone().toString());
-
-        final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, workflow)
-                        + DEVIATIONS_URL)
-                .GET()
-                .queryParams(params)
-                .acceptedHttpStatuses(Set.of(OK, CREATED))
-                .build();
-
-        return send(request, response -> response.getData(new TypeReference<>() {}));
     }
 
 }

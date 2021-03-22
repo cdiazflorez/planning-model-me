@@ -39,7 +39,6 @@ public class ProjectionController {
     private final AuthorizeUser authorizeUser;
     private final GetCptProjection getCptProjection;
     private final GetBacklogProjection getBacklogProjection;
-
     private final DatadogMetricService datadogMetricService;
 
     @Trace
