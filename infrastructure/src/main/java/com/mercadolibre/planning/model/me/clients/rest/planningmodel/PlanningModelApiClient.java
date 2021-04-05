@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
+import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.json.type.TypeReference;
+import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.ProductivityResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -58,6 +60,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
 @Slf4j
@@ -159,7 +162,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         return response;
     }
 
-
     @Override
     public List<ProjectionResult> runProjection(final ProjectionRequest projectionRequest) {
         final HttpRequest request = HttpRequest.builder()
@@ -168,7 +170,15 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
-        return send(request, response -> response.getData(new TypeReference<>() {}));
+        try {
+            return send(request, response -> response.getData(new TypeReference<>() {}));
+        } catch (ClientException ex) {
+            if (forecastNotFound(ex)) {
+                throw new ForecastNotFoundException();
+            }
+
+            throw ex;
+        }
     }
 
     @Override
@@ -225,8 +235,15 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
-        return send(request, response -> response.getData(new TypeReference<>() {
-        }));
+        try {
+            return send(request, response -> response.getData(new TypeReference<>() {}));
+        } catch (ClientException ex) {
+            if (forecastNotFound(ex)) {
+                throw new ForecastNotFoundException();
+            }
+
+            throw ex;
+        }
     }
 
     @Override
@@ -385,6 +402,11 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .metricUnit(MetricUnit.from(response.getMetricUnit()))
                 .abilityLevel(response.getAbilityLevel())
                 .build();
+    }
+
+    private boolean forecastNotFound(ClientException ex) {
+        return ex.getResponseStatus() == NOT_FOUND.value()
+                && ex.getResponseBody().contains("forecast_not_found");
     }
 
 }
