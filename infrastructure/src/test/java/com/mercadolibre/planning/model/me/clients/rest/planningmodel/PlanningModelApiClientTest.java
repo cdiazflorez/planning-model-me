@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
+import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
@@ -88,6 +89,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.of;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
 class PlanningModelApiClientTest extends BaseClientTest {
@@ -306,7 +308,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     }
 
     @Test
-    void testRunProjection() throws JSONException {
+    void testRunProjectionOk() throws JSONException {
         // GIVEN
         final ProjectionRequest request = ProjectionRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
@@ -367,6 +369,36 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(parse("2020-09-29T14:00:00Z", ISO_OFFSET_DATE_TIME),
                 cpt3.getProjectedEndDate());
         assertEquals(70, cpt3.getRemainingQuantity());
+    }
+
+    @ParameterizedTest
+    @MethodSource("errorResponseProvider")
+    void testRunProjectionError(final Class exceptionClass, final String response) {
+        // GIVEN
+        final ProjectionRequest request = ProjectionRequest.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .type(ProjectionType.CPT)
+                .processName(List.of(PICKING, PACKING))
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
+                .backlog(List.of(
+                        new Backlog(parse("2020-09-29T10:00:00Z"), 100),
+                        new Backlog(parse("2020-09-29T11:00:00Z"), 200),
+                        new Backlog(parse("2020-09-29T12:00:00Z"), 300)
+                ))
+                .build();
+
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(format(BASE_URL + RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND, "cpts"))
+                .withStatusCode(NOT_FOUND.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(response)
+                .build();
+
+        // When - Then
+        assertThrows(exceptionClass, () -> client.runProjection(request));
     }
 
     @Test
@@ -638,6 +670,33 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 cpt3Response.getDateOut().format(ISO_OFFSET_DATE_TIME));
     }
 
+    @ParameterizedTest
+    @MethodSource("errorResponseProvider")
+    void testGetPlanningDistributionError(final Class exceptionClass, final String response) {
+        // GIVEN
+        final ZonedDateTime currentTime = now().withMinute(0).withSecond(0).withNano(0);
+
+        final PlanningDistributionRequest request = new PlanningDistributionRequest(
+                WAREHOUSE_ID,
+                FBM_WMS_OUTBOUND,
+                currentTime,
+                currentTime,
+                currentTime.plusDays(1),
+                true
+        );
+
+        MockResponse.builder()
+                .withMethod(GET)
+                .withURL(format(BASE_URL + PLANNING_DISTRIBUTION_URL, FBM_WMS_OUTBOUND.getName()))
+                .withStatusCode(NOT_FOUND.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(response)
+                .build();
+
+        // WHEN - THEN
+        assertThrows(exceptionClass, () -> client.getPlanningDistribution(request));
+    }
+
     @Test
     void testGetSuggestedWaves() throws JSONException {
         // GIVEN
@@ -875,6 +934,14 @@ class PlanningModelApiClientTest extends BaseClientTest {
                                 )))
                         )))
                 .build();
+    }
+
+    private static Stream<Arguments> errorResponseProvider() throws IOException {
+        return Stream.of(
+                of(ForecastNotFoundException.class,
+                        getResourceAsString("forecast_not_found_response.json")),
+                of(ClientException.class, "")
+        );
     }
 
     @Nested

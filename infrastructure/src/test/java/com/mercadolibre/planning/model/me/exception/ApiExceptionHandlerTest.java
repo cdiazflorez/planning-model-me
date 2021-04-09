@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.exception;
 
+import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,23 @@ class ApiExceptionHandlerTest {
 
         // WHEN
         response = apiExceptionHandler.handleMissingParameterException(exception, request);
+
+        // THEN
+        thenThrow(exception, expectedResponse);
+    }
+
+    @Test
+    @DisplayName("Handle ForecastNotFoundException")
+    void handleForecastNotFoundException() {
+        // GIVEN
+        final ForecastNotFoundException exception = new ForecastNotFoundException();
+        final ErrorResponse expectedResponse = ErrorResponse.builder()
+                .error("forecast_not_found")
+                .message(exception.getMessage())
+                .status(HttpStatus.NOT_FOUND).build();
+
+        // WHEN
+        response = apiExceptionHandler.handleForecastNotFoundException(exception, request);
 
         // THEN
         thenThrow(exception, expectedResponse);

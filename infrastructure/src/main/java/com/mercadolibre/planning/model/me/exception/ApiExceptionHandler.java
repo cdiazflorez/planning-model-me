@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.exception;
 
+import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -81,6 +82,22 @@ public class ApiExceptionHandler {
 
         request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
 
+        log.error(exception.getMessage(), exception);
+        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+    }
+
+    @ExceptionHandler(ForecastNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleForecastNotFoundException(
+            final ForecastNotFoundException exception,
+            final HttpServletRequest request) {
+
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.NOT_FOUND)
+                .message(exception.getMessage())
+                .error("forecast_not_found")
+                .build();
+
+        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
         log.error(exception.getMessage(), exception);
         return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }
