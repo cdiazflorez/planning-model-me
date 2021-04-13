@@ -1,0 +1,89 @@
+{
+    "columns": [{
+        "id": "column_1",
+        "title": "Horas de Operación"
+    }],
+    "data": [{
+        "id": "headcount",
+        "title": "Headcount",
+        "open": true,
+        "content": [{
+            "column_1": {
+                "title": "Picking",
+                "id": "picking"
+            },
+            "column_2": {
+                "title": "30",
+                "date": "2020-07-27T10:00:00Z",
+                "tooltip": {
+                    "title_1": "Hora de operación",
+                    "subtitle_1": "11:00 - 12:00",
+                    "title_2": "Cantidad de reps FCST",
+                    "subtitle_2": "30"
+                }
+            }
+        },
+            {
+                "column_1": {
+                    "title": "Packing",
+                    "id": "packing"
+                },
+                "column_2": {
+                    "title": "30",
+                    "date": "2020-07-27T10:00:00Z"
+                }
+            }
+        ]
+    },
+        {
+            "id": "productivity",
+            "title": "Productividad regular",
+            "open": true,
+            "content": [{
+                "column_1": {
+                    "title": "Picking",
+                    "id": "picking"
+                },
+                "column_2": {
+                    "title": "30",
+                    "tooltip": {
+                        "title_1": "Productividad polivalente",
+                        "subtitle_1": "30,4 uds/h"
+                    }
+                }
+            },
+                {
+                    "column_1": {
+                        "title": "Packing",
+                        "id": "packing"
+                    },
+                    "column_2": {
+                        "title": "30"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "throughput",
+            "title": "Throughput",
+            "open": true,
+            "content": [{
+                "column_1": {
+                    "title": "Picking"
+                },
+                "column_2": {
+                    "title": "1600"
+                }
+            },
+                {
+                    "column_1": {
+                        "title": "Packing"
+                    },
+                    "column_2": {
+                        "title": "1600"
+                    }
+                }
+            ]
+        }
+    ]
+}
