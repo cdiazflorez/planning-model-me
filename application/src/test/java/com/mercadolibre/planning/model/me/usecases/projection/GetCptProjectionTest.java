@@ -60,6 +60,7 @@ import static org.mockito.Mockito.when;
 public class GetCptProjectionTest {
 
     private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
+    private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private static final TimeZone TIME_ZONE = getDefault();
     private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
@@ -184,7 +185,7 @@ public class GetCptProjectionTest {
         final ZonedDateTime projectedEndDate1 = convertToTimeZone(zoneId,
                 getCurrentUtcDate()).plusHours(3).plusMinutes(30);
 
-        assertEquals(cpt1.format(HOUR_MINUTES_FORMAT), chartData1.getTitle());
+        assertEquals(cpt1.format(DATE_SHORT_FORMATTER), chartData1.getTitle());
         assertEquals(cpt1.format(DATE_FORMATTER), chartData1.getCpt());
         assertEquals(projectedEndDate1.format(DATE_FORMATTER), chartData1.getProjectedEndTime());
         assertChartTooltip(
@@ -196,7 +197,7 @@ public class GetCptProjectionTest {
         final ZonedDateTime cpt2 = convertToTimeZone(zoneId, CPT_2);
         final ZonedDateTime projectedEndDate2 = convertToTimeZone(zoneId,
                 getCurrentUtcDate()).plusHours(3);
-        assertEquals(cpt2.format(HOUR_MINUTES_FORMAT), chartData2.getTitle());
+        assertEquals(cpt2.format(DATE_SHORT_FORMATTER), chartData2.getTitle());
         assertEquals(cpt2.format(DATE_FORMATTER), chartData2.getCpt());
         assertEquals(projectedEndDate2.format(DATE_FORMATTER), chartData2.getProjectedEndTime());
         assertChartTooltip(
@@ -208,7 +209,7 @@ public class GetCptProjectionTest {
         final ZonedDateTime cpt3 = convertToTimeZone(zoneId, CPT_3);
         final ZonedDateTime projectedEndDate3 = convertToTimeZone(zoneId,
                 getCurrentUtcDate()).plusHours(3).plusMinutes(25);
-        assertEquals(cpt3.format(HOUR_MINUTES_FORMAT), chartData3.getTitle());
+        assertEquals(cpt3.format(DATE_SHORT_FORMATTER), chartData3.getTitle());
         assertEquals(cpt3.format(DATE_FORMATTER), chartData3.getCpt());
         assertEquals(projectedEndDate3.format(DATE_FORMATTER), chartData3.getProjectedEndTime());
         assertChartTooltip(
@@ -220,7 +221,7 @@ public class GetCptProjectionTest {
         final ZonedDateTime cpt4 = convertToTimeZone(zoneId, CPT_4);
         final ZonedDateTime projectedEndDate4 = convertToTimeZone(zoneId,
                 getCurrentUtcDate()).plusHours(8).plusMinutes(10);
-        assertEquals(cpt4.format(HOUR_MINUTES_FORMAT), chartData4.getTitle());
+        assertEquals(cpt4.format(DATE_SHORT_FORMATTER), chartData4.getTitle());
         assertEquals(cpt4.format(DATE_FORMATTER), chartData4.getCpt());
         assertEquals(projectedEndDate4.format(DATE_FORMATTER), chartData4.getProjectedEndTime());
         assertChartTooltip(
@@ -232,7 +233,7 @@ public class GetCptProjectionTest {
         final ZonedDateTime cpt5 = convertToTimeZone(zoneId, CPT_5);
         final ZonedDateTime projectedEndDate5 = convertToTimeZone(zoneId,
                 getCurrentUtcDate().plusDays(1));
-        assertEquals(cpt5.format(HOUR_MINUTES_FORMAT), chartData5.getTitle());
+        assertEquals(cpt5.format(DATE_SHORT_FORMATTER), chartData5.getTitle());
         assertEquals(cpt5.format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(projectedEndDate5.format(DATE_FORMATTER), chartData5.getProjectedEndTime());
         assertChartTooltip(

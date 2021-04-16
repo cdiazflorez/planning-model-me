@@ -14,7 +14,7 @@ import static java.time.format.DateTimeFormatter.ofPattern;
 public class ChartData {
 
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:mm");
+    private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
 
     private String title;
     private String cpt;
@@ -28,7 +28,7 @@ public class ChartData {
 
 
         return ChartData.builder()
-                .title(cpt.format(HOUR_FORMAT))
+                .title(cpt.format(DATE_SHORT_FORMATTER))
                 .cpt(cpt.format(DATE_FORMATTER))
                 .projectedEndTime(projectedEndDate.format(DATE_FORMATTER))
                 .tooltip(createChartTooltip(cpt, projectedEndDate, dateTo, remainingQuantity))

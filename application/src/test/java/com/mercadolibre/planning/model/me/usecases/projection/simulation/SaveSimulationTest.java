@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class SaveSimulationTest {
 
-    private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
+    private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private static final TimeZone TIME_ZONE = getDefault();
 
@@ -149,14 +149,14 @@ public class SaveSimulationTest {
         assertEquals(5, chartData.size());
 
         final ChartData chartData1 = chartData.get(0);
-        assertEquals(currentTime.plusHours(4).toLocalTime().format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(4).format(DATE_SHORT_FORMATTER),
                 chartData1.getTitle());
         assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
         assertEquals(currentTime.plusHours(2).plusMinutes(35).format(DATE_FORMATTER),
                 chartData1.getProjectedEndTime());
 
         final ChartData chartData2 = chartData.get(1);
-        assertEquals(currentTime.plusHours(7).toLocalTime().format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(7).format(DATE_SHORT_FORMATTER),
                 chartData2.getTitle());
         assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData2.getCpt());
         assertEquals(currentTime.plusHours(3).format(DATE_FORMATTER),
@@ -165,7 +165,7 @@ public class SaveSimulationTest {
         final ChartData chartData3 = chartData.get(2);
         assertEquals(
                 currentTime.plusHours(5).plusMinutes(30)
-                        .toLocalTime().format(HOUR_MINUTES_FORMAT),
+                        .format(DATE_SHORT_FORMATTER),
                 chartData3.getTitle()
         );
         assertEquals(currentTime.plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
@@ -174,7 +174,7 @@ public class SaveSimulationTest {
                 chartData3.getProjectedEndTime());
 
         final ChartData chartData4 = chartData.get(3);
-        assertEquals(currentTime.plusHours(6).toLocalTime().format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(6).format(DATE_SHORT_FORMATTER),
                 chartData4.getTitle()
         );
         assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
@@ -182,7 +182,7 @@ public class SaveSimulationTest {
                 chartData4.getProjectedEndTime());
 
         final ChartData chartData5 = chartData.get(4);
-        assertEquals(currentTime.plusHours(8).toLocalTime().format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(8).format(DATE_SHORT_FORMATTER),
                 chartData5.getTitle()
         );
         assertEquals(currentTime.plusHours(8).format(DATE_FORMATTER), chartData5.getCpt());
