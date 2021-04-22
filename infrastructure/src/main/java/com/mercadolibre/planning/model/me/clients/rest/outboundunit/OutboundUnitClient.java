@@ -63,7 +63,7 @@ import static java.util.Optional.ofNullable;
 public class OutboundUnitClient extends HttpClient implements BacklogGateway {
 
     private static final String SEARCH_GROUPS_URL = "/wms/outbound/groups/%s/search";
-    private static final String SEARCH_UNITS_URL = "/wms/outbound/units/search";
+    private static final String SEARCH_UNITS_URL = "/wms/warehouses/%s/outbound/units/search";
     public static final String CLIENT_ID = "9999";
     private static final String AGGREGATION_BY_ETD = "by_etd";
     private static final String ORDER_VALUE = "order";
@@ -187,15 +187,16 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     @Override
     public ProcessBacklog getUnitBacklog(final UnitProcessBacklogInput input) {
         final Map<String, String> defaultParams = defaultParams();
+        final String warehouseId = input.getWarehouseId();
 
-        addUnitParam(WAREHOUSE_ID.toJson(), input.getWarehouseId(), defaultParams);
+        addUnitParam(WAREHOUSE_ID.toJson(), warehouseId, defaultParams);
         addUnitParam("group.etd_from", input.getDateFrom().toString(), defaultParams);
         addUnitParam("group.etd_to", input.getDateTo(), defaultParams);
         addUnitParam(LIMIT.toJson(), "1", defaultParams);
         addUnitParam(STATUS.toJson(), input.getStatuses(), defaultParams);
         addUnitParam("address.area", input.getArea(), defaultParams);
 
-        final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams);
+        final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams, warehouseId);
         int quantity = Objects.nonNull(response) ? response.getPaging().getTotal() : 0;
         return ProcessBacklog.builder()
                 .process(input.getStatuses())
@@ -204,7 +205,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .build();
     }
 
-    public void addUnitParam(final String paramLabel,
+    private void addUnitParam(final String paramLabel,
             final Object param,
             final Map<String, String> defaultParams) {
         ofNullable(param)
@@ -292,13 +293,15 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     }
 
     @Trace(metricName = "API/outboundUnit/searchUnits")
-    public OutboundUnitSearchResponse<Unit> searchUnits(final Map<String, String> params) {
+    private OutboundUnitSearchResponse<Unit> searchUnits(final Map<String, String> params,
+                                                         final String warehouseId) {
 
         final HttpRequest request = HttpRequest.builder()
-                .url(SEARCH_UNITS_URL)
+                .url(String.format(SEARCH_UNITS_URL, warehouseId))
                 .GET()
                 .queryParams(params)
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .headers(Map.of("X-Consistency", "strong"))
                 .build();
 
         try {
