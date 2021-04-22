@@ -530,7 +530,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
         @Test
         @DisplayName("Units API returns OK by Unit Process Backlog")
-        public void testGetUnitProcessBacklog() throws JsonProcessingException, JSONException {
+        public void testGetUnitProcessBacklog() throws JSONException {
             // GIVEN
             final ZonedDateTime utcDateFrom = getCurrentUtcDate();
             final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
@@ -551,7 +551,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     GET,
-                    searchUnitUrl(requestParam),
+                    searchUnitUrl(requestParam, WAREHOUSE_ID),
                     null,
                     responseBody.toString()
             );
@@ -592,7 +592,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     GET,
-                    searchUnitUrl(requestParam),
+                    searchUnitUrl(requestParam, WAREHOUSE_ID),
                     null,
                     responseBody.toString()
             );
@@ -739,7 +739,8 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .put("warehouse_id", WAREHOUSE_ID)
                     .put("address.area", "PW")
                     .build();
-            unsuccessfulResponse(GET, searchUnitUrl(requestParam), INTERNAL_SERVER_ERROR);
+            unsuccessfulResponse(GET, searchUnitUrl(requestParam, WAREHOUSE_ID),
+                    INTERNAL_SERVER_ERROR);
 
             // WHEN
             final ClientException exception = assertThrows(ClientException.class,
@@ -762,14 +763,14 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
         private String searchGroupUrl(final String groupType) {
             return UnitGroupUrlBuilder
-                    .create(format("/groups/%s/search", groupType))
+                    .create(format("/wms/outbound/groups/%s/search", groupType))
                     .withParams(ImmutableMap.of("client.id", "9999"))
                     .build();
         }
 
-        private String searchUnitUrl(final Map<String, String> params) {
+        private String searchUnitUrl(final Map<String, String> params, final String warehouseId) {
             return UnitGroupUrlBuilder
-                    .create("/units/search")
+                    .create(String.format("/wms/warehouses/%s/outbound/units/search", warehouseId))
                     .withParams(params)
                     .build();
         }
@@ -844,7 +845,6 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
     private static class UnitGroupUrlBuilder {
         private static final String DOMAIN = "http://internal.mercadolibre.com";
-        private static final String BASE_PATH = "/wms/outbound";
 
         private final String path;
         private final Map<String, String> params;
@@ -864,9 +864,8 @@ public class OutboundUnitClientTest extends BaseClientTest {
         }
 
         public String build() {
-            return format("%s%s%s?%s",
+            return format("%s%s?%s",
                     DOMAIN,
-                    BASE_PATH,
                     path,
                     params.entrySet().stream()
                             .map(entry -> format("%s=%s", entry.getKey(), entry.getValue()))
