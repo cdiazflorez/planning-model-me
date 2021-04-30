@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
@@ -38,17 +39,23 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
     private static final DateTimeFormatter TIME_FORMATTER = ofPattern("HH:mm");
     private final BacklogGatewayProvider backlogGatewayProvider;
     private final PlanningModelGateway planningModelGateway;
+    protected final LogisticCenterGateway logisticCenterGateway;
 
     @Override
     public SimpleTable execute(final GetWaveSuggestionInputDto input) {
+
         final ZonedDateTime now = getCurrentUtcDateTime();
         final ZonedDateTime suggestionTimeFrom = getDateFrom(now);
         final ZonedDateTime suggestionTimeTo = suggestionTimeFrom.plusHours(1);
 
         final List<SuggestedWave> suggestedWaves = getSuggestedWaves(input, now, suggestionTimeTo);
 
-        return createSimpleTableForWaves(suggestedWaves, input.getZoneId(), suggestionTimeFrom,
-                suggestionTimeTo);
+        return createSimpleTableForWaves(
+                suggestedWaves,
+                getZoneId(input),
+                suggestionTimeFrom,
+                suggestionTimeTo
+        );
     }
 
     private ZonedDateTime getDateFrom(final ZonedDateTime now) {
@@ -129,6 +136,13 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                 .mapToInt(SuggestedWave::getQuantity)
                 .sum() + " uds."
         );
+    }
+
+    private ZoneId getZoneId(final GetWaveSuggestionInputDto input) {
+        if (input.getZoneId() == null) {
+            return logisticCenterGateway.getConfiguration(input.getWarehouseId()).getZoneId();
+        }
+        return input.getZoneId();
     }
 
 }
