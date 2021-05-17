@@ -19,19 +19,25 @@ public class ChartData {
     private String title;
     private String cpt;
     private String projectedEndTime;
+    private ProcessingTime processingTime;
     private ChartTooltip tooltip;
 
     public static ChartData fromProjection(final ZonedDateTime cpt,
                                            final ZonedDateTime projectedEndDate,
                                            final ZonedDateTime dateTo,
-                                           final int remainingQuantity) {
-
+                                           final int remainingQuantity,
+                                           final ProcessingTime processingTime,
+                                           final boolean isDeferred) {
 
         return ChartData.builder()
                 .title(cpt.format(DATE_SHORT_FORMATTER))
                 .cpt(cpt.format(DATE_FORMATTER))
                 .projectedEndTime(projectedEndDate.format(DATE_FORMATTER))
-                .tooltip(createChartTooltip(cpt, projectedEndDate, dateTo, remainingQuantity))
+                .processingTime(processingTime)
+                .tooltip(createChartTooltip(
+                        cpt, projectedEndDate, dateTo, remainingQuantity,
+                        processingTime.getValue(), isDeferred)
+                )
                 .build();
     }
 }

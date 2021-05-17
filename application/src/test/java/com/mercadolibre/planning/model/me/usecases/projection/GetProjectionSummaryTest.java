@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -81,7 +82,6 @@ public class GetProjectionSummaryTest {
                 .dateTo(utcCurrentTime.plusDays(1))
                 .backlogs(mockBacklog())
                 .projections(mockProjections(utcCurrentTime))
-                .processingTime(new ProcessingTime(60, "minutes"))
                 .build());
 
         //THEN
@@ -94,26 +94,31 @@ public class GetProjectionSummaryTest {
                         .date(CPT_1)
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(30))
                         .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_2)
                         .projectedEndDate(utcCurrentTime.plusHours(3))
                         .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_3)
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
                         .remainingQuantity(100)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_4)
                         .projectedEndDate(utcCurrentTime.plusHours(8).plusMinutes(10))
                         .remainingQuantity(180)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_5)
                         .projectedEndDate(null)
                         .remainingQuantity(100)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build()
         );
     }
@@ -172,14 +177,14 @@ public class GetProjectionSummaryTest {
         assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMAT),
                 cpt1.get("column_4"));
 
-        assertEquals("none", cpt2.get("style"));
+        assertEquals("warning", cpt2.get("style"));
         assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
                 cpt2.get("column_1"));
         assertEquals("235", cpt2.get("column_2"));
         assertEquals("17.5%", cpt2.get("column_3"));
         assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMAT), cpt2.get("column_4"));
 
-        assertEquals("none", cpt3.get("style"));
+        assertEquals("warning", cpt3.get("style"));
         assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
                 cpt3.get("column_1"));
         assertEquals("300", cpt3.get("column_2"));

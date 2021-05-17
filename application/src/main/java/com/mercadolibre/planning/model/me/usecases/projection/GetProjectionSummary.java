@@ -3,7 +3,6 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -79,8 +78,7 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                 sales,
                 input.getProjections(),
                 config,
-                planningDistribution,
-                input.getProcessingTime()
+                planningDistribution
         );
     }
 
@@ -89,8 +87,7 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final List<Backlog> sales,
             final List<ProjectionResult> projectionResults,
             final LogisticCenterConfiguration configuration,
-            final List<PlanningDistributionResponse> planningDistribution,
-            final ProcessingTime processingTime) {
+            final List<PlanningDistributionResponse> planningDistribution) {
 
         final ZoneId zoneId = configuration.getTimeZone().toZoneId();
         final boolean hasSimulatedResults = hasSimulatedResults(projectionResults);
@@ -98,8 +95,14 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
         return new SimpleTable(
                 "Resumen de Proyección",
                 getProjectionDetailsTableColumns(hasSimulatedResults),
-                getTableData(backlogs, sales, projectionResults,
-                        planningDistribution, processingTime, zoneId, hasSimulatedResults)
+                getTableData(
+                        backlogs,
+                        sales,
+                        projectionResults,
+                        planningDistribution,
+                        zoneId,
+                        hasSimulatedResults
+                )
         );
     }
 
@@ -124,10 +127,10 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
 
     private String getStyle(final ZonedDateTime cpt,
                             final ZonedDateTime projectedEndDate,
-                            final ProcessingTime processingTime) {
+                            final long processingTime) {
         if (projectedEndDate == null || projectedEndDate.isAfter(cpt)) {
             return "danger";
-        } else if (projectedEndDate.isBefore(cpt.minusMinutes(processingTime.getValue()))) {
+        } else if (projectedEndDate.isBefore(cpt.minusMinutes(processingTime))) {
             return "none";
         } else {
             return "warning";
@@ -169,7 +172,6 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final List<Backlog> sales,
             final List<ProjectionResult> projectionResults,
             final List<PlanningDistributionResponse> planning,
-            final ProcessingTime processingTime,
             final ZoneId zoneId,
             final boolean hasSimulatedResults) {
 
@@ -179,13 +181,12 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                         backlogs,
                         sales,
                         planning,
-                        processingTime,
                         zoneId,
                         projection,
                         hasSimulatedResults)
                 )
                 .collect(toList());
-        tableData.add(addTotalsRow(backlogs,sales, planning));
+        tableData.add(addTotalsRow(backlogs, sales, planning));
         return tableData;
     }
 
@@ -193,10 +194,10 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final List<Backlog> backlogs,
             final List<Backlog> sales,
             final List<PlanningDistributionResponse> planningDistribution,
-            final ProcessingTime processingTime,
             final ZoneId zoneId,
             final ProjectionResult projection,
             final boolean hasSimulatedResults) {
+
         final ZonedDateTime cpt = projection.getDate();
         final ZonedDateTime projectedEndDate = projection.getProjectedEndDate();
         final ZonedDateTime simulatedEndDate = projection.getSimulatedEndDate();
@@ -204,13 +205,14 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
         final int soldItems = getBacklogQuantity(cpt, sales);
 
         final Map<String, Object> data = new LinkedHashMap<>(Map.of(
-                "style", getStyle(cpt, projectedEndDate, processingTime),
+                "style", getStyle(cpt, projectedEndDate, projection.getProcessingTime().getValue()),
                 "column_1", convertToTimeZone(zoneId, cpt).format(CPT_HOUR_FORMAT),
                 "column_2", String.valueOf(backlog),
                 "column_3", getDeviation(cpt, soldItems, planningDistribution),
                 "column_4", projectedEndDate == null
                         ? "Excede las 24hs"
-                        : convertToTimeZone(zoneId, projectedEndDate).format(CPT_HOUR_FORMAT)));
+                        : convertToTimeZone(zoneId, projectedEndDate).format(CPT_HOUR_FORMAT),
+                "is_deferred", projection.isDeferred()));
 
         if (hasSimulatedResults) {
             data.put(

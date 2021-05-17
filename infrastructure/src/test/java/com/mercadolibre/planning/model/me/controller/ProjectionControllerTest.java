@@ -260,22 +260,24 @@ public class ProjectionControllerTest {
 
     private Chart mockProjectionChart() {
         return new Chart(
-                new ProcessingTime(60, MINUTES.getName()),
                 List.of(
                         ChartData.builder()
                                 .title("10:00")
                                 .cpt("2020-07-27T10:00:00Z")
                                 .projectedEndTime("2020-07-27T08:39:00Z")
+                                .processingTime(new ProcessingTime(240, MINUTES.getName()))
                                 .build(),
                         ChartData.builder()
                                 .title("08:00")
                                 .cpt("2020-07-27T08:00:00Z")
                                 .projectedEndTime("2020-07-27T07:40:00Z")
+                                .processingTime(new ProcessingTime(240, MINUTES.getName()))
                                 .build(),
                         ChartData.builder()
                                 .title("07:00")
                                 .cpt("2020-07-27T07:00:00Z")
                                 .projectedEndTime("2020-07-27T07:15:00Z")
+                                .processingTime(new ProcessingTime(240, MINUTES.getName()))
                                 .build()
                 )
         );
@@ -296,21 +298,24 @@ public class ProjectionControllerTest {
                                 "column_1", "10:00",
                                 "column_2", "57",
                                 "column_3", "4%",
-                                "column_4", "8:39"
+                                "column_4", "8:39",
+                                "is_deferred", false
                         ),
                         Map.of(
                                 "style", "warning",
                                 "column_1", "8:00",
                                 "column_2", "34",
                                 "column_3", "6%",
-                                "column_4", "7:40"
+                                "column_4", "7:40",
+                                "is_deferred", false
                         ),
                         Map.of(
                                 "style", "danger",
                                 "column_1", "7:00",
                                 "column_2", "78",
                                 "column_3", "1%",
-                                "column_4", "7:15"
+                                "column_4", "7:15",
+                                "is_deferred", true
                         )
                 )
         );

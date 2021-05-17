@@ -167,44 +167,55 @@
                 "column_1": "10:00",
                 "column_2": "57",
                 "column_3": "4%",
-                "column_4": "8:39"
+                "column_4": "8:39",
+                "is_deferred": false
             },
             {
                 "style": "warning",
                 "column_1": "8:00",
                 "column_2": "34",
                 "column_3": "6%",
-                "column_4": "7:40"
+                "column_4": "7:40",
+                "is_deferred": false
             },
             {
                 "style": "danger",
                 "column_1": "7:00",
                 "column_2": "78",
                 "column_3": "1%",
-                "column_4": "7:15"
+                "column_4": "7:15",
+                "is_deferred": true
             }
         ]
     },
     "chart": {
-        "processing_time": {
-            "value": 60,
-            "unit_metric": "minutes"
-        },
         "data": [
             {
                 "title": "10:00",
                 "cpt": "2020-07-27T10:00:00Z",
-                "projected_end_time": "2020-07-27T08:39:00Z"
+                "projected_end_time": "2020-07-27T08:39:00Z",
+                "processing_time": {
+                    "value": 240,
+                    "unit_metric": "minutes"
+                }
             },
             {
                 "title": "08:00",
                 "cpt": "2020-07-27T08:00:00Z",
-                "projected_end_time": "2020-07-27T07:40:00Z"
+                "projected_end_time": "2020-07-27T07:40:00Z",
+                "processing_time": {
+                    "value": 240,
+                    "unit_metric": "minutes"
+                }
             },
             {
                 "title": "07:00",
                 "cpt": "2020-07-27T07:00:00Z",
-                "projected_end_time": "2020-07-27T07:15:00Z"
+                "projected_end_time": "2020-07-27T07:15:00Z",
+                "processing_time": {
+                    "value": 240,
+                    "unit_metric": "minutes"
+                }
             }
         ]
     }

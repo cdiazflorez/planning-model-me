@@ -4,12 +4,9 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
@@ -25,10 +22,8 @@ import lombok.AllArgsConstructor;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -39,8 +34,6 @@ import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationM
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
-
-    private static final String PROCESSING_TIME = "processing_time";
 
     protected static final List<ProcessName> PROJECTION_PROCESS_NAMES =
             List.of(PICKING, PACKING, PACKING_WALL);
@@ -67,13 +60,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final List<ProjectionResult> projections = getProjection(
                 input, utcDateFrom, utcDateTo, backlogs);
 
-        final ProcessingTime processingTime = createProcessingTimeObject(
-                planningModelGateway.getConfiguration(
-                        ConfigurationRequest.builder()
-                                .warehouseId(input.getWarehouseId())
-                                .key(PROCESSING_TIME)
-                                .build()));
-
         return new Projection(
                 "Proyecciones",
                 getWaveSuggestion.execute(GetWaveSuggestionInputDto.builder()
@@ -88,25 +74,13 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         .warehouseId(input.getWarehouseId())
                         .dateFrom(utcDateFrom)
                         .dateTo(utcDateTo)
-                        .processingTime(processingTime)
                         .projections(projections)
                         .backlogs(backlogs)
                         .build()),
-                new Chart(
-                        processingTime,
-                        toChartData(projections, config.getZoneId(), utcDateTo)
-                ),
+                new Chart(toChartData(projections, config.getZoneId(), utcDateTo)),
                 createTabs(),
                 simulationMode
         );
-    }
-
-    private ProcessingTime createProcessingTimeObject(
-            Optional<ConfigurationResponse> processingTimeConfiguration) {
-        return processingTimeConfiguration
-                .map(configurationResponse -> new ProcessingTime(configurationResponse.getValue(),
-                        configurationResponse.getMetricUnit().getName()))
-                .orElseGet(() -> new ProcessingTime(60, MINUTES.getName()));
     }
 
     private boolean hasSimulatedResults(List<ProjectionResult> projectionResults) {
@@ -129,7 +103,9 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                             convertToTimeZone(zoneId, projectedEndDate == null
                                     ? dateTo : projectedEndDate),
                             convertToTimeZone(zoneId, dateTo),
-                            projection.getRemainingQuantity());
+                            projection.getRemainingQuantity(),
+                            projection.getProcessingTime(),
+                            projection.isDeferred());
                 })
                 .collect(Collectors.toList());
     }

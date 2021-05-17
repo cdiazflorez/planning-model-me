@@ -270,22 +270,24 @@ public class SimulationControllerTest {
 
     private Chart mockProjectionChart() {
         return new Chart(
-                new ProcessingTime(60, MINUTES.getName()),
                 List.of(
                         ChartData.builder()
                                 .title("10:00")
                                 .cpt("2020-07-27T10:00:00Z")
                                 .projectedEndTime("2020-07-27T09:00:00Z")
+                                .processingTime(new ProcessingTime(240, MINUTES.getName()))
                                 .build(),
                         ChartData.builder()
                                 .title("11:00")
                                 .cpt("2020-07-27T11:00:00Z")
                                 .projectedEndTime("2020-07-27T09:45:00Z")
+                                .processingTime(new ProcessingTime(240, MINUTES.getName()))
                                 .build(),
                         ChartData.builder()
                                 .title("12:00")
                                 .cpt("2020-07-27T12:00:00Z")
                                 .projectedEndTime("2020-07-27T13:10:00Z")
+                                .processingTime(new ProcessingTime(240, MINUTES.getName()))
                                 .build()
                 )
         );

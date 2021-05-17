@@ -6,6 +6,5 @@ import java.util.List;
 
 @Value
 public class Chart {
-    private ProcessingTime processingTime;
     private List<ChartData> data;
 }
