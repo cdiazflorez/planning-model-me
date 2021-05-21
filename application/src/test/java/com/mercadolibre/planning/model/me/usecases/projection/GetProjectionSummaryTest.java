@@ -118,7 +118,7 @@ public class GetProjectionSummaryTest {
                         .date(CPT_5)
                         .projectedEndDate(null)
                         .remainingQuantity(100)
-                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
+                        .processingTime(null)
                         .build()
         );
     }
