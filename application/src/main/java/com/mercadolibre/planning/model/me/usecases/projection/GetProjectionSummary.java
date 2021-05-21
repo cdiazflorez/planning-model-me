@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -73,6 +74,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                         .applyDeviation(true)
                         .build());
 
+        fixProjections(input.getProjections());
+
         return createProjectionDetailsTable(
                 input.getBacklogs(),
                 sales,
@@ -80,6 +83,17 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                 config,
                 planningDistribution
         );
+    }
+
+
+    private void fixProjections(List<ProjectionResult> projections) {
+        final ProcessingTime defaultProcessingTime = new ProcessingTime(240, "minutes");
+
+        projections.forEach(projectionResult -> {
+            if (projectionResult.getProcessingTime() == null) {
+                projectionResult.setProcessingTime(defaultProcessingTime);
+            }
+        });
     }
 
     private SimpleTable createProjectionDetailsTable(
