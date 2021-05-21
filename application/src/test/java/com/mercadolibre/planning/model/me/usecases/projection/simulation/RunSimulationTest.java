@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -40,6 +41,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -133,7 +135,6 @@ public class RunSimulationTest {
         final Chart chart = projection.getChart();
         final List<ChartData> chartData = chart.getData();
 
-        assertEquals(60, chart.getProcessingTime().getValue());
         assertEquals(5, chartData.size());
 
         final ChartData chartData1 = chartData.get(0);
@@ -188,28 +189,33 @@ public class RunSimulationTest {
                         .projectedEndDate(utcCurrentTime.plusHours(2).plusMinutes(30))
                         .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(35))
                         .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(5))
                         .projectedEndDate(utcCurrentTime.plusHours(3))
                         .simulatedEndDate(utcCurrentTime.plusHours(3))
                         .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(5).plusMinutes(30))
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
                         .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(20))
                         .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(6))
                         .projectedEndDate(utcCurrentTime.plusHours(8).plusMinutes(10))
                         .simulatedEndDate(utcCurrentTime.plusHours(8).plusMinutes(11))
                         .remainingQuantity(180)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(7))
                         .remainingQuantity(100)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build()
         );
     }

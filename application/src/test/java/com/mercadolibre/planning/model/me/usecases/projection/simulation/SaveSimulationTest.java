@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -41,6 +42,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -136,16 +138,14 @@ public class SaveSimulationTest {
         final Chart chart = projection.getChart();
         final List<ChartData> chartData = chart.getData();
 
-        thenTestCharDataIsOk(currentTime, chart, chartData);
+        thenTestCharDataIsOk(currentTime, chartData);
 
         assertEquals(mockComplexTable(), projection.getComplexTable1());
         assertEquals(mockSimpleTable(), projection.getSimpleTable2());
     }
 
-    private void thenTestCharDataIsOk(ZonedDateTime currentTime,
-                                      Chart chart,
-                                      List<ChartData> chartData) {
-        assertEquals(60, chart.getProcessingTime().getValue());
+    private void thenTestCharDataIsOk(final ZonedDateTime currentTime,
+                                      final List<ChartData> chartData) {
         assertEquals(5, chartData.size());
 
         final ChartData chartData1 = chartData.get(0);
@@ -154,6 +154,7 @@ public class SaveSimulationTest {
         assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
         assertEquals(currentTime.plusHours(2).plusMinutes(35).format(DATE_FORMATTER),
                 chartData1.getProjectedEndTime());
+        assertEquals(240, chartData1.getProcessingTime().getValue());
 
         final ChartData chartData2 = chartData.get(1);
         assertEquals(currentTime.plusHours(7).format(DATE_SHORT_FORMATTER),
@@ -161,6 +162,7 @@ public class SaveSimulationTest {
         assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData2.getCpt());
         assertEquals(currentTime.plusHours(3).format(DATE_FORMATTER),
                 chartData2.getProjectedEndTime());
+        assertEquals(240, chartData2.getProcessingTime().getValue());
 
         final ChartData chartData3 = chartData.get(2);
         assertEquals(
@@ -172,6 +174,7 @@ public class SaveSimulationTest {
                 chartData3.getCpt());
         assertEquals(currentTime.plusHours(3).plusMinutes(20).format(DATE_FORMATTER),
                 chartData3.getProjectedEndTime());
+        assertEquals(240, chartData3.getProcessingTime().getValue());
 
         final ChartData chartData4 = chartData.get(3);
         assertEquals(currentTime.plusHours(6).format(DATE_SHORT_FORMATTER),
@@ -180,6 +183,7 @@ public class SaveSimulationTest {
         assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
         assertEquals(currentTime.plusHours(8).plusMinutes(11).format(DATE_FORMATTER),
                 chartData4.getProjectedEndTime());
+        assertEquals(240, chartData4.getProcessingTime().getValue());
 
         final ChartData chartData5 = chartData.get(4);
         assertEquals(currentTime.plusHours(8).format(DATE_SHORT_FORMATTER),
@@ -188,6 +192,7 @@ public class SaveSimulationTest {
         assertEquals(currentTime.plusHours(8).format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(currentTime.plusDays(1).format(DATE_FORMATTER),
                 chartData5.getProjectedEndTime());
+        assertEquals(300, chartData5.getProcessingTime().getValue());
     }
 
     private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
@@ -197,28 +202,33 @@ public class SaveSimulationTest {
                         .projectedEndDate(utcCurrentTime.plusHours(2).plusMinutes(30))
                         .simulatedEndDate(utcCurrentTime.plusHours(2).plusMinutes(35))
                         .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(7))
                         .projectedEndDate(utcCurrentTime.plusHours(3))
                         .simulatedEndDate(utcCurrentTime.plusHours(3))
                         .remainingQuantity(30)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(5).plusMinutes(30))
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
                         .simulatedEndDate(utcCurrentTime.plusHours(3).plusMinutes(20))
                         .remainingQuantity(50)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(6))
                         .projectedEndDate(utcCurrentTime.plusHours(8).plusMinutes(10))
                         .simulatedEndDate(utcCurrentTime.plusHours(8).plusMinutes(11))
                         .remainingQuantity(180)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
                         .build(),
                 ProjectionResult.builder()
                         .date(utcCurrentTime.plusHours(8))
                         .remainingQuantity(100)
+                        .processingTime(new ProcessingTime(300, MINUTES.getName()))
                         .build()
         );
     }

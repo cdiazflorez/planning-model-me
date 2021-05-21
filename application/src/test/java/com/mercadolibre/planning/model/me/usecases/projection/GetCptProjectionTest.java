@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -53,6 +54,7 @@ import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
@@ -102,10 +104,6 @@ public class GetCptProjectionTest {
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
-
-
-        when(planningModelGateway.getConfiguration(createConfigurationRequest()))
-                .thenReturn(mockProcessingTimeConfiguration());
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
@@ -179,7 +177,6 @@ public class GetCptProjectionTest {
         final ChartData chartData4 = chartData.get(3);
         final ChartData chartData5 = chartData.get(4);
 
-        assertEquals(60, chart.getProcessingTime().getValue());
         assertEquals(5, chartData.size());
         final ZonedDateTime cpt1 = convertToTimeZone(zoneId, CPT_1);
         final ZonedDateTime projectedEndDate1 = convertToTimeZone(zoneId,
@@ -188,11 +185,14 @@ public class GetCptProjectionTest {
         assertEquals(cpt1.format(DATE_SHORT_FORMATTER), chartData1.getTitle());
         assertEquals(cpt1.format(DATE_FORMATTER), chartData1.getCpt());
         assertEquals(projectedEndDate1.format(DATE_FORMATTER), chartData1.getProjectedEndTime());
+        assertEquals(240, chartData1.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData1.getTooltip(),
                 cpt1.format(HOUR_MINUTES_FORMAT),
                 "-",
-                projectedEndDate1.format(HOUR_MINUTES_FORMAT));
+                projectedEndDate1.format(HOUR_MINUTES_FORMAT),
+                "4 horas",
+                null);
 
         final ZonedDateTime cpt2 = convertToTimeZone(zoneId, CPT_2);
         final ZonedDateTime projectedEndDate2 = convertToTimeZone(zoneId,
@@ -200,11 +200,14 @@ public class GetCptProjectionTest {
         assertEquals(cpt2.format(DATE_SHORT_FORMATTER), chartData2.getTitle());
         assertEquals(cpt2.format(DATE_FORMATTER), chartData2.getCpt());
         assertEquals(projectedEndDate2.format(DATE_FORMATTER), chartData2.getProjectedEndTime());
+        assertEquals(240, chartData2.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData2.getTooltip(),
                 cpt2.format(HOUR_MINUTES_FORMAT),
                 "-",
-                projectedEndDate2.format(HOUR_MINUTES_FORMAT));
+                projectedEndDate2.format(HOUR_MINUTES_FORMAT),
+                "4 horas",
+                null);
 
         final ZonedDateTime cpt3 = convertToTimeZone(zoneId, CPT_3);
         final ZonedDateTime projectedEndDate3 = convertToTimeZone(zoneId,
@@ -212,11 +215,14 @@ public class GetCptProjectionTest {
         assertEquals(cpt3.format(DATE_SHORT_FORMATTER), chartData3.getTitle());
         assertEquals(cpt3.format(DATE_FORMATTER), chartData3.getCpt());
         assertEquals(projectedEndDate3.format(DATE_FORMATTER), chartData3.getProjectedEndTime());
+        assertEquals(240, chartData3.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData3.getTooltip(),
                 cpt3.format(HOUR_MINUTES_FORMAT),
                 "100",
-                projectedEndDate3.format(HOUR_MINUTES_FORMAT));
+                projectedEndDate3.format(HOUR_MINUTES_FORMAT),
+                "4 horas",
+                null);
 
         final ZonedDateTime cpt4 = convertToTimeZone(zoneId, CPT_4);
         final ZonedDateTime projectedEndDate4 = convertToTimeZone(zoneId,
@@ -224,11 +230,14 @@ public class GetCptProjectionTest {
         assertEquals(cpt4.format(DATE_SHORT_FORMATTER), chartData4.getTitle());
         assertEquals(cpt4.format(DATE_FORMATTER), chartData4.getCpt());
         assertEquals(projectedEndDate4.format(DATE_FORMATTER), chartData4.getProjectedEndTime());
+        assertEquals(240, chartData4.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData4.getTooltip(),
                 cpt4.format(HOUR_MINUTES_FORMAT),
                 "180",
-                projectedEndDate4.format(HOUR_MINUTES_FORMAT));
+                projectedEndDate4.format(HOUR_MINUTES_FORMAT),
+                "4 horas",
+                null);
 
         final ZonedDateTime cpt5 = convertToTimeZone(zoneId, CPT_5);
         final ZonedDateTime projectedEndDate5 = convertToTimeZone(zoneId,
@@ -236,23 +245,31 @@ public class GetCptProjectionTest {
         assertEquals(cpt5.format(DATE_SHORT_FORMATTER), chartData5.getTitle());
         assertEquals(cpt5.format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(projectedEndDate5.format(DATE_FORMATTER), chartData5.getProjectedEndTime());
+        assertEquals(300, chartData5.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData5.getTooltip(),
                 cpt5.format(HOUR_MINUTES_FORMAT),
                 "100",
-                "Excede las 24hs");
+                "Excede las 24hs",
+                "5 horas",
+                "Diferido");
     }
 
     private void assertChartTooltip(final ChartTooltip tooltip,
                                     final String subtitle1,
                                     final String subtitle2,
-                                    final String subtitle3) {
+                                    final String subtitle3,
+                                    final String subtitle4,
+                                    final String title5) {
         assertEquals("CPT:", tooltip.getTitle1());
         assertEquals(subtitle1, tooltip.getSubtitle1());
         assertEquals("Desviación:", tooltip.getTitle2());
         assertEquals(subtitle2, tooltip.getSubtitle2());
         assertEquals("Cierre proyectado:", tooltip.getTitle3());
         assertEquals(subtitle3, tooltip.getSubtitle3());
+        assertEquals("Cycle time:", tooltip.getTitle4());
+        assertEquals(subtitle4, tooltip.getSubtitle4());
+        assertEquals(title5, tooltip.getTitle5());
     }
 
     private ProjectionRequest createProjectionRequest(final List<Backlog> backlogs,
@@ -275,26 +292,36 @@ public class GetCptProjectionTest {
                         .date(CPT_1)
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(30))
                         .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
+                        .isDeferred(false)
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_2)
                         .projectedEndDate(utcCurrentTime.plusHours(3))
                         .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
+                        .isDeferred(false)
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_3)
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(25))
                         .remainingQuantity(100)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
+                        .isDeferred(false)
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_4)
                         .projectedEndDate(utcCurrentTime.plusHours(8).plusMinutes(10))
                         .remainingQuantity(180)
+                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
+                        .isDeferred(false)
                         .build(),
                 ProjectionResult.builder()
                         .date(CPT_5)
                         .projectedEndDate(null)
                         .remainingQuantity(100)
+                        .processingTime(new ProcessingTime(300, MINUTES.getName()))
+                        .isDeferred(true)
                         .build()
         );
     }

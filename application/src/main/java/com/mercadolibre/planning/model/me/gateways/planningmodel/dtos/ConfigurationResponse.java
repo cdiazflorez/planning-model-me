@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConfigurationResponse {
-    private int value;
+    private long value;
     private MetricUnit metricUnit;
 }

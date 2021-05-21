@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.projection.dtos;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.Builder;
@@ -21,8 +20,6 @@ public class GetProjectionSummaryInput {
     final ZonedDateTime dateFrom;
 
     final ZonedDateTime dateTo;
-
-    final ProcessingTime processingTime;
 
     final List<ProjectionResult> projections;
 
