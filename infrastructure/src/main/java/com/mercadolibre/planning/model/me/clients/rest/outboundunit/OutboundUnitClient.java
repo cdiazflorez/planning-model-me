@@ -62,7 +62,7 @@ import static java.util.Optional.ofNullable;
 @Component
 public class OutboundUnitClient extends HttpClient implements BacklogGateway {
 
-    private static final String SEARCH_GROUPS_URL = "/wms/outbound/groups/%s/search";
+    private static final String SEARCH_GROUPS_URL = "/wms/warehouses/%s/outbound/groups/%s/search";
     private static final String SEARCH_UNITS_URL = "/wms/warehouses/%s/outbound/units/search";
     public static final String CLIENT_ID = "9999";
     private static final String AGGREGATION_BY_ETD = "by_etd";
@@ -110,7 +110,8 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 ))
                 .build();
 
-        final OutboundUnitSearchResponse<UnitGroup> response = searchGroups(ORDER_VALUE, request);
+        final OutboundUnitSearchResponse<UnitGroup> response =
+                searchGroups(ORDER_VALUE, warehouseId, request);
 
         return response.getAggregations().stream()
                 .filter(aggregationResponse ->
@@ -153,7 +154,8 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 ))
                 .build();
 
-        final OutboundUnitSearchResponse<UnitGroup> response = searchGroups(ORDER_VALUE, request);
+        final OutboundUnitSearchResponse<UnitGroup> response =
+                searchGroups(ORDER_VALUE, warehouseId, request);
 
         return response.getAggregations().stream()
                 .map(AggregationResponse::getBuckets)
@@ -258,7 +260,8 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 ))
                 .build();
 
-        final OutboundUnitSearchResponse<UnitGroup> response = searchGroups("order", request);
+        final OutboundUnitSearchResponse<UnitGroup> response =
+                searchGroups("order", filters.getWarehouseId(), request);
 
         return response.getAggregations().stream()
                 .filter(aggregationResponse ->
@@ -273,13 +276,15 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     @Trace(metricName = "API/outboundUnit/searchGroups")
     public OutboundUnitSearchResponse<UnitGroup> searchGroups(
             final String groupType,
+            final String warehouseId,
             final SearchUnitRequest searchUnitRequest) {
 
         final HttpRequest request = HttpRequest.builder()
-                .url(format(SEARCH_GROUPS_URL, groupType))
+                .url(format(SEARCH_GROUPS_URL, warehouseId, groupType))
                 .POST(requestSupplier(searchUnitRequest))
                 .queryParams(defaultParams())
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
+                .headers(Map.of("X-Consistency", "strong"))
                 .build();
         try {
             return unitCircuitBreaker.run(
