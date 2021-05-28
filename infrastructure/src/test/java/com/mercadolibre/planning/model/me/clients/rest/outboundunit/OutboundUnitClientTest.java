@@ -107,16 +107,18 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // GIVEN
             final SearchUnitRequest searchUnitRequest =
                     new SearchUnitRequest(0, 0, null, emptyList(), emptyList());
-            failingResponse(POST, searchGroupUrl(GROUP_TYPE));
+            failingResponse(POST, searchGroupUrl(WAREHOUSE_ID, GROUP_TYPE));
 
             // WHEN
             final ClientException exception = assertThrows(ClientException.class,
-                    () -> outboundUnitClient.searchGroups(GROUP_TYPE, searchUnitRequest)
+                    () -> outboundUnitClient
+                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest)
             );
 
             // THEN
             assertEquals("OUTBOUND_UNIT", exception.getApiName());
-            assertEquals("/wms/outbound/groups/order/search", exception.getPath());
+            assertEquals("/wms/warehouses/" + WAREHOUSE_ID + "/outbound/groups/order/search",
+                    exception.getPath());
             assertEquals(POST, exception.getHttpMethod());
             assertNotNull(exception.getCause());
         }
@@ -127,11 +129,13 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // GIVEN
             final SearchUnitRequest searchUnitRequest =
                     new SearchUnitRequest(0, 0, null, emptyList(), emptyList());
-            unsuccessfulResponse(POST, searchGroupUrl(GROUP_TYPE), INTERNAL_SERVER_ERROR);
+            unsuccessfulResponse(POST,
+                    searchGroupUrl(WAREHOUSE_ID, GROUP_TYPE), INTERNAL_SERVER_ERROR);
 
             // WHEN
             final ClientException exception = assertThrows(ClientException.class,
-                    () -> outboundUnitClient.searchGroups(GROUP_TYPE, searchUnitRequest)
+                    () -> outboundUnitClient
+                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest)
             );
 
             // THEN
@@ -149,11 +153,13 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // GIVEN
             final SearchUnitRequest searchUnitRequest =
                     new SearchUnitRequest(0, 0, null, emptyList(), emptyList());
-            unsuccessfulResponse(POST, searchGroupUrl(GROUP_TYPE), NOT_FOUND);
+            unsuccessfulResponse(POST,
+                    searchGroupUrl(WAREHOUSE_ID, GROUP_TYPE), NOT_FOUND);
 
             // WHEN
             final Executable executable =
-                    () -> outboundUnitClient.searchGroups(GROUP_TYPE, searchUnitRequest);
+                    () -> outboundUnitClient
+                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest);
 
             // THEN
             assertThrows(ClientException.class, executable);
@@ -203,7 +209,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     POST,
-                    searchGroupUrl(GROUP_TYPE),
+                    searchGroupUrl(WAREHOUSE_ID, GROUP_TYPE),
                     objectMapper.writeValueAsString(body),
                     searchBody(
                             new JSONArray()
@@ -214,7 +220,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             // WHEN
             final OutboundUnitSearchResponse<UnitGroup> response =
-                    outboundUnitClient.searchGroups(GROUP_TYPE, searchUnitRequest);
+                    outboundUnitClient.searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest);
 
             // THEN
             assertEquals(
@@ -285,7 +291,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     POST,
-                    searchGroupUrl(GROUP_TYPE),
+                    searchGroupUrl(WAREHOUSE_ID, GROUP_TYPE),
                     objectMapper.writeValueAsString(body),
                     searchBodyWithAggregations(
                             new JSONObject()
@@ -295,7 +301,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             // WHEN
             final OutboundUnitSearchResponse<UnitGroup> response =
-                    outboundUnitClient.searchGroups(GROUP_TYPE, searchUnitRequest);
+                    outboundUnitClient.searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest);
 
             // THEN
             assertEquals(
@@ -414,7 +420,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     POST,
-                    searchGroupUrl(GROUP_TYPE),
+                    searchGroupUrl(WAREHOUSE_ID, GROUP_TYPE),
                     objectMapper.writeValueAsString(requestBody),
                     responseBody.toString()
             );
@@ -497,7 +503,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     POST,
-                    searchGroupUrl(GROUP_TYPE),
+                    searchGroupUrl(WAREHOUSE_ID, GROUP_TYPE),
                     objectMapper.writeValueAsString(requestBody),
                     responseBody.toString()
             );
@@ -695,7 +701,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     POST,
-                    searchGroupUrl(GROUP_TYPE),
+                    searchGroupUrl(WAREHOUSE_ID, GROUP_TYPE),
                     objectMapper.writeValueAsString(requestBody),
                     responseBody.toString()
             );
@@ -761,9 +767,10 @@ public class OutboundUnitClientTest extends BaseClientTest {
             assertNull(exception.getCause().getCause());
         }
 
-        private String searchGroupUrl(final String groupType) {
+        private String searchGroupUrl(final String warehouseId, final String groupType) {
             return UnitGroupUrlBuilder
-                    .create(format("/wms/outbound/groups/%s/search", groupType))
+                    .create(format("/wms/warehouses/%s/outbound/groups/%s/search",
+                            warehouseId, groupType))
                     .withParams(ImmutableMap.of("client.id", "9999"))
                     .build();
         }
