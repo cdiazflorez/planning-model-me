@@ -567,7 +567,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     new UnitProcessBacklogInput(PICKING.getStatus(),
                     WAREHOUSE_ID,
                     utcDateFrom,
-                    utcDateTo, null));
+                    utcDateTo, null, "order"));
 
             // THEN
             assertEquals(PICKING.getStatus(), backlogs.getProcess());
@@ -608,7 +608,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     new UnitProcessBacklogInput(PACKING.getStatus(),
                             WAREHOUSE_ID,
                             utcDateFrom,
-                            utcDateTo, "PW"));
+                            utcDateTo, "PW", GROUP_TYPE));
 
             // THEN
             assertEquals(PACKING.getStatus(), backlogs.getProcess());
@@ -754,7 +754,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     new UnitProcessBacklogInput(PICKING.getStatus(),
                             WAREHOUSE_ID,
                             utcDateFrom,
-                            utcDateTo, null))
+                            utcDateTo, null, GROUP_TYPE))
             );
 
             // THEN

@@ -59,6 +59,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
                         .workflow(input.getWorkflow())
                         .dateFrom(input.getDateFrom())
                         .dateTo(input.getDateTo())
+                        .groupType("order")
                         .currentTime(currentTime)
                         .build());
 

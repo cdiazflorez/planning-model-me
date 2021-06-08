@@ -80,20 +80,24 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
 
         final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
+
         List<ProcessBacklog> backlogs =
                 backlogGateway.getBacklog(statuses,
                         input.getWarehouseId(),
                         dateFrom,
                         dateFrom.plusHours(HOURS_TO_SHOW)
                 );
+
         final ProcessBacklog pickingBacklog =
                 backlogGateway.getUnitBacklog(
                         new UnitProcessBacklogInput(ProcessInfo.PICKING.getStatus(),
                                 input.getWarehouseId(),
                                 dateFrom,
                                 dateFrom.plusHours(HOURS_TO_SHOW),
-                                null)
+                                null,
+                                input.getGroupType())
                 );
+
         return List.of(
                 new CurrentBacklog(WAVING, backlogs.stream()
                         .filter(t -> t.getProcess().equals(OUTBOUND_PLANNING.getStatus()))

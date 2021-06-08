@@ -55,6 +55,7 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.ORDER_GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -110,6 +111,7 @@ class GetCurrentStatusTest {
                 .dateFrom(getCurrentUtcDate())
                 .dateTo(getCurrentUtcDate().plusHours(25))
                 .currentTime(A_DATE)
+                .groupType(ORDER_GROUP_TYPE)
                 .build();
 
         final ZonedDateTime cptFrom = A_DATE.truncatedTo(DAYS)
@@ -222,6 +224,7 @@ class GetCurrentStatusTest {
                 .dateFrom(getCurrentUtcDate())
                 .dateTo(getCurrentUtcDate().plusHours(25))
                 .currentTime(A_DATE)
+                .groupType(ORDER_GROUP_TYPE)
                 .build();
 
 
@@ -315,6 +318,7 @@ class GetCurrentStatusTest {
                 .dateFrom(getCurrentUtcDate())
                 .dateTo(getCurrentUtcDate().plusHours(25))
                 .currentTime(A_DATE)
+                .groupType(ORDER_GROUP_TYPE)
                 .build();
 
         final ZonedDateTime cptFrom = A_DATE.truncatedTo(DAYS)
@@ -381,21 +385,22 @@ class GetCurrentStatusTest {
                 input.getWarehouseId(),
                 cptFrom,
                 null,
-                null)))
+                null,
+                ORDER_GROUP_TYPE)))
                 .thenReturn(pickingProcessBacklog);
 
         if (hasPutToWall) {
             when(backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(
-                            WALL_IN.getStatus(), input.getWarehouseId(), cptFrom, null, null)))
+                    new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
+                            cptFrom, null, null, ORDER_GROUP_TYPE)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
                             .build());
 
             when(backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(
-                            PACKING.getStatus(), input.getWarehouseId(), cptFrom, null, "PW")))
+                    new UnitProcessBacklogInput(PACKING.getStatus(), input.getWarehouseId(),
+                            cptFrom, null, "PW", ORDER_GROUP_TYPE)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
@@ -403,16 +408,16 @@ class GetCurrentStatusTest {
                             .build());
 
             when(backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(
-                            WALL_IN.getStatus(), input.getWarehouseId(), cptFrom, null, null)))
+                    new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
+                            cptFrom, null, null, ORDER_GROUP_TYPE)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
                             .build());
 
             when(backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(
-                            PACKING_WALL.getStatus(), input.getWarehouseId(), cptFrom, null, "PW")))
+                    new UnitProcessBacklogInput(PACKING_WALL.getStatus(), input.getWarehouseId(),
+                            cptFrom, null, "PW", ORDER_GROUP_TYPE)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
@@ -426,7 +431,7 @@ class GetCurrentStatusTest {
                 input.getWarehouseId(),
                 currentTime.minusHours(1),
                 currentTime,
-                "ORDER"))
+                ORDER_GROUP_TYPE))
                 .thenReturn(UnitsResume.builder()
                         .unitCount(54)
                         .build());

@@ -167,20 +167,21 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 new UnitProcessBacklogInput(PICKING.getStatus(),
                 input.getWarehouseId(),
                 cptFrom,
-                null, null));
+                null, null, input.getGroupType()));
 
         if (warehouseHasWall) {
             final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(),
                     input.getWarehouseId(),
                     cptFrom,
-                    null, null));
+                    null, null, input.getGroupType()));
+
             final ProcessBacklog packingWall = backlogGateway
                     .getUnitBacklog(
                             new UnitProcessBacklogInput(ProcessInfo.PACKING_WALL.getStatus(),
                             input.getWarehouseId(),
                             cptFrom,
-                            null, "PW"));
+                            null, "PW", input.getGroupType()));
             recalculatePackingNoWallUnits(processBacklogs, packingWall);
             processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog, packingWall));
         } else {
@@ -309,7 +310,7 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 input.getWarehouseId(),
                 currentTime.minusHours(1),
                 currentTime,
-                "ORDER");
+                "order");
     }
 
     private List<Metric> createMetricsList(final CurrentStatusMetricInputs inputs,

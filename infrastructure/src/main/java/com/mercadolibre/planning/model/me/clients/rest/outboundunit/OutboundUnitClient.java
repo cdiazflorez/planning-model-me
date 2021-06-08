@@ -62,9 +62,9 @@ import static java.util.Optional.ofNullable;
 @Component
 public class OutboundUnitClient extends HttpClient implements BacklogGateway {
 
+    public static final String CLIENT_ID = "9999";
     private static final String SEARCH_GROUPS_URL = "/wms/warehouses/%s/outbound/groups/%s/search";
     private static final String SEARCH_UNITS_URL = "/wms/warehouses/%s/outbound/units/search";
-    public static final String CLIENT_ID = "9999";
     private static final String AGGREGATION_BY_ETD = "by_etd";
     private static final String ORDER_VALUE = "order";
     private static final String API_NAME = "OUTBOUND_UNIT";
@@ -194,6 +194,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         addUnitParam(WAREHOUSE_ID.toJson(), warehouseId, defaultParams);
         addUnitParam("group.etd_from", input.getDateFrom().toString(), defaultParams);
         addUnitParam("group.etd_to", input.getDateTo(), defaultParams);
+        addUnitParam("group.type", input.getGroupType(), defaultParams);
         addUnitParam(LIMIT.toJson(), "1", defaultParams);
         addUnitParam(STATUS.toJson(), input.getStatuses(), defaultParams);
         addUnitParam("address.area", input.getArea(), defaultParams);
