@@ -18,7 +18,8 @@ public interface BacklogGateway {
     List<ProcessBacklog> getBacklog(final List<Map<String, String>> statuses,
                                     final String warehouseId,
                                     final ZonedDateTime dateFrom,
-                                    final ZonedDateTime dateTo);
+                                    final ZonedDateTime dateTo,
+                                    final boolean forceConsistency);
 
     List<Backlog> getSalesByCpt(final BacklogFilters filters);
 

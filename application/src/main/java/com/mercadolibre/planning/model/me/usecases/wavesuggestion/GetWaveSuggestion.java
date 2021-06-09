@@ -75,7 +75,8 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                         .getBacklog(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus())),
                                 input.getWarehouseId(),
                                 cptFrom,
-                                cptFrom.plusHours(25))
+                                cptFrom.plusHours(25),
+                                true)
                         .stream().findFirst().map(ProcessBacklog::getQuantity).orElse(0);
 
         return planningModelGateway

@@ -124,7 +124,8 @@ class GetWaveSuggestionTest {
         when(backlogGateway.getBacklog(eq(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus()))),
                 eq(WAREHOUSE_ID),
                 any(),
-                any()
+                any(),
+                eq(true)
         )).thenReturn(List.of(
                 ProcessBacklog.builder()
                         .process(OUTBOUND_PLANNING.getStatus())

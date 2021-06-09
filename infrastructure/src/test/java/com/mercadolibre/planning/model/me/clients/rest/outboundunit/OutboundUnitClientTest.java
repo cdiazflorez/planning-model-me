@@ -112,7 +112,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // WHEN
             final ClientException exception = assertThrows(ClientException.class,
                     () -> outboundUnitClient
-                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest)
+                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest, false)
             );
 
             // THEN
@@ -135,7 +135,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // WHEN
             final ClientException exception = assertThrows(ClientException.class,
                     () -> outboundUnitClient
-                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest)
+                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest, false)
             );
 
             // THEN
@@ -159,7 +159,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // WHEN
             final Executable executable =
                     () -> outboundUnitClient
-                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest);
+                            .searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest, false);
 
             // THEN
             assertThrows(ClientException.class, executable);
@@ -220,7 +220,8 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             // WHEN
             final OutboundUnitSearchResponse<UnitGroup> response =
-                    outboundUnitClient.searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest);
+                    outboundUnitClient.searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest,
+                            false);
 
             // THEN
             assertEquals(
@@ -301,7 +302,8 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             // WHEN
             final OutboundUnitSearchResponse<UnitGroup> response =
-                    outboundUnitClient.searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest);
+                    outboundUnitClient.searchGroups(GROUP_TYPE, WAREHOUSE_ID, searchUnitRequest,
+                            false);
 
             // THEN
             assertEquals(
@@ -524,7 +526,8 @@ public class OutboundUnitClientTest extends BaseClientTest {
             final List<ProcessBacklog> backlogs = outboundUnitClient.getBacklog(statuses,
                     input.getWarehouseId(),
                     input.getDateFrom(),
-                    input.getDateTo());
+                    input.getDateTo(),
+                    false);
 
             // THEN
             assertEquals(1, backlogs.size());
@@ -567,7 +570,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     new UnitProcessBacklogInput(PICKING.getStatus(),
                     WAREHOUSE_ID,
                     utcDateFrom,
-                    utcDateTo, null, "order"));
+                    utcDateTo, null, "order", false));
 
             // THEN
             assertEquals(PICKING.getStatus(), backlogs.getProcess());
@@ -608,7 +611,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     new UnitProcessBacklogInput(PACKING.getStatus(),
                             WAREHOUSE_ID,
                             utcDateFrom,
-                            utcDateTo, "PW", GROUP_TYPE));
+                            utcDateTo, "PW", GROUP_TYPE, false));
 
             // THEN
             assertEquals(PACKING.getStatus(), backlogs.getProcess());
@@ -754,7 +757,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     new UnitProcessBacklogInput(PICKING.getStatus(),
                             WAREHOUSE_ID,
                             utcDateFrom,
-                            utcDateTo, null, GROUP_TYPE))
+                            utcDateTo, null, GROUP_TYPE, false))
             );
 
             // THEN

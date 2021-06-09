@@ -73,7 +73,8 @@ public class GetBacklogProjectionTest {
                 ),
                 WAREHOUSE_ID,
                 A_DATE,
-                A_DATE.plusHours(25))
+                A_DATE.plusHours(25),
+                true)
         ).thenReturn(
                 new ArrayList<>(
                         List.of(
@@ -85,7 +86,7 @@ public class GetBacklogProjectionTest {
         );
 
         when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput("to_pick",
-                WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25), null, ORDER_GROUP_TYPE))
+                WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25), null, ORDER_GROUP_TYPE, true))
         ).thenReturn(
                 ProcessBacklog.builder()
                         .process(ProcessInfo.PICKING.getStatus())

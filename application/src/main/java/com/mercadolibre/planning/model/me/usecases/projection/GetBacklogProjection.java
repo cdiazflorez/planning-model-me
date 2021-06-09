@@ -85,7 +85,8 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
                 backlogGateway.getBacklog(statuses,
                         input.getWarehouseId(),
                         dateFrom,
-                        dateFrom.plusHours(HOURS_TO_SHOW)
+                        dateFrom.plusHours(HOURS_TO_SHOW),
+                        true
                 );
 
         final ProcessBacklog pickingBacklog =
@@ -95,7 +96,8 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
                                 dateFrom,
                                 dateFrom.plusHours(HOURS_TO_SHOW),
                                 null,
-                                input.getGroupType())
+                                input.getGroupType(),
+                                true)
                 );
 
         return List.of(

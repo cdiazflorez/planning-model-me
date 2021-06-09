@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
+import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequestBuilder;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.json.type.TypeReference;
@@ -111,7 +112,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .build();
 
         final OutboundUnitSearchResponse<UnitGroup> response =
-                searchGroups(ORDER_VALUE, warehouseId, request);
+                searchGroups(ORDER_VALUE, warehouseId, request, true);
 
         return response.getAggregations().stream()
                 .filter(aggregationResponse ->
@@ -128,7 +129,8 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     public List<ProcessBacklog> getBacklog(final List<Map<String, String>> statuses,
                                            final String warehouseId,
                                            final ZonedDateTime dateFrom,
-                                           final ZonedDateTime dateTo) {
+                                           final ZonedDateTime dateTo,
+                                           final boolean forceConsistency) {
         final SearchUnitRequest request = SearchUnitRequest.builder()
                 .limit(1)
                 .offset(0)
@@ -155,7 +157,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .build();
 
         final OutboundUnitSearchResponse<UnitGroup> response =
-                searchGroups(ORDER_VALUE, warehouseId, request);
+                searchGroups(ORDER_VALUE, warehouseId, request, forceConsistency);
 
         return response.getAggregations().stream()
                 .map(AggregationResponse::getBuckets)
@@ -199,7 +201,9 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         addUnitParam(STATUS.toJson(), input.getStatuses(), defaultParams);
         addUnitParam("address.area", input.getArea(), defaultParams);
 
-        final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams, warehouseId);
+        final OutboundUnitSearchResponse<Unit> response = searchUnits(defaultParams,
+                warehouseId, input.isForceConsistency());
+
         int quantity = Objects.nonNull(response) ? response.getPaging().getTotal() : 0;
         return ProcessBacklog.builder()
                 .process(input.getStatuses())
@@ -262,7 +266,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .build();
 
         final OutboundUnitSearchResponse<UnitGroup> response =
-                searchGroups("order", filters.getWarehouseId(), request);
+                searchGroups("order", filters.getWarehouseId(), request, false);
 
         return response.getAggregations().stream()
                 .filter(aggregationResponse ->
@@ -278,46 +282,53 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     public OutboundUnitSearchResponse<UnitGroup> searchGroups(
             final String groupType,
             final String warehouseId,
-            final SearchUnitRequest searchUnitRequest) {
+            final SearchUnitRequest searchUnitRequest,
+            final boolean forceConsistency) {
 
-        final HttpRequest request = HttpRequest.builder()
+        final HttpRequestBuilder requestBuilder = HttpRequest.builder()
                 .url(format(SEARCH_GROUPS_URL, warehouseId, groupType))
                 .POST(requestSupplier(searchUnitRequest))
                 .queryParams(defaultParams())
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
-                .headers(Map.of("X-Consistency", "strong"))
-                .build();
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK));
+
+        if (forceConsistency) {
+            requestBuilder.headers(Map.of("X-Consistency", "strong"));
+        }
+
         try {
             return unitCircuitBreaker.run(
                     (FailOnExceptionAction<OutboundUnitSearchResponse<UnitGroup>>)
-                    () -> send(request, response ->
+                    () -> send(requestBuilder.build(), response ->
                                     response.getData(new TypeReference<>() {})));
         } catch (ExecutionException e) {
             log.error("An error has occurred on OutboundUnitClient - searchGroups: ", e);
-            throw new ClientException(API_NAME, request, e.getCause());
+            throw new ClientException(API_NAME, requestBuilder.build(), e.getCause());
         }
     }
 
     @Trace(metricName = "API/outboundUnit/searchUnits")
     private OutboundUnitSearchResponse<Unit> searchUnits(final Map<String, String> params,
-                                                         final String warehouseId) {
+                                                         final String warehouseId,
+                                                         final boolean forceConsistency) {
 
-        final HttpRequest request = HttpRequest.builder()
+        final HttpRequestBuilder requestBuilder = HttpRequest.builder()
                 .url(String.format(SEARCH_UNITS_URL, warehouseId))
                 .GET()
                 .queryParams(params)
-                .acceptedHttpStatuses(Set.of(HttpStatus.OK))
-                .headers(Map.of("X-Consistency", "strong"))
-                .build();
+                .acceptedHttpStatuses(Set.of(HttpStatus.OK));
+
+        if (forceConsistency) {
+            requestBuilder.headers(Map.of("X-Consistency", "strong"));
+        }
 
         try {
             return unitCircuitBreaker.run(
                     (FailOnExceptionAction<OutboundUnitSearchResponse<Unit>>)
-                    () -> send(request, response ->
+                    () -> send(requestBuilder.build(), response ->
                             response.getData(new TypeReference<>() {})));
         } catch (ExecutionException e) {
             log.error("An error has occurred on OutboundUnitClient - searchUnits: ", e);
-            throw new ClientException(API_NAME, request, e.getCause());
+            throw new ClientException(API_NAME, requestBuilder.build(), e.getCause());
         }
     }
 

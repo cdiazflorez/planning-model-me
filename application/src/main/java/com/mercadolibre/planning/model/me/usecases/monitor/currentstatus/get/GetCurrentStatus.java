@@ -159,29 +159,23 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
 
         final List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
-                input.getWarehouseId(),
-                cptFrom,
-                null);
+                input.getWarehouseId(), cptFrom, null, false);
 
         final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(
-                new UnitProcessBacklogInput(PICKING.getStatus(),
-                input.getWarehouseId(),
-                cptFrom,
-                null, null, input.getGroupType()));
+                new UnitProcessBacklogInput(PICKING.getStatus(), input.getWarehouseId(),
+                        cptFrom, null, null, input.getGroupType(), false));
 
         if (warehouseHasWall) {
             final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(WALL_IN.getStatus(),
-                    input.getWarehouseId(),
-                    cptFrom,
-                    null, null, input.getGroupType()));
+                    new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
+                            cptFrom, null, null, input.getGroupType(), false));
 
             final ProcessBacklog packingWall = backlogGateway
                     .getUnitBacklog(
                             new UnitProcessBacklogInput(ProcessInfo.PACKING_WALL.getStatus(),
-                            input.getWarehouseId(),
-                            cptFrom,
-                            null, "PW", input.getGroupType()));
+                            input.getWarehouseId(), cptFrom, null, "PW",
+                                    input.getGroupType(), false));
+
             recalculatePackingNoWallUnits(processBacklogs, packingWall);
             processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog, packingWall));
         } else {

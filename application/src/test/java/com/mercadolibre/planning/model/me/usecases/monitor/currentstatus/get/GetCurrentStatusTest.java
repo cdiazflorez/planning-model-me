@@ -125,7 +125,7 @@ class GetCurrentStatusTest {
                 Map.of("status", PACKING.getStatus())
         );
 
-        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, null))
+        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, null, false))
                 .thenReturn(
                         new ArrayList<>(
                                 List.of(
@@ -239,7 +239,7 @@ class GetCurrentStatusTest {
                 Map.of("status", PACKING.getStatus())
         );
 
-        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, null))
+        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, null, false))
                 .thenReturn(
                         new ArrayList<>(
                                 List.of(
@@ -386,13 +386,14 @@ class GetCurrentStatusTest {
                 cptFrom,
                 null,
                 null,
-                ORDER_GROUP_TYPE)))
+                ORDER_GROUP_TYPE,
+                false)))
                 .thenReturn(pickingProcessBacklog);
 
         if (hasPutToWall) {
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, null, ORDER_GROUP_TYPE)))
+                            cptFrom, null, null, ORDER_GROUP_TYPE, false)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
@@ -400,7 +401,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(PACKING.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, "PW", ORDER_GROUP_TYPE)))
+                            cptFrom, null, "PW", ORDER_GROUP_TYPE, false)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
@@ -409,7 +410,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, null, ORDER_GROUP_TYPE)))
+                            cptFrom, null, null, ORDER_GROUP_TYPE, false)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
@@ -417,7 +418,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(PACKING_WALL.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, "PW", ORDER_GROUP_TYPE)))
+                            cptFrom, null, "PW", ORDER_GROUP_TYPE, false)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
