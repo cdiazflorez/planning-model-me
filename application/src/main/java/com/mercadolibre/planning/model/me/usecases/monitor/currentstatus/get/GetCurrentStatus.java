@@ -150,6 +150,10 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 .minusDays(7)
                 .withZoneSameInstant(UTC);
 
+        final ZonedDateTime cptTo = input.getCurrentTime().truncatedTo(DAYS)
+                .plusMonths(2)
+                .withZoneSameInstant(UTC);
+
         final List<Map<String, String>> statuses = List.of(
                 Map.of(STATUS_ATTRIBUTE, OUTBOUND_PLANNING.getStatus()),
                 Map.of(STATUS_ATTRIBUTE, PACKING.getStatus())
@@ -159,21 +163,21 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
 
         final List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
-                input.getWarehouseId(), cptFrom, null, false);
+                input.getWarehouseId(), cptFrom, cptTo, false);
 
         final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(
                 new UnitProcessBacklogInput(PICKING.getStatus(), input.getWarehouseId(),
-                        cptFrom, null, null, input.getGroupType(), false));
+                        cptFrom, cptTo, null, input.getGroupType(), false));
 
         if (warehouseHasWall) {
             final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, null, input.getGroupType(), false));
+                            cptFrom, cptTo, null, input.getGroupType(), false));
 
             final ProcessBacklog packingWall = backlogGateway
                     .getUnitBacklog(
                             new UnitProcessBacklogInput(ProcessInfo.PACKING_WALL.getStatus(),
-                            input.getWarehouseId(), cptFrom, null, "PW",
+                            input.getWarehouseId(), cptFrom, cptTo, "PW",
                                     input.getGroupType(), false));
 
             recalculatePackingNoWallUnits(processBacklogs, packingWall);

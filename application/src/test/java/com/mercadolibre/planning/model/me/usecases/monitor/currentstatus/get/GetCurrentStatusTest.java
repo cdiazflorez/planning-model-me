@@ -105,17 +105,22 @@ class GetCurrentStatusTest {
     @Test
     public void testExecuteOkWhenHavePutToWall() {
         // GIVEN
+        final ZonedDateTime currentDate = getCurrentUtcDate();
         final GetCurrentStatusInput input = GetCurrentStatusInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
-                .dateFrom(getCurrentUtcDate())
-                .dateTo(getCurrentUtcDate().plusHours(25))
-                .currentTime(A_DATE)
+                .dateFrom(currentDate)
+                .dateTo(currentDate.plusHours(25))
+                .currentTime(currentDate)
                 .groupType(ORDER_GROUP_TYPE)
                 .build();
 
-        final ZonedDateTime cptFrom = A_DATE.truncatedTo(DAYS)
+        final ZonedDateTime cptFrom = currentDate.truncatedTo(DAYS)
                 .minusDays(7)
+                .withZoneSameInstant(UTC);
+
+        final ZonedDateTime cptTo = currentDate.truncatedTo(DAYS)
+                .plusMonths(2)
                 .withZoneSameInstant(UTC);
 
         isAnalyticsError = false;
@@ -125,7 +130,7 @@ class GetCurrentStatusTest {
                 Map.of("status", PACKING.getStatus())
         );
 
-        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, null, false))
+        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, cptTo, false))
                 .thenReturn(
                         new ArrayList<>(
                                 List.of(
@@ -138,7 +143,7 @@ class GetCurrentStatusTest {
                                                 .quantity(1442)
                                                 .build())));
 
-        commonMocks(input, cptFrom, true);
+        commonMocks(input, cptFrom, cptTo, true);
 
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
                 asList(AnalyticsQueryEvent.PACKING_WALL,
@@ -218,18 +223,23 @@ class GetCurrentStatusTest {
     @Test
     public void testExecuteOkWhenDoesntHavePutToWall() {
         // GIVEN
+        final ZonedDateTime currentDate = getCurrentUtcDate();
         final GetCurrentStatusInput input = GetCurrentStatusInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
-                .dateFrom(getCurrentUtcDate())
-                .dateTo(getCurrentUtcDate().plusHours(25))
-                .currentTime(A_DATE)
+                .dateFrom(currentDate)
+                .dateTo(currentDate.plusHours(25))
+                .currentTime(currentDate)
                 .groupType(ORDER_GROUP_TYPE)
                 .build();
 
 
-        final ZonedDateTime cptFrom = A_DATE.truncatedTo(DAYS)
+        final ZonedDateTime cptFrom = currentDate.truncatedTo(DAYS)
                 .minusDays(7)
+                .withZoneSameInstant(UTC);
+
+        final ZonedDateTime cptTo = currentDate.truncatedTo(DAYS)
+                .plusMonths(2)
                 .withZoneSameInstant(UTC);
 
         isAnalyticsError = false;
@@ -239,7 +249,7 @@ class GetCurrentStatusTest {
                 Map.of("status", PACKING.getStatus())
         );
 
-        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, null, false))
+        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, cptTo, false))
                 .thenReturn(
                         new ArrayList<>(
                                 List.of(
@@ -252,7 +262,7 @@ class GetCurrentStatusTest {
                                                 .quantity(1442)
                                                 .build())));
 
-        commonMocks(input, cptFrom, false);
+        commonMocks(input, cptFrom, cptTo, false);
 
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
                 singletonList(AnalyticsQueryEvent.PICKING)))
@@ -325,9 +335,13 @@ class GetCurrentStatusTest {
                 .minusDays(7)
                 .withZoneSameInstant(UTC);
 
+        final ZonedDateTime cptTo = A_DATE.truncatedTo(DAYS)
+                .plusMonths(2)
+                .withZoneSameInstant(UTC);
+
         isAnalyticsError = true;
 
-        commonMocks(input, cptFrom, true);
+        commonMocks(input, cptFrom, cptTo, true);
 
         when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
                 asList(AnalyticsQueryEvent.PACKING_WALL,
@@ -367,6 +381,7 @@ class GetCurrentStatusTest {
 
     private void commonMocks(final GetCurrentStatusInput input,
                              final ZonedDateTime cptFrom,
+                             final ZonedDateTime cptTo,
                              final boolean hasPutToWall) {
 
         when(planningModelGateway.getEntities(any(EntityRequest.class)))
@@ -384,7 +399,7 @@ class GetCurrentStatusTest {
                 PICKING.getStatus(),
                 input.getWarehouseId(),
                 cptFrom,
-                null,
+                cptTo,
                 null,
                 ORDER_GROUP_TYPE,
                 false)))
@@ -393,7 +408,7 @@ class GetCurrentStatusTest {
         if (hasPutToWall) {
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, null, ORDER_GROUP_TYPE, false)))
+                            cptFrom, cptTo, null, ORDER_GROUP_TYPE, false)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
@@ -401,7 +416,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(PACKING.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, "PW", ORDER_GROUP_TYPE, false)))
+                            cptFrom, cptTo, "PW", ORDER_GROUP_TYPE, false)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
@@ -410,7 +425,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, null, ORDER_GROUP_TYPE, false)))
+                            cptFrom, cptTo, null, ORDER_GROUP_TYPE, false)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
@@ -418,7 +433,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(PACKING_WALL.getStatus(), input.getWarehouseId(),
-                            cptFrom, null, "PW", ORDER_GROUP_TYPE, false)))
+                            cptFrom, cptTo, "PW", ORDER_GROUP_TYPE, false)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
