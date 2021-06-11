@@ -121,7 +121,8 @@ class GetWaveSuggestionTest {
 
         when(backlogGatewayProvider.getBy(FBM_WMS_OUTBOUND))
                 .thenReturn(Optional.of(backlogGateway));
-        when(backlogGateway.getBacklog(eq(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus()))),
+        when(backlogGateway.getBacklog(
+                eq(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus()))),
                 eq(WAREHOUSE_ID),
                 any(),
                 any(),

@@ -5,6 +5,10 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.proc
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
 
+
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
+
 public interface GetMetric<T, P> extends UseCase<T, P> {
 
     static Metric createEmptyMetric(final MetricType metricType, final ProcessInfo process) {
@@ -17,7 +21,7 @@ public interface GetMetric<T, P> extends UseCase<T, P> {
         return Metric.builder()
                 .title(metricType.getTitle())
                 .type(metricType.getType())
-                .subtitle(metricType == MetricType.BACKLOG
+                .subtitle(TOTAL_BACKLOG == metricType ||  IMMEDIATE_BACKLOG == metricType
                         ? process.getSubtitle() : metricType.getSubtitle())
                 .value(value)
                 .build();

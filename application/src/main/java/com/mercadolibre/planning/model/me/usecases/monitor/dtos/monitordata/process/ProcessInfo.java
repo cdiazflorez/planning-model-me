@@ -5,7 +5,8 @@ import lombok.Getter;
 
 import java.util.List;
 
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static java.util.Arrays.asList;
@@ -21,32 +22,32 @@ public enum ProcessInfo {
             "Ready to Wave",
             "Outbound Planning",
             0,
-            asList(BACKLOG, THROUGHPUT_PER_HOUR)),
+            asList(TOTAL_BACKLOG, IMMEDIATE_BACKLOG, THROUGHPUT_PER_HOUR)),
 
     PICKING(
             "to_pick",
             "Ready to Pick",
             "Picking",
             1,
-            asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
+            asList(TOTAL_BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
     WALL_IN(
             "sorted,to_group",
             "Ready to Group",
             "Wall",
             2,
-            singletonList(BACKLOG)),
+            singletonList(TOTAL_BACKLOG)),
     PACKING(
             "to_pack",
             "Ready to Pack",
             "Packing normal",
             3,
-            asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
+            asList(TOTAL_BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY)),
     PACKING_WALL(
             "to_pack",
             "Ready to Pack",
             "Packing de wall",
             4,
-            asList(BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY));
+            asList(TOTAL_BACKLOG, THROUGHPUT_PER_HOUR, PRODUCTIVITY));
 
     private final String status;
     private final String subtitle;

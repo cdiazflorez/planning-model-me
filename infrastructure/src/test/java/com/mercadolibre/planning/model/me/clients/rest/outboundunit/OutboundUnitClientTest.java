@@ -19,8 +19,6 @@ import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
-import com.mercadolibre.resilience.breaker.CircuitBreaker;
-import com.mercadolibre.resilience.breaker.CircuitBreakers;
 import com.mercadolibre.restclient.MockResponse;
 import com.mercadolibre.restclient.http.HttpMethod;
 import com.mercadolibre.restclient.mock.RequestMockHolder;

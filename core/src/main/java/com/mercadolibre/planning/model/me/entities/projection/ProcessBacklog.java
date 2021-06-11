@@ -7,8 +7,14 @@ import lombok.Setter;
 @Getter
 @Builder
 public class ProcessBacklog {
+
     String process;
+
     @Setter
     int quantity;
+
     String area;
+
+    @Setter
+    int immediateQuantity;
 }

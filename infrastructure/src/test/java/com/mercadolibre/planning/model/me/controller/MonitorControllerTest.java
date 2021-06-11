@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.DEVIATION;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PICKING;
@@ -92,8 +92,8 @@ class MonitorControllerTest {
 
         TreeSet<Process> processes = processMap.entrySet().stream().map(entry -> {
                     final Metric metric = Metric.builder()
-                            .type(BACKLOG.getType())
-                            .title(BACKLOG.getTitle())
+                            .type(TOTAL_BACKLOG.getType())
+                            .title(TOTAL_BACKLOG.getTitle())
                             .subtitle(entry.getKey().getSubtitle())
                             .value(entry.getValue())
                             .build();
