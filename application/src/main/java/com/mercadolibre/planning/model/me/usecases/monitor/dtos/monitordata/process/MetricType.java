@@ -6,7 +6,8 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum MetricType {
-    BACKLOG("Backlog en","backlog", null),
+    TOTAL_BACKLOG("Backlog total en","backlog", null),
+    IMMEDIATE_BACKLOG("Backlog inmediato en","backlog", null),
     THROUGHPUT_PER_HOUR("Procesamiento", "throughput_per_hour", "última hora"),
     PRODUCTIVITY("Productividad", "productivity", "por persona")
     ;

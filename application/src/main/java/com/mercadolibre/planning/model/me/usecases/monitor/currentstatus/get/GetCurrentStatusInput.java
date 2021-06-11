@@ -15,4 +15,5 @@ public class GetCurrentStatusInput {
     private final ZonedDateTime dateTo;
     private final ZonedDateTime dateFrom;
     private final ZonedDateTime currentTime;
+    private final String groupType;
 }

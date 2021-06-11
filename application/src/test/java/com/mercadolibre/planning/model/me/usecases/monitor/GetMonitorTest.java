@@ -34,7 +34,7 @@ import java.util.TreeSet;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.CURRENT_STATUS;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
@@ -106,8 +106,8 @@ class GetMonitorTest {
         assertEquals(PICKING.getTitle(), picking.getTitle());
         Metric pickingBacklogMetric = picking.getMetrics().get(0);
         assertEquals(PICKING.getSubtitle(), pickingBacklogMetric.getSubtitle());
-        assertEquals(BACKLOG.getTitle(), pickingBacklogMetric.getTitle());
-        assertEquals(BACKLOG.getType(), pickingBacklogMetric.getType());
+        assertEquals(TOTAL_BACKLOG.getTitle(), pickingBacklogMetric.getTitle());
+        assertEquals(TOTAL_BACKLOG.getType(), pickingBacklogMetric.getType());
         assertEquals("2.232 uds.", pickingBacklogMetric.getValue());
 
         Metric pickingThroughputMetric = picking.getMetrics().get(1);
@@ -127,8 +127,8 @@ class GetMonitorTest {
         assertEquals(PACKING.getTitle(), packing.getTitle());
         Metric packingBacklogMetric = packing.getMetrics().get(0);
         assertEquals(PACKING.getSubtitle(), packingBacklogMetric.getSubtitle());
-        assertEquals(BACKLOG.getTitle(), packingBacklogMetric.getTitle());
-        assertEquals(BACKLOG.getType(), packingBacklogMetric.getType());
+        assertEquals(TOTAL_BACKLOG.getTitle(), packingBacklogMetric.getTitle());
+        assertEquals(TOTAL_BACKLOG.getType(), packingBacklogMetric.getType());
         assertEquals("1.442 uds.", packingBacklogMetric.getValue());
 
         Metric packingThroughputMetric = packing.getMetrics().get(1);
@@ -146,24 +146,24 @@ class GetMonitorTest {
         assertEquals(PACKING_WALL.getTitle(), packingWall.getTitle());
         Metric packingWallBacklogMetric = packingWall.getMetrics().get(0);
         assertEquals(PACKING_WALL.getSubtitle(), packingWallBacklogMetric.getSubtitle());
-        assertEquals(BACKLOG.getTitle(), packingWallBacklogMetric.getTitle());
-        assertEquals(BACKLOG.getType(), packingWallBacklogMetric.getType());
+        assertEquals(TOTAL_BACKLOG.getTitle(), packingWallBacklogMetric.getTitle());
+        assertEquals(TOTAL_BACKLOG.getType(), packingWallBacklogMetric.getType());
         assertEquals("981 uds.", packingWallBacklogMetric.getValue());
 
         final Process wallIn = processList.get(WALL_IN.getIndex());
         assertEquals(WALL_IN.getTitle(), wallIn.getTitle());
         Metric wallInBacklogMetric = wallIn.getMetrics().get(0);
         assertEquals(WALL_IN.getSubtitle(), wallInBacklogMetric.getSubtitle());
-        assertEquals(BACKLOG.getTitle(), wallInBacklogMetric.getTitle());
-        assertEquals(BACKLOG.getType(), wallInBacklogMetric.getType());
+        assertEquals(TOTAL_BACKLOG.getTitle(), wallInBacklogMetric.getTitle());
+        assertEquals(TOTAL_BACKLOG.getType(), wallInBacklogMetric.getType());
         assertEquals("725 uds.", wallInBacklogMetric.getValue());
 
         final Process outboundPlanning = processList.get(OUTBOUND_PLANNING.getIndex());
         assertEquals(OUTBOUND_PLANNING.getTitle(), outboundPlanning.getTitle());
         Metric planningBacklogMetric = outboundPlanning.getMetrics().get(0);
         assertEquals(OUTBOUND_PLANNING.getSubtitle(), planningBacklogMetric.getSubtitle());
-        assertEquals(BACKLOG.getTitle(), planningBacklogMetric.getTitle());
-        assertEquals(BACKLOG.getType(), planningBacklogMetric.getType());
+        assertEquals(TOTAL_BACKLOG.getTitle(), planningBacklogMetric.getTitle());
+        assertEquals(TOTAL_BACKLOG.getType(), planningBacklogMetric.getType());
         assertEquals("0 uds.", planningBacklogMetric.getValue());
 
         assertTrue(monitorDataList.get(0) instanceof DeviationData);
@@ -186,8 +186,8 @@ class GetMonitorTest {
                         new TreeSet<>(List.of(
                                 Process.builder().title(OUTBOUND_PLANNING.getTitle())
                                         .metrics(
-                                                List.of(createMetric(BACKLOG.getTitle(),
-                                                        BACKLOG.getType(),
+                                                List.of(createMetric(TOTAL_BACKLOG.getTitle(),
+                                                        TOTAL_BACKLOG.getType(),
                                                         OUTBOUND_PLANNING.getSubtitle(),
                                                         "0 uds.")
                                                 )
@@ -195,8 +195,8 @@ class GetMonitorTest {
                                 Process.builder().title(PICKING.getTitle())
                                         .metrics(
                                                 List.of(
-                                                        createMetric(BACKLOG.getTitle(),
-                                                                BACKLOG.getType(),
+                                                        createMetric(TOTAL_BACKLOG.getTitle(),
+                                                                TOTAL_BACKLOG.getType(),
                                                                 PICKING.getSubtitle(),
                                                                 "2.232 uds."),
                                                         createMetric(THROUGHPUT_PER_HOUR.getTitle(),
@@ -212,8 +212,8 @@ class GetMonitorTest {
                                 Process.builder().title(PACKING.getTitle())
                                         .metrics(
                                                 List.of(
-                                                        createMetric(BACKLOG.getTitle(),
-                                                                BACKLOG.getType(),
+                                                        createMetric(TOTAL_BACKLOG.getTitle(),
+                                                                TOTAL_BACKLOG.getType(),
                                                                 PACKING.getSubtitle(),
                                                                 "1.442 uds."),
                                                         createMetric(THROUGHPUT_PER_HOUR.getTitle(),
@@ -228,16 +228,16 @@ class GetMonitorTest {
                                         ).build(),
                                 Process.builder().title(PACKING_WALL.getTitle())
                                         .metrics(
-                                                List.of(createMetric(BACKLOG.getTitle(),
-                                                        BACKLOG.getType(),
+                                                List.of(createMetric(TOTAL_BACKLOG.getTitle(),
+                                                        TOTAL_BACKLOG.getType(),
                                                         PACKING_WALL.getSubtitle(),
                                                         "981 uds.")
                                         )
                                         ).build(),
                                 Process.builder().title(WALL_IN.getTitle())
                                         .metrics(
-                                                List.of(createMetric(BACKLOG.getTitle(),
-                                                        BACKLOG.getType(),
+                                                List.of(createMetric(TOTAL_BACKLOG.getTitle(),
+                                                        TOTAL_BACKLOG.getType(),
                                                         WALL_IN.getSubtitle(),
                                                         "725 uds.")
                                                 )

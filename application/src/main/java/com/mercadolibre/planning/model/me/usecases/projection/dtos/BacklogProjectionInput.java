@@ -23,4 +23,6 @@ public class BacklogProjectionInput {
     ZonedDateTime dateFrom;
 
     ZonedDateTime dateTo;
+
+    String groupType;
 }

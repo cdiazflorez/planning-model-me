@@ -31,6 +31,7 @@ public class TestUtils {
             ZoneId.of("UTC"));
     public static final String PROCESSING_TIME = "processing_time";
     public static final Long USER_ID = 1234L;
+    public static final String ORDER_GROUP_TYPE = "order";
     private static final String FORECAST_EXAMPLE_FILE = "forecast_example.xlsx";
 
     private static MeliDocumentFactory meliDocumentFactory = new PoiMeliDocumentFactory();

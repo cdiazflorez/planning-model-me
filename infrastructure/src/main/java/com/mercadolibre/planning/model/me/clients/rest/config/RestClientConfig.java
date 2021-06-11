@@ -22,6 +22,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OU
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_WAVE;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_FORECAST;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.STAFFING;
 
 @AllArgsConstructor
 @Configuration
@@ -33,7 +34,8 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PL
         RestClientConfig.AnalyticsClientProperties.class,
         RestClientConfig.PlanningModelForecastClientProperties.class,
         RestClientConfig.OutboundWaveClientProperties.class,
-        RestClientConfig.OutboundUnitSearchClientProperties.class
+        RestClientConfig.OutboundUnitSearchClientProperties.class,
+        RestClientConfig.StaffingClientProperties.class
 })
 public class RestClientConfig {
     private PlanningModelClientProperties planningModelClientProperties;
@@ -44,6 +46,7 @@ public class RestClientConfig {
     private PlanningModelForecastClientProperties planningModelForecastClientProperties;
     private OutboundWaveClientProperties outboundWaveClientProperties;
     private OutboundUnitSearchClientProperties outboundUnitSearchClientProperties;
+    private StaffingClientProperties staffingClientProperties;
 
     @Bean
     public MeliRestClient restClient() throws IOException {
@@ -66,7 +69,8 @@ public class RestClientConfig {
                         restPool(OUTBOUND_WAVE.name(),
                                 outboundWaveClientProperties),
                         restPool(OUTBOUND_UNIT_SEARCH.name(),
-                                outboundUnitSearchClientProperties)
+                                outboundUnitSearchClientProperties),
+                        restPool(STAFFING.name(), staffingClientProperties)
                 )
                 .build();
     }
@@ -130,5 +134,9 @@ public class RestClientConfig {
 
     @ConfigurationProperties("restclient.pool.unit-search")
     public static class OutboundUnitSearchClientProperties extends RestClientProperties {
+    }
+
+    @ConfigurationProperties("restclient.pool.staffing")
+    public static class StaffingClientProperties extends RestClientProperties {
     }
 }

@@ -36,6 +36,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.ORDER_GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WORKFLOW;
 import static java.util.TimeZone.getDefault;
@@ -72,7 +73,8 @@ public class GetBacklogProjectionTest {
                 ),
                 WAREHOUSE_ID,
                 A_DATE,
-                A_DATE.plusHours(25))
+                A_DATE.plusHours(25),
+                true)
         ).thenReturn(
                 new ArrayList<>(
                         List.of(
@@ -84,7 +86,7 @@ public class GetBacklogProjectionTest {
         );
 
         when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput("to_pick",
-                WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25), null))
+                WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25), null, ORDER_GROUP_TYPE, true))
         ).thenReturn(
                 ProcessBacklog.builder()
                         .process(ProcessInfo.PICKING.getStatus())
@@ -153,6 +155,7 @@ public class GetBacklogProjectionTest {
                 .userId(1L)
                 .dateFrom(A_DATE)
                 .dateTo(A_DATE.plusHours(25))
+                .groupType(ORDER_GROUP_TYPE)
                 .build();
 
         // WHEN
