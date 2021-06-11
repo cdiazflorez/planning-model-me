@@ -6,7 +6,6 @@ import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.A
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.LogisticCenterClientProperties;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.PlanningModelClientProperties;
 import com.mercadolibre.restclient.MeliRestClient;
-import com.mercadolibre.restclient.RestClient;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
 
 import java.io.IOException;
@@ -50,6 +49,10 @@ public class BaseClientTest {
                 new RestClientConfig.OutboundUnitSearchClientProperties();
         unitSearchClientProperties.setBaseUrl(BASE_URL);
 
+        final RestClientConfig.StaffingClientProperties staffingClientProperties =
+                new RestClientConfig.StaffingClientProperties();
+        staffingClientProperties.setBaseUrl(BASE_URL);
+
         return new RestClientConfig(
                 planningModelClientProperties,
                 outboundUnitRestClientProperties,
@@ -58,7 +61,8 @@ public class BaseClientTest {
                 analyticsClientProperties,
                 planningModelForecastClientProperties,
                 outboundWaveRestClientProperties,
-                unitSearchClientProperties
+                unitSearchClientProperties,
+                staffingClientProperties
         ).restClient();
     }
 
