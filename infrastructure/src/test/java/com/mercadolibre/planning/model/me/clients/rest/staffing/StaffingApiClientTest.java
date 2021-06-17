@@ -79,7 +79,7 @@ public class StaffingApiClientTest extends BaseClientTest {
         assertEquals(aggregation.getResults().get(0)
                 .getOperations().get(0).getAlias(), "net_productivity");
         assertEquals(aggregation.getResults().get(0)
-                .getOperations().get(0).getResult(), 56.01);
+                .getOperations().get(0).getResult(), 56);
         assertEquals(aggregation.getResults().get(0)
                 .getOperations().get(1).getAlias(), "workers_count");
         assertEquals(aggregation.getResults().get(0)
@@ -90,7 +90,7 @@ public class StaffingApiClientTest extends BaseClientTest {
         assertEquals(aggregation.getResults().get(1)
                 .getOperations().get(0).getAlias(), "net_productivity");
         assertEquals(aggregation.getResults().get(1)
-                .getOperations().get(0).getResult(), 59.01);
+                .getOperations().get(0).getResult(), 59);
         assertEquals(aggregation.getResults().get(1)
                 .getOperations().get(1).getAlias(), "workers_count");
         assertEquals(aggregation.getResults().get(1)
@@ -101,9 +101,9 @@ public class StaffingApiClientTest extends BaseClientTest {
             throws JsonProcessingException {
 
         Map<String, String> filters = Map.ofEntries(
-                entry("synchronizationDateFrom", dateFrom.format(DATE_FORMATTER)),
-                entry("synchronizationDateTo", dateTo.format(DATE_FORMATTER)),
-                entry("logisticCenterId", WAREHOUSE_ID));
+                entry("synchronization_date_from", dateFrom.format(DATE_FORMATTER)),
+                entry("synchronization_date_to", dateTo.format(DATE_FORMATTER)),
+                entry("logistic_center_id", WAREHOUSE_ID));
 
         final StaffingRequest staffingRequest = new StaffingRequest(filters, getAggregations());
 
@@ -111,7 +111,7 @@ public class StaffingApiClientTest extends BaseClientTest {
                 .withMethod(POST)
                 .withStatusCode(SC_OK)
                 .withURL(format(BaseClientTest.BASE_URL
-                        + "/fbm/flow/staffing/logistic_centers/%s/metrics", WAREHOUSE_ID))
+                        + "/logistic_centers/%s/metrics", WAREHOUSE_ID))
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withRequestBody(objectMapper.writeValueAsString(staffingRequest))
                 .withResponseBody(bodyResponse.toString())
@@ -152,7 +152,7 @@ public class StaffingApiClientTest extends BaseClientTest {
                                                 .put("operations", new JSONArray()
                                                         .put(new JSONObject()
                                                                 .put("alias","net_productivity")
-                                                                .put("result","56.01"))
+                                                                .put("result","56"))
                                                         .put(new JSONObject()
                                                                 .put("alias","workers_count")
                                                                 .put("result","120")))
@@ -164,7 +164,7 @@ public class StaffingApiClientTest extends BaseClientTest {
                                                 .put("operations", new JSONArray()
                                                         .put(new JSONObject()
                                                                 .put("alias","net_productivity")
-                                                                .put("result","59.01"))
+                                                                .put("result","59"))
                                                         .put(new JSONObject()
                                                                 .put("alias","workers_count")
                                                                 .put("result","20")))))));

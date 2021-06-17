@@ -27,7 +27,7 @@ import static org.springframework.http.HttpStatus.OK;
 @Component
 public class StaffingApiClient extends HttpClient implements StaffingGateway {
 
-    private static final String STAFFING_URL = "/fbm/flow/staffing/logistic_centers/%s/metrics";
+    private static final String STAFFING_URL = "/logistic_centers/%s/metrics";
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private final ObjectMapper objectMapper;
 
@@ -40,11 +40,11 @@ public class StaffingApiClient extends HttpClient implements StaffingGateway {
     public StaffingResponse getStaffing(GetStaffingRequest getStaffingRequest) {
 
         Map<String, String> filters = Map.ofEntries(
-                entry("synchronizationDateFrom",
+                entry("synchronization_date_from",
                         getStaffingRequest.getSynchronizationDateFrom().format(DATE_FORMATTER)),
-                entry("synchronizationDateTo",
+                entry("synchronization_date_to",
                         getStaffingRequest.getSynchronizationDateTo().format(DATE_FORMATTER)),
-                entry("logisticCenterId",getStaffingRequest.getLogisticCenterId()));
+                entry("logistic_center_id",getStaffingRequest.getLogisticCenterId()));
 
         final HttpRequest request = HttpRequest.builder()
                 .url(format(STAFFING_URL, getStaffingRequest.getLogisticCenterId()))
