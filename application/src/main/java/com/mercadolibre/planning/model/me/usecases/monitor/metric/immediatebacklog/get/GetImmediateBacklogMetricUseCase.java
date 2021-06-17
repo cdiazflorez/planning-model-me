@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.metric.immediatebacklog.get;
 
-
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.GetMetric;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.BacklogMetricInput;
@@ -9,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.text.NumberFormat;
 import java.util.Locale;
+
 import javax.inject.Named;
 
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;

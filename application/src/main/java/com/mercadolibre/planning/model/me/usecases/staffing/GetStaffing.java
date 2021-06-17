@@ -164,7 +164,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                                             final ZonedDateTime now,
                                             final long minutes) {
 
-        return staffingGateway.getStaffing(new GetStaffingRequest(
+        final List<Result> results = staffingGateway.getStaffing(new GetStaffingRequest(
                 now.minusMinutes(minutes),
                 now,
                 logisticCenterId,
@@ -176,26 +176,32 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                                 new Operation("net_productivity", "net_productivity", "avg"))
                 )))
         ).getAggregations().get(0).getResults();
+
+        return results != null ? results : new ArrayList<>();
     }
 
     private Map<EntityType, List<Entity>> getForecastStaffing(final String logisticCenterId,
                                                               final List<String> processes,
                                                               final ZonedDateTime now) {
 
-        return planningModelGateway.searchEntities(SearchEntitiesRequest.builder()
-                .warehouseId(logisticCenterId)
-                .workflow(Workflow.FBM_WMS_OUTBOUND)
-                .entityTypes(List.of(EntityType.PRODUCTIVITY))
-                .dateFrom(now.truncatedTo(ChronoUnit.HOURS).minusHours(1))
-                .dateTo(now.truncatedTo(ChronoUnit.HOURS))
-                .processName(processes.stream().map(ProcessName::from).collect(toList()))
-                .entityFilters(Map.of(
-                        EntityType.PRODUCTIVITY, Map.of(
-                                EntityFilters.ABILITY_LEVEL.toJson(),
-                                List.of(String.valueOf(1))
-                        )
-                ))
-                .build());
+        try {
+            return planningModelGateway.searchEntities(SearchEntitiesRequest.builder()
+                    .warehouseId(logisticCenterId)
+                    .workflow(Workflow.FBM_WMS_OUTBOUND)
+                    .entityTypes(List.of(EntityType.PRODUCTIVITY))
+                    .dateFrom(now.truncatedTo(ChronoUnit.HOURS).minusHours(1))
+                    .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                    .processName(processes.stream().map(ProcessName::from).collect(toList()))
+                    .entityFilters(Map.of(
+                            EntityType.PRODUCTIVITY, Map.of(
+                                    EntityFilters.ABILITY_LEVEL.toJson(),
+                                    List.of(String.valueOf(1))
+                            )
+                    ))
+                    .build());
+        } catch (Exception exception) {
+            return Map.of(EntityType.PRODUCTIVITY, Collections.emptyList());
+        }
     }
 
     private Integer filterProductivity(final Map<EntityType, List<Entity>> staffingForecast,
