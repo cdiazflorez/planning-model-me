@@ -7,5 +7,5 @@ public class Operation {
 
     final String alias;
 
-    final Double result;
+    final Integer result;
 }

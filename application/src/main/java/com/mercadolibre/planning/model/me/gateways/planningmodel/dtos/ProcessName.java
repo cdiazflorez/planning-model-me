@@ -11,7 +11,9 @@ public enum ProcessName {
     PICKING(1),
     PACKING(2),
     PACKING_WALL(3),
-    WAVING(null);
+    WAVING(null),
+    BATCH_SORTER(null),
+    WALL_IN(null);
 
     private final Integer index;
 

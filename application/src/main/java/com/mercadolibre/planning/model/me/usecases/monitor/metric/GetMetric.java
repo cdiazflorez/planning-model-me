@@ -5,7 +5,6 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.proc
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
 
-
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
 

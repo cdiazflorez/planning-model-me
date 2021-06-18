@@ -10,4 +10,12 @@ public class Result {
     final List<String> keys;
 
     final List<Operation> operations;
+
+    public Integer getResult(final String alias) {
+        return operations.stream()
+                .filter(operation -> operation.getAlias().equals(alias))
+                .map(Operation::getResult)
+                .findFirst()
+                .orElse(0);
+    }
 }
