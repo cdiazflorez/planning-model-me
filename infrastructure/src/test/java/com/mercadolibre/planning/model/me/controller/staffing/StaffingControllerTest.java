@@ -78,7 +78,7 @@ public class StaffingControllerTest {
                                         Process.builder()
                                                 .process("picking")
                                                 .netProductivity(40)
-                                                .workers(new Worker(10, 30, Map.of("MZ1", 30)))
+                                                .workers(new Worker(10, 30))
                                                 .targetProductivity(50)
                                                 .throughput(1200)
                                                 .build(),
@@ -101,7 +101,7 @@ public class StaffingControllerTest {
                                         Process.builder()
                                                 .process("picking")
                                                 .netProductivity(40)
-                                                .workers(new Worker(10, 30, Map.of("MZ1", 30)))
+                                                .workers(new Worker(10, 30))
                                                 .targetProductivity(50)
                                                 .throughput(1200)
                                                 .build(),

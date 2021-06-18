@@ -44,16 +44,15 @@ import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQu
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.CURRENT_STATUS;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PICKING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.WALL_IN;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.ORDER_GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
@@ -171,7 +170,8 @@ class GetCurrentStatusTest {
         assertEquals(3, outboundPlanning.getMetrics().size());
 
         final Metric planningBacklogMetric = outboundPlanning.getMetrics().get(0);
-        assertMetric(planningBacklogMetric, OUTBOUND_PLANNING.getSubtitle(), TOTAL_BACKLOG.getTitle(),
+        assertMetric(planningBacklogMetric, OUTBOUND_PLANNING.getSubtitle(),
+                TOTAL_BACKLOG.getTitle(),
                 TOTAL_BACKLOG.getType(), "0 uds.");
 
         final Metric planningImmediateBacklogMetric = outboundPlanning.getMetrics().get(1);
@@ -290,7 +290,8 @@ class GetCurrentStatusTest {
         assertEquals(3, outboundPlanning.getMetrics().size());
 
         final Metric planningBacklogMetric = outboundPlanning.getMetrics().get(0);
-        assertMetric(planningBacklogMetric, OUTBOUND_PLANNING.getSubtitle(), TOTAL_BACKLOG.getTitle(),
+        assertMetric(planningBacklogMetric, OUTBOUND_PLANNING.getSubtitle(),
+                TOTAL_BACKLOG.getTitle(),
                 TOTAL_BACKLOG.getType(), "0 uds.");
 
         final Metric planningImmediateBacklogMetric = outboundPlanning.getMetrics().get(1);

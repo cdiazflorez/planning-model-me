@@ -13,12 +13,7 @@
             "target_productivity": 50,
             "throughput": 1200,
             "workers": {
-                "busy": {
-                    "total": 30,
-                    "by_area": {
-                        "MZ1": 30
-                    }
-                },
+                "busy": 30,
                 "idle": 10
             }
         }, {
@@ -27,9 +22,7 @@
             "target_productivity": 50,
             "throughput": 1200,
             "workers": {
-                "busy": {
-                    "total": 30
-                },
+                "busy": 30,
                 "idle": 10
             }
         }]
@@ -44,12 +37,7 @@
             "target_productivity": 50,
             "throughput": 1200,
             "workers": {
-                "busy": {
-                    "total": 30,
-                    "by_area": {
-                        "MZ1": 30
-                    }
-                },
+                "busy": 30,
                 "idle": 10
             }
         }, {
@@ -58,9 +46,7 @@
             "target_productivity": 50,
             "throughput": 1200,
             "workers": {
-                "busy": {
-                    "total": 30
-                },
+                "busy": 30,
                 "idle": 10
             }
         }]
@@ -75,9 +61,7 @@
             "target_productivity": 50,
             "throughput": 1200,
             "workers": {
-                "busy": {
-                    "total": 30
-                },
+                "busy": 30,
                 "idle": 10
             }
         }, {
@@ -86,9 +70,7 @@
             "target_productivity": 50,
             "throughput": 1200,
             "workers": {
-                "busy": {
-                    "total": 30
-                },
+                "busy": 30,
                 "idle": 10
             }
         }]

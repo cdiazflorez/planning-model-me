@@ -18,4 +18,6 @@ public class Process {
     private Integer throughput;
 
     private Worker workers;
+
+    private List<Area> areas;
 }

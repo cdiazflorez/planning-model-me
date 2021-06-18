@@ -6,10 +6,10 @@ import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.Ba
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.inject.Named;
+
 import java.text.NumberFormat;
 import java.util.Locale;
-
-import javax.inject.Named;
 
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.metric.GetMetric.createMetric;
