@@ -21,8 +21,6 @@ import com.mercadolibre.planning.model.me.usecases.UseCase;
 import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
-
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -31,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.util.stream.Collectors.toList;
 
 @Named
@@ -55,7 +54,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     public Staffing execute(final GetStaffingInput input) {
 
         final String logisticCenterId = input.getLogisticCenterId();
-        final ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+        final ZonedDateTime now = getCurrentUtcDateTime();
 
         final List<Result> lastHourMetrics = getStaffingMetrics(logisticCenterId, now, 60);
         final List<Result> lastMinutesMetrics = getStaffingMetrics(logisticCenterId, now, 10);
@@ -80,16 +79,17 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 forecastStaffing = Map.of(EntityType.PRODUCTIVITY, Collections.emptyList());
             }
             final List<Process> processes = processNames.stream().map(p -> {
-                final Worker worker = calculateWorkersQty(quantityMetrics, workflow, p);
+                final Worker lastMinutesWorker = calculateWorkersQty(quantityMetrics, workflow, p);
+                final Worker lastHourWorker = calculateWorkersQty(productivityMetrics, workflow, p);
                 final Integer productivity =
                         calculateNetProductivity(productivityMetrics, workflow, p);
 
                 return Process.builder()
                         .process(p)
                         .netProductivity(productivity)
-                        .workers(worker)
+                        .workers(lastMinutesWorker)
                         .areas(createAreas(quantityMetrics, workflow, p))
-                        .throughput(productivity * worker.getBusy())
+                        .throughput(productivity * lastHourWorker.getBusy())
                         .targetProductivity(filterProductivity(forecastStaffing, p))
                         .build();
             }).collect(toList());
