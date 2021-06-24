@@ -98,6 +98,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                     .workflow(workflow)
                     .processes(processes)
                     .totalWorkers(calculateTotalWorkers(processes))
+                    .totalNonSystemicWorkers(
+                            calculateNonSystemicWorkersQty(quantityMetrics, workflow))
                     .build());
         });
 
@@ -121,22 +123,30 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .orElse(0);
     }
 
+    private Integer calculateNonSystemicWorkersQty(final List<Result> results,
+                                                   final String workflow) {
+
+        return calculateWorkersQtyByKeys(results, workflow, "working_non_systemic");
+    }
+
     private Worker calculateWorkersQty(final List<Result> results,
                                        final String workflow,
                                        final String process) {
 
-        final Integer idle = findResultByKey(results,
-                workflow, process, "idle").stream()
-                .mapToInt(result -> result.getResult("total_workers"))
-                .sum();
+        final Integer idle = calculateWorkersQtyByKeys(results,
+                workflow, process, "idle");
 
-        final Integer working = findResultByKey(results,
-                workflow, process, "working_systemic").stream()
-                .mapToInt(result -> result.getResult("total_workers"))
-                .sum();
-
+        final Integer working = calculateWorkersQtyByKeys(results,
+                workflow, process, "working_systemic");
 
         return new Worker(idle, working);
+    }
+
+    private Integer calculateWorkersQtyByKeys(final List<Result> results, final String... keys) {
+
+        return findResultByKey(results, keys).stream()
+                .mapToInt(result -> result.getResult("total_workers"))
+                .sum();
     }
 
     private List<Area> createAreas(final List<Result> results,
