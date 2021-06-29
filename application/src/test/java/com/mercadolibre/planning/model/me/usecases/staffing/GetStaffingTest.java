@@ -48,7 +48,7 @@ public class GetStaffingTest {
 
         when(staffingGateway.getStaffing(mockStaffingRequest(WAREHOUSE_ID, 60)))
                 .thenReturn(mockStaffingResponse(30));
-        when(staffingGateway.getStaffing(mockStaffingRequest(WAREHOUSE_ID, 10)))
+        when(staffingGateway.getStaffing(mockStaffingRequest(WAREHOUSE_ID, 11)))
                 .thenReturn(mockStaffingResponse(10));
         when(planningModelGateway.searchEntities(any())).thenReturn(mockForecastEntities());
 
@@ -83,12 +83,12 @@ public class GetStaffingTest {
 
         assertEquals(2, pickingAreas.size());
         assertEquals("MZ1", pickingAreas.get(0).getArea());
-        assertEquals( 10, pickingAreas.get(0).getWorkers().getBusy());
-        assertEquals( null, pickingAreas.get(0).getWorkers().getIdle());
+        assertEquals(10, pickingAreas.get(0).getWorkers().getBusy());
+        assertEquals(null, pickingAreas.get(0).getWorkers().getIdle());
         assertEquals(45, pickingAreas.get(0).getNetProductivity());
         assertEquals("MZ2", pickingAreas.get(1).getArea());
-        assertEquals( 10, pickingAreas.get(1).getWorkers().getBusy());
-        assertEquals( null, pickingAreas.get(1).getWorkers().getIdle());
+        assertEquals(10, pickingAreas.get(1).getWorkers().getBusy());
+        assertEquals(null, pickingAreas.get(1).getWorkers().getIdle());
         assertEquals(45, pickingAreas.get(1).getNetProductivity());
 
         assertEquals("batch_sorter", outboundO.getProcesses().get(1).getProcess());
@@ -118,19 +118,24 @@ public class GetStaffingTest {
         assertEquals(3, inbound.getProcesses().size());
     }
 
-    private GetStaffingRequest mockStaffingRequest(final String logisticCenterId, final int minutes) {
+    private GetStaffingRequest mockStaffingRequest(final String logisticCenterId,
+                                                   final int minutes) {
         final ZonedDateTime now = getCurrentUtcDateTime();
 
         return new GetStaffingRequest(
                 now.minusMinutes(minutes),
                 now,
                 logisticCenterId,
-                List.of(new com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Aggregation(
+                List.of(new com.mercadolibre.planning.model.me.gateways.staffing
+                        .dtos.request.Aggregation(
                         "staffing",
                         List.of("workflow", "process", "worker_status", "area"),
-                        List.of(
-                                new com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Operation("total_workers", "worker_id", "count"),
-                                new com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Operation("net_productivity", "net_productivity", "avg"))
+                        List.of(new com.mercadolibre.planning.model.me.gateways.staffing.dtos
+                                        .request.Operation("total_workers", "worker_id", "count"),
+                                new com.mercadolibre.planning.model.me.gateways.staffing.dtos
+                                        .request.Operation(
+                                                "net_productivity", "net_productivity", "avg")
+                        )
                 ))
         );
     }
