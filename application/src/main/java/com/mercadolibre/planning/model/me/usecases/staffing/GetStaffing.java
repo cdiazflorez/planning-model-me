@@ -159,7 +159,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .filter(result -> !result.getKeys().get(AREA_INDEX).equals(""))
                 .map(result -> new Area(
                         result.getKeys().get(AREA_INDEX),
-                        result.getResult("net_productivity"),
+                        result.getResult("effective_productivity"),
                         new Worker(null, result.getResult("total_workers"))
                 )).collect(toList());
     }
@@ -183,7 +183,11 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                         List.of("workflow", "process", "worker_status", "area"),
                         List.of(
                                 new Operation("total_workers", "worker_id", "count"),
-                                new Operation("net_productivity", "net_productivity", "avg"))
+                                new Operation("net_productivity", "net_productivity", "avg"),
+                                new Operation(
+                                        "effective_productivity",
+                                        "effective_productivity",
+                                        "avg"))
                 )))
         ).getAggregations().get(0).getResults();
 
