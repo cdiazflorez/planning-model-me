@@ -69,6 +69,7 @@ public class GetStaffingTest {
 
         assertEquals("fbm-wms-outbound", outboundO.getWorkflow());
         assertEquals(50, outboundO.getTotalWorkers());
+        assertEquals(20, outboundO.getTotalNonSystemicWorkers());
         assertEquals(5, outboundO.getProcesses().size());
 
         assertEquals("picking", outboundO.getProcesses().get(0).getProcess());
@@ -113,6 +114,7 @@ public class GetStaffingTest {
 
         assertEquals("fbm-wms-inbound", inbound.getWorkflow());
         assertEquals(20, inbound.getTotalWorkers());
+        assertEquals(0, inbound.getTotalNonSystemicWorkers());
         assertEquals(3, inbound.getProcesses().size());
     }
 
@@ -161,6 +163,14 @@ public class GetStaffingTest {
                                 new Operation("net_productivity", 45))),
                 new Result(
                         List.of("fbm-wms-inbound","check_in","working_systemic",""),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45))),
+                new Result(
+                        List.of("fbm-wms-outbound","out_setter","working_non_systemic",""),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45))),
+                new Result(
+                        List.of("fbm-wms-outbound","sorting_carrousel","working_non_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
                                 new Operation("net_productivity", 45)))
                 ))
