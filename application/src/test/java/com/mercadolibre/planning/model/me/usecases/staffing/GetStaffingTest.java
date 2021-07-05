@@ -13,6 +13,7 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Aggreg
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Operation;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Result;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingResponse;
+import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInput;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -1,10 +1,13 @@
 package com.mercadolibre.planning.model.me.controller.staffing;
 
+import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcount;
 import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.staffing.GetPlannedHeadcount;
 import com.mercadolibre.planning.model.me.usecases.staffing.GetStaffing;
-import com.mercadolibre.planning.model.me.usecases.staffing.GetStaffingInput;
+import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetPlannedHeadcountInput;
+import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInput;
 import com.newrelic.api.agent.Trace;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,8 +28,8 @@ import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.Use
 public class StaffingController {
 
     private final AuthorizeUser authorizeUser;
-
     private final GetStaffing getStaffing;
+    private final GetPlannedHeadcount getPlannedHeadcount;
 
     @Trace
     @GetMapping("/current")
@@ -38,6 +41,19 @@ public class StaffingController {
 
         return ResponseEntity.of(Optional.of(
                 getStaffing.execute(new GetStaffingInput(warehouseId))
+        ));
+    }
+
+    @Trace
+    @GetMapping("/plan")
+    public ResponseEntity<PlannedHeadcount> getPlannedHeadcount(
+            @PathVariable final String warehouseId,
+            @RequestParam("caller.id") final long callerId) {
+
+        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+
+        return ResponseEntity.of(Optional.of(
+                getPlannedHeadcount.execute(new GetPlannedHeadcountInput(warehouseId))
         ));
     }
 }

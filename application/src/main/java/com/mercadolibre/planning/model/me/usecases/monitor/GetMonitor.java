@@ -13,14 +13,14 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.Curr
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorData;
 import lombok.AllArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
 
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 
 @Slf4j
 @Named
@@ -67,7 +67,7 @@ public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
     }
 
     private String getPrettyTime(ZonedDateTime date) {
-        return date.format(DateTimeFormatter.ofPattern("HH:mm"));
+        return date.format(HOUR_MINUTES_FORMATTER);
     }
 
     private ZonedDateTime getCurrentTime(String warehouseId) {

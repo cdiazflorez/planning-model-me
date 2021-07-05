@@ -46,6 +46,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
@@ -258,12 +259,12 @@ public class RunSimulationTest {
                                            final ZonedDateTime utcDateTimeTo) {
         final String title = "Ondas sugeridas";
         final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())
-                .format(ofPattern("HH:mm")) + "-"
+                .format(HOUR_MINUTES_FORMATTER) + "-"
                 + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
-                .format(ofPattern("HH:mm"));
-        final String expextedTitle = "Sig. hora " + nextHour;
+                .format(HOUR_MINUTES_FORMATTER);
+        final String expectedTitle = "Sig. hora " + nextHour;
         final List<ColumnHeader> columnHeaders = List.of(
-                new ColumnHeader("column_1", expextedTitle, null),
+                new ColumnHeader("column_1", expectedTitle, null),
                 new ColumnHeader("column_2", "Tamaño de onda", null)
         );
         final List<Map<String, Object>> data = List.of(

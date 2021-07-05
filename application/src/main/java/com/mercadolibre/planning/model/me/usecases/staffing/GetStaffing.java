@@ -18,6 +18,7 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.GetStaf
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Operation;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Result;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
+import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInput;
 import lombok.AllArgsConstructor;
 
 import javax.inject.Named;

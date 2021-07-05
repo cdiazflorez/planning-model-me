@@ -20,7 +20,6 @@ import javax.inject.Named;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -28,15 +27,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.stream.Collectors.toList;
 
 @Named
 @AllArgsConstructor
 public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, SimpleTable> {
-
-    private static final DateTimeFormatter CPT_HOUR_FORMAT = ofPattern("HH:mm");
 
     private static final int SELLING_PERIOD_HOURS = 28;
 
@@ -220,12 +217,13 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
 
         final Map<String, Object> data = new LinkedHashMap<>(Map.of(
                 "style", getStyle(cpt, projectedEndDate, projection.getProcessingTime().getValue()),
-                "column_1", convertToTimeZone(zoneId, cpt).format(CPT_HOUR_FORMAT),
+                "column_1", convertToTimeZone(zoneId, cpt).format(HOUR_MINUTES_FORMATTER),
                 "column_2", String.valueOf(backlog),
                 "column_3", getDeviation(cpt, soldItems, planningDistribution),
                 "column_4", projectedEndDate == null
                         ? "Excede las 24hs"
-                        : convertToTimeZone(zoneId, projectedEndDate).format(CPT_HOUR_FORMAT),
+                        : convertToTimeZone(zoneId, projectedEndDate)
+                        .format(HOUR_MINUTES_FORMATTER),
                 "is_deferred", projection.isDeferred()));
 
         if (hasSimulatedResults) {
@@ -233,7 +231,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                     "column_5",
                     simulatedEndDate == null
                             ? "Excede las 24hs"
-                            : convertToTimeZone(zoneId, simulatedEndDate).format(CPT_HOUR_FORMAT)
+                            : convertToTimeZone(zoneId, simulatedEndDate)
+                            .format(HOUR_MINUTES_FORMATTER)
             );
         }
 

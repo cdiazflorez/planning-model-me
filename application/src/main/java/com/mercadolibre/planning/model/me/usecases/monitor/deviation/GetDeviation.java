@@ -23,13 +23,12 @@ import lombok.AllArgsConstructor;
 import javax.inject.Named;
 
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
@@ -40,7 +39,6 @@ import static java.util.Map.Entry;
 @AllArgsConstructor
 public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final String UNITS_DEFAULT_STRING = "%d uds.";
     private static final int DATE_OUT_LIMIT_HOURS = 24;
     public static final double HOUR_IN_MINUTES = 60;
@@ -181,8 +179,8 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
 
                 final String title = String.format("Se ajustó el forecast %.2f%s de %s a %s",
                         deviationResponse.getValue(), "%",
-                        dateFrom.format(DATE_FORMAT),
-                        dateTo.format(DATE_FORMAT)) + getDateCurrent(dateFrom, dateTo);
+                        dateFrom.format(HOUR_MINUTES_FORMATTER),
+                        dateTo.format(HOUR_MINUTES_FORMATTER)) + getDateCurrent(dateFrom, dateTo);
 
                 deviationAppliedData = new DeviationAppliedData(title, "info");
             }
