@@ -18,7 +18,6 @@ import javax.inject.Named;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -26,9 +25,9 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
-import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.time.temporal.ChronoUnit.HOURS;
 
 @Named
@@ -36,7 +35,6 @@ import static java.time.temporal.ChronoUnit.HOURS;
 public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, SimpleTable> {
 
     private static final int NEXT_HOUR_WAVE_SUGGESTION_MINUTES = 40;
-    private static final DateTimeFormatter TIME_FORMATTER = ofPattern("HH:mm");
     private final BacklogGatewayProvider backlogGatewayProvider;
     private final PlanningModelGateway planningModelGateway;
     protected final LogisticCenterGateway logisticCenterGateway;
@@ -99,8 +97,8 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
 
         final ZonedDateTime dateFrom = convertToTimeZone(zoneId, dateTimeFrom);
         final ZonedDateTime dateTo = convertToTimeZone(zoneId, dateTimeTo);
-        final String nextHour =
-                dateFrom.format(TIME_FORMATTER) + "-" + dateTo.format(TIME_FORMATTER);
+        final String nextHour = dateFrom.format(HOUR_MINUTES_FORMATTER)
+                + "-" + dateTo.format(HOUR_MINUTES_FORMATTER);
 
         final List<ColumnHeader> columnHeaders = List.of(
                 new ColumnHeader("column_1", "Sig. hora " + nextHour, null),

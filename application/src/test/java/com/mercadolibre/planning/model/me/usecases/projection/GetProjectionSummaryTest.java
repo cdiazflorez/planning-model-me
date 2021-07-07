@@ -23,15 +23,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,8 +44,6 @@ public class GetProjectionSummaryTest {
     private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
     private static final ZonedDateTime CPT_4 = getCurrentUtcDate().plusHours(6);
     private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
-
-    private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
 
     @InjectMocks
     private GetProjectionSummary getProjectionSummary;
@@ -170,38 +167,38 @@ public class GetProjectionSummaryTest {
         final Map<String, Object> cpt5 = projectionDetailsTable.getData().get(0);
 
         assertEquals("warning", cpt1.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMAT),
+        assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMATTER),
                 cpt1.get("column_1"));
         assertEquals("150", cpt1.get("column_2"));
         assertEquals("-14.4%", cpt1.get("column_3"));
-        assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMATTER),
                 cpt1.get("column_4"));
 
         assertEquals("warning", cpt2.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMAT),
+        assertEquals(convertToTimeZone(zoneId, CPT_2).format(HOUR_MINUTES_FORMATTER),
                 cpt2.get("column_1"));
         assertEquals("235", cpt2.get("column_2"));
         assertEquals("17.5%", cpt2.get("column_3"));
-        assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMAT), cpt2.get("column_4"));
+        assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMATTER), cpt2.get("column_4"));
 
         assertEquals("warning", cpt3.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMAT),
+        assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMATTER),
                 cpt3.get("column_1"));
         assertEquals("300", cpt3.get("column_2"));
         assertEquals("-3.4%", cpt3.get("column_3"));
-        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(HOUR_MINUTES_FORMATTER),
                 cpt3.get("column_4"));
 
         assertEquals("danger", cpt4.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_4).format(HOUR_MINUTES_FORMAT),
+        assertEquals(convertToTimeZone(zoneId, CPT_4).format(HOUR_MINUTES_FORMATTER),
                 cpt4.get("column_1"));
         assertEquals("120", cpt4.get("column_2"));
         assertEquals("-4.8%", cpt4.get("column_3"));
-        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(HOUR_MINUTES_FORMAT),
+        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(HOUR_MINUTES_FORMATTER),
                 cpt4.get("column_4"));
 
         assertEquals("danger", cpt5.get("style"));
-        assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMAT),
+        assertEquals(convertToTimeZone(zoneId, CPT_5).format(HOUR_MINUTES_FORMATTER),
                 cpt5.get("column_1"));
         assertEquals("0", cpt5.get("column_2"));
         assertEquals("0.0%", cpt5.get("column_3"));

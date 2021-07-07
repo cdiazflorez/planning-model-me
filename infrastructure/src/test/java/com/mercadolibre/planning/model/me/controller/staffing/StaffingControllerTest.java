@@ -1,13 +1,19 @@
 package com.mercadolibre.planning.model.me.controller.staffing;
 
+import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcount;
+import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByHour;
+import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByProcess;
+import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByWorkflow;
 import com.mercadolibre.planning.model.me.entities.staffing.Process;
 import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
 import com.mercadolibre.planning.model.me.entities.staffing.Worker;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.staffing.GetPlannedHeadcount;
 import com.mercadolibre.planning.model.me.usecases.staffing.GetStaffing;
-import com.mercadolibre.planning.model.me.usecases.staffing.GetStaffingInput;
+import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetPlannedHeadcountInput;
+import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInput;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -17,9 +23,10 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
@@ -43,6 +50,9 @@ public class StaffingControllerTest {
 
     @MockBean
     private GetStaffing getStaffing;
+
+    @MockBean
+    private GetPlannedHeadcount getPlannedHeadcount;
 
     @Test
     public void testGetStaffing() throws Exception {
@@ -140,5 +150,50 @@ public class StaffingControllerTest {
                                 .build()
                 ))
                 .build();
+    }
+
+    @Test
+    public void testGetPlannedHeadcountOk() throws Exception {
+        // GIVEN
+        when(getPlannedHeadcount.execute(new GetPlannedHeadcountInput(WAREHOUSE_ID)))
+                .thenReturn(mockPlannedHeadcount());
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, WAREHOUSE_ID) + "/plan")
+                .param("caller.id", String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(
+                getResourceAsString("get_planned_headcount_response.json"))
+        );
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    private PlannedHeadcount mockPlannedHeadcount() {
+        return new PlannedHeadcount(List.of(
+                new PlannedHeadcountByHour(
+                        "12:00",
+                        List.of(
+                                new PlannedHeadcountByWorkflow("fbm-wms-outbound", 17, List.of(
+                                        new PlannedHeadcountByProcess(PACKING.getName(), 5, 58),
+                                        new PlannedHeadcountByProcess(PICKING.getName(), 10, 100)
+                                ))
+                        )
+                ),
+                new PlannedHeadcountByHour(
+                        "13:00",
+                        List.of(
+                                new PlannedHeadcountByWorkflow("fbm-wms-outbound", 26, List.of(
+                                        new PlannedHeadcountByProcess(PACKING.getName(), 8, 82),
+                                        new PlannedHeadcountByProcess(PICKING.getName(), 15, 120)
+                                ))
+                        )
+                )
+        ));
     }
 }

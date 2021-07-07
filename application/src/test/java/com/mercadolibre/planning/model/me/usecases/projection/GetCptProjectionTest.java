@@ -46,6 +46,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PROCESSING_TIME;
@@ -54,14 +55,12 @@ import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class GetCptProjectionTest {
 
-    private static final DateTimeFormatter HOUR_MINUTES_FORMAT = ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private static final TimeZone TIME_ZONE = getDefault();
@@ -161,11 +160,11 @@ public class GetCptProjectionTest {
 
         final String title = simpleTable.getColumns().get(0).getTitle();
         final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())
-                .format(ofPattern("HH:mm")) + "-"
+                .format(HOUR_MINUTES_FORMATTER) + "-"
                 + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
-                .format(ofPattern("HH:mm"));
-        final String expextedTitle = "Sig. hora " + nextHour;
-        assertEquals(title, expextedTitle);
+                .format(HOUR_MINUTES_FORMATTER);
+        final String expectedTitle = "Sig. hora " + nextHour;
+        assertEquals(title, expectedTitle);
     }
 
     private void assertChart(final Chart chart) {
@@ -188,9 +187,9 @@ public class GetCptProjectionTest {
         assertEquals(240, chartData1.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData1.getTooltip(),
-                cpt1.format(HOUR_MINUTES_FORMAT),
+                cpt1.format(HOUR_MINUTES_FORMATTER),
                 "-",
-                projectedEndDate1.format(HOUR_MINUTES_FORMAT),
+                projectedEndDate1.format(HOUR_MINUTES_FORMATTER),
                 "4 horas",
                 null);
 
@@ -203,9 +202,9 @@ public class GetCptProjectionTest {
         assertEquals(240, chartData2.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData2.getTooltip(),
-                cpt2.format(HOUR_MINUTES_FORMAT),
+                cpt2.format(HOUR_MINUTES_FORMATTER),
                 "-",
-                projectedEndDate2.format(HOUR_MINUTES_FORMAT),
+                projectedEndDate2.format(HOUR_MINUTES_FORMATTER),
                 "4 horas",
                 null);
 
@@ -218,9 +217,9 @@ public class GetCptProjectionTest {
         assertEquals(240, chartData3.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData3.getTooltip(),
-                cpt3.format(HOUR_MINUTES_FORMAT),
+                cpt3.format(HOUR_MINUTES_FORMATTER),
                 "100",
-                projectedEndDate3.format(HOUR_MINUTES_FORMAT),
+                projectedEndDate3.format(HOUR_MINUTES_FORMATTER),
                 "4 horas",
                 null);
 
@@ -233,9 +232,9 @@ public class GetCptProjectionTest {
         assertEquals(240, chartData4.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData4.getTooltip(),
-                cpt4.format(HOUR_MINUTES_FORMAT),
+                cpt4.format(HOUR_MINUTES_FORMATTER),
                 "180",
-                projectedEndDate4.format(HOUR_MINUTES_FORMAT),
+                projectedEndDate4.format(HOUR_MINUTES_FORMATTER),
                 "4 horas",
                 null);
 
@@ -248,7 +247,7 @@ public class GetCptProjectionTest {
         assertEquals(300, chartData5.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData5.getTooltip(),
-                cpt5.format(HOUR_MINUTES_FORMAT),
+                cpt5.format(HOUR_MINUTES_FORMATTER),
                 "100",
                 "Excede las 24hs",
                 "5 horas",
@@ -363,9 +362,9 @@ public class GetCptProjectionTest {
                                            final ZonedDateTime utcDateTimeTo) {
         final String title = "Ondas sugeridas";
         final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())
-                .format(ofPattern("HH:mm")) + "-"
+                .format(HOUR_MINUTES_FORMATTER) + "-"
                 + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
-                .format(ofPattern("HH:mm"));
+                .format(HOUR_MINUTES_FORMATTER);
         final String expextedTitle = "Sig. hora " + nextHour;
         final List<ColumnHeader> columnHeaders = List.of(
                 new ColumnHeader("column_1", expextedTitle, null),

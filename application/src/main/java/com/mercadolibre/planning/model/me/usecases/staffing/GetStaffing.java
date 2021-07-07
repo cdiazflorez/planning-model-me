@@ -18,9 +18,11 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.GetStaf
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Operation;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Result;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
+import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInput;
 import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
+
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -57,7 +59,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
         final ZonedDateTime now = getCurrentUtcDateTime();
 
         final List<Result> lastHourMetrics = getStaffingMetrics(logisticCenterId, now, 60);
-        final List<Result> lastMinutesMetrics = getStaffingMetrics(logisticCenterId, now, 10);
+        final List<Result> lastMinutesMetrics = getStaffingMetrics(logisticCenterId, now, 11);
 
         return mapMetricsResults(logisticCenterId, now, lastHourMetrics, lastMinutesMetrics);
     }

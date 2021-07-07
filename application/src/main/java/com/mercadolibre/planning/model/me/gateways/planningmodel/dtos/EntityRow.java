@@ -7,10 +7,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-
 @Builder
 @Data
 public class EntityRow {
