@@ -27,6 +27,7 @@ import java.util.Map;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -47,9 +48,9 @@ public class GetStaffingTest {
         //GIVEN
         final GetStaffingInput input = new GetStaffingInput(WAREHOUSE_ID);
 
-        when(staffingGateway.getStaffing(mockStaffingRequest(WAREHOUSE_ID, 60)))
+        when(staffingGateway.getStaffing(mockStaffingRequest(60)))
                 .thenReturn(mockStaffingResponse(30));
-        when(staffingGateway.getStaffing(mockStaffingRequest(WAREHOUSE_ID, 11)))
+        when(staffingGateway.getStaffing(mockStaffingRequest(11)))
                 .thenReturn(mockStaffingResponse(10));
         when(planningModelGateway.searchEntities(any())).thenReturn(mockForecastEntities());
 
@@ -85,16 +86,16 @@ public class GetStaffingTest {
         assertEquals(2, pickingAreas.size());
         assertEquals("MZ1", pickingAreas.get(0).getArea());
         assertEquals(10, pickingAreas.get(0).getWorkers().getBusy());
-        assertEquals(null, pickingAreas.get(0).getWorkers().getIdle());
+        assertNull(pickingAreas.get(0).getWorkers().getIdle());
         assertEquals(45, pickingAreas.get(0).getNetProductivity());
         assertEquals("MZ2", pickingAreas.get(1).getArea());
         assertEquals(10, pickingAreas.get(1).getWorkers().getBusy());
-        assertEquals(null, pickingAreas.get(1).getWorkers().getIdle());
+        assertNull(pickingAreas.get(1).getWorkers().getIdle());
         assertEquals(45, pickingAreas.get(1).getNetProductivity());
 
         assertEquals("batch_sorter", outboundO.getProcesses().get(1).getProcess());
         assertEquals(0, outboundO.getProcesses().get(1).getNetProductivity());
-        assertEquals(null, outboundO.getProcesses().get(1).getTargetProductivity());
+        assertNull(outboundO.getProcesses().get(1).getTargetProductivity());
         assertEquals(0, outboundO.getProcesses().get(1).getWorkers().getBusy());
         assertEquals(0, outboundO.getProcesses().get(1).getWorkers().getIdle());
         assertEquals(0, outboundO.getProcesses().get(1).getThroughput());
@@ -119,24 +120,24 @@ public class GetStaffingTest {
         assertEquals(3, inbound.getProcesses().size());
     }
 
-    private GetStaffingRequest mockStaffingRequest(final String logisticCenterId,
-                                                   final int minutes) {
+    private GetStaffingRequest mockStaffingRequest(final int minutes) {
         final ZonedDateTime now = getCurrentUtcDateTime();
 
         return new GetStaffingRequest(
                 now.minusMinutes(minutes),
                 now,
-                logisticCenterId,
+                WAREHOUSE_ID,
                 List.of(new com.mercadolibre.planning.model.me.gateways.staffing
                         .dtos.request.Aggregation(
                         "staffing",
                         List.of("workflow", "process", "worker_status", "area"),
-                        List.of(new com.mercadolibre.planning.model.me.gateways.staffing.dtos
-                                        .request.Operation("total_workers", "worker_id", "count"),
+                        List.of(
                                 new com.mercadolibre.planning.model.me.gateways.staffing.dtos
                                         .request.Operation(
-                                                "net_productivity", "net_productivity", "avg")
-                        )
+                                                "total_workers", "worker_id", "count"),
+                                new com.mercadolibre.planning.model.me.gateways.staffing.dtos
+                                        .request.Operation(
+                                                "net_productivity", "net_productivity", "avg"))
                 ))
         );
     }

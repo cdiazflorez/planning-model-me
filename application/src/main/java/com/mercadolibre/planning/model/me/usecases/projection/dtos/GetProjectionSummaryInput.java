@@ -21,6 +21,8 @@ public class GetProjectionSummaryInput {
 
     final ZonedDateTime dateTo;
 
+    final boolean showDeviation;
+
     final List<ProjectionResult> projections;
 
     final List<Backlog> backlogs;

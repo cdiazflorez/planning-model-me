@@ -76,6 +76,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                         .dateTo(utcDateTo)
                         .projections(projections)
                         .backlogs(backlogs)
+                        .showDeviation(true)
                         .build()),
                 new Chart(toChartData(projections, config.getZoneId(), utcDateTo)),
                 createTabs(),

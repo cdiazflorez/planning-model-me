@@ -184,13 +184,13 @@ public class GetCptProjectionTest {
         assertEquals(cpt1.format(DATE_SHORT_FORMATTER), chartData1.getTitle());
         assertEquals(cpt1.format(DATE_FORMATTER), chartData1.getCpt());
         assertEquals(projectedEndDate1.format(DATE_FORMATTER), chartData1.getProjectedEndTime());
-        assertEquals(240, chartData1.getProcessingTime().getValue());
+        assertEquals(45, chartData1.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData1.getTooltip(),
                 cpt1.format(HOUR_MINUTES_FORMATTER),
                 "-",
                 projectedEndDate1.format(HOUR_MINUTES_FORMATTER),
-                "4 horas",
+                "45 minutos",
                 null);
 
         final ZonedDateTime cpt2 = convertToTimeZone(zoneId, CPT_2);
@@ -229,13 +229,13 @@ public class GetCptProjectionTest {
         assertEquals(cpt4.format(DATE_SHORT_FORMATTER), chartData4.getTitle());
         assertEquals(cpt4.format(DATE_FORMATTER), chartData4.getCpt());
         assertEquals(projectedEndDate4.format(DATE_FORMATTER), chartData4.getProjectedEndTime());
-        assertEquals(240, chartData4.getProcessingTime().getValue());
+        assertEquals(250, chartData4.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData4.getTooltip(),
                 cpt4.format(HOUR_MINUTES_FORMATTER),
                 "180",
                 projectedEndDate4.format(HOUR_MINUTES_FORMATTER),
-                "4 horas",
+                "4 horas y 10 minutos",
                 null);
 
         final ZonedDateTime cpt5 = convertToTimeZone(zoneId, CPT_5);
@@ -291,7 +291,7 @@ public class GetCptProjectionTest {
                         .date(CPT_1)
                         .projectedEndDate(utcCurrentTime.plusHours(3).plusMinutes(30))
                         .remainingQuantity(0)
-                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
+                        .processingTime(new ProcessingTime(45, MINUTES.getName()))
                         .isDeferred(false)
                         .build(),
                 ProjectionResult.builder()
@@ -312,7 +312,7 @@ public class GetCptProjectionTest {
                         .date(CPT_4)
                         .projectedEndDate(utcCurrentTime.plusHours(8).plusMinutes(10))
                         .remainingQuantity(180)
-                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
+                        .processingTime(new ProcessingTime(250, MINUTES.getName()))
                         .isDeferred(false)
                         .build(),
                 ProjectionResult.builder()

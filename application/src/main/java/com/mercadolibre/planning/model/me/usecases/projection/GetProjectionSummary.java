@@ -78,7 +78,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                 sales,
                 input.getProjections(),
                 config,
-                planningDistribution
+                planningDistribution,
+                input.isShowDeviation()
         );
     }
 
@@ -98,41 +99,45 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final List<Backlog> sales,
             final List<ProjectionResult> projectionResults,
             final LogisticCenterConfiguration configuration,
-            final List<PlanningDistributionResponse> planningDistribution) {
+            final List<PlanningDistributionResponse> planningDistribution,
+            final boolean showDeviation) {
 
         final ZoneId zoneId = configuration.getTimeZone().toZoneId();
         final boolean hasSimulatedResults = hasSimulatedResults(projectionResults);
 
         return new SimpleTable(
                 "Resumen de Proyección",
-                getProjectionDetailsTableColumns(hasSimulatedResults),
+                getProjectionDetailsTableColumns(hasSimulatedResults, showDeviation),
                 getTableData(
                         backlogs,
                         sales,
                         projectionResults,
                         planningDistribution,
                         zoneId,
-                        hasSimulatedResults
+                        hasSimulatedResults,
+                        showDeviation
                 )
         );
     }
 
     private List<ColumnHeader> getProjectionDetailsTableColumns(
-            final boolean hasSimulatedResults) {
+            final boolean hasSimulatedResults,
+            final boolean showDeviation) {
 
-        final List<ColumnHeader> columnHeaders = new ArrayList<>(List.of(
-                new ColumnHeader("column_1", "CPT's", null),
-                new ColumnHeader("column_2", "Backlog actual", null),
-                new ColumnHeader("column_3", "Desv. vs forecast", null)
-        ));
+        int columnIndex = 1;
+        final List<ColumnHeader> columnHeaders = new ArrayList<>();
+        columnHeaders.add(new ColumnHeader("column_" + columnIndex++, "CPT's"));
+        columnHeaders.add(new ColumnHeader("column_" + columnIndex++, "Backlog actual"));
 
-        if (hasSimulatedResults) {
-            columnHeaders.add(new ColumnHeader("column_4", "Cierre actual", null));
-            columnHeaders.add(new ColumnHeader("column_5", "Cierre simulado", null));
-        } else {
-            columnHeaders.add(new ColumnHeader("column_4", "Cierre proyectado", null));
+        if (showDeviation) {
+            columnHeaders.add(new ColumnHeader("column_" + columnIndex++, "Desv. vs forecast"));
         }
-
+        if (hasSimulatedResults) {
+            columnHeaders.add(new ColumnHeader("column_" + columnIndex++, "Cierre actual"));
+            columnHeaders.add(new ColumnHeader("column_" + columnIndex, "Cierre simulado"));
+        } else {
+            columnHeaders.add(new ColumnHeader("column_" + columnIndex, "Cierre proyectado"));
+        }
         return columnHeaders;
     }
 
@@ -184,7 +189,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final List<ProjectionResult> projectionResults,
             final List<PlanningDistributionResponse> planning,
             final ZoneId zoneId,
-            final boolean hasSimulatedResults) {
+            final boolean hasSimulatedResults,
+            final boolean showDeviation) {
 
         final List<Map<String, Object>> tableData = projectionResults.stream()
                 .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
@@ -194,10 +200,11 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                         planning,
                         zoneId,
                         projection,
-                        hasSimulatedResults)
+                        hasSimulatedResults,
+                        showDeviation)
                 )
                 .collect(toList());
-        tableData.add(addTotalsRow(backlogs, sales, planning));
+        tableData.add(addTotalsRow(backlogs, sales, planning, showDeviation));
         return tableData;
     }
 
@@ -207,7 +214,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final List<PlanningDistributionResponse> planningDistribution,
             final ZoneId zoneId,
             final ProjectionResult projection,
-            final boolean hasSimulatedResults) {
+            final boolean hasSimulatedResults,
+            final boolean showDeviation) {
 
         final ZonedDateTime cpt = projection.getDate();
         final ZonedDateTime projectedEndDate = projection.getProjectedEndDate();
@@ -215,42 +223,58 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
         final int backlog = getBacklogQuantity(cpt, backlogs);
         final int soldItems = getBacklogQuantity(cpt, sales);
 
-        final Map<String, Object> data = new LinkedHashMap<>(Map.of(
-                "style", getStyle(cpt, projectedEndDate, projection.getProcessingTime().getValue()),
-                "column_1", convertToTimeZone(zoneId, cpt).format(HOUR_MINUTES_FORMATTER),
-                "column_2", String.valueOf(backlog),
-                "column_3", getDeviation(cpt, soldItems, planningDistribution),
-                "column_4", projectedEndDate == null
-                        ? "Excede las 24hs"
-                        : convertToTimeZone(zoneId, projectedEndDate)
-                        .format(HOUR_MINUTES_FORMATTER),
-                "is_deferred", projection.isDeferred()));
+        int index = 1;
+        final Map<String, Object> columns = new LinkedHashMap<>();
 
-        if (hasSimulatedResults) {
-            data.put(
-                    "column_5",
-                    simulatedEndDate == null
-                            ? "Excede las 24hs"
-                            : convertToTimeZone(zoneId, simulatedEndDate)
-                            .format(HOUR_MINUTES_FORMATTER)
-            );
+        columns.put("style", getStyle(
+                cpt,
+                projectedEndDate,
+                projection.getProcessingTime().getValue()));
+
+        columns.put("column_" + index++, convertToTimeZone(zoneId, cpt)
+                .format(HOUR_MINUTES_FORMATTER));
+        columns.put("column_" + index++, String.valueOf(backlog));
+
+        if (showDeviation) {
+            columns.put("column_" + index++, getDeviation(cpt, soldItems, planningDistribution));
         }
 
-        return data;
+        columns.put("column_" + index++, projectedEndDate == null
+                ? "Excede las 24hs"
+                : convertToTimeZone(zoneId, projectedEndDate).format(HOUR_MINUTES_FORMATTER));
+
+        if (hasSimulatedResults) {
+            columns.put("column_" + index, simulatedEndDate == null
+                    ? "Excede las 24hs"
+                    : convertToTimeZone(zoneId, simulatedEndDate).format(HOUR_MINUTES_FORMATTER));
+        }
+
+        if (projection.isDeferred()) {
+            columns.put("is_deferred", true);
+        }
+
+        return columns;
     }
 
     private Map<String, Object> addTotalsRow(final List<Backlog> backlogs,
                                              final List<Backlog> realSales,
-                                             final List<PlanningDistributionResponse> planning) {
-        return Map.of("style", "none",
-                "column_1", "Total",
-                "column_2", String.valueOf(
-                        calculateTotalFromBacklog(backlogs)),
-                "column_3", calculateDeviationTotal(
-                        calculateTotalForecast(planning),
-                        calculateTotalFromBacklog(realSales)),
-                "column_4","",
-                "column_5","");
+                                             final List<PlanningDistributionResponse> planning,
+                                             final boolean showDeviation) {
+        int index = 1;
+        final Map<String, Object> columns = new LinkedHashMap<>();
+        columns.put("style", "none");
+        columns.put("column_" + index++, "Total");
+        columns.put("column_" + index++, String.valueOf(calculateTotalFromBacklog(backlogs)));
+
+        if (showDeviation) {
+            columns.put("column_" + index++, calculateDeviationTotal(
+                    calculateTotalForecast(planning),
+                    calculateTotalFromBacklog(realSales)));
+        }
+        columns.put("column_" + index++, "");
+        columns.put("column_" + index, "");
+
+        return columns;
     }
 
     private long calculateTotalForecast(final List<PlanningDistributionResponse> planning) {

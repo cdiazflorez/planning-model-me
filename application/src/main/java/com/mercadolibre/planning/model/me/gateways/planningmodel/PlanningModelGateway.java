@@ -43,6 +43,8 @@ public interface PlanningModelGateway {
 
     List<ProjectionResult> runProjection(final ProjectionRequest request);
 
+    List<ProjectionResult> runDeferralProjection(final ProjectionRequest request);
+
     List<ProjectionResult> runSimulation(final SimulationRequest request);
 
     List<ProjectionResult> saveSimulation(final SimulationRequest request);
