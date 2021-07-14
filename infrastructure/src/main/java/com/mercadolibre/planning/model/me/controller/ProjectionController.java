@@ -11,6 +11,8 @@ import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetCptProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.newrelic.api.agent.Trace;
@@ -39,6 +41,7 @@ public class ProjectionController {
     private final AuthorizeUser authorizeUser;
     private final GetCptProjection getCptProjection;
     private final GetBacklogProjection getBacklogProjection;
+    private final GetDeferralProjection getDeferralProjection;
     private final DatadogMetricService datadogMetricService;
 
     @Trace
@@ -56,6 +59,22 @@ public class ProjectionController {
                 .workflow(workflow)
                 .warehouseId(warehouseId)
                 .build()))
+        );
+    }
+
+    @Trace
+    @GetMapping("/projections/deferral")
+    public ResponseEntity<Projection> getDeferralProjection(
+            @PathVariable final Workflow workflow,
+            @RequestParam("caller.id") @NotNull final Long callerId,
+            @RequestParam final String warehouseId) {
+
+        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+
+        datadogMetricService.trackProjection(warehouseId, workflow, "deferral");
+
+        return ResponseEntity.of(of(getDeferralProjection.execute(
+                new GetProjectionInput(warehouseId, workflow)))
         );
     }
 

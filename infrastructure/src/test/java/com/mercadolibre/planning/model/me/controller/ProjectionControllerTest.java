@@ -17,6 +17,8 @@ import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeU
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetCptProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
@@ -74,6 +76,9 @@ public class ProjectionControllerTest {
     private GetBacklogProjection getBacklogProjection;
 
     @MockBean
+    private GetDeferralProjection getDeferralProjection;
+
+    @MockBean
     private DatadogMetricService datadogMetricService;
 
     @Test
@@ -127,6 +132,33 @@ public class ProjectionControllerTest {
         // THEN
         result.andExpect(status().isForbidden());
         verifyNoInteractions(getProjection);
+    }
+
+    @Test
+    void getDeferralProjection() throws Exception {
+        // GIVEN
+        when(getDeferralProjection.execute(new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND)))
+                .thenReturn(new Projection(
+                        "Test",
+                        mockSuggestedWaves(),
+                        mockComplexTable(),
+                        mockProjectionDetailTable(),
+                        mockProjectionChart(),
+                        createTabs(),
+                        simulationMode));
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/deferral")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isOk());
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
     }
 
     @Test

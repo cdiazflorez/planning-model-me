@@ -13,7 +13,8 @@ public enum ProcessName {
     PACKING_WALL(3),
     WAVING(null),
     BATCH_SORTER(null),
-    WALL_IN(null);
+    WALL_IN(null),
+    GLOBAL(null);
 
     private final Integer index;
 

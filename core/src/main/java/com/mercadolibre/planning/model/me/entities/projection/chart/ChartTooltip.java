@@ -61,12 +61,36 @@ public class ChartTooltip {
                 .title3("Cierre proyectado:")
                 .subtitle3(subtitle3)
                 .title4("Cycle time:")
-                .subtitle4(Duration.ofMinutes(processingTime).toHours() + " horas");
+                .subtitle4(createProcessingTimeLabel(processingTime));
 
         if (isDeferred) {
             chartTooltipBuilder.title5("Diferido");
         }
 
         return chartTooltipBuilder.build();
+    }
+
+    private static String createProcessingTimeLabel(final long processingTime) {
+        final long hours = Duration.ofMinutes(processingTime).toHours();
+        final long minutes = processingTime % 60;
+
+        final StringBuilder label = new StringBuilder();
+
+        if (hours != 0) {
+            label.append(hours);
+            label.append(" horas");
+
+            if (minutes != 0) {
+                label.append(" y ");
+                label.append(minutes);
+                label.append(" minutos");
+            }
+        } else if (minutes != 0) {
+            label.append(minutes);
+            label.append(" minutos");
+        } else {
+            label.append("-");
+        }
+        return label.toString();
     }
 }

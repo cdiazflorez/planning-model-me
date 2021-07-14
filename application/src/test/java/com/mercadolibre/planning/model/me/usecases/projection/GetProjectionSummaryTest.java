@@ -79,6 +79,7 @@ public class GetProjectionSummaryTest {
                 .dateTo(utcCurrentTime.plusDays(1))
                 .backlogs(mockBacklog())
                 .projections(mockProjections(utcCurrentTime))
+                .showDeviation(true)
                 .build());
 
         //THEN

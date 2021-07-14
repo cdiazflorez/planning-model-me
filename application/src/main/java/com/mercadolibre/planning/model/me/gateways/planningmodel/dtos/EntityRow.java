@@ -41,6 +41,9 @@ public class EntityRow {
             case PICKING:
                 rowName = RowName.PICKING;
                 break;
+            case GLOBAL:
+                rowName = RowName.GLOBAL;
+                break;
             default:
                 break;
         }

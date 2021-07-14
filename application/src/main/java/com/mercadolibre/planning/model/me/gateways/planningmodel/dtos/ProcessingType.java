@@ -7,7 +7,8 @@ public enum ProcessingType {
     ACTIVE_WORKERS,
     PERFORMED_PROCESSING,
     REMAINING_PROCESSING,
-    WORKERS;
+    WORKERS,
+    MAX_CAPACITY;
 
     public static ProcessingType from(final String value) {
         return valueOf(value.toUpperCase());

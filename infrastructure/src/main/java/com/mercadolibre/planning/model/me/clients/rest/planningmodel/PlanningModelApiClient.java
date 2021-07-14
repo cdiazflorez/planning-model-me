@@ -162,10 +162,10 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         return response;
     }
 
-    @Override
-    public List<ProjectionResult> runProjection(final ProjectionRequest projectionRequest) {
+    private List<ProjectionResult> callProjection(final ProjectionRequest projectionRequest,
+                                                 final String path) {
         final HttpRequest request = HttpRequest.builder()
-                .url(format(PROJECTION_URL, projectionRequest.getWorkflow(), "cpts"))
+                .url(format(PROJECTION_URL, projectionRequest.getWorkflow(), path))
                 .POST(requestSupplier(projectionRequest))
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
@@ -176,9 +176,18 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
             if (forecastNotFound(ex)) {
                 throw new ForecastNotFoundException();
             }
-
             throw ex;
         }
+    }
+
+    @Override
+    public List<ProjectionResult> runProjection(final ProjectionRequest projectionRequest) {
+        return callProjection(projectionRequest, "cpts");
+    }
+
+    @Override
+    public List<ProjectionResult> runDeferralProjection(final ProjectionRequest projectionRequest) {
+        return callProjection(projectionRequest, "cpts/delivery_promise");
     }
 
     @Override

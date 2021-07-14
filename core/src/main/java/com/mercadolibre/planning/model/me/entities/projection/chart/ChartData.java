@@ -20,6 +20,7 @@ public class ChartData {
     private String cpt;
     private String projectedEndTime;
     private ProcessingTime processingTime;
+    private Boolean isDeferred;
     private ChartTooltip tooltip;
 
     public static ChartData fromProjection(final ZonedDateTime cpt,
@@ -38,6 +39,7 @@ public class ChartData {
                         cpt, projectedEndDate, dateTo, remainingQuantity,
                         processingTime.getValue(), isDeferred)
                 )
+                .isDeferred(isDeferred)
                 .build();
     }
 }
