@@ -87,11 +87,11 @@ public class GetStaffingTest {
         assertEquals("MZ1", pickingAreas.get(0).getArea());
         assertEquals(10, pickingAreas.get(0).getWorkers().getBusy());
         assertNull(pickingAreas.get(0).getWorkers().getIdle());
-        assertEquals(45, pickingAreas.get(0).getNetProductivity());
+        assertEquals(60, pickingAreas.get(0).getNetProductivity());
         assertEquals("MZ2", pickingAreas.get(1).getArea());
         assertEquals(10, pickingAreas.get(1).getWorkers().getBusy());
-        assertNull(pickingAreas.get(1).getWorkers().getIdle());
-        assertEquals(45, pickingAreas.get(1).getNetProductivity());
+        assertNull(pickingAreas.get(0).getWorkers().getIdle());
+        assertEquals(75, pickingAreas.get(1).getNetProductivity());
 
         assertEquals("batch_sorter", outboundO.getProcesses().get(1).getProcess());
         assertEquals(0, outboundO.getProcesses().get(1).getNetProductivity());
@@ -137,7 +137,11 @@ public class GetStaffingTest {
                                                 "total_workers", "worker_id", "count"),
                                 new com.mercadolibre.planning.model.me.gateways.staffing.dtos
                                         .request.Operation(
-                                                "net_productivity", "net_productivity", "avg"))
+                                                "net_productivity", "net_productivity", "avg"),
+                                new com.mercadolibre.planning.model.me.gateways.staffing.dtos
+                                        .request.Operation(
+                                        "effective_productivity", "effective_productivity", "avg")
+                        )
                 ))
         );
     }
@@ -147,39 +151,48 @@ public class GetStaffingTest {
                 new Result(
                         List.of("fbm-wms-outbound","picking","working_systemic","MZ1"),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("net_productivity", 45),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-outbound","picking","working_systemic","MZ2"),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("net_productivity", 45),
+                                new Operation("effective_productivity", 75))),
                 new Result(
                         List.of("fbm-wms-outbound","picking","idle",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 0))),
+                                new Operation("net_productivity", 0),
+                                new Operation("effective_productivity", 0))),
                 new Result(
                         List.of("fbm-wms-outbound","packing","working_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("net_productivity", 45),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-outbound","packing","idle",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 0))),
+                                new Operation("net_productivity", 0),
+                                new Operation("effective_productivity", 0))),
                 new Result(
                         List.of("fbm-wms-inbound","receiving","working_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("net_productivity", 45),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-inbound","check_in","working_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("net_productivity", 45),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-outbound","out_setter","working_non_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("net_productivity", 45),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-outbound","sorting_carrousel","working_non_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45)))
+                                new Operation("net_productivity", 45),
+                                new Operation("effective_productivity", 60)))
                 ))
         ));
     }
