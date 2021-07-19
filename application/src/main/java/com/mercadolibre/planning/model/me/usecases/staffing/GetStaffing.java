@@ -17,6 +17,7 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Aggrega
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.GetStaffingRequest;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Operation;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Result;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingResponse;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInput;
 import lombok.AllArgsConstructor;
@@ -58,18 +59,28 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
         final String logisticCenterId = input.getLogisticCenterId();
         final ZonedDateTime now = getCurrentUtcDateTime();
 
-        final List<Result> lastHourMetrics = getStaffingMetrics(logisticCenterId, now, 60);
-        final List<Result> lastMinutesMetrics = getStaffingMetrics(logisticCenterId, now, 11);
+        final StaffingResponse lastHourMetrics = getStaffingMetrics(
+                logisticCenterId, now, 60, aggregateByProcess());
+
+        final StaffingResponse lastMinutesMetrics = getStaffingMetrics(
+                logisticCenterId, now, 11, aggregateByProcess(), aggregateByArea());
 
         return mapMetricsResults(logisticCenterId, now, lastHourMetrics, lastMinutesMetrics);
     }
 
     private Staffing mapMetricsResults(final String logisticCenterId,
                                        final ZonedDateTime now,
-                                       final List<Result> productivityMetrics,
-                                       final List<Result> quantityMetrics) {
+                                       final StaffingResponse lastHourMetrics,
+                                       final StaffingResponse lastMinutesMetrics) {
 
         final List<StaffingWorkflow> workflows = new ArrayList<>();
+
+        final List<Result> productivityMetrics =
+                findResultsInAggregation(lastHourMetrics, "staffing_by_process");
+        final List<Result> quantityMetrics =
+                findResultsInAggregation(lastMinutesMetrics, "staffing_by_process");
+        final List<Result> areaMetrics =
+                findResultsInAggregation(lastMinutesMetrics, "staffing_by_area");
 
         WORKFLOWS.forEach((workflow, processNames) -> {
             final Map<EntityType, List<Entity>> forecastStaffing;
@@ -90,7 +101,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                         .process(p)
                         .netProductivity(productivity)
                         .workers(lastMinutesWorker)
-                        .areas(createAreas(quantityMetrics, workflow, p))
+                        .areas(createAreas(areaMetrics, workflow, p))
                         .throughput(productivity * lastHourWorker.getBusy())
                         .targetProductivity(filterProductivity(forecastStaffing, p))
                         .build();
@@ -170,28 +181,49 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .collect(toList());
     }
 
-    private List<Result> getStaffingMetrics(final String logisticCenterId,
-                                            final ZonedDateTime now,
-                                            final long minutes) {
+    private Aggregation aggregateByProcess() {
+        return new Aggregation(
+                "staffing_by_process",
+                List.of("workflow", "process", "worker_status"),
+                List.of(
+                        new Operation("total_workers", "worker_id", "count"),
+                        new Operation("net_productivity", "net_productivity", "avg")
+                )
+        );
+    }
 
-        final List<Result> results = staffingGateway.getStaffing(new GetStaffingRequest(
+    private Aggregation aggregateByArea() {
+        return new Aggregation(
+                "staffing_by_area",
+                List.of("workflow", "process", "worker_status", "area"),
+                List.of(
+                        new Operation("total_workers", "worker_id", "count"),
+                        new Operation(
+                                "effective_productivity",
+                                "effective_productivity",
+                                "avg"))
+        );
+    }
+
+    private StaffingResponse getStaffingMetrics(final String logisticCenterId,
+                                            final ZonedDateTime now,
+                                            final long minutes,
+                                            final Aggregation... aggregations) {
+
+        return staffingGateway.getStaffing(new GetStaffingRequest(
                 now.minusMinutes(minutes),
                 now,
                 logisticCenterId,
-                List.of(new Aggregation(
-                        "staffing",
-                        List.of("workflow", "process", "worker_status", "area"),
-                        List.of(
-                                new Operation("total_workers", "worker_id", "count"),
-                                new Operation("net_productivity", "net_productivity", "avg"),
-                                new Operation(
-                                        "effective_productivity",
-                                        "effective_productivity",
-                                        "avg"))
-                )))
-        ).getAggregations().get(0).getResults();
+                List.of(aggregations))
+        );
+    }
 
-        return results != null ? results : new ArrayList<>();
+    private List<Result> findResultsInAggregation(final StaffingResponse results, final String name) {
+        return results.getAggregations().stream()
+                .filter(aggregation -> aggregation.getName().equals(name))
+                .findFirst()
+                .map(aggregation -> aggregation.getResults())
+                .orElse(new ArrayList<>());
     }
 
     private Map<EntityType, List<Entity>> getForecastStaffing(final String logisticCenterId,
