@@ -48,10 +48,17 @@ public class GetStaffingTest {
         //GIVEN
         final GetStaffingInput input = new GetStaffingInput(WAREHOUSE_ID);
 
-        when(staffingGateway.getStaffing(mockStaffingRequest(60)))
-                .thenReturn(mockStaffingResponse(30));
-        when(staffingGateway.getStaffing(mockStaffingRequest(11)))
-                .thenReturn(mockStaffingResponse(10));
+        when(staffingGateway.getStaffing(mockLastHourStaffingRequest(60)))
+                .thenReturn(new StaffingResponse(
+                        List.of(
+                                mockStaffingByProcessResponse(30))));
+
+        when(staffingGateway.getStaffing(mockLastMinutesStaffingRequest(11)))
+                .thenReturn(new StaffingResponse(
+                        List.of(
+                                mockStaffingByProcessResponse(10),
+                                mockStaffingByAreaResponse(10))));
+
         when(planningModelGateway.searchEntities(any())).thenReturn(mockForecastEntities());
 
         //WHEN
@@ -87,11 +94,11 @@ public class GetStaffingTest {
         assertEquals("MZ1", pickingAreas.get(0).getArea());
         assertEquals(10, pickingAreas.get(0).getWorkers().getBusy());
         assertNull(pickingAreas.get(0).getWorkers().getIdle());
-        assertEquals(45, pickingAreas.get(0).getNetProductivity());
+        assertEquals(60, pickingAreas.get(0).getNetProductivity());
         assertEquals("MZ2", pickingAreas.get(1).getArea());
         assertEquals(10, pickingAreas.get(1).getWorkers().getBusy());
-        assertNull(pickingAreas.get(1).getWorkers().getIdle());
-        assertEquals(45, pickingAreas.get(1).getNetProductivity());
+        assertNull(pickingAreas.get(0).getWorkers().getIdle());
+        assertEquals(75, pickingAreas.get(1).getNetProductivity());
 
         assertEquals("batch_sorter", outboundO.getProcesses().get(1).getProcess());
         assertEquals(0, outboundO.getProcesses().get(1).getNetProductivity());
@@ -120,7 +127,7 @@ public class GetStaffingTest {
         assertEquals(3, inbound.getProcesses().size());
     }
 
-    private GetStaffingRequest mockStaffingRequest(final int minutes) {
+    private GetStaffingRequest mockLastHourStaffingRequest(final int minutes) {
         final ZonedDateTime now = getCurrentUtcDateTime();
 
         return new GetStaffingRequest(
@@ -129,58 +136,136 @@ public class GetStaffingTest {
                 WAREHOUSE_ID,
                 List.of(new com.mercadolibre.planning.model.me.gateways.staffing
                         .dtos.request.Aggregation(
-                        "staffing",
-                        List.of("workflow", "process", "worker_status", "area"),
+                        "staffing_by_process",
+                        List.of("workflow", "process", "worker_status"),
                         List.of(
                                 new com.mercadolibre.planning.model.me.gateways.staffing.dtos
                                         .request.Operation(
-                                                "total_workers", "worker_id", "count"),
+                                        "total_workers", "worker_id", "count"),
                                 new com.mercadolibre.planning.model.me.gateways.staffing.dtos
                                         .request.Operation(
-                                                "net_productivity", "net_productivity", "avg"))
+                                        "net_productivity", "net_productivity", "avg")
+                        )
                 ))
         );
     }
 
-    private StaffingResponse mockStaffingResponse(final int totalWorkers) {
-        return new StaffingResponse(List.of(new Aggregation("staffing", List.of(
+    private GetStaffingRequest mockLastMinutesStaffingRequest(final int minutes) {
+        final ZonedDateTime now = getCurrentUtcDateTime();
+
+        return new GetStaffingRequest(
+                now.minusMinutes(minutes),
+                now,
+                WAREHOUSE_ID,
+                List.of(new com.mercadolibre.planning.model.me.gateways.staffing
+                        .dtos.request.Aggregation(
+                        "staffing_by_process",
+                        List.of("workflow", "process", "worker_status"),
+                        List.of(
+                                new com.mercadolibre.planning.model.me.gateways.staffing.dtos
+                                        .request.Operation(
+                                        "total_workers", "worker_id", "count"),
+                                new com.mercadolibre.planning.model.me.gateways.staffing.dtos
+                                        .request.Operation(
+                                        "net_productivity", "net_productivity", "avg")
+                        )),
+                        new com.mercadolibre.planning.model.me.gateways.staffing
+                                .dtos.request.Aggregation(
+                                "staffing_by_area",
+                                List.of("workflow", "process", "worker_status", "area"),
+                                List.of(
+                                        new com.mercadolibre.planning.model.me.gateways.staffing.dtos
+                                                .request.Operation(
+                                                "total_workers", "worker_id", "count"),
+                                        new com.mercadolibre.planning.model.me.gateways.staffing.dtos
+                                                .request.Operation(
+                                                        "effective_productivity",
+                                                "effective_productivity",
+                                                "avg")
+                                )
+                        ))
+        );
+    }
+
+    private Aggregation mockStaffingByProcessResponse(final int totalWorkers) {
+        return new Aggregation("staffing_by_process", List.of(
+                new Result(
+                        List.of("fbm-wms-outbound","picking","working_systemic"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45))),
+                new Result(
+                        List.of("fbm-wms-outbound","picking","working_systemic"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45))),
+                new Result(
+                        List.of("fbm-wms-outbound","picking","idle"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 0))),
+                new Result(
+                        List.of("fbm-wms-outbound","packing","working_systemic"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45))),
+                new Result(
+                        List.of("fbm-wms-outbound","packing","idle"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 0))),
+                new Result(
+                        List.of("fbm-wms-inbound","receiving","working_systemic"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45))),
+                new Result(
+                        List.of("fbm-wms-inbound","check_in","working_systemic"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45))),
+                new Result(
+                        List.of("fbm-wms-outbound","out_setter","working_non_systemic"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45))),
+                new Result(
+                        List.of("fbm-wms-outbound","sorting_carrousel","working_non_systemic"),
+                        List.of(new Operation("total_workers", totalWorkers),
+                                new Operation("net_productivity", 45)))
+        ));
+    }
+
+    private Aggregation mockStaffingByAreaResponse(final int totalWorkers) {
+        return new Aggregation("staffing_by_area", List.of(
                 new Result(
                         List.of("fbm-wms-outbound","picking","working_systemic","MZ1"),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-outbound","picking","working_systemic","MZ2"),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("effective_productivity", 75))),
                 new Result(
                         List.of("fbm-wms-outbound","picking","idle",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 0))),
+                                new Operation("effective_productivity", 0))),
                 new Result(
                         List.of("fbm-wms-outbound","packing","working_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-outbound","packing","idle",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 0))),
+                                new Operation("effective_productivity", 0))),
                 new Result(
                         List.of("fbm-wms-inbound","receiving","working_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-inbound","check_in","working_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-outbound","out_setter","working_non_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45))),
+                                new Operation("effective_productivity", 60))),
                 new Result(
                         List.of("fbm-wms-outbound","sorting_carrousel","working_non_systemic",""),
                         List.of(new Operation("total_workers", totalWorkers),
-                                new Operation("net_productivity", 45)))
-                ))
+                                new Operation("effective_productivity", 60)))
         ));
     }
 
