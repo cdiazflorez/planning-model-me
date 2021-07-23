@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcount;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByHour;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByProcess;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByWorkflow;
+import com.mercadolibre.planning.model.me.exception.NoPlannedDataException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
@@ -15,6 +16,7 @@ import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetPlannedHeadcountInput;
 import com.mercadolibre.planning.model.me.usecases.staffing.dtos.PlannedEntity;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
 
@@ -36,12 +38,14 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
+
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.stream.Collectors.groupingBy;
 
 @Named
 @AllArgsConstructor
+@Slf4j
 public class GetPlannedHeadcount implements UseCase<GetPlannedHeadcountInput, PlannedHeadcount> {
 
     private final LogisticCenterGateway logisticCenterGateway;
@@ -53,26 +57,33 @@ public class GetPlannedHeadcount implements UseCase<GetPlannedHeadcountInput, Pl
                 .getConfiguration(input.getLogisticCenterId()).getZoneId();
         final ZonedDateTime dateTimeFrom = ZonedDateTime.now(zoneId).truncatedTo(DAYS);
         final ZonedDateTime dateTimeTo = dateTimeFrom.plusHours(23);
+        Map<EntityType, List<Entity>> entities;
 
-        final Map<EntityType, List<Entity>> entities = planningModelGateway.searchEntities(
-                SearchEntitiesRequest.builder()
-                        .warehouseId(input.getLogisticCenterId())
-                        .workflow(FBM_WMS_OUTBOUND)
-                        .entityTypes(List.of(HEADCOUNT, THROUGHPUT))
-                        .dateFrom(dateTimeFrom)
-                        .dateTo(dateTimeTo)
-                        .processName(List.of(PICKING, PACKING, PACKING_WALL))
-                        .entityFilters(Map.of(
-                                HEADCOUNT, Map.of(
-                                        PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName())
-                                )
-                        ))
-                        .build()
-        );
+        try {
+            entities = planningModelGateway.searchEntities(
+                    SearchEntitiesRequest.builder()
+                            .warehouseId(input.getLogisticCenterId())
+                            .workflow(FBM_WMS_OUTBOUND)
+                            .entityTypes(List.of(HEADCOUNT, THROUGHPUT))
+                            .dateFrom(dateTimeFrom)
+                            .dateTo(dateTimeTo)
+                            .processName(List.of(PICKING, PACKING, PACKING_WALL))
+                            .entityFilters(Map.of(
+                                    HEADCOUNT, Map.of(
+                                            PROCESSING_TYPE.toJson(),
+                                            List.of(ACTIVE_WORKERS.getName())
+                                    )
+                            ))
+                            .build()
+            );
+        } catch (Exception ex) {
+            throw new NoPlannedDataException(ex);
+        }
 
         final List<PlannedEntity> headcount = entities.get(HEADCOUNT).stream()
                 .map((Entity entity) -> PlannedEntity.fromEntity(entity, HEADCOUNT))
                 .collect(Collectors.toList());
+
         final List<PlannedEntity> throughput = entities.get(THROUGHPUT).stream()
                 .map((Entity entity) -> PlannedEntity.fromEntity(entity, THROUGHPUT))
                 .collect(Collectors.toList());

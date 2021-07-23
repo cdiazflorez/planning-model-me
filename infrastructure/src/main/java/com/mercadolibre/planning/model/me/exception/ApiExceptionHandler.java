@@ -69,6 +69,38 @@ public class ApiExceptionHandler {
         return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }
 
+    @ExceptionHandler(ForecastNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleForecastNotFoundException(
+            final ForecastNotFoundException exception,
+            final HttpServletRequest request) {
+
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.NOT_FOUND)
+                .message(exception.getMessage())
+                .error("forecast_not_found")
+                .build();
+
+        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+        log.error(exception.getMessage(), exception);
+        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+    }
+
+    @ExceptionHandler(NoPlannedDataException.class)
+    public ResponseEntity<ErrorResponse> handleNoPlannedDataException(
+            final NoPlannedDataException exception,
+            final HttpServletRequest request) {
+
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.NOT_FOUND)
+                .message(exception.getMessage())
+                .error("no_planned_data_forecast_not_found")
+                .build();
+
+        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+        log.error(exception.getMessage(), exception);
+        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             final Exception exception,
@@ -82,22 +114,6 @@ public class ApiExceptionHandler {
 
         request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
 
-        log.error(exception.getMessage(), exception);
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
-
-    @ExceptionHandler(ForecastNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleForecastNotFoundException(
-            final ForecastNotFoundException exception,
-            final HttpServletRequest request) {
-
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.NOT_FOUND)
-                .message(exception.getMessage())
-                .error("forecast_not_found")
-                .build();
-
-        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
         log.error(exception.getMessage(), exception);
         return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }

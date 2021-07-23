@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.staffing;
 
+import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcount;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByHour;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByProcess;
@@ -14,6 +15,7 @@ import com.mercadolibre.planning.model.me.usecases.staffing.GetPlannedHeadcount;
 import com.mercadolibre.planning.model.me.usecases.staffing.GetStaffing;
 import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetPlannedHeadcountInput;
 import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInput;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -69,6 +71,52 @@ public class StaffingControllerTest {
         // THEN
         result.andExpect(status().isOk());
         result.andExpect(content().json(getResourceAsString("get_staffing_response.json")));
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    public void testGetPlannedHeadcountOk() throws Exception {
+        // GIVEN
+        when(getPlannedHeadcount.execute(new GetPlannedHeadcountInput(WAREHOUSE_ID)))
+                .thenReturn(mockPlannedHeadcount());
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, WAREHOUSE_ID) + "/plan")
+                .param("caller.id", String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(
+                getResourceAsString("get_planned_headcount_response.json"))
+        );
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    public void testGetPlannedHeadcountError() throws Exception {
+        // GIVEN
+        when(getPlannedHeadcount.execute(new GetPlannedHeadcountInput(WAREHOUSE_ID)))
+                .thenThrow(ForecastNotFoundException.class);
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, WAREHOUSE_ID) + "/plan")
+                .param("caller.id", String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isNotFound());
+        result.andExpect(content().json(new JSONObject()
+                .put("status", "NOT_FOUND")
+                .put("error", "forecast_not_found")
+                .toString())
+        );
 
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
     }
@@ -150,28 +198,6 @@ public class StaffingControllerTest {
                                 .build()
                 ))
                 .build();
-    }
-
-    @Test
-    public void testGetPlannedHeadcountOk() throws Exception {
-        // GIVEN
-        when(getPlannedHeadcount.execute(new GetPlannedHeadcountInput(WAREHOUSE_ID)))
-                .thenReturn(mockPlannedHeadcount());
-
-        // WHEN
-        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, WAREHOUSE_ID) + "/plan")
-                .param("caller.id", String.valueOf(USER_ID))
-                .contentType(APPLICATION_JSON)
-        );
-
-        // THEN
-        result.andExpect(status().isOk());
-        result.andExpect(content().json(
-                getResourceAsString("get_planned_headcount_response.json"))
-        );
-
-        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
     }
 
     private PlannedHeadcount mockPlannedHeadcount() {

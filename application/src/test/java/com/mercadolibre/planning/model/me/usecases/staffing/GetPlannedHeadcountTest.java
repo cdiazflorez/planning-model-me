@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcount;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByHour;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByProcess;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByWorkflow;
+import com.mercadolibre.planning.model.me.exception.NoPlannedDataException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -31,6 +32,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WORKFLOW;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -62,6 +64,21 @@ public class GetPlannedHeadcountTest {
         // THEN
         assertTrue(plannedHeadcount.getHeadcountByHours().size() > 0);
         assertEquals(getExpectedResult(), plannedHeadcount);
+    }
+
+    @Test
+    public void testExecuteError() {
+        // GIVEN
+        final GetPlannedHeadcountInput input = new GetPlannedHeadcountInput(WAREHOUSE_ID);
+
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+
+        when(planningModelGateway.searchEntities(any()))
+                .thenThrow(NoPlannedDataException.class);
+
+        // WHEN - THEN
+        assertThrows(NoPlannedDataException.class, () -> useCase.execute(input));
     }
 
     private PlannedHeadcount getExpectedResult() {
