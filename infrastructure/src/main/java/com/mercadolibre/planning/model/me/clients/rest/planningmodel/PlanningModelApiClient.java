@@ -93,11 +93,19 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
-        final List<EntityResponse> apiResponse = send(request, response ->
-                response.getData(new TypeReference<>() {
-                }));
+        try {
+            final List<EntityResponse> apiResponse = send(request, response ->
+                    response.getData(new TypeReference<>() {
+                    }));
 
-        return apiResponse.stream().map(this::toEntity).collect(toList());
+            return apiResponse.stream().map(this::toEntity).collect(toList());
+        } catch (ClientException ex) {
+            if (forecastNotFound(ex)) {
+                throw new ForecastNotFoundException();
+            } else {
+                throw ex;
+            }
+        }
     }
 
     @Override

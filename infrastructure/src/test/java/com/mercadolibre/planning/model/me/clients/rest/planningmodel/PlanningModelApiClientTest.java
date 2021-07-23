@@ -36,6 +36,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.mercadolibre.restclient.MockResponse;
+import com.mercadolibre.restclient.http.HttpMethod;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -163,6 +164,33 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(PACKING, headcount1.getProcessName());
         assertEquals(20, headcount1.getValue());
         assertEquals(Source.SIMULATION, headcount1.getSource());
+    }
+
+    @ParameterizedTest
+    @MethodSource("errorResponseProvider")
+    void testGetEntitiesError(final Class exceptionClass, final String response) {
+        // GIVEN
+        final EntityRequest request = EntityRequest.builder()
+                .entityType(HEADCOUNT)
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId("ARBA01")
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
+                .source(Source.FORECAST)
+                .processName(List.of(PICKING, PACKING))
+                .build();
+
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(format(BASE_URL + ENTITIES_URL, HEADCOUNT.getName().toLowerCase()))
+                .withRequestBody(request.toString())
+                .withStatusCode(NOT_FOUND.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(response)
+                .build();
+
+        // WHEN - THEN
+        assertThrows(exceptionClass, () -> client.getEntities(request));
     }
 
     @Test

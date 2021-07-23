@@ -96,6 +96,26 @@ class ApiExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("Handle NoPlannedDataForecastNotFoundException")
+    void handleNoPlannedDataForecastNotFoundException() {
+        // GIVEN
+        final NoPlannedDataException exception =
+                new NoPlannedDataException();
+
+        final ErrorResponse expectedResponse = ErrorResponse.builder()
+                .error("no_planned_data_forecast_not_found")
+                .message(exception.getMessage())
+                .status(HttpStatus.NOT_FOUND).build();
+
+        // WHEN
+        response = apiExceptionHandler.handleNoPlannedDataException(exception, request);
+
+        // THEN
+        thenThrow(exception, expectedResponse);
+    }
+
+
+    @Test
     @DisplayName("Handle Exception")
     void handleGenericException() {
         // GIVEN
