@@ -65,7 +65,7 @@ public class GetStaffingTest {
         final Staffing staffing = useCase.execute(input);
 
         //THEN
-        assertEquals(70, staffing.getTotalWorkers());
+        assertEquals(90, staffing.getTotalWorkers());
         assertEquals(2, staffing.getWorkflows().size());
 
         final StaffingWorkflow outboundO = staffing.getWorkflows().stream()
@@ -77,7 +77,7 @@ public class GetStaffingTest {
                 .findFirst().orElseThrow();
 
         assertEquals("fbm-wms-outbound", outboundO.getWorkflow());
-        assertEquals(50, outboundO.getTotalWorkers());
+        assertEquals(70, outboundO.getTotalWorkers());
         assertEquals(20, outboundO.getTotalNonSystemicWorkers());
         assertEquals(5, outboundO.getProcesses().size());
 
@@ -174,11 +174,11 @@ public class GetStaffingTest {
                                 "staffing_by_area",
                                 List.of("workflow", "process", "worker_status", "area"),
                                 List.of(
-                                        new com.mercadolibre.planning.model.me.gateways.staffing.dtos
-                                                .request.Operation(
+                                        new com.mercadolibre.planning.model.me.gateways
+                                                .staffing.dtos.request.Operation(
                                                 "total_workers", "worker_id", "count"),
-                                        new com.mercadolibre.planning.model.me.gateways.staffing.dtos
-                                                .request.Operation(
+                                        new com.mercadolibre.planning.model.me.gateways
+                                                .staffing.dtos.request.Operation(
                                                         "effective_productivity",
                                                 "effective_productivity",
                                                 "avg")

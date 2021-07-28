@@ -91,6 +91,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
             } else {
                 forecastStaffing = Map.of(EntityType.PRODUCTIVITY, Collections.emptyList());
             }
+
             final List<Process> processes = processNames.stream().map(p -> {
                 final Worker lastMinutesWorker = calculateWorkersQty(quantityMetrics, workflow, p);
                 final Worker lastHourWorker = calculateWorkersQty(productivityMetrics, workflow, p);
@@ -107,24 +108,30 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                         .build();
             }).collect(toList());
 
+            final int totalNonSystemic = calculateNonSystemicWorkersQty(quantityMetrics, workflow);
             workflows.add(StaffingWorkflow.builder()
                     .workflow(workflow)
                     .processes(processes)
-                    .totalWorkers(calculateTotalWorkers(processes))
-                    .totalNonSystemicWorkers(
-                            calculateNonSystemicWorkersQty(quantityMetrics, workflow))
+                    .totalWorkers(calculateTotalWorkers(processes, totalNonSystemic))
+                    .totalNonSystemicWorkers(totalNonSystemic)
                     .build());
         });
 
         return Staffing.builder()
-                .totalWorkers(workflows.stream().mapToInt(w -> w.getTotalWorkers()).sum())
-                .workflows(workflows).build();
+                .totalWorkers(workflows.stream().mapToInt(StaffingWorkflow::getTotalWorkers).sum())
+                .workflows(workflows)
+                .build();
     }
 
-    private Integer calculateTotalWorkers(final List<Process> processes) {
-        return processes.stream().mapToInt(process ->
-                process.getWorkers().getBusy() + process.getWorkers().getIdle())
+    private Integer calculateTotalWorkers(final List<Process> processes,
+                                          final int nonSystemicWorkers) {
+
+        final int systemicWorkers = processes.stream()
+                .mapToInt(process ->
+                        process.getWorkers().getBusy() + process.getWorkers().getIdle())
                 .sum();
+
+        return nonSystemicWorkers + systemicWorkers;
     }
 
     private Integer calculateNetProductivity(final List<Result> results,
@@ -218,7 +225,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
         );
     }
 
-    private List<Result> findResultsInAggregation(final StaffingResponse results, final String name) {
+    private List<Result> findResultsInAggregation(final StaffingResponse results,
+                                                  final String name) {
         return results.getAggregations().stream()
                 .filter(aggregation -> aggregation.getName().equals(name))
                 .findFirst()
