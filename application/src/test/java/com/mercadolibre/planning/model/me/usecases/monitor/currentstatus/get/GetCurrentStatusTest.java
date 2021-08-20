@@ -10,9 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatew
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
@@ -23,8 +21,6 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.proc
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.BacklogMetricInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.GetBacklogMetricUseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.immediatebacklog.get.GetImmediateBacklogMetricUseCase;
-import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.GetProductivity;
-import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.ProductivityInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.GetThroughput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.ThroughputInput;
 import org.junit.jupiter.api.Test;
@@ -89,16 +85,10 @@ class GetCurrentStatusTest {
     @Mock
     private GetThroughput getThroughputMetric;
 
-    @Mock
-    private GetProductivity getProductivityMetric;
-
     private boolean isAnalyticsError;
 
     @Mock
     private OutboundWaveGateway outboundWaveGateway;
-
-    @Mock
-    private PlanningModelGateway planningModelGateway;
 
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
@@ -188,28 +178,11 @@ class GetCurrentStatusTest {
         assertMetric(pickingBacklogMetric, PICKING.getSubtitle(), TOTAL_BACKLOG.getTitle(),
                 TOTAL_BACKLOG.getType(), "10 uds.");
 
-        final Metric pickingThroughputMetric = picking.getMetrics().get(1);
-        assertMetric(pickingThroughputMetric, THROUGHPUT_PER_HOUR.getSubtitle(),
-                THROUGHPUT_PER_HOUR.getTitle(), THROUGHPUT_PER_HOUR.getType(), "33 uds./h");
-
-        final Metric pickingProductivityMetric = picking.getMetrics().get(2);
-        assertMetric(pickingProductivityMetric, PRODUCTIVITY.getSubtitle(),
-                PRODUCTIVITY.getTitle(), PRODUCTIVITY.getType(), "270 uds./h");
-
         final Process packing = processList.get(PACKING.getIndex());
         assertEquals(PACKING.getTitle(), packing.getTitle());
         final Metric packingBacklogMetric = packing.getMetrics().get(0);
         assertMetric(packingBacklogMetric, PACKING.getSubtitle(), TOTAL_BACKLOG.getTitle(),
                 TOTAL_BACKLOG.getType(), "725 uds.");
-
-        final Metric packingThroughputMetric = packing.getMetrics().get(1);
-        assertMetric(packingThroughputMetric, THROUGHPUT_PER_HOUR.getSubtitle(),
-                THROUGHPUT_PER_HOUR.getTitle(), THROUGHPUT_PER_HOUR.getType(), "20 uds./h");
-
-        final Metric packingProductivityMetric = packing.getMetrics().get(2);
-        assertMetric(packingProductivityMetric, PRODUCTIVITY.getSubtitle(),
-                PRODUCTIVITY.getTitle(), PRODUCTIVITY.getType(), "145 uds./h");
-
 
         final Process packingWall = processList.get(PACKING_WALL.getIndex());
         assertEquals(PACKING_WALL.getTitle(), packingWall.getTitle());
@@ -308,27 +281,11 @@ class GetCurrentStatusTest {
         assertMetric(pickingBacklogMetric, PICKING.getSubtitle(), TOTAL_BACKLOG.getTitle(),
                 TOTAL_BACKLOG.getType(), "10 uds.");
 
-        final Metric pickingThroughputMetric = picking.getMetrics().get(1);
-        assertMetric(pickingThroughputMetric, THROUGHPUT_PER_HOUR.getSubtitle(),
-                THROUGHPUT_PER_HOUR.getTitle(), THROUGHPUT_PER_HOUR.getType(), "33 uds./h");
-
-        final Metric pickingProductivityMetric = picking.getMetrics().get(2);
-        assertMetric(pickingProductivityMetric, PRODUCTIVITY.getSubtitle(),
-                PRODUCTIVITY.getTitle(), PRODUCTIVITY.getType(), "270 uds./h");
-
         final Process packing = processList.get(PACKING.getIndex() - 1);
         assertEquals(PACKING.getTitle(), packing.getTitle());
         final Metric packingBacklogMetric = packing.getMetrics().get(0);
         assertMetric(packingBacklogMetric, PACKING.getSubtitle(), TOTAL_BACKLOG.getTitle(),
                 TOTAL_BACKLOG.getType(), "725 uds.");
-
-        final Metric packingThroughputMetric = packing.getMetrics().get(1);
-        assertMetric(packingThroughputMetric, THROUGHPUT_PER_HOUR.getSubtitle(),
-                THROUGHPUT_PER_HOUR.getTitle(), THROUGHPUT_PER_HOUR.getType(), "20 uds./h");
-
-        final Metric packingProductivityMetric = packing.getMetrics().get(2);
-        assertMetric(packingProductivityMetric, PRODUCTIVITY.getSubtitle(),
-                PRODUCTIVITY.getTitle(), PRODUCTIVITY.getType(), "145 uds./h");
     }
 
     @Test
@@ -365,30 +322,12 @@ class GetCurrentStatusTest {
         final Optional<Process> optionalPicking = currentStatusData.getProcesses().stream()
                 .filter(t -> PICKING.getTitle().equals(t.getTitle()))
                 .findFirst();
-
         assertTrue(optionalPicking.isPresent());
-        final Process picking = optionalPicking.get();
-        final Metric pickingThroughputMetric = picking.getMetrics().get(1);
-        assertMetric(pickingThroughputMetric, THROUGHPUT_PER_HOUR.getSubtitle(),
-                "Procesamiento", "throughput_per_hour", "-");
-
-        final Metric pickingProductivityMetric = optionalPicking.get().getMetrics().get(2);
-        assertMetric(pickingProductivityMetric, PRODUCTIVITY.getSubtitle(), PRODUCTIVITY.getTitle(),
-                PRODUCTIVITY.getType(), "-");
 
         final Optional<Process> optionalPacking = currentStatusData.getProcesses().stream()
                 .filter(t -> PACKING.getTitle().equals(t.getTitle()))
                 .findFirst();
-
         assertTrue(optionalPacking.isPresent());
-
-        final Metric packingThroughputMetric = optionalPacking.get().getMetrics().get(1);
-        assertMetric(packingThroughputMetric, THROUGHPUT_PER_HOUR.getSubtitle(),
-                THROUGHPUT_PER_HOUR.getTitle(), THROUGHPUT_PER_HOUR.getType(), "-");
-
-        final Metric packingProductivityMetric = optionalPacking.get().getMetrics().get(2);
-        assertMetric(packingProductivityMetric, PRODUCTIVITY.getSubtitle(),
-                PRODUCTIVITY.getTitle(), PRODUCTIVITY.getType(), "-");
     }
 
     private void commonMocks(final GetCurrentStatusInput input,
@@ -396,9 +335,6 @@ class GetCurrentStatusTest {
                              final ZonedDateTime cptTo,
                              final ZonedDateTime currentDate,
                              final boolean hasPutToWall) {
-
-        when(planningModelGateway.getEntities(any(EntityRequest.class)))
-                .thenReturn(mockHeadcountEntities(getCurrentUtcDate()));
 
         when(backlogGatewayProvider.getBy(input.getWorkflow()))
                 .thenReturn(Optional.of(backlogGateway));
@@ -483,7 +419,6 @@ class GetCurrentStatusTest {
 
         mockGetBacklogMetric();
         mockGetImmediateBacklogMetric();
-        mockGetProductivityMetric();
         mockGetThroughputMetric();
     }
 
@@ -547,26 +482,6 @@ class GetCurrentStatusTest {
     private void mockGetImmediateBacklogMetric() {
         when(getImmediateBacklogMetricUseCase.execute(any(BacklogMetricInput.class)))
                 .thenReturn(createMetric(IMMEDIATE_BACKLOG, OUTBOUND_PLANNING, "10 uds."));
-    }
-
-    private void mockGetProductivityMetric() {
-        when(getProductivityMetric.execute(any(ProductivityInput.class))).thenAnswer(invocation -> {
-            ProductivityInput productivityInput = invocation.getArgument(0);
-            switch (productivityInput.getProcessInfo()) {
-                case OUTBOUND_PLANNING:
-                    return createMetric(PRODUCTIVITY, OUTBOUND_PLANNING, "20 uds./h");
-                case PICKING:
-                    return createMetric(PRODUCTIVITY, PICKING, "270 uds./h");
-                case PACKING_WALL:
-                    return createMetric(PRODUCTIVITY, PACKING_WALL, "33 uds./h");
-                case PACKING:
-                    return createMetric(PRODUCTIVITY, PACKING, "145 uds./h");
-                case WALL_IN:
-                    return createMetric(PRODUCTIVITY, WALL_IN, "176 uds./h");
-                default:
-                    throw new IllegalArgumentException();
-            }
-        });
     }
 
     private void mockGetThroughputMetric() {
