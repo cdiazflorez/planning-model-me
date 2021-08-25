@@ -2,8 +2,8 @@ package com.mercadolibre.planning.model.me.clients.rest.backlog;
 
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
-import com.mercadolibre.planning.model.me.clients.rest.backlog.request.BacklogRequest;
-import com.mercadolibre.planning.model.me.clients.rest.backlog.response.Backlog;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.restclient.MockResponse;
 import org.json.JSONArray;
 import org.json.JSONException;

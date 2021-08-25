@@ -1,4 +1,4 @@
-package com.mercadolibre.planning.model.me.clients.rest.backlog.response;
+package com.mercadolibre.planning.model.me.gateways.backlog.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.mercadolibre.planning.model.me.utils.CustomDateZoneDeserializer;

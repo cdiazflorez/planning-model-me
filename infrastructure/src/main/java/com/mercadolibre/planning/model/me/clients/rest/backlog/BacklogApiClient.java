@@ -3,9 +3,9 @@ package com.mercadolibre.planning.model.me.clients.rest.backlog;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.json.type.TypeReference;
-import com.mercadolibre.planning.model.me.clients.rest.backlog.request.BacklogRequest;
-import com.mercadolibre.planning.model.me.clients.rest.backlog.response.Backlog;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.restclient.MeliRestClient;
 
 import java.time.ZonedDateTime;
@@ -34,7 +34,8 @@ public class BacklogApiClient extends HttpClient {
                 .build();
 
         return send(httpRequest, response ->
-                response.getData(new TypeReference<>() {})
+                response.getData(new TypeReference<>() {
+                })
         );
     }
 
