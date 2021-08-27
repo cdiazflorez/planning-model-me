@@ -1,0 +1,80 @@
+ {
+    "workflow": "outbound-orders",
+    "processes": [
+        {
+            "process": "waving",
+            "total": {
+                "units": 100,
+                "minutes": 150
+            },
+            "backlogs": [
+                {
+                    "date": "2021-08-12T01:00:00Z",
+                    "current": {
+                        "units": 10,
+                        "minutes": 30
+                    },
+                    "historical": 23
+                },
+                {
+                    "date": "2021-08-12T04:00:00Z",
+                    "current": {
+                        "units": 25,
+                        "minutes": 75
+                    },
+                    "historical": 44
+                }
+            ]
+        },
+        {
+            "process": "picking",
+            "total": {
+                "units": 30,
+                "minutes": 90
+            },
+            "backlogs": [
+                {
+                    "date": "2021-08-12T01:00:00Z",
+                    "current": {
+                        "units": 30,
+                        "minutes": 90
+                    },
+                    "historical": 60
+                },
+                {
+                    "date": "2021-08-12T04:00:00Z",
+                    "current": {
+                        "units": 45,
+                        "minutes": 120
+                    },
+                    "historical": 100
+                }
+            ]
+        },
+        {
+            "process": "packing",
+            "total": {
+                "units": 200,
+                "minutes": 60
+            },
+            "backlogs": [
+                {
+                    "date": "2021-08-12T01:00:00Z",
+                    "current": {
+                        "units": 200,
+                        "minutes": 60
+                    },
+                    "historical": 190
+                },
+                {
+                    "date": "2021-08-12T04:00:00Z",
+                    "current": {
+                        "units": 120,
+                        "minutes": 30
+                    },
+                    "historical": 115
+                }
+            ]
+        }
+    ]
+}
