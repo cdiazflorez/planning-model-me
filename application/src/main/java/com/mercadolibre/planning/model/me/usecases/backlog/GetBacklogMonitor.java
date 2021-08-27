@@ -160,6 +160,7 @@ public class GetBacklogMonitor {
         final List<BacklogProjectionResponse> projectedBacklog = backlogProjection.execute(
                 BacklogProjectionInput.builder()
                         .workflow(FBM_WMS_OUTBOUND)
+                        .warehouseId(input.getWarehouseId())
                         .processName(outboundProcessesNames())
                         .dateFrom(nextHour)
                         .dateTo(input.getDateTo())
@@ -255,7 +256,7 @@ public class GetBacklogMonitor {
                                     .current(
                                             new UnitMeasure(
                                                     b.getQuantity(),
-                                                    b.getQuantity() / currentProductivity)
+                                                    inMinutes(b.getQuantity(), currentProductivity))
                                     )
                                     .historical(historicalQuantity)
                                     .build();
@@ -268,6 +269,13 @@ public class GetBacklogMonitor {
                 .stream()
                 .map(ProcessName::from)
                 .collect(Collectors.toList());
+    }
+
+    private Integer inMinutes(Integer quantity, Integer productivity) {
+        if (productivity == 0) {
+            return null;
+        }
+        return quantity / productivity;
     }
 
     private Integer minutesFromWeekStart(ZonedDateTime date) {

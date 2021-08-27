@@ -34,7 +34,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.OK;
 
 class BacklogApiClientTest extends BaseClientTest {
-    private static final String URL = "/flow/backlogs/logistic_centers/%s/backlogs";
+    private static final String URL = "/backlogs/logistic_centers/%s/backlogs";
 
     private static final String QUERY_PARAMS =
             "workflows=outbound_orders&date_from=2021-01-01T00:00&date_to=2021-01-02T05:00";

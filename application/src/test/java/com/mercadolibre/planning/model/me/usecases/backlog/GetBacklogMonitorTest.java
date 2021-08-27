@@ -42,6 +42,7 @@ import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -196,6 +197,10 @@ class GetBacklogMonitorTest {
         assertEquals(100, wavingPastBacklog.getCurrent().getUnits());
         assertEquals(10, wavingPastBacklog.getCurrent().getMinutes());
 
+        final BacklogByDate wavingNullMinutesBacklog = waving.getBacklogs().get(2);
+        assertEquals(DATES.get(2), wavingNullMinutesBacklog.getDate());
+        assertNull(wavingNullMinutesBacklog.getCurrent().getMinutes());
+
         // projected backlog
         final BacklogByDate wavingProjectedBacklog = waving.getBacklogs().get(3);
         assertEquals(DATES.get(3), wavingProjectedBacklog.getDate());
@@ -334,7 +339,7 @@ class GetBacklogMonitorTest {
                                         .workflow(FBM_WMS_OUTBOUND)
                                         .processName(WAVING)
                                         .date(DATES.get(2))
-                                        .value(20)
+                                        .value(0)
                                         .build(),
                                 Entity.builder()
                                         .workflow(FBM_WMS_OUTBOUND)

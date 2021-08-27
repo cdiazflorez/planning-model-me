@@ -22,7 +22,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 @Component
 public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
-    private static final String BACKLOG_URL = "/flow/backlogs/logistic_centers/%s/backlogs";
+    private static final String BACKLOG_URL = "/backlogs/logistic_centers/%s/backlogs";
 
     public BacklogApiClient(final MeliRestClient client) {
         super(client, RestPool.BACKLOG.name());
