@@ -4,9 +4,11 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.restclient.MeliRestClient;
+import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -18,7 +20,8 @@ import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.springframework.http.HttpStatus.OK;
 
-public class BacklogApiClient extends HttpClient {
+@Component
+public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
     private static final String BACKLOG_URL = "/flow/backlogs/logistic_centers/%s/backlogs";
 
     public BacklogApiClient(final MeliRestClient client) {

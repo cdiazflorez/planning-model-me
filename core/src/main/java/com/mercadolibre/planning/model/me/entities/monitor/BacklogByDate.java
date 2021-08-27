@@ -1,0 +1,16 @@
+package com.mercadolibre.planning.model.me.entities.monitor;
+
+import lombok.Builder;
+import lombok.Value;
+
+import java.time.ZonedDateTime;
+
+@Value
+@Builder
+public class BacklogByDate {
+    private ZonedDateTime date;
+    private UnitMeasure current;
+    private Integer historical;
+    private UnitMeasure maxLimit;
+    private UnitMeasure minLimit;
+}
