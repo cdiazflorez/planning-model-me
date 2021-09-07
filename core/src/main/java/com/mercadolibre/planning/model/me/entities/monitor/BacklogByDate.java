@@ -10,7 +10,7 @@ import java.time.ZonedDateTime;
 public class BacklogByDate {
     private ZonedDateTime date;
     private UnitMeasure current;
-    private Integer historical;
+    private UnitMeasure historical;
     private UnitMeasure maxLimit;
     private UnitMeasure minLimit;
 }

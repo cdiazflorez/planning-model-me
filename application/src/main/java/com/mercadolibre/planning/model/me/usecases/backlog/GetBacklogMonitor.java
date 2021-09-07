@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.inject.Named;
 
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +30,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -45,8 +47,8 @@ public class GetBacklogMonitor {
 
     private static final String OUTBOUND_ORDERS = "outbound-orders";
 
-    private static final Map<String, List<String>> WORKFLOWS = Map.of(
-            OUTBOUND_ORDERS, of("waving", "picking", "packing")
+    private static final Map<String, List<ProcessName>> WORKFLOWS = Map.of(
+            OUTBOUND_ORDERS, of(WAVING, PICKING, PACKING)
     );
 
     private final BacklogApiGateway backlogApiGateway;
@@ -56,25 +58,25 @@ public class GetBacklogMonitor {
     private final ProjectBacklog backlogProjection;
 
     public WorkflowBacklogDetail execute(GetBacklogMonitorInputDto input) {
-        final Map<Process, ProcessData> processData = getData(input);
+        final Map<ProcessName, ProcessData> processData = getData(input);
 
         return new WorkflowBacklogDetail(
                 input.getWorkflow(),
+                getCurrentDatetime(processData),
                 buildProcesses(input.getWorkflow(), processData)
         );
     }
 
-    private Map<Process, ProcessData> getData(GetBacklogMonitorInputDto input) {
-        final Map<Process, List<QuantityByDate>> currentBacklog = getCurrentBacklog(input);
-        final Map<Process, List<QuantityByDate>> projectedBacklog = getProjectedBacklog(input);
-        final Map<Process, Map<Integer, Integer>> historicalBacklog = getHistoricalBacklog(input);
-        final Map<Process, List<QuantityByDate>> productivity = getProductivity(input);
+    private Map<ProcessName, ProcessData> getData(GetBacklogMonitorInputDto input) {
+        final Map<ProcessName, List<QuantityByDate>> currentBacklog = getCurrentBacklog(input);
+        final Map<ProcessName, List<QuantityByDate>> projectedBacklog = getProjectedBacklog(input);
+        final Map<ProcessName, Map<Integer, Integer>> historicalBacklog =
+                getHistoricalBacklog(input);
 
-        return WORKFLOWS.entrySet()
+        final Map<ProcessName, List<QuantityByDate>> productivity = getProductivity(input);
+
+        return WORKFLOWS.get(input.getWorkflow())
                 .stream()
-                .flatMap(w -> w.getValue()
-                        .stream()
-                        .map(p -> new Process(w.getKey(), p)))
                 .collect(Collectors.toMap(
                         Function.identity(),
                         p -> new ProcessData(
@@ -86,14 +88,16 @@ public class GetBacklogMonitor {
                 ));
     }
 
-    private Map<Process, List<QuantityByDate>> getCurrentBacklog(GetBacklogMonitorInputDto input) {
+    private Map<ProcessName, List<QuantityByDate>> getCurrentBacklog(
+            GetBacklogMonitorInputDto input) {
+
         return getBacklog(
                 input.getWarehouseId(),
                 input.getDateFrom(),
                 DateUtils.getCurrentUtcDateTime());
     }
 
-    private Map<Process, Map<Integer, Integer>> getHistoricalBacklog(
+    private Map<ProcessName, Map<Integer, Integer>> getHistoricalBacklog(
             GetBacklogMonitorInputDto input) {
 
         final ZonedDateTime dateFrom = input.getDateFrom().minusWeeks(BACKLOG_WEEKS_LOOKBACK);
@@ -125,7 +129,7 @@ public class GetBacklogMonitor {
                 );
     }
 
-    private Map<Process, List<QuantityByDate>> getBacklog(
+    private Map<ProcessName, List<QuantityByDate>> getBacklog(
             String warehouseId,
             ZonedDateTime dateFrom,
             ZonedDateTime dateTo) {
@@ -134,8 +138,8 @@ public class GetBacklogMonitor {
                 BacklogRequest.builder()
                         .warehouseId(warehouseId)
                         .workflows(of(OUTBOUND_ORDERS))
-                        .processes(WORKFLOWS.get(OUTBOUND_ORDERS))
-                        .groupingFields(of("workflow", "process", "date_out"))
+                        .processes(outboundProcessesNames())
+                        .groupingFields(of("process"))
                         .dateFrom(dateFrom)
                         .dateTo(dateTo)
                         .build()
@@ -143,14 +147,14 @@ public class GetBacklogMonitor {
 
         return backlog.stream()
                 .collect(Collectors.groupingBy(
-                        this::makeProcessFromBacklog,
+                        this::processNameFromBacklog,
                         Collectors.mapping(
-                                b -> new QuantityByDate(getDateOut(b), b.getTotal()),
+                                b -> new QuantityByDate(b.getDate(), b.getTotal()),
                                 Collectors.toList()))
                 );
     }
 
-    private Map<Process, List<QuantityByDate>> getProjectedBacklog(
+    private Map<ProcessName, List<QuantityByDate>> getProjectedBacklog(
             GetBacklogMonitorInputDto input) {
 
         final ZonedDateTime nextHour = DateUtils.getCurrentUtcDateTime()
@@ -161,7 +165,7 @@ public class GetBacklogMonitor {
                 BacklogProjectionInput.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .warehouseId(input.getWarehouseId())
-                        .processName(outboundProcessesNames())
+                        .processName(WORKFLOWS.get(input.getWorkflow()))
                         .dateFrom(nextHour)
                         .dateTo(input.getDateTo())
                         .groupType("order")
@@ -171,7 +175,7 @@ public class GetBacklogMonitor {
 
         return projectedBacklog.stream()
                 .collect(Collectors.groupingBy(
-                        p -> new Process(OUTBOUND_ORDERS, p.getProcessName().getName()),
+                        BacklogProjectionResponse::getProcessName,
                         Collectors.flatMapping(p -> p.getValues()
                                         .stream()
                                         .map(v ->
@@ -180,7 +184,9 @@ public class GetBacklogMonitor {
                 );
     }
 
-    private Map<Process, List<QuantityByDate>> getProductivity(GetBacklogMonitorInputDto input) {
+    private Map<ProcessName, List<QuantityByDate>> getProductivity(
+            GetBacklogMonitorInputDto input) {
+
         final List<Entity> entities = planningModelGateway.searchEntities(
                 SearchEntitiesRequest.builder()
                         .warehouseId(input.getWarehouseId())
@@ -188,24 +194,27 @@ public class GetBacklogMonitor {
                         .entityTypes(List.of(THROUGHPUT))
                         .dateFrom(input.getDateFrom())
                         .dateTo(input.getDateTo())
-                        .processName(outboundProcessesNames())
+                        .processName(WORKFLOWS.get(input.getWorkflow()))
                         .build()
         ).get(THROUGHPUT);
 
         return entities.stream()
                 .collect(Collectors.groupingBy(
-                        e -> new Process(OUTBOUND_ORDERS, e.getProcessName().getName()),
+                        Entity::getProcessName,
                         Collectors.mapping(
                                 e -> new QuantityByDate(e.getDate(), e.getValue()),
                                 Collectors.toList()))
                 );
     }
 
-    private List<ProcessDetail> buildProcesses(String workflow, Map<Process, ProcessData> data) {
+    private List<ProcessDetail> buildProcesses(
+            String workflow,
+            Map<ProcessName, ProcessData> data) {
+
         return WORKFLOWS.get(workflow)
                 .stream()
                 .map(process ->
-                        buildProcessDetail(process, data.get(new Process(workflow, process)))
+                        buildProcessDetail(process.getName(), data.get(process))
                 ).collect(Collectors.toList());
     }
 
@@ -246,7 +255,7 @@ public class GetBacklogMonitor {
                                     .truncatedTo(ChronoUnit.HOURS);
 
                             final Integer currentProductivity =
-                                    productivityByDate.getOrDefault(lookupDate, 1);
+                                    productivityByDate.getOrDefault(lookupDate, 0);
 
                             final Integer historicalQuantity = historicalBacklog.getOrDefault(
                                     minutesFromWeekStart(lookupDate), 0);
@@ -258,16 +267,18 @@ public class GetBacklogMonitor {
                                                     b.getQuantity(),
                                                     inMinutes(b.getQuantity(), currentProductivity))
                                     )
-                                    .historical(historicalQuantity)
+                                    .historical(
+                                            new UnitMeasure(historicalQuantity, null)
+                                    )
                                     .build();
                         }
                 ).collect(Collectors.toList());
     }
 
-    private List<ProcessName> outboundProcessesNames() {
+    private List<String> outboundProcessesNames() {
         return WORKFLOWS.get(OUTBOUND_ORDERS)
                 .stream()
-                .map(ProcessName::from)
+                .map(ProcessName::getName)
                 .collect(Collectors.toList());
     }
 
@@ -284,20 +295,23 @@ public class GetBacklogMonitor {
                 + date.getMinute();
     }
 
-    private Process makeProcessFromBacklog(Backlog b) {
+    private ProcessName processNameFromBacklog(Backlog b) {
         final Map<String, String> keys = b.getKeys();
-        return new Process(keys.get("workflow"), keys.get("process"));
+        return ProcessName.from(keys.get("process"));
     }
 
-    private ZonedDateTime getDateOut(Backlog backlog) {
-        return ZonedDateTime.parse(
-                backlog.getKeys().get("date_out"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-    }
-
-    @Value
-    private static class Process {
-        String workflow;
-        String process;
+    private ZonedDateTime getCurrentDatetime(Map<ProcessName, ProcessData> processData) {
+        return processData.values()
+                .stream()
+                .findAny()
+                .map(p ->
+                        p.getCurrentBacklog()
+                                .stream()
+                                .max(comparing(QuantityByDate::getDate))
+                                .map(QuantityByDate::getDate)
+                                .orElse(DateUtils.getCurrentUtcDateTime())
+                )
+                .orElse(DateUtils.getCurrentUtcDateTime());
     }
 
     @Value

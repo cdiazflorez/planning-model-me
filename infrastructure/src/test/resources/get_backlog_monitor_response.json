@@ -1,5 +1,5 @@
  {
-    "workflow": "outbound-orders",
+    "workflow": "fbm-wms-outbound",
     "processes": [
         {
             "process": "waving",
@@ -14,7 +14,9 @@
                         "units": 10,
                         "minutes": 30
                     },
-                    "historical": 23
+                    "historical": {
+                        "units": 23
+                    }
                 },
                 {
                     "date": "2021-08-12T04:00:00Z",
@@ -22,7 +24,9 @@
                         "units": 25,
                         "minutes": 75
                     },
-                    "historical": 44
+                    "historical": {
+                        "units": 44
+                    }
                 }
             ]
         },
@@ -39,7 +43,9 @@
                         "units": 30,
                         "minutes": 90
                     },
-                    "historical": 60
+                    "historical": {
+                        "units": 60
+                    }
                 },
                 {
                     "date": "2021-08-12T04:00:00Z",
@@ -47,7 +53,9 @@
                         "units": 45,
                         "minutes": 120
                     },
-                    "historical": 100
+                    "historical": {
+                        "units": 100
+                    }
                 }
             ]
         },
@@ -64,7 +72,9 @@
                         "units": 200,
                         "minutes": 60
                     },
-                    "historical": 190
+                    "historical": {
+                        "units": 190
+                    }
                 },
                 {
                     "date": "2021-08-12T04:00:00Z",
@@ -72,7 +82,9 @@
                         "units": 120,
                         "minutes": 30
                     },
-                    "historical": 115
+                    "historical": {
+                        "units": 115
+                    }
                 }
             ]
         }

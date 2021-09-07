@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.time.ZoneOffset.UTC;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
@@ -22,9 +25,12 @@ import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
 @AllArgsConstructor
 @RequestMapping("/wms/flow/middleend/logistic_centers/{warehouseId}/backlog")
 public class BacklogMonitorController {
+    private static final Map<String, String> WORKFLOW_ADAPTER = Map.of(
+            FBM_WMS_OUTBOUND.getName(), "outbound-orders"
+    );
 
     private static final long DEFAULT_HOURS_LOOKBACK = 2L;
-    private static final long DEFAULT_HOURS_LOOKAHEAD = 22L;
+    private static final long DEFAULT_HOURS_LOOKAHEAD = 8L;
 
     private final GetBacklogMonitor getBacklogMonitor;
 
@@ -38,17 +44,26 @@ public class BacklogMonitorController {
             final ZonedDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
-        ZonedDateTime now = DateUtils.getCurrentUtcDateTime();
+        ZonedDateTime now = DateUtils.getCurrentUtcDateTime().truncatedTo(ChronoUnit.HOURS);
 
         ZonedDateTime from = dateFrom == null
-                ? now.minusHours(DEFAULT_HOURS_LOOKBACK) : dateFrom.withZoneSameInstant(UTC);
+                ? now.minusHours(DEFAULT_HOURS_LOOKBACK)
+                : dateFrom.withZoneSameInstant(UTC);
 
         ZonedDateTime to = dateTo == null
                 ? now.plusHours(DEFAULT_HOURS_LOOKAHEAD) : dateTo.withZoneSameInstant(UTC);
 
+        WorkflowBacklogDetail response = getBacklogMonitor.execute(
+                new GetBacklogMonitorInputDto(
+                        warehouseId, WORKFLOW_ADAPTER.get(workflow), from, to, callerId
+                )
+        );
+
         return ResponseEntity.ok(
-                getBacklogMonitor.execute(
-                        new GetBacklogMonitorInputDto(warehouseId, workflow, from, to, callerId)
+                new WorkflowBacklogDetail(
+                        workflow,
+                        response.getCurrentDatetime(),
+                        response.getProcesses()
                 )
         );
     }

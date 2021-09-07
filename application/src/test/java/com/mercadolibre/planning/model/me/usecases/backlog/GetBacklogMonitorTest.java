@@ -94,8 +94,10 @@ class GetBacklogMonitorTest {
         final ProcessDetail waving = orders.getProcesses().get(0);
 
         assertWavingBacklogResults(waving);
-        assertEquals(169000, waving.getBacklogs().get(0).getHistorical());
-        assertEquals(172000, waving.getBacklogs().get(3).getHistorical());
+        assertEquals(169000, waving.getBacklogs().get(0).getHistorical().getUnits());
+        assertEquals(172000, waving.getBacklogs().get(3).getHistorical().getUnits());
+        assertNull(waving.getBacklogs().get(0).getHistorical().getMinutes());
+        assertNull(waving.getBacklogs().get(3).getHistorical().getMinutes());
     }
 
     @Test
@@ -136,7 +138,7 @@ class GetBacklogMonitorTest {
                 .warehouseId(WAREHOUSE_ID)
                 .workflows(of("outbound-orders"))
                 .processes(of("waving", "picking", "packing"))
-                .groupingFields(of("workflow", "process", "date_out"))
+                .groupingFields(of("process"))
                 .dateFrom(DATE_FROM.minusWeeks(3L))
                 .dateTo(DATE_FROM)
                 .build();
@@ -154,8 +156,10 @@ class GetBacklogMonitorTest {
         final ProcessDetail waving = orders.getProcesses().get(0);
 
         assertWavingBacklogResults(waving);
-        assertEquals(0, waving.getBacklogs().get(0).getHistorical());
-        assertEquals(0, waving.getBacklogs().get(3).getHistorical());
+        assertEquals(0, waving.getBacklogs().get(0).getHistorical().getUnits());
+        assertEquals(0, waving.getBacklogs().get(3).getHistorical().getUnits());
+        assertNull(waving.getBacklogs().get(0).getHistorical().getMinutes());
+        assertNull(waving.getBacklogs().get(3).getHistorical().getMinutes());
     }
 
     @Test
@@ -214,37 +218,28 @@ class GetBacklogMonitorTest {
     }
 
     private void mockBacklogApiResponse() {
+        ZonedDateTime firstDate = DATES.get(0);
+        ZonedDateTime secondDate = DATES.get(1);
+
         when(backlogApiGateway.getBacklog(any(BacklogRequest.class)))
                 .thenReturn(of(
-                        new Backlog(DATE_FROM, Map.of(
-                                "workflow", "outbound-orders",
-                                "process", "waving",
-                                "date_out", "2021-08-12T01:00:00Z"
+                        new Backlog(firstDate, Map.of(
+                                "process", "waving"
                         ), 100),
-                        new Backlog(DATE_FROM, Map.of(
-                                "workflow", "outbound-orders",
-                                "process", "waving",
-                                "date_out", "2021-08-12T02:00:00Z"
+                        new Backlog(secondDate, Map.of(
+                                "process", "waving"
                         ), 150),
-                        new Backlog(DATE_FROM, Map.of(
-                                "workflow", "outbound-orders",
-                                "process", "picking",
-                                "date_out", "2021-08-12T01:00:00Z"
+                        new Backlog(firstDate, Map.of(
+                                "process", "picking"
                         ), 300),
-                        new Backlog(DATE_FROM, Map.of(
-                                "workflow", "outbound-orders",
-                                "process", "picking",
-                                "date_out", "2021-08-12T02:00:00Z"
+                        new Backlog(secondDate, Map.of(
+                                "process", "picking"
                         ), 350),
-                        new Backlog(DATE_FROM, Map.of(
-                                "workflow", "outbound-orders",
-                                "process", "packing",
-                                "date_out", "2021-08-12T01:00:00Z"
+                        new Backlog(firstDate, Map.of(
+                                "process", "packing"
                         ), 6000),
-                        new Backlog(DATE_FROM, Map.of(
-                                "workflow", "outbound-orders",
-                                "process", "packing",
-                                "date_out", "2021-08-12T02:00:00Z"
+                        new Backlog(secondDate, Map.of(
+                                "process", "packing"
                         ), 8000)
                 ));
     }
@@ -254,7 +249,7 @@ class GetBacklogMonitorTest {
                 .warehouseId(WAREHOUSE_ID)
                 .workflows(of("outbound-orders"))
                 .processes(of("waving", "picking", "packing"))
-                .groupingFields(of("workflow", "process", "date_out"))
+                .groupingFields(of("process"))
                 .dateFrom(DATE_FROM.minusWeeks(3L))
                 .dateTo(DATE_FROM)
                 .build();
@@ -270,10 +265,8 @@ class GetBacklogMonitorTest {
 
         return Stream.of(0, 1, 2)
                 .map(i -> IntStream.range(0, hours)
-                        .mapToObj(h -> new Backlog(DATE_FROM, Map.of(
-                                "workflow", "outbound-orders",
-                                "process", processes.get(i),
-                                "date_out", dateFrom.plusHours(h).format(ISO_OFFSET_DATE_TIME)
+                        .mapToObj(h -> new Backlog(dateFrom.plusHours(h), Map.of(
+                                "process", processes.get(i)
                         ), (h + 1) * 1000 * (i + 1)))
                 ).collect(Collectors.flatMapping(
                         Function.identity(),
@@ -282,28 +275,31 @@ class GetBacklogMonitorTest {
     }
 
     private void mockProjectedBacklog() {
+        ZonedDateTime firstDate = DATES.get(2);
+        ZonedDateTime secondDate = DATES.get(3);
+
         when(backlogProjection.execute(any(BacklogProjectionInput.class)))
                 .thenReturn(new ProjectedBacklog(
                         of(
                                 new BacklogProjectionResponse(
                                         WAVING,
                                         of(
-                                                new ProjectionValue(DATES.get(2), 125),
-                                                new ProjectionValue(DATES.get(3), 250)
+                                                new ProjectionValue(firstDate, 125),
+                                                new ProjectionValue(secondDate, 250)
                                         )
                                 ),
                                 new BacklogProjectionResponse(
                                         PICKING,
                                         of(
-                                                new ProjectionValue(DATES.get(2), 410),
-                                                new ProjectionValue(DATES.get(3), 630)
+                                                new ProjectionValue(firstDate, 410),
+                                                new ProjectionValue(secondDate, 630)
                                         )
                                 ),
                                 new BacklogProjectionResponse(
                                         PACKING,
                                         of(
-                                                new ProjectionValue(DATES.get(2), 888),
-                                                new ProjectionValue(DATES.get(3), 999)
+                                                new ProjectionValue(firstDate, 888),
+                                                new ProjectionValue(secondDate, 999)
                                         )
                                 )
                         )

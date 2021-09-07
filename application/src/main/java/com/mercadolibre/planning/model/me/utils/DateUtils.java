@@ -15,6 +15,8 @@ import static java.time.temporal.WeekFields.SUNDAY_START;
 
 public class DateUtils {
 
+    private DateUtils() { }
+
     public static final DateTimeFormatter HOUR_MINUTES_FORMATTER =
             DateTimeFormatter.ofPattern("HH:mm");
 

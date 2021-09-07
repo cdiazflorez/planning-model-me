@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -24,9 +23,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsSt
 import static java.lang.String.format;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,7 +34,8 @@ class BacklogMonitorControllerTest {
     private static final String A_DATE = "2021-08-12T01:00:00Z";
     private static final String ANOTHER_DATE = "2021-08-12T04:00:00Z";
 
-    private static final String WORKFLOW = "outbound_orders";
+    private static final String OUTBOUND = "fbm-wms-outbound";
+    private static final String OUTBOUND_ORDERS = "outbound-orders";
 
     @Autowired
     private MockMvc mockMvc;
@@ -51,7 +48,7 @@ class BacklogMonitorControllerTest {
         // GIVEN
         GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
                 WAREHOUSE_ID,
-                WORKFLOW,
+                OUTBOUND_ORDERS,
                 parse(A_DATE, ISO_DATE_TIME),
                 parse(ANOTHER_DATE, ISO_DATE_TIME),
                 999L);
@@ -61,7 +58,7 @@ class BacklogMonitorControllerTest {
         // WHEN
         final ResultActions result = mockMvc.perform(
                 MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
-                        .param("workflow", WORKFLOW)
+                        .param("workflow", OUTBOUND)
                         .param("date_from", A_DATE)
                         .param("date_to", ANOTHER_DATE)
                         .param("caller.id", "999")
@@ -92,7 +89,7 @@ class BacklogMonitorControllerTest {
         // WHEN
         final ResultActions result = mockMvc.perform(
                 MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
-                        .param("workflow", WORKFLOW)
+                        .param("workflow", OUTBOUND)
                         .param("date_from", A_DATE)
                         .param("date_to", ANOTHER_DATE)
         );
@@ -101,58 +98,14 @@ class BacklogMonitorControllerTest {
         result.andExpect(status().isBadRequest());
     }
 
-    @Test
-    void testMissingDateFromParameter() throws Exception {
-        // GIVEN
-        when(getBacklogMonitor.execute(any())).thenReturn(getMockedResponse());
-
-        // WHEN
-        final ResultActions result = mockMvc.perform(
-                MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
-                        .param("workflow", WORKFLOW)
-                        .param("date_to", ANOTHER_DATE)
-                        .param("caller.id", "999")
-        );
-
-        // THEN
-        result.andExpect(status().isOk());
-        verify(getBacklogMonitor).execute(
-                argThat(input -> checkTimeDeltaWithNow(input.getDateFrom(), 2))
-        );
-    }
-
-    @Test
-    void testMissingDateToParameter() throws Exception {
-        // GIVEN
-        when(getBacklogMonitor.execute(any())).thenReturn(getMockedResponse());
-
-        // WHEN
-        final ResultActions result = mockMvc.perform(
-                MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
-                        .param("workflow", WORKFLOW)
-                        .param("date_from", A_DATE)
-                        .param("caller.id", "999")
-        );
-
-        // THEN
-        result.andExpect(status().isOk());
-        verify(getBacklogMonitor).execute(
-                argThat(input -> checkTimeDeltaWithNow(input.getDateTo(), 22))
-        );
-    }
-
-    private boolean checkTimeDeltaWithNow(ZonedDateTime date, int expectedDiff) {
-        ZonedDateTime now = DateUtils.getCurrentUtcDateTime();
-        long diff = Math.abs(ChronoUnit.MINUTES.between(date, now));
-        int expectedDiffInMinutes = expectedDiff * 60;
-        return expectedDiffInMinutes - 1 < diff && diff < expectedDiffInMinutes + 1;
-    }
-
     private WorkflowBacklogDetail getMockedResponse() {
         ZonedDateTime date = parse(A_DATE, ISO_DATE_TIME);
         ZonedDateTime anotherDate = parse(ANOTHER_DATE, ISO_DATE_TIME);
 
-        return new WorkflowBacklogDetail("outbound-orders", List.of(
+        return new WorkflowBacklogDetail(
+                "outbound-orders",
+                DateUtils.getCurrentUtcDateTime(),
+                List.of(
                         new ProcessDetail(
                                 "waving",
                                 new UnitMeasure(100, 150),
@@ -160,12 +113,12 @@ class BacklogMonitorControllerTest {
                                         BacklogByDate.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(10, 30))
-                                                .historical(23)
+                                                .historical(new UnitMeasure(23, null))
                                                 .build(),
                                         BacklogByDate.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(25, 75))
-                                                .historical(44)
+                                                .historical(new UnitMeasure(44, null))
                                                 .build()
                                 )),
                         new ProcessDetail(
@@ -175,12 +128,12 @@ class BacklogMonitorControllerTest {
                                         BacklogByDate.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(30, 90))
-                                                .historical(60)
+                                                .historical(new UnitMeasure(60, null))
                                                 .build(),
                                         BacklogByDate.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(45, 120))
-                                                .historical(100)
+                                                .historical(new UnitMeasure(100, null))
                                                 .build()
                                 )),
                         new ProcessDetail(
@@ -190,12 +143,12 @@ class BacklogMonitorControllerTest {
                                         BacklogByDate.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(200, 60))
-                                                .historical(190)
+                                                .historical(new UnitMeasure(190, null))
                                                 .build(),
                                         BacklogByDate.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(120, 30))
-                                                .historical(115)
+                                                .historical(new UnitMeasure(115, null))
                                                 .build()
                                 ))
                 )
