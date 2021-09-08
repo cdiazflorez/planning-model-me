@@ -117,14 +117,22 @@ class GetBacklogMonitorTest {
     void testGetProjectedBacklogError() {
         // GIVEN
         mockBacklogApiResponse();
+        mockHistoricalBacklog();
+        mockProductivitySearch();
+
         when(backlogProjection.execute(any(BacklogProjectionInput.class)))
                 .thenThrow(new TestException());
 
         // WHEN
-        assertThrows(
-                TestException.class,
-                () -> getBacklogMonitor.execute(input())
-        );
+        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input());
+
+        // THEN
+        assertNotNull(orders);
+        assertEquals("outbound-orders", orders.getWorkflow());
+
+        // waving
+        final ProcessDetail waving = orders.getProcesses().get(0);
+        assertEquals(2, waving.getBacklogs().size());
     }
 
     @Test
@@ -182,10 +190,19 @@ class GetBacklogMonitorTest {
                 .thenThrow(TestException.class);
 
         // WHEN
-        assertThrows(
-                TestException.class,
-                () -> getBacklogMonitor.execute(input())
-        );
+        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input());
+
+        // THEN
+        assertNotNull(orders);
+        assertEquals("outbound-orders", orders.getWorkflow());
+
+        // waving
+        final ProcessDetail waving = orders.getProcesses().get(0);
+
+        assertEquals("waving", waving.getProcess());
+        assertEquals(4, waving.getBacklogs().size());
+        assertEquals(150, waving.getTotal().getUnits());
+        assertNull(waving.getTotal().getMinutes());
     }
 
     private void assertWavingBacklogResults(ProcessDetail waving) {

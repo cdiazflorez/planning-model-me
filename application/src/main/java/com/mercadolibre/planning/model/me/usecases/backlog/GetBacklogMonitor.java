@@ -69,11 +69,11 @@ public class GetBacklogMonitor {
 
     private Map<ProcessName, ProcessData> getData(GetBacklogMonitorInputDto input) {
         final Map<ProcessName, List<QuantityByDate>> currentBacklog = getCurrentBacklog(input);
-        final Map<ProcessName, List<QuantityByDate>> projectedBacklog = getProjectedBacklog(input);
+        final Map<ProcessName, List<QuantityByDate>> projectedBacklog = projectedBacklog(input);
         final Map<ProcessName, Map<Integer, Integer>> historicalBacklog =
                 getHistoricalBacklog(input);
 
-        final Map<ProcessName, List<QuantityByDate>> productivity = getProductivity(input);
+        final Map<ProcessName, List<QuantityByDate>> productivity = productivity(input);
 
         return WORKFLOWS.get(input.getWorkflow())
                 .stream()
@@ -152,6 +152,26 @@ public class GetBacklogMonitor {
                                 b -> new QuantityByDate(b.getDate(), b.getTotal()),
                                 Collectors.toList()))
                 );
+    }
+
+    private Map<ProcessName, List<QuantityByDate>> projectedBacklog(
+            GetBacklogMonitorInputDto input) {
+
+        try {
+            return getProjectedBacklog(input);
+        } catch (RuntimeException e) {
+            log.error("colud not retrieve backlog projections", e);
+        }
+        return emptyMap();
+    }
+
+    private Map<ProcessName, List<QuantityByDate>> productivity(GetBacklogMonitorInputDto input) {
+        try {
+            return getProductivity(input);
+        } catch (RuntimeException e) {
+            log.error("colud not retrieve productivity", e);
+        }
+        return emptyMap();
     }
 
     private Map<ProcessName, List<QuantityByDate>> getProjectedBacklog(
