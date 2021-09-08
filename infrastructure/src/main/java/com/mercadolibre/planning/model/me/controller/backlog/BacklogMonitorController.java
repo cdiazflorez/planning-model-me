@@ -1,7 +1,11 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitor;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import lombok.AllArgsConstructor;
@@ -34,6 +38,8 @@ public class BacklogMonitorController {
 
     private final GetBacklogMonitor getBacklogMonitor;
 
+    private final GetBacklogMonitorDetails getBacklogMonitorDetails;
+
     @GetMapping("/monitor")
     public ResponseEntity<WorkflowBacklogDetail> monitor(
             @PathVariable final String warehouseId,
@@ -64,6 +70,40 @@ public class BacklogMonitorController {
                         workflow,
                         response.getCurrentDatetime(),
                         response.getProcesses()
+                )
+        );
+    }
+
+    @GetMapping("/details")
+    public ResponseEntity<GetBacklogMonitorDetailsResponse> details(
+            @PathVariable final String warehouseId,
+            @RequestParam(required = false) final String workflow,
+            @RequestParam final String process,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
+            final ZonedDateTime dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
+            final ZonedDateTime dateTo,
+            @RequestParam("caller.id") final long callerId) {
+
+        ZonedDateTime now = DateUtils.getCurrentUtcDateTime().truncatedTo(ChronoUnit.HOURS);
+
+        ZonedDateTime from = dateFrom == null
+                ? now.minusHours(DEFAULT_HOURS_LOOKBACK)
+                : dateFrom.withZoneSameInstant(UTC);
+
+        ZonedDateTime to = dateTo == null
+                ? now.plusHours(DEFAULT_HOURS_LOOKAHEAD) : dateTo.withZoneSameInstant(UTC);
+
+        return ResponseEntity.ok(
+                getBacklogMonitorDetails.execute(
+                        GetBacklogMonitorDetailsInput.builder()
+                                .warehouseId(warehouseId)
+                                .workflow(WORKFLOW_ADAPTER.get(workflow))
+                                .process(ProcessName.from(process))
+                                .dateFrom(from)
+                                .dateTo(to)
+                                .callerId(callerId)
+                                .build()
                 )
         );
     }
