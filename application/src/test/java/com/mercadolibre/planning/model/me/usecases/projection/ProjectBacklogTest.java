@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
@@ -87,7 +88,7 @@ public class ProjectBacklogTest {
                 BacklogProjectionRequest.builder()
                         .warehouseId(WAREHOUSE_ID)
                         .workflow(WORKFLOW)
-                        .processName(List.of(WAVING, PICKING, PACKING))
+                        .processName(List.of(WAVING, PICKING, PACKING, PACKING_WALL))
                         .dateFrom(A_DATE)
                         .dateTo(firstDate.plusHours(25))
                         .currentBacklog(List.of(

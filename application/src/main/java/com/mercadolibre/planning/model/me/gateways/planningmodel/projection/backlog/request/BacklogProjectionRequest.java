@@ -9,6 +9,10 @@ import lombok.Value;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
 
 @Value
@@ -34,7 +38,7 @@ public class BacklogProjectionRequest {
         return BacklogProjectionRequest.builder()
                 .warehouseId(input.getWarehouseId())
                 .workflow(input.getWorkflow())
-                .processName(input.getProcessName())
+                .processName(List.of(WAVING, PICKING, PACKING, PACKING_WALL))
                 .dateFrom(input.getDateFrom())
                 .dateTo(getNextHour(input.getDateTo()))
                 .currentBacklog(currentBacklogs)
