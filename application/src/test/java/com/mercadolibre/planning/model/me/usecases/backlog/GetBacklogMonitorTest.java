@@ -202,7 +202,7 @@ class GetBacklogMonitorTest {
         assertEquals("waving", waving.getProcess());
         assertEquals(4, waving.getBacklogs().size());
         assertEquals(150, waving.getTotal().getUnits());
-        assertNull(waving.getTotal().getMinutes());
+        assertEquals(0, waving.getTotal().getMinutes());
     }
 
     private void assertWavingBacklogResults(ProcessDetail waving) {

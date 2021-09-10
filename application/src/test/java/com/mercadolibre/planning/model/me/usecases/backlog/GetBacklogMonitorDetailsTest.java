@@ -25,6 +25,7 @@ import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class GetBacklogMonitorDetailsTest {
+class GetBacklogMonitorDetailsTest {
     private static final List<ZonedDateTime> DATES = of(
             parse("2021-08-12T01:00:00Z", ISO_OFFSET_DATE_TIME),
             parse("2021-08-12T02:00:00Z", ISO_OFFSET_DATE_TIME),
@@ -97,9 +98,11 @@ public class GetBacklogMonitorDetailsTest {
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
         assertEquals(2, firstAreas.get(0).getValue().getMinutes());
 
+        assertEquals(2, results.get(1).getAreas().size());
+
         var lastResults = results.get(3);
         assertEquals(DATE_TO, lastResults.getDate());
-        assertNull(lastResults.getAreas());
+        assertNotNull(lastResults.getAreas());
 
         assertEquals(60, lastResults.getTarget().getUnits());
         assertEquals(12, lastResults.getTarget().getMinutes());
@@ -148,7 +151,7 @@ public class GetBacklogMonitorDetailsTest {
 
         var lastResults = results.get(3);
         assertEquals(DATE_TO, lastResults.getDate());
-        assertNull(lastResults.getAreas());
+        assertNotNull(lastResults.getAreas());
         assertNull(lastResults.getTarget());
         assertEquals(500, lastResults.getTotal().getUnits());
         assertEquals(100, lastResults.getTotal().getMinutes());
@@ -216,8 +219,7 @@ public class GetBacklogMonitorDetailsTest {
                         List.of(
                                 new Backlog(firstDate, rkH, 15),
                                 new Backlog(secondDate, rkH, 50),
-                                new Backlog(firstDate, rkL, 75),
-                                new Backlog(secondDate, rkL, 100)
+                                new Backlog(firstDate, rkL, 75)
                         ));
     }
 

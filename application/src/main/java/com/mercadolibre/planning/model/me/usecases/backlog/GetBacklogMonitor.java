@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
@@ -37,6 +38,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
 import static java.util.List.of;
 
 @Slf4j
@@ -177,17 +179,21 @@ public class GetBacklogMonitor {
     private Map<ProcessName, List<QuantityByDate>> getProjectedBacklog(
             GetBacklogMonitorInputDto input) {
 
-        final ZonedDateTime nextHour = DateUtils.getCurrentUtcDateTime()
+        final ZonedDateTime dateFrom = DateUtils.getCurrentUtcDateTime()
                 .truncatedTo(ChronoUnit.HOURS)
                 .plusHours(1L);
+
+        final ZonedDateTime dateTo = input.getDateTo()
+                .truncatedTo(ChronoUnit.HOURS)
+                .minusHours(1L);
 
         final List<BacklogProjectionResponse> projectedBacklog = backlogProjection.execute(
                 BacklogProjectionInput.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .warehouseId(input.getWarehouseId())
                         .processName(WORKFLOWS.get(input.getWorkflow()))
-                        .dateFrom(nextHour)
-                        .dateTo(input.getDateTo())
+                        .dateFrom(dateFrom)
+                        .dateTo(dateTo)
                         .groupType("order")
                         .userId(input.getCallerId())
                         .build()
@@ -257,11 +263,20 @@ public class GetBacklogMonitor {
         final UnitMeasure totals = backlog.stream()
                 .max(comparing(BacklogByDate::getDate))
                 .map(BacklogByDate::getCurrent)
+                .map(u ->
+                        new UnitMeasure(
+                                u.getUnits(),
+                                u.getMinutes() == null ? Integer.valueOf(0) : u.getMinutes())
+                )
                 .orElse(new UnitMeasure(0, 0));
 
-        backlog.addAll(projections);
+        final List<BacklogByDate> allBacklog = Stream.concat(
+                        backlog.stream(),
+                        projections.stream())
+                .sorted(comparing(BacklogByDate::getDate))
+                .collect(Collectors.toList());
 
-        return new ProcessDetail(process, totals, backlog);
+        return new ProcessDetail(process, totals, allBacklog);
     }
 
     private List<BacklogByDate> toBacklogByDate(
@@ -323,14 +338,11 @@ public class GetBacklogMonitor {
     private ZonedDateTime getCurrentDatetime(Map<ProcessName, ProcessData> processData) {
         return processData.values()
                 .stream()
-                .findAny()
-                .map(p ->
-                        p.getCurrentBacklog()
+                .flatMap(
+                        p -> p.getCurrentBacklog()
                                 .stream()
-                                .max(comparing(QuantityByDate::getDate))
-                                .map(QuantityByDate::getDate)
-                                .orElse(DateUtils.getCurrentUtcDateTime())
-                )
+                                .map(QuantityByDate::getDate))
+                .max(naturalOrder())
                 .orElse(DateUtils.getCurrentUtcDateTime());
     }
 
