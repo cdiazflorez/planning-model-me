@@ -4,13 +4,15 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
+import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
+import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
+import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +23,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.List.of;
@@ -57,18 +63,21 @@ class GetBacklogMonitorDetailsTest {
     @Mock
     private ProjectBacklog backlogProjection;
 
+    @Mock
+    private GetProcessThroughput getProcessThroughput;
+
     @Test
     void testGetBacklogDetails() {
         // GIVEN
         mockPastBacklogWithAreas();
         mockProjectedBacklog();
         mockTargetBacklog();
-        mockProductivity();
+        mockThroughput(WAVING);
 
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
-                .warehouseId("ARTW01")
+                .warehouseId(WAREHOUSE_ID)
                 .workflow("fbm-wms-outbound")
-                .process(ProcessName.WAVING)
+                .process(WAVING)
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
                 .callerId(999L)
@@ -116,13 +125,13 @@ class GetBacklogMonitorDetailsTest {
         // GIVEN
         mockPastBacklogWithAreas();
         mockProjectedBacklog();
-        mockProductivity();
+        mockThroughput(PICKING);
 
         // WHEN
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
-                .warehouseId("ARTW01")
+                .warehouseId(WAREHOUSE_ID)
                 .workflow("fbm-wms-outbound")
-                .process(ProcessName.PICKING)
+                .process(PICKING)
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
                 .callerId(999L)
@@ -165,13 +174,13 @@ class GetBacklogMonitorDetailsTest {
         mockPastBacklogWithoutAreas();
         mockProjectedBacklog();
         mockTargetBacklog();
-        mockProductivity();
+        mockThroughput(WAVING);
 
         // WHEN
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
-                .warehouseId("ARTW01")
+                .warehouseId(WAREHOUSE_ID)
                 .workflow("fbm-wms-outbound")
-                .process(ProcessName.WAVING)
+                .process(WAVING)
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
                 .callerId(999L)
@@ -266,28 +275,23 @@ class GetBacklogMonitorDetailsTest {
                 ));
     }
 
-    private void mockProductivity() {
-        var entities = List.of(
-                Entity.builder()
-                        .date(DATES.get(0))
-                        .value(10)
-                        .build(),
-                Entity.builder()
-                        .date(DATES.get(1))
-                        .value(25)
-                        .build(),
-                Entity.builder()
-                        .date(DATES.get(2))
-                        .value(15)
-                        .build(),
-                Entity.builder()
-                        .date(DATES.get(3))
-                        .value(5)
-                        .build()
-        );
+    private void mockThroughput(ProcessName process) {
+        final GetThroughputInput request = GetThroughputInput.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(FBM_WMS_OUTBOUND)
+                .processes(List.of(process))
+                .dateFrom(DATE_FROM)
+                .dateTo(DATE_TO)
+                .build();
 
-        when(planningModelGateway.searchEntities(any()))
-                .thenReturn(
-                        Map.of(EntityType.THROUGHPUT, entities));
+        when(getProcessThroughput.execute(request))
+                .thenReturn(new GetThroughputResult(
+                        Map.of(process, Map.of(
+                                DATES.get(0), 10,
+                                DATES.get(1), 25,
+                                DATES.get(2), 15,
+                                DATES.get(3), 5)
+                        )
+                ));
     }
 }

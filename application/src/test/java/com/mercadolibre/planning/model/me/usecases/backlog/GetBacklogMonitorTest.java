@@ -1,20 +1,20 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
-import com.mercadolibre.planning.model.me.entities.monitor.BacklogByDate;
+import com.mercadolibre.planning.model.me.entities.monitor.BacklogsByDate;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
+import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
+import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
+import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.TestException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
@@ -70,10 +69,10 @@ class GetBacklogMonitorTest {
     private BacklogApiGateway backlogApiGateway;
 
     @Mock
-    private PlanningModelGateway planningModelGateway;
+    private ProjectBacklog backlogProjection;
 
     @Mock
-    private ProjectBacklog backlogProjection;
+    private GetProcessThroughput getProcessThroughput;
 
     @Test
     void testExecuteOK() {
@@ -81,7 +80,7 @@ class GetBacklogMonitorTest {
         mockBacklogApiResponse();
         mockHistoricalBacklog();
         mockProjectedBacklog();
-        mockProductivitySearch();
+        mockThroughput();
 
         // WHEN
         final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input());
@@ -118,7 +117,7 @@ class GetBacklogMonitorTest {
         // GIVEN
         mockBacklogApiResponse();
         mockHistoricalBacklog();
-        mockProductivitySearch();
+        mockThroughput();
 
         when(backlogProjection.execute(any(BacklogProjectionInput.class)))
                 .thenThrow(new TestException());
@@ -140,7 +139,7 @@ class GetBacklogMonitorTest {
         // GIVEN
         mockBacklogApiResponse();
         mockProjectedBacklog();
-        mockProductivitySearch();
+        mockThroughput();
 
         final BacklogRequest request = BacklogRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
@@ -171,22 +170,21 @@ class GetBacklogMonitorTest {
     }
 
     @Test
-    void testGetProductivityError() {
+    void testGetThroughputError() {
         // GIVEN
         mockBacklogApiResponse();
         mockHistoricalBacklog();
         mockProjectedBacklog();
 
-        final SearchEntitiesRequest request = SearchEntitiesRequest.builder()
+        final GetThroughputInput request = GetThroughputInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
-                .entityTypes(List.of(THROUGHPUT))
+                .processes(List.of(WAVING, PICKING, PACKING))
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
-                .processName(List.of(WAVING, PICKING, PACKING))
                 .build();
 
-        when(planningModelGateway.searchEntities(request))
+        when(getProcessThroughput.execute(request))
                 .thenThrow(TestException.class);
 
         // WHEN
@@ -213,17 +211,17 @@ class GetBacklogMonitorTest {
         assertEquals(4, waving.getBacklogs().size());
 
         // past backlog
-        final BacklogByDate wavingPastBacklog = waving.getBacklogs().get(0);
+        final BacklogsByDate wavingPastBacklog = waving.getBacklogs().get(0);
         assertEquals(DATE_FROM, wavingPastBacklog.getDate());
         assertEquals(100, wavingPastBacklog.getCurrent().getUnits());
         assertEquals(10, wavingPastBacklog.getCurrent().getMinutes());
 
-        final BacklogByDate wavingNullMinutesBacklog = waving.getBacklogs().get(2);
+        final BacklogsByDate wavingNullMinutesBacklog = waving.getBacklogs().get(2);
         assertEquals(DATES.get(2), wavingNullMinutesBacklog.getDate());
         assertNull(wavingNullMinutesBacklog.getCurrent().getMinutes());
 
         // projected backlog
-        final BacklogByDate wavingProjectedBacklog = waving.getBacklogs().get(3);
+        final BacklogsByDate wavingProjectedBacklog = waving.getBacklogs().get(3);
         assertEquals(DATES.get(3), wavingProjectedBacklog.getDate());
         assertEquals(250, wavingProjectedBacklog.getCurrent().getUnits());
         assertEquals(12, wavingProjectedBacklog.getCurrent().getMinutes());
@@ -323,91 +321,33 @@ class GetBacklogMonitorTest {
                 ));
     }
 
-    private void mockProductivitySearch() {
-        final SearchEntitiesRequest request = SearchEntitiesRequest.builder()
+    private void mockThroughput() {
+        final GetThroughputInput request = GetThroughputInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
-                .entityTypes(List.of(THROUGHPUT))
+                .processes(List.of(WAVING, PICKING, PACKING))
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
-                .processName(List.of(WAVING, PICKING, PACKING))
                 .build();
 
-        when(planningModelGateway.searchEntities(request))
-                .thenReturn(Map.of(
-                        THROUGHPUT, of(
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(WAVING)
-                                        .date(DATES.get(0))
-                                        .value(10)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(WAVING)
-                                        .date(DATES.get(1))
-                                        .value(15)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(WAVING)
-                                        .date(DATES.get(2))
-                                        .value(0)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(WAVING)
-                                        .date(DATES.get(3))
-                                        .value(20)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(PICKING)
-                                        .date(DATES.get(0))
-                                        .value(3)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(PICKING)
-                                        .date(DATES.get(1))
-                                        .value(1)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(PICKING)
-                                        .date(DATES.get(2))
-                                        .value(4)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(PICKING)
-                                        .date(DATES.get(3))
-                                        .value(5)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(PACKING)
-                                        .date(DATES.get(0))
-                                        .value(1000)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(PACKING)
-                                        .date(DATES.get(1))
-                                        .value(50)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(PACKING)
-                                        .date(DATES.get(2))
-                                        .value(20)
-                                        .build(),
-                                Entity.builder()
-                                        .workflow(FBM_WMS_OUTBOUND)
-                                        .processName(PACKING)
-                                        .date(DATES.get(3))
-                                        .value(300)
-                                        .build()
+        when(getProcessThroughput.execute(request))
+                .thenReturn(new GetThroughputResult(
+                        Map.of(
+                                WAVING, Map.of(
+                                        DATES.get(0), 10,
+                                        DATES.get(1), 15,
+                                        DATES.get(2), 0,
+                                        DATES.get(3), 20),
+                                PICKING, Map.of(
+                                        DATES.get(0), 3,
+                                        DATES.get(1), 1,
+                                        DATES.get(2), 4,
+                                        DATES.get(3), 5),
+                                PACKING, Map.of(
+                                        DATES.get(0), 1000,
+                                        DATES.get(1), 50,
+                                        DATES.get(2), 20,
+                                        DATES.get(3), 300)
                         )
                 ));
     }

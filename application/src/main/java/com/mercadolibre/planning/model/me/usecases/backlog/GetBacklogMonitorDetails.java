@@ -10,15 +10,15 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
+import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
+import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -35,12 +35,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.util.Comparator.comparing;
 import static java.util.List.of;
@@ -56,6 +54,8 @@ public class GetBacklogMonitorDetails {
     private final ProjectBacklog backlogProjection;
 
     private final PlanningModelGateway planningModelGateway;
+
+    private final GetProcessThroughput getProcessThroughput;
 
     public GetBacklogMonitorDetailsResponse execute(GetBacklogMonitorDetailsInput input) {
         final ProcessBacklog processBacklog = getData(input);
@@ -199,20 +199,14 @@ public class GetBacklogMonitorDetails {
     }
 
     private Map<ZonedDateTime, Integer> getThroughput(GetBacklogMonitorDetailsInput input) {
-        final List<Entity> entities = planningModelGateway.searchEntities(
-                SearchEntitiesRequest.builder()
+        return getProcessThroughput.execute(GetThroughputInput.builder()
                         .warehouseId(input.getWarehouseId())
                         .workflow(FBM_WMS_OUTBOUND)
-                        .processName(of(input.getProcess()))
-                        .entityTypes(of(THROUGHPUT))
+                        .processes(of(input.getProcess()))
                         .dateFrom(input.getDateFrom())
                         .dateTo(input.getDateTo())
-                        .source(SIMULATION)
-                        .build()
-        ).get(THROUGHPUT);
-
-        return entities.stream()
-                .collect(Collectors.toMap(Entity::getDate, Entity::getValue));
+                        .build())
+                .get(input.getProcess());
     }
 
     private ProcessBacklogDetail toProcessDetail(

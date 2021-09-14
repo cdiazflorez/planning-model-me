@@ -7,7 +7,7 @@ import java.time.ZonedDateTime;
 
 @Value
 @Builder
-public class BacklogByDate {
+public class BacklogsByDate {
     private ZonedDateTime date;
     private UnitMeasure current;
     private UnitMeasure historical;

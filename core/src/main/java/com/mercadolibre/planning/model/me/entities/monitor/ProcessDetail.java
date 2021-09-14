@@ -8,5 +8,5 @@ import java.util.List;
 public class ProcessDetail {
     private String process;
     private UnitMeasure total;
-    private List<BacklogByDate> backlogs;
+    private List<BacklogsByDate> backlogs;
 }

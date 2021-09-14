@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
 import com.mercadolibre.planning.model.me.entities.monitor.AreaBacklogDetail;
-import com.mercadolibre.planning.model.me.entities.monitor.BacklogByDate;
+import com.mercadolibre.planning.model.me.entities.monitor.BacklogsByDate;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessBacklogDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
@@ -178,12 +178,12 @@ class BacklogMonitorControllerTest {
                                 "waving",
                                 new UnitMeasure(100, 150),
                                 List.of(
-                                        BacklogByDate.builder()
+                                        BacklogsByDate.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(10, 30))
                                                 .historical(new UnitMeasure(23, null))
                                                 .build(),
-                                        BacklogByDate.builder()
+                                        BacklogsByDate.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(25, 75))
                                                 .historical(new UnitMeasure(44, null))
@@ -193,12 +193,12 @@ class BacklogMonitorControllerTest {
                                 "picking",
                                 new UnitMeasure(30, 90),
                                 List.of(
-                                        BacklogByDate.builder()
+                                        BacklogsByDate.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(30, 90))
                                                 .historical(new UnitMeasure(60, null))
                                                 .build(),
-                                        BacklogByDate.builder()
+                                        BacklogsByDate.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(45, 120))
                                                 .historical(new UnitMeasure(100, null))
@@ -208,12 +208,12 @@ class BacklogMonitorControllerTest {
                                 "packing",
                                 new UnitMeasure(200, 60),
                                 List.of(
-                                        BacklogByDate.builder()
+                                        BacklogsByDate.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(200, 60))
                                                 .historical(new UnitMeasure(190, null))
                                                 .build(),
-                                        BacklogByDate.builder()
+                                        BacklogsByDate.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(120, 30))
                                                 .historical(new UnitMeasure(115, null))
