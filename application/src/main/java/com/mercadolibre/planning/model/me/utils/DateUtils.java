@@ -66,4 +66,9 @@ public class DateUtils {
                 .with(previous(fistDayRule.getFirstDayOfWeek()));
     }
 
+    public static Integer minutesFromWeekStart(ZonedDateTime date) {
+        return date.getDayOfWeek().getValue() * 1440
+                + date.getHour() * 60
+                + date.getMinute();
+    }
 }

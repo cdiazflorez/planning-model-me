@@ -9,12 +9,15 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.planning.model.me.utils.TestException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,13 +26,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -74,6 +72,9 @@ class GetBacklogMonitorTest {
     @Mock
     private GetProcessThroughput getProcessThroughput;
 
+    @Mock
+    private GetHistoricalBacklog getHistoricalBacklog;
+
     @Test
     void testExecuteOK() {
         // GIVEN
@@ -93,8 +94,8 @@ class GetBacklogMonitorTest {
         final ProcessDetail waving = orders.getProcesses().get(0);
 
         assertWavingBacklogResults(waving);
-        assertEquals(169000, waving.getBacklogs().get(0).getHistorical().getUnits());
-        assertEquals(172000, waving.getBacklogs().get(3).getHistorical().getUnits());
+        assertEquals(200, waving.getBacklogs().get(0).getHistorical().getUnits());
+        assertEquals(80, waving.getBacklogs().get(3).getHistorical().getUnits());
         assertNull(waving.getBacklogs().get(0).getHistorical().getMinutes());
         assertNull(waving.getBacklogs().get(3).getHistorical().getMinutes());
     }
@@ -141,16 +142,16 @@ class GetBacklogMonitorTest {
         mockProjectedBacklog();
         mockThroughput();
 
-        final BacklogRequest request = BacklogRequest.builder()
+        final var request = GetHistoricalBacklogInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflows(of("outbound-orders"))
-                .processes(of("waving", "picking", "packing"))
-                .groupingFields(of("process"))
+                .processes(of(WAVING, PICKING, PACKING))
                 .dateFrom(DATE_FROM.minusWeeks(3L))
                 .dateTo(DATE_FROM)
                 .build();
 
-        when(backlogApiGateway.getBacklog(request)).thenThrow(RuntimeException.class);
+        when(getHistoricalBacklog.execute(request))
+                .thenThrow(TestException.class);
 
         // WHEN
         final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input());
@@ -260,32 +261,46 @@ class GetBacklogMonitorTest {
     }
 
     private void mockHistoricalBacklog() {
-        final BacklogRequest request = BacklogRequest.builder()
+        final var firstDate = DateUtils.minutesFromWeekStart(DATES.get(0));
+        final var secondDate = DateUtils.minutesFromWeekStart(DATES.get(1));
+        final var thirdDate = DateUtils.minutesFromWeekStart(DATES.get(2));
+        final var fourthDate = DateUtils.minutesFromWeekStart(DATES.get(3));
+
+
+        final var input = GetHistoricalBacklogInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflows(of("outbound-orders"))
-                .processes(of("waving", "picking", "packing"))
-                .groupingFields(of("process"))
+                .processes(of(WAVING, PICKING, PACKING))
                 .dateFrom(DATE_FROM.minusWeeks(3L))
                 .dateTo(DATE_FROM)
                 .build();
 
-        when(backlogApiGateway.getBacklog(request)).thenReturn(
-                generateHistoricalBacklog(DATE_FROM.minusWeeks(3L), DATE_FROM)
-        );
-    }
-
-    private List<Backlog> generateHistoricalBacklog(ZonedDateTime dateFrom, ZonedDateTime dateTo) {
-        final int hours = (int) ChronoUnit.HOURS.between(dateFrom, dateTo);
-        final List<String> processes = of("waving", "packing", "picking");
-
-        return Stream.of(0, 1, 2)
-                .map(i -> IntStream.range(0, hours)
-                        .mapToObj(h -> new Backlog(dateFrom.plusHours(h), Map.of(
-                                "process", processes.get(i)
-                        ), (h + 1) * 1000 * (i + 1)))
-                ).collect(Collectors.flatMapping(
-                        Function.identity(),
-                        Collectors.toList()
+        when(getHistoricalBacklog.execute(input))
+                .thenReturn(Map.of(
+                        WAVING, new HistoricalBacklog(
+                                Map.of(
+                                        firstDate, 200,
+                                        secondDate, 100,
+                                        thirdDate, 50,
+                                        fourthDate, 80
+                                )
+                        ),
+                        PICKING, new HistoricalBacklog(
+                                Map.of(
+                                        firstDate, 22,
+                                        secondDate, 111,
+                                        thirdDate, 150,
+                                        fourthDate, 215
+                                )
+                        ),
+                        PACKING, new HistoricalBacklog(
+                                Map.of(
+                                        firstDate, 0,
+                                        secondDate, 120,
+                                        thirdDate, 220,
+                                        fourthDate, 420
+                                )
+                        )
                 ));
     }
 

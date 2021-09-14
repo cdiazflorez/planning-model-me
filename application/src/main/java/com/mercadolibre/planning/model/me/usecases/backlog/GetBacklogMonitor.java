@@ -10,6 +10,8 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
@@ -34,6 +36,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog.emptyBacklog;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
@@ -54,10 +57,11 @@ public class GetBacklogMonitor {
 
     private final BacklogApiGateway backlogApiGateway;
 
-
     private final ProjectBacklog backlogProjection;
 
     private final GetProcessThroughput getProcessThroughput;
+
+    private final GetHistoricalBacklog getHistoricalBacklog;
 
     public WorkflowBacklogDetail execute(GetBacklogMonitorInputDto input) {
         final Map<ProcessName, ProcessData> processData = getData(input);
@@ -72,8 +76,7 @@ public class GetBacklogMonitor {
     private Map<ProcessName, ProcessData> getData(GetBacklogMonitorInputDto input) {
         final Map<ProcessName, List<QuantityByDate>> currentBacklog = getCurrentBacklog(input);
         final Map<ProcessName, List<QuantityByDate>> projectedBacklog = projectedBacklog(input);
-        final Map<ProcessName, Map<Integer, Integer>> historicalBacklog =
-                getHistoricalBacklog(input);
+        final Map<ProcessName, HistoricalBacklog> historicalBacklog = getHistoricalBacklog(input);
 
         final GetThroughputResult throughput = getThroughput(input);
 
@@ -84,7 +87,7 @@ public class GetBacklogMonitor {
                         p -> new ProcessData(
                                 currentBacklog.getOrDefault(p, emptyList()),
                                 projectedBacklog.getOrDefault(p, emptyList()),
-                                historicalBacklog.getOrDefault(p, emptyMap()),
+                                historicalBacklog.getOrDefault(p, emptyBacklog()),
                                 throughput.getOrDefault(p, emptyMap())
                         )
                 ));
@@ -93,57 +96,14 @@ public class GetBacklogMonitor {
     private Map<ProcessName, List<QuantityByDate>> getCurrentBacklog(
             GetBacklogMonitorInputDto input) {
 
-        return getBacklog(
-                input.getWarehouseId(),
-                input.getDateFrom(),
-                DateUtils.getCurrentUtcDateTime());
-    }
-
-    private Map<ProcessName, Map<Integer, Integer>> getHistoricalBacklog(
-            GetBacklogMonitorInputDto input) {
-
-        final ZonedDateTime dateFrom = input.getDateFrom().minusWeeks(BACKLOG_WEEKS_LOOKBACK);
-        final ZonedDateTime dateTo = input.getDateFrom();
-
-        try {
-            return getBacklog(input.getWarehouseId(), dateFrom, dateTo)
-                    .entrySet()
-                    .stream()
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            e -> backlogAvgByMinuteInWeek(e.getValue()))
-                    );
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-        return emptyMap();
-    }
-
-    private Map<Integer, Integer> backlogAvgByMinuteInWeek(List<QuantityByDate> backlog) {
-        return backlog.stream()
-                .collect(Collectors.groupingBy(
-                                quantity -> minutesFromWeekStart(quantity.getDate()),
-                                Collectors.collectingAndThen(
-                                        Collectors.averagingInt(QuantityByDate::getQuantity),
-                                        Double::intValue
-                                )
-                        )
-                );
-    }
-
-    private Map<ProcessName, List<QuantityByDate>> getBacklog(
-            String warehouseId,
-            ZonedDateTime dateFrom,
-            ZonedDateTime dateTo) {
-
         final List<Backlog> backlog = backlogApiGateway.getBacklog(
                 BacklogRequest.builder()
-                        .warehouseId(warehouseId)
+                        .warehouseId(input.getWarehouseId())
                         .workflows(of(OUTBOUND_ORDERS))
                         .processes(outboundProcessesNames())
                         .groupingFields(of("process"))
-                        .dateFrom(dateFrom)
-                        .dateTo(dateTo)
+                        .dateFrom(input.getDateFrom())
+                        .dateTo(DateUtils.getCurrentUtcDateTime())
                         .build()
         );
 
@@ -156,13 +116,35 @@ public class GetBacklogMonitor {
                 );
     }
 
+    private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(
+            GetBacklogMonitorInputDto input) {
+
+        final ZonedDateTime dateFrom = input.getDateFrom().minusWeeks(BACKLOG_WEEKS_LOOKBACK);
+        final ZonedDateTime dateTo = input.getDateFrom();
+
+        try {
+            return getHistoricalBacklog.execute(
+                    GetHistoricalBacklogInput.builder()
+                            .warehouseId(input.getWarehouseId())
+                            .workflows(of(input.getWorkflow()))
+                            .processes(WORKFLOWS.get(input.getWorkflow()))
+                            .dateFrom(dateFrom)
+                            .dateTo(dateTo)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        return emptyMap();
+    }
+
     private Map<ProcessName, List<QuantityByDate>> projectedBacklog(
             GetBacklogMonitorInputDto input) {
 
         try {
             return getProjectedBacklog(input);
         } catch (RuntimeException e) {
-            log.error("colud not retrieve backlog projections", e);
+            log.error("could not retrieve backlog projections", e);
         }
         return emptyMap();
     }
@@ -230,16 +212,14 @@ public class GetBacklogMonitor {
     }
 
     private ProcessDetail buildProcessDetail(String process, ProcessData data) {
-        final Map<Integer, Integer> historicalBacklog = data.getHistoricalBacklog();
-
         final List<BacklogsByDate> backlog = toBacklogByDate(
                 data.getCurrentBacklog(),
-                historicalBacklog,
+                data.getHistoricalBacklog(),
                 data.getThroughputByDate());
 
         final List<BacklogsByDate> projections = toBacklogByDate(
                 data.getProjectedBacklog(),
-                historicalBacklog,
+                data.getHistoricalBacklog(),
                 data.getThroughputByDate());
 
         final UnitMeasure totals = backlog.stream()
@@ -263,7 +243,7 @@ public class GetBacklogMonitor {
 
     private List<BacklogsByDate> toBacklogByDate(
             List<QuantityByDate> backlog,
-            Map<Integer, Integer> historicalBacklog,
+            HistoricalBacklog historicalBacklog,
             Map<ZonedDateTime, Integer> throughputByDate) {
 
         return backlog.stream()
@@ -274,8 +254,8 @@ public class GetBacklogMonitor {
                             final Integer currentThroughput =
                                     throughputByDate.getOrDefault(lookupDate, 0);
 
-                            final Integer historicalQuantity = historicalBacklog.getOrDefault(
-                                    minutesFromWeekStart(lookupDate), 0);
+                            final Integer historicalQuantity =
+                                    historicalBacklog.getOr(lookupDate, 0);
 
                             return BacklogsByDate.builder()
                                     .date(b.getDate())
@@ -306,12 +286,6 @@ public class GetBacklogMonitor {
         return quantity / throughput;
     }
 
-    private Integer minutesFromWeekStart(ZonedDateTime date) {
-        return date.getDayOfWeek().getValue() * 1440
-                + date.getHour() * 60
-                + date.getMinute();
-    }
-
     private ProcessName processNameFromBacklog(Backlog b) {
         final Map<String, String> keys = b.getKeys();
         return ProcessName.from(keys.get("process"));
@@ -338,7 +312,7 @@ public class GetBacklogMonitor {
     private static class ProcessData {
         List<QuantityByDate> currentBacklog;
         List<QuantityByDate> projectedBacklog;
-        Map<Integer, Integer> historicalBacklog;
+        HistoricalBacklog historicalBacklog;
         Map<ZonedDateTime, Integer> throughputByDate;
     }
 }
