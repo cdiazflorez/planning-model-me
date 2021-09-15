@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
@@ -74,6 +75,9 @@ class GetBacklogMonitorTest {
 
     @Mock
     private GetHistoricalBacklog getHistoricalBacklog;
+
+    @Spy
+    private ProcessDetailBuilder processDetailBuilder;
 
     @Test
     void testExecuteOK() {
@@ -164,8 +168,8 @@ class GetBacklogMonitorTest {
         final ProcessDetail waving = orders.getProcesses().get(0);
 
         assertWavingBacklogResults(waving);
-        assertEquals(0, waving.getBacklogs().get(0).getHistorical().getUnits());
-        assertEquals(0, waving.getBacklogs().get(3).getHistorical().getUnits());
+        assertNull(waving.getBacklogs().get(0).getHistorical().getUnits());
+        assertNull(waving.getBacklogs().get(3).getHistorical().getUnits());
         assertNull(waving.getBacklogs().get(0).getHistorical().getMinutes());
         assertNull(waving.getBacklogs().get(3).getHistorical().getMinutes());
     }
