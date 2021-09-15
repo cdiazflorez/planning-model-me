@@ -1,0 +1,59 @@
+{
+    "current_datetime": "2021-08-12T01:00:00Z",
+    "dates": [
+        {
+            "date": "2021-08-12T01:00:00Z",
+            "target": {
+                "units": 100,
+                "minutes":150
+            },
+            "total": {
+                "units": 125,
+                "minutes":170
+            },
+            "areas": [
+                {
+                    "id": "RK-H",
+                    "value": {
+                        "units": 200,
+                        "minutes": 10
+                    }
+                },
+                {
+                    "id": "RK-L",
+                    "value": {
+                        "units": 300,
+                        "minutes": 15
+                    }
+                }
+            ]
+        },
+        {
+            "date": "2021-08-12T04:00:00Z",
+            "target": {
+                "units": 30,
+                "minutes":90
+            },
+            "total": {
+                "units": 50,
+                "minutes":120
+            },
+            "areas": [
+                {
+                    "id": "RK-H",
+                    "value": {
+                        "units": 250,
+                        "minutes": 20
+                    }
+                },
+                {
+                    "id": "RK-L",
+                    "value": {
+                        "units": 350,
+                        "minutes": 30
+                    }
+                }
+            ]
+        }
+    ]
+}

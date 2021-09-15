@@ -11,11 +11,6 @@ import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatew
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
@@ -25,8 +20,6 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.proc
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.BacklogMetricInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.GetBacklogMetricUseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.immediatebacklog.get.GetImmediateBacklogMetricUseCase;
-import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.GetProductivity;
-import com.mercadolibre.planning.model.me.usecases.monitor.metric.productivity.ProductivityInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.GetThroughput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.ThroughputInput;
 import lombok.AllArgsConstructor;
@@ -35,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.inject.Named;
 
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +35,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_NO_WALL;
 import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_WALL;
@@ -78,9 +69,7 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
     private final GetBacklogMetricUseCase getBacklogMetric;
     private final GetImmediateBacklogMetricUseCase getImmediateBacklogMetric;
     private final GetThroughput getThroughputMetric;
-    private final GetProductivity getProductivityMetric;
     private final OutboundWaveGateway outboundWaveGateway;
-    private final PlanningModelGateway planningModelGateway;
     private final LogisticCenterGateway logisticCenterGateway;
 
     @Override
@@ -103,51 +92,16 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
         final List<UnitsResume> processedUnitsLastHour = getUnitsResumes(input,
                 config.isPutToWall());
 
-        final List<Entity> productivityHeadCounts =
-                getHeadcountForProductivity(input, processedUnitsLastHour);
-
         processBacklogs.forEach(processBacklog ->
                 addProcessIfExist(processes, CurrentStatusMetricInputs.builder()
                         .input(input)
                         .processBacklog(processBacklog)
                         .processedUnitsLastHour(processedUnitsLastHour)
-                        .productivityHeadCounts(productivityHeadCounts)
                         .build())
         );
 
         completeProcess(processes);
         return processes;
-    }
-
-    private List<Entity> getHeadcountForProductivity(
-            final GetCurrentStatusInput input,
-            final List<UnitsResume> processedUnitsLastHour) {
-
-        final ZonedDateTime utcDateTo = getCurrentUtcDateTime().with(ChronoField.MINUTE_OF_HOUR, 0);
-        final ZonedDateTime utcDateFrom = utcDateTo.minusHours(1);
-        return planningModelGateway.getEntities(
-                createHeadcountRequest(input,
-                        utcDateFrom,
-                        utcDateTo,
-                        processedUnitsLastHour
-                ));
-    }
-
-    private EntityRequest createHeadcountRequest(final GetCurrentStatusInput input,
-                                                 final ZonedDateTime dateFrom,
-                                                 final ZonedDateTime dateTo,
-                                                 final List<UnitsResume> unitsResumes) {
-        return EntityRequest.builder()
-                .workflow(input.getWorkflow())
-                .warehouseId(input.getWarehouseId())
-                .entityType(EntityType.HEADCOUNT)
-                .dateFrom(dateFrom)
-                .dateTo(dateTo)
-                .processName(unitsResumes.stream().map(unitResume
-                        -> ProcessName.from(unitResume.getProcess().getRelatedProcessName()))
-                        .collect(Collectors.toList()))
-                .processingType(PROJECTION_PROCESSING_TYPES)
-                .build();
     }
 
     private List<ProcessBacklog> getProcessBacklogs(final GetCurrentStatusInput input,
@@ -367,18 +321,6 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                                     .processInfo(processInfo)
                                     .processedUnitLastHour(unitResume)
                                     .build()
-                            )
-                    );
-                    break;
-                case PRODUCTIVITY:
-                    metrics.add(
-                            getProductivityMetric.execute(
-                                    ProductivityInput.builder()
-                                            .monitorInput(inputs.getInput())
-                                            .processedUnitLastHour(unitResume)
-                                            .processInfo(processInfo)
-                                            .headcounts(inputs.getProductivityHeadCounts())
-                                            .build()
                             )
                     );
                     break;

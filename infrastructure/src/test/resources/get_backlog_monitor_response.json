@@ -1,0 +1,92 @@
+ {
+    "workflow": "fbm-wms-outbound",
+    "processes": [
+        {
+            "process": "waving",
+            "total": {
+                "units": 100,
+                "minutes": 150
+            },
+            "backlogs": [
+                {
+                    "date": "2021-08-12T01:00:00Z",
+                    "current": {
+                        "units": 10,
+                        "minutes": 30
+                    },
+                    "historical": {
+                        "units": 23
+                    }
+                },
+                {
+                    "date": "2021-08-12T04:00:00Z",
+                    "current": {
+                        "units": 25,
+                        "minutes": 75
+                    },
+                    "historical": {
+                        "units": 44
+                    }
+                }
+            ]
+        },
+        {
+            "process": "picking",
+            "total": {
+                "units": 30,
+                "minutes": 90
+            },
+            "backlogs": [
+                {
+                    "date": "2021-08-12T01:00:00Z",
+                    "current": {
+                        "units": 30,
+                        "minutes": 90
+                    },
+                    "historical": {
+                        "units": 60
+                    }
+                },
+                {
+                    "date": "2021-08-12T04:00:00Z",
+                    "current": {
+                        "units": 45,
+                        "minutes": 120
+                    },
+                    "historical": {
+                        "units": 100
+                    }
+                }
+            ]
+        },
+        {
+            "process": "packing",
+            "total": {
+                "units": 200,
+                "minutes": 60
+            },
+            "backlogs": [
+                {
+                    "date": "2021-08-12T01:00:00Z",
+                    "current": {
+                        "units": 200,
+                        "minutes": 60
+                    },
+                    "historical": {
+                        "units": 190
+                    }
+                },
+                {
+                    "date": "2021-08-12T04:00:00Z",
+                    "current": {
+                        "units": 120,
+                        "minutes": 30
+                    },
+                    "historical": {
+                        "units": 115
+                    }
+                }
+            ]
+        }
+    ]
+}

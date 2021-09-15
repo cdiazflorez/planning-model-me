@@ -35,6 +35,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.restclient.MockResponse;
 import com.mercadolibre.restclient.http.HttpMethod;
 import org.json.JSONArray;
@@ -311,6 +312,92 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(20, productivity2.getValue());
         assertEquals(Source.SIMULATION, productivity2.getSource());
         assertEquals(2, productivity2.getAbilityLevel());
+    }
+
+    @Test
+    void testGetPerformedProcessing() throws JSONException {
+        // Given
+        ZonedDateTime now = DateUtils.getCurrentUtcDateTime();
+
+        final EntityRequest request = EntityRequest.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId("ARTW01")
+                .dateFrom(now)
+                .dateTo(now.plusDays(1))
+                .source(Source.FORECAST)
+                .processName(List.of(WAVING))
+                .build();
+
+
+        final JSONArray apiResponse = new JSONArray()
+                .put(new JSONObject()
+                        .put("date", request.getDateFrom().format(ISO_OFFSET_DATE_TIME))
+                        .put("workflow", "fbm-wms-outbound")
+                        .put("process_name", "waving")
+                        .put("value", "30")
+                        .put("source", "forecast")
+                        .put("metric_unit", "minutes")
+                        .put("type", "performed_processing")
+                )
+                .put(new JSONObject()
+                        .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
+                        .put("workflow", "fbm-wms-outbound")
+                        .put("process_name", "waving")
+                        .put("value", "20")
+                        .put("source", "forecast")
+                        .put("metric_unit", "percentage")
+                        .put("type", "performed_processing")
+                );
+
+        mockGetPerformedProcessing(apiResponse);
+
+        // When
+        final List<Entity> targetBacklog = client.getPerformedProcessing(request);
+
+        // Then
+        assertEquals(2, targetBacklog.size());
+
+        final Entity target1 = targetBacklog.get(0);
+        assertEquals(request.getDateFrom(), target1.getDate());
+        assertEquals(WAVING, target1.getProcessName());
+        assertEquals(30, target1.getValue());
+        assertEquals(Source.FORECAST, target1.getSource());
+
+        final Entity target2 = targetBacklog.get(1);
+        assertEquals(request.getDateTo(), target2.getDate());
+        assertEquals(WAVING, target2.getProcessName());
+        assertEquals(20, target2.getValue());
+        assertEquals(Source.FORECAST, target2.getSource());
+    }
+
+    @ParameterizedTest
+    @MethodSource("errorResponseProvider")
+    void testGetPerformedProcessingError(
+            final Class<Throwable> exceptionClass,
+            final String response) {
+
+        // GIVEN
+        ZonedDateTime now = DateUtils.getCurrentUtcDateTime();
+
+        final EntityRequest request = EntityRequest.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId("ARTW01")
+                .dateFrom(now)
+                .dateTo(now.plusDays(1))
+                .source(Source.FORECAST)
+                .processName(List.of(WAVING))
+                .build();
+
+        MockResponse.builder()
+                .withMethod(GET)
+                .withURL(format(BASE_URL + ENTITIES_URL, "performed_processing"))
+                .withStatusCode(NOT_FOUND.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(response)
+                .build();
+
+        // WHEN - THEN
+        assertThrows(exceptionClass, () -> client.getPerformedProcessing(request));
     }
 
     @Test
@@ -922,6 +1009,16 @@ class PlanningModelApiClientTest extends BaseClientTest {
         MockResponse.builder()
                 .withMethod(POST)
                 .withURL(format(BASE_URL + ENTITIES_URL, "productivity"))
+                .withStatusCode(OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(response.toString())
+                .build();
+    }
+
+    private void mockGetPerformedProcessing(final JSONArray response) {
+        MockResponse.builder()
+                .withMethod(GET)
+                .withURL(format(BASE_URL + ENTITIES_URL, "performed_processing"))
                 .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withResponseBody(response.toString())

@@ -53,6 +53,10 @@ public class BaseClientTest {
                 new RestClientConfig.StaffingClientProperties();
         staffingClientProperties.setBaseUrl(BASE_URL);
 
+        final RestClientConfig.BacklogClientProperties backlogClientProperties =
+                new RestClientConfig.BacklogClientProperties();
+        backlogClientProperties.setBaseUrl(BASE_URL);
+
         return new RestClientConfig(
                 planningModelClientProperties,
                 outboundUnitRestClientProperties,
@@ -62,7 +66,8 @@ public class BaseClientTest {
                 planningModelForecastClientProperties,
                 outboundWaveRestClientProperties,
                 unitSearchClientProperties,
-                staffingClientProperties
+                staffingClientProperties,
+                backlogClientProperties
         ).restClient();
     }
 

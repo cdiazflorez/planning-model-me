@@ -93,19 +93,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
-        try {
-            final List<EntityResponse> apiResponse = send(request, response ->
-                    response.getData(new TypeReference<>() {
-                    }));
-
-            return apiResponse.stream().map(this::toEntity).collect(toList());
-        } catch (ClientException ex) {
-            if (forecastNotFound(ex)) {
-                throw new ForecastNotFoundException();
-            } else {
-                throw ex;
-            }
-        }
+        return executeGetEntities(request);
     }
 
     @Override
@@ -140,6 +128,19 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 response.getData(new TypeReference<>() {}));
 
         return apiResponse.stream().map(this::toProductivity).collect(toList());
+    }
+
+    @Override
+    public List<Entity> getPerformedProcessing(final EntityRequest request) {
+        final HttpRequest httpRequest = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL + "/entities/performed_processing",
+                        request.getWorkflow().getName()))
+                    .GET()
+                .queryParams(createEntityParams(request))
+                .acceptedHttpStatuses(Set.of(OK))
+                .build();
+
+        return executeGetEntities(httpRequest);
     }
 
     @Override
@@ -396,6 +397,22 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private String getEnumNamesAsString(final List<? extends Enum> namedEnums) {
         return namedEnums.stream().map(Enum::name).map(String::toLowerCase)
                 .collect(joining(","));
+    }
+
+    private List<Entity> executeGetEntities(HttpRequest request) {
+        try {
+            final List<EntityResponse> apiResponse = send(request, response ->
+                    response.getData(new TypeReference<>() {
+                    }));
+
+            return apiResponse.stream().map(this::toEntity).collect(toList());
+        } catch (ClientException ex) {
+            if (forecastNotFound(ex)) {
+                throw new ForecastNotFoundException();
+            } else {
+                throw ex;
+            }
+        }
     }
 
     private Entity toEntity(final EntityResponse response) {

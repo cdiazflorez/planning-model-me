@@ -39,6 +39,8 @@ public interface PlanningModelGateway {
 
     List<Productivity> getProductivity(final ProductivityRequest request);
 
+    List<Entity> getPerformedProcessing(final EntityRequest request);
+
     Map<EntityType, List<Entity>> searchEntities(final SearchEntitiesRequest request);
 
     List<ProjectionResult> runProjection(final ProjectionRequest request);

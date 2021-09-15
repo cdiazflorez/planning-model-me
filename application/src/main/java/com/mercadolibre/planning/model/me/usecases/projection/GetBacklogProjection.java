@@ -2,25 +2,17 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.SelectionValue;
 import com.mercadolibre.planning.model.me.entities.projection.Selections;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
-import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.utils.ResponseUtils;
 import lombok.AllArgsConstructor;
@@ -39,9 +31,6 @@ import java.util.stream.Collectors;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.REMAINING_PROCESSING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest.fromInput;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
@@ -58,62 +47,11 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
 
     protected final LogisticCenterGateway logisticCenter;
 
-    protected final GetBacklog getBacklog;
-
-    private final BacklogGatewayProvider backlogGatewayProvider;
+    private final ProjectBacklog projectBacklog;
 
     @Override
     public BacklogProjection execute(final BacklogProjectionInput input) {
-        final List<CurrentBacklog> backlogs = getBacklogList(input);
-        final List<BacklogProjectionResponse> projections = planningModel
-                .getBacklogProjection(fromInput(input, backlogs));
-
-        return mapResponse(input, projections);
-    }
-
-    private List<CurrentBacklog> getBacklogList(final BacklogProjectionInput input) {
-        final ZonedDateTime dateFrom = input.getDateFrom();
-        final List<Map<String, String>> statuses = List.of(
-                Map.of("status", OUTBOUND_PLANNING.getStatus()),
-                Map.of("status", ProcessInfo.PACKING.getStatus())
-        );
-
-        final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
-                .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
-
-        List<ProcessBacklog> backlogs =
-                backlogGateway.getBacklog(statuses,
-                        input.getWarehouseId(),
-                        dateFrom,
-                        dateFrom.plusHours(HOURS_TO_SHOW),
-                        true
-                );
-
-        final ProcessBacklog pickingBacklog =
-                backlogGateway.getUnitBacklog(
-                        new UnitProcessBacklogInput(ProcessInfo.PICKING.getStatus(),
-                                input.getWarehouseId(),
-                                dateFrom,
-                                dateFrom.plusHours(HOURS_TO_SHOW),
-                                null,
-                                input.getGroupType(),
-                                true)
-                );
-
-        return List.of(
-                new CurrentBacklog(WAVING, backlogs.stream()
-                        .filter(t -> t.getProcess().equals(OUTBOUND_PLANNING.getStatus()))
-                        .findFirst()
-                        .map(ProcessBacklog::getQuantity)
-                        .orElse(0)
-                ),
-                new CurrentBacklog(PICKING, pickingBacklog.getQuantity()),
-                new CurrentBacklog(PACKING, backlogs.stream()
-                        .filter(t -> t.getProcess().equals(ProcessInfo.PACKING.getStatus()))
-                        .findFirst()
-                        .map(ProcessBacklog::getQuantity)
-                        .orElse(0))
-        );
+        return mapResponse(input, projectBacklog.execute(input).getProjections());
     }
 
     private BacklogProjection mapResponse(final BacklogProjectionInput input,

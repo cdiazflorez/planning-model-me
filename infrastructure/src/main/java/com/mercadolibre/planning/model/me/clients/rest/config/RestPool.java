@@ -9,5 +9,6 @@ public enum RestPool {
     ANALYTICS,
     OUTBOUND_WAVE,
     OUTBOUND_UNIT_SEARCH,
-    STAFFING;
+    STAFFING,
+    BACKLOG;
 }

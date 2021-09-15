@@ -16,6 +16,7 @@ import java.io.IOException;
 
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.ANALYTICS;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AUTHORIZATION;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.BACKLOG;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT_SEARCH;
@@ -35,7 +36,8 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.ST
         RestClientConfig.PlanningModelForecastClientProperties.class,
         RestClientConfig.OutboundWaveClientProperties.class,
         RestClientConfig.OutboundUnitSearchClientProperties.class,
-        RestClientConfig.StaffingClientProperties.class
+        RestClientConfig.StaffingClientProperties.class,
+        RestClientConfig.BacklogClientProperties.class
 })
 public class RestClientConfig {
     private PlanningModelClientProperties planningModelClientProperties;
@@ -47,6 +49,7 @@ public class RestClientConfig {
     private OutboundWaveClientProperties outboundWaveClientProperties;
     private OutboundUnitSearchClientProperties outboundUnitSearchClientProperties;
     private StaffingClientProperties staffingClientProperties;
+    private BacklogClientProperties backlogClientProperties;
 
     @Bean
     public MeliRestClient restClient() throws IOException {
@@ -70,7 +73,8 @@ public class RestClientConfig {
                                 outboundWaveClientProperties),
                         restPool(OUTBOUND_UNIT_SEARCH.name(),
                                 outboundUnitSearchClientProperties),
-                        restPool(STAFFING.name(), staffingClientProperties)
+                        restPool(STAFFING.name(), staffingClientProperties),
+                        restPool(BACKLOG.name(), backlogClientProperties)
                 )
                 .build();
     }
@@ -138,5 +142,9 @@ public class RestClientConfig {
 
     @ConfigurationProperties("restclient.pool.staffing")
     public static class StaffingClientProperties extends RestClientProperties {
+    }
+
+    @ConfigurationProperties("restclient.pool.backlog")
+    public static class BacklogClientProperties extends RestClientProperties {
     }
 }
