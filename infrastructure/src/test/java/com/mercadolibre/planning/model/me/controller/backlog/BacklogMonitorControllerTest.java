@@ -142,28 +142,46 @@ class BacklogMonitorControllerTest {
         ZonedDateTime date = parse(A_DATE, ISO_DATE_TIME);
         ZonedDateTime anotherDate = parse(ANOTHER_DATE, ISO_DATE_TIME);
 
-        return new GetBacklogMonitorDetailsResponse(parse(A_DATE, ISO_DATE_TIME), List.of(
-                new ProcessBacklogDetail(
-                        date,
-                        new UnitMeasure(100, 150),
+        return new GetBacklogMonitorDetailsResponse(
+                parse(A_DATE, ISO_DATE_TIME),
+                List.of(
+                        new ProcessBacklogDetail(
+                                date,
+                                new UnitMeasure(100, 150),
+                                new UnitMeasure(125, 170),
+                                List.of(
+                                        new AreaBacklogDetail("RK-H",
+                                                new UnitMeasure(200, 10)),
+                                        new AreaBacklogDetail("RK-L",
+                                                new UnitMeasure(300, 15))
+                                )),
+                        new ProcessBacklogDetail(
+                                anotherDate,
+                                new UnitMeasure(30, 90),
+                                new UnitMeasure(50, 120),
+                                List.of(
+                                        new AreaBacklogDetail("RK-H",
+                                                new UnitMeasure(250, 20)),
+                                        new AreaBacklogDetail("RK-L",
+                                                new UnitMeasure(350, 30))
+                                ))
+                ),
+                new ProcessDetail(
+                        "waving",
                         new UnitMeasure(125, 170),
                         List.of(
-                                new AreaBacklogDetail("RK-H",
-                                        new UnitMeasure(200, 10)),
-                                new AreaBacklogDetail("RK-L",
-                                        new UnitMeasure(300, 15))
-                        )),
-                new ProcessBacklogDetail(
-                        anotherDate,
-                        new UnitMeasure(30, 90),
-                        new UnitMeasure(50, 120),
-                        List.of(
-                                new AreaBacklogDetail("RK-H",
-                                        new UnitMeasure(250, 20)),
-                                new AreaBacklogDetail("RK-L",
-                                        new UnitMeasure(350, 30))
-                        ))
-        ));
+                                BacklogsByDate.builder()
+                                        .date(date)
+                                        .current(new UnitMeasure(125, 170))
+                                        .historical(new UnitMeasure(115, 160))
+                                        .build(),
+                                BacklogsByDate.builder()
+                                        .date(anotherDate)
+                                        .current(new UnitMeasure(50, 120))
+                                        .historical(new UnitMeasure(30, 70))
+                                        .build()
+                        )
+                ));
     }
 
     private WorkflowBacklogDetail getMockedResponse() {

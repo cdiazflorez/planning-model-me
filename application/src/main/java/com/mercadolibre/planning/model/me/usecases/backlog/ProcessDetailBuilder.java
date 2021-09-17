@@ -6,17 +6,28 @@ import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.ProcessDetailBuilderInput;
 
-import javax.inject.Named;
-
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Named
 class ProcessDetailBuilder {
-    ProcessDetail execute(ProcessDetailBuilderInput input) {
+
+    private ProcessDetailBuilder() { }
+
+    static Integer inMinutes(Integer quantity, Integer throughput) {
+        if (quantity == null || throughput == null || throughput.equals(0)) {
+            return null;
+        }
+        return (int) Math.ceil((double) quantity / throughput);
+    }
+
+    static ProcessDetail build(ProcessDetailBuilderInput input) {
         final List<BacklogsByDate> backlog = input.getBacklogs()
                 .stream()
-                .map(this::toBacklogByDate)
+                .map(stats -> toBacklogByDate(stats, input.getCurrentDatetime()))
+                .sorted(Comparator.comparing(BacklogsByDate::getDate))
                 .collect(Collectors.toList());
 
         final UnitMeasure totals = backlog.stream()
@@ -31,26 +42,27 @@ class ProcessDetailBuilder {
         return new ProcessDetail(input.getProcess().getName(), totals, backlog);
     }
 
-    private BacklogsByDate toBacklogByDate(BacklogStatsByDate description) {
+    private static BacklogsByDate toBacklogByDate(BacklogStatsByDate description,
+                                                  ZonedDateTime currentDatetime) {
+
+        ZonedDateTime date = currentDatetime.equals(description.getDate())
+                ? currentDatetime
+                : description.getDate().truncatedTo(ChronoUnit.HOURS);
+
+        Integer units = description.getUnits() >= 0 ? description.getUnits() : 0;
+
         return BacklogsByDate.builder()
-                .date(description.getDate())
+                .date(date)
                 .current(
                         new UnitMeasure(
-                                description.getUnits(),
+                                units,
                                 inMinutes(
-                                        description.getUnits(),
+                                        units,
                                         description.getThroughput()))
                 )
                 .historical(
                         new UnitMeasure(description.getHistorical(), null)
                 )
                 .build();
-    }
-
-    private Integer inMinutes(Integer quantity, Integer throughput) {
-        if (quantity == null || throughput == null || throughput.equals(0)) {
-            return null;
-        }
-        return quantity / throughput;
     }
 }

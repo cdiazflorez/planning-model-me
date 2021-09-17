@@ -26,17 +26,16 @@ class ProcessDetailBuilderTest {
     @Test
     void testExecuteOk() {
         // GIVEN
-        ProcessDetailBuilder descriptionBuilder = new ProcessDetailBuilder();
 
         // WHEN
-        var result = descriptionBuilder.execute(input());
+        var result = ProcessDetailBuilder.build(input());
 
         // THEN
         assertNotNull(result);
         assertEquals("waving", result.getProcess());
 
         assertEquals(125, result.getTotal().getUnits());
-        assertEquals(8, result.getTotal().getMinutes());
+        assertEquals(9, result.getTotal().getMinutes());
         assertEquals(4, result.getBacklogs().size());
 
         var firstBacklog = result.getBacklogs().get(0);
@@ -51,7 +50,7 @@ class ProcessDetailBuilderTest {
         var lastBacklog = result.getBacklogs().get(3);
         assertEquals(DATE_D, lastBacklog.getDate());
         assertEquals(200, lastBacklog.getCurrent().getUnits());
-        assertEquals(8, lastBacklog.getCurrent().getMinutes());
+        assertEquals(9, lastBacklog.getCurrent().getMinutes());
         assertEquals(185, lastBacklog.getHistorical().getUnits());
         assertNull(lastBacklog.getHistorical().getMinutes());
         assertNull(lastBacklog.getMaxLimit());
