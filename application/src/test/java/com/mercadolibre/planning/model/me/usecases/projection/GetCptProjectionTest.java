@@ -18,8 +18,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
@@ -89,37 +89,38 @@ public class GetCptProjectionTest {
     private GetProjectionSummary getProjectionSummary;
 
     @Mock
-    private GetBacklog getBacklog;
+    private GetBacklogByDate getBacklog;
 
     @Test
     void testExecute() {
         // Given
-        final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
+        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(1);
 
         final GetProjectionInputDto input = GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
+                .date(utcDateTimeFrom)
                 .build();
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
         final List<Backlog> mockedBacklog = mockBacklog();
-        when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
+        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
+                utcDateTimeFrom, utcDateTimeTo)))
                 .thenReturn(mockedBacklog);
 
         when(planningModelGateway.runProjection(
-                createProjectionRequest(mockedBacklog, utcCurrentTime)))
-                .thenReturn(mockProjections(utcCurrentTime));
-
-        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
-        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
+                createProjectionRequest(mockedBacklog, utcDateTimeFrom, utcDateTimeTo)))
+                .thenReturn(mockProjections(utcDateTimeFrom));
 
         when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
                         .warehouseId(WAREHOUSE_ID)
                         .workflow(FBM_WMS_OUTBOUND)
                         .zoneId(TIME_ZONE.toZoneId())
+                        .date(utcDateTimeFrom)
                         .build()
                 )
         )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
@@ -134,10 +135,44 @@ public class GetCptProjectionTest {
         // Then
         assertEquals("Proyecciones", projection.getTitle());
 
-        assertSimpleTable(projection.getSimpleTable1(), utcDateTimeFrom, utcDateTimeTo);
-        assertEquals(mockComplexTable(), projection.getComplexTable1());
-        assertEquals(mockSimpleTable(), projection.getSimpleTable2());
-        assertChart(projection.getChart());
+        assertSimpleTable(projection.getData().getSimpleTable1(), utcDateTimeFrom, utcDateTimeTo);
+        assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
+        assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
+        assertChart(projection.getData().getChart());
+    }
+
+    @Test
+    void testExecuteWithError() {
+        // Given
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
+        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(1);
+
+        final GetProjectionInputDto input = GetProjectionInputDto.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .date(utcDateTimeFrom)
+                .build();
+
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+                .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+
+        final List<Backlog> mockedBacklog = mockBacklog();
+        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
+                utcDateTimeFrom, utcDateTimeTo)))
+                .thenReturn(mockedBacklog);
+
+        when(planningModelGateway.runProjection(
+                createProjectionRequest(mockedBacklog, utcDateTimeFrom, utcDateTimeTo)))
+                .thenThrow(RuntimeException.class);
+
+        // When
+        final Projection projection = getProjection.execute(input);
+
+        // Then
+        assertEquals("Proyecciones", projection.getTitle());
+        assertEquals(2, projection.getTabs().size());
+        assertEquals(null, projection.getData());
     }
 
     private void assertSimpleTable(final SimpleTable simpleTable,
@@ -272,13 +307,14 @@ public class GetCptProjectionTest {
     }
 
     private ProjectionRequest createProjectionRequest(final List<Backlog> backlogs,
-                                                      final ZonedDateTime currentTime) {
+                                                      final ZonedDateTime dateFrom,
+                                                      final ZonedDateTime dateTo) {
         return ProjectionRequest.builder()
                 .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
-                .dateFrom(currentTime)
-                .dateTo(currentTime.plusDays(1))
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
                 .type(ProjectionType.CPT)
                 .backlog(backlogs)
                 .applyDeviation(true)

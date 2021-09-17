@@ -5,12 +5,17 @@ import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @SuperBuilder
 @Value
 public class GetWaveSuggestionInputDto {
 
     ZoneId zoneId;
+
     Workflow workflow;
+
     String warehouseId;
+
+    ZonedDateTime date;
 }

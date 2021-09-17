@@ -17,8 +17,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityBy
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
@@ -86,7 +86,7 @@ public class SaveSimulationTest {
     private GetProjectionSummary getProjectionSummary;
 
     @Mock
-    private GetBacklog getBacklog;
+    private GetBacklogByDate getBacklog;
 
     @Test
     @DisplayName("Execute the case when all the data is correctly generated")
@@ -98,7 +98,8 @@ public class SaveSimulationTest {
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
         final List<Backlog> mockedBacklog = mockBacklog();
-        when(getBacklog.execute(new GetBacklogInputDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID)))
+        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
+                utcCurrentTime, utcCurrentTime.plusDays(1))))
                 .thenReturn(mockedBacklog);
 
         when(planningModelGateway.saveSimulation(
@@ -113,6 +114,7 @@ public class SaveSimulationTest {
                         .warehouseId(WAREHOUSE_ID)
                         .workflow(FBM_WMS_OUTBOUND)
                         .zoneId(TIME_ZONE.toZoneId())
+                        .date(currentUtcDateTime)
                         .build()
                 )
         )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
@@ -136,13 +138,13 @@ public class SaveSimulationTest {
         final ZonedDateTime currentTime = utcCurrentTime.withZoneSameInstant(TIME_ZONE.toZoneId());
         assertEquals("Proyecciones", projection.getTitle());
 
-        final Chart chart = projection.getChart();
+        final Chart chart = projection.getData().getChart();
         final List<ChartData> chartData = chart.getData();
 
         thenTestCharDataIsOk(currentTime, chartData);
 
-        assertEquals(mockComplexTable(), projection.getComplexTable1());
-        assertEquals(mockSimpleTable(), projection.getSimpleTable2());
+        assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
+        assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
     }
 
     private void thenTestCharDataIsOk(final ZonedDateTime currentTime,

@@ -66,15 +66,16 @@ class GetWaveSuggestionTest {
         final ZonedDateTime utcDateTimeFrom = getDateFrom(currentUtcDateTime);
         final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusHours(1);
 
-        mockGateways(currentUtcDateTime, utcDateTimeTo);
+        mockGateways(utcDateTimeFrom, utcDateTimeTo);
 
         // WHEN
         final SimpleTable simpleTable = getWaveSuggestion.execute(
                 GetWaveSuggestionInputDto.builder()
-                .zoneId(TIME_ZONE.toZoneId())
-                .warehouseId(WAREHOUSE_ID)
-                .workflow(FBM_WMS_OUTBOUND)
-                .build()
+                        .zoneId(TIME_ZONE.toZoneId())
+                        .warehouseId(WAREHOUSE_ID)
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .date(utcDateTimeFrom)
+                        .build()
         );
 
         // THEN
@@ -89,7 +90,7 @@ class GetWaveSuggestionTest {
         final ZonedDateTime utcDateTimeFrom = getDateFrom(currentUtcDateTime);
         final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusHours(1);
 
-        mockGateways(currentUtcDateTime, utcDateTimeTo);
+        mockGateways(utcDateTimeFrom, utcDateTimeTo);
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(
                 new LogisticCenterConfiguration(TIME_ZONE));
 
@@ -98,6 +99,7 @@ class GetWaveSuggestionTest {
                 GetWaveSuggestionInputDto.builder()
                         .warehouseId(WAREHOUSE_ID)
                         .workflow(FBM_WMS_OUTBOUND)
+                        .date(utcDateTimeFrom)
                         .build()
         );
 
@@ -105,14 +107,14 @@ class GetWaveSuggestionTest {
         assertSimpleTable(simpleTable, utcDateTimeFrom, utcDateTimeTo);
     }
 
-    private void mockGateways(final ZonedDateTime currentUtcDateTime,
+    private void mockGateways(final ZonedDateTime utcDateTimeFrom,
                               final ZonedDateTime utcDateTimeTo) {
 
         when(planningModelGateway.getSuggestedWaves(
                 SuggestedWavesRequest.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .warehouseId(WAREHOUSE_ID)
-                        .dateFrom(currentUtcDateTime)
+                        .dateFrom(utcDateTimeFrom)
                         .dateTo(utcDateTimeTo)
                         .backlog(2232)
                         .applyDeviation(true)

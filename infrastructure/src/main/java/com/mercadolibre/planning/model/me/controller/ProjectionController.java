@@ -18,6 +18,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjection
 import com.newrelic.api.agent.Trace;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.PropertyEditorRegistry;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
@@ -28,10 +29,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.NotNull;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
 import static java.util.Optional.of;
+import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 @RestController
 @AllArgsConstructor
@@ -49,7 +52,9 @@ public class ProjectionController {
     public ResponseEntity<Projection> getCptProjection(
             @PathVariable final Workflow workflow,
             @RequestParam("caller.id") @NotNull final Long callerId,
-            @RequestParam final String warehouseId) {
+            @RequestParam final String warehouseId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
+            final ZonedDateTime date) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
 
@@ -58,6 +63,7 @@ public class ProjectionController {
         return ResponseEntity.of(of(getCptProjection.execute(GetProjectionInputDto.builder()
                 .workflow(workflow)
                 .warehouseId(warehouseId)
+                .date(date)
                 .build()))
         );
     }
@@ -67,14 +73,16 @@ public class ProjectionController {
     public ResponseEntity<Projection> getDeferralProjection(
             @PathVariable final Workflow workflow,
             @RequestParam("caller.id") @NotNull final Long callerId,
-            @RequestParam final String warehouseId) {
+            @RequestParam final String warehouseId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
+            final ZonedDateTime date) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
 
         datadogMetricService.trackProjection(warehouseId, workflow, "deferral");
 
         return ResponseEntity.of(of(getDeferralProjection.execute(
-                new GetProjectionInput(warehouseId, workflow)))
+                new GetProjectionInput(warehouseId, workflow, date)))
         );
     }
 

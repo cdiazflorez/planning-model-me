@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.entities.projection.complextable;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
 import lombok.Value;
 
 import java.util.List;

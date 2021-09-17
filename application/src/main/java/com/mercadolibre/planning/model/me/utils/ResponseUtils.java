@@ -2,9 +2,9 @@ package com.mercadolibre.planning.model.me.utils;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Tab;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ErrorMessage;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.SimulationMode;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.Snackbar;

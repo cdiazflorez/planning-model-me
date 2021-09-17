@@ -4,13 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
+import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
+import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
@@ -21,6 +23,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferr
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -87,10 +90,13 @@ public class ProjectionControllerTest {
         when(getProjection.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection(
                         "Test",
-                        mockSuggestedWaves(),
-                        mockComplexTable(),
-                        mockProjectionDetailTable(),
-                        mockProjectionChart(),
+                        mockDateSelector(),
+                        null,
+                        new com.mercadolibre.planning.model.me.entities.projection.Data(
+                                mockSuggestedWaves(),
+                                mockComplexTable(),
+                                mockProjectionDetailTable(),
+                                mockProjectionChart()),
                         createTabs(),
                         simulationMode));
 
@@ -137,13 +143,17 @@ public class ProjectionControllerTest {
     @Test
     void getDeferralProjection() throws Exception {
         // GIVEN
-        when(getDeferralProjection.execute(new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND)))
+        when(getDeferralProjection.execute(
+                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null)))
                 .thenReturn(new Projection(
                         "Test",
-                        mockSuggestedWaves(),
-                        mockComplexTable(),
-                        mockProjectionDetailTable(),
-                        mockProjectionChart(),
+                        null,
+                        null,
+                        new com.mercadolibre.planning.model.me.entities.projection.Data(
+                                mockSuggestedWaves(),
+                                mockComplexTable(),
+                                mockProjectionDetailTable(),
+                                mockProjectionChart()),
                         createTabs(),
                         simulationMode));
 
@@ -379,4 +389,15 @@ public class ProjectionControllerTest {
         return new SimpleTable(title, columnHeaders, data);
     }
 
+    private DateSelector mockDateSelector() {
+
+        DateSelector dateSelector = new DateSelector("Fecha:", new Date[4]);
+
+        dateSelector.dates[0] = new Date("2021-09-06T02:00:00Z", "Lunes 06/09/2021", true);
+        dateSelector.dates[1] = new Date("2021-09-07T02:00:00Z", "Martes 07/09/2021", false);
+        dateSelector.dates[2] = new Date("2021-09-08T02:00:00Z", "Miercoles 08/09/2021", false);
+        dateSelector.dates[3] = new Date("2021-09-09T02:00:00Z", "Jueves 09/09/2021", false);
+
+        return dateSelector;
+    }
 }

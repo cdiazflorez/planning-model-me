@@ -1,18 +1,21 @@
 package com.mercadolibre.planning.model.me.entities.projection;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import lombok.Value;
-
-import java.util.List;
-import java.util.Map;
 
 @Value
 public class Data {
 
-    private String id;
+    @JsonProperty("simple_table_1")
+    private SimpleTable simpleTable1;
 
-    private String title;
+    @JsonProperty("complex_table_1")
+    private ComplexTable complexTable1;
 
-    private boolean open;
+    @JsonProperty("simple_table_2")
+    private SimpleTable simpleTable2;
 
-    private List<Map<String, Content>> content;
+    private Chart chart;
 }

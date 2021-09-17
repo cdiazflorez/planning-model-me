@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
@@ -10,8 +11,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
@@ -29,6 +30,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 
@@ -38,50 +40,67 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     protected static final List<ProcessName> PROJECTION_PROCESS_NAMES =
             List.of(PICKING, PACKING, PACKING_WALL);
 
+    protected static final int DAYS_TO_SHOW = 3;
+
     protected final PlanningModelGateway planningModelGateway;
     protected final LogisticCenterGateway logisticCenterGateway;
     protected final GetWaveSuggestion getWaveSuggestion;
     protected final GetEntities getEntities;
     protected final GetProjectionSummary getProjectionSummary;
-    protected final GetBacklog getBacklog;
+    protected final GetBacklogByDate getBacklog;
 
     @Override
     public Projection execute(final GetProjectionInputDto input) {
-        final ZonedDateTime utcDateFrom = getCurrentUtcDate();
+        final ZonedDateTime utcDateFrom = input.getDate() == null
+                ? getCurrentUtcDate() : input.getDate();
         final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
         final List<Backlog> backlogs = getBacklog.execute(
-                new GetBacklogInputDto(input.getWorkflow(), input.getWarehouseId())
+                new GetBacklogByDateDto(input.getWorkflow(),
+                        input.getWarehouseId(),
+                        utcDateFrom, utcDateTo)
         );
 
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getWarehouseId());
 
-        final List<ProjectionResult> projections = getProjection(
-                input, utcDateFrom, utcDateTo, backlogs);
+        try {
+            final List<ProjectionResult> projections = getProjection(
+                    input, utcDateFrom, utcDateTo, backlogs);
 
-        return new Projection(
-                "Proyecciones",
-                getWaveSuggestion.execute(GetWaveSuggestionInputDto.builder()
-                        .zoneId(config.getZoneId())
-                        .warehouseId(input.getWarehouseId())
-                        .workflow(input.getWorkflow())
-                        .build()
-                ),
-                getEntities.execute(input),
-                getProjectionSummary.execute(GetProjectionSummaryInput.builder()
-                        .workflow(input.getWorkflow())
-                        .warehouseId(input.getWarehouseId())
-                        .dateFrom(utcDateFrom)
-                        .dateTo(utcDateTo)
-                        .projections(projections)
-                        .backlogs(backlogs)
-                        .showDeviation(true)
-                        .build()),
-                new Chart(toChartData(projections, config.getZoneId(), utcDateTo)),
-                createTabs(),
-                simulationMode
-        );
+            return new Projection(
+                    "Proyecciones",
+                    getDateSelector(utcDateFrom, DAYS_TO_SHOW),
+                    null,
+                    new Data(getWaveSuggestion.execute(GetWaveSuggestionInputDto.builder()
+                            .zoneId(config.getZoneId())
+                            .warehouseId(input.getWarehouseId())
+                            .workflow(input.getWorkflow())
+                            .date(utcDateFrom)
+                            .build()),
+                            getEntities.execute(input),
+                            getProjectionSummary.execute(GetProjectionSummaryInput.builder()
+                                    .workflow(input.getWorkflow())
+                                    .warehouseId(input.getWarehouseId())
+                                    .dateFrom(utcDateFrom)
+                                    .dateTo(utcDateTo)
+                                    .projections(projections)
+                                    .backlogs(backlogs)
+                                    .showDeviation(true)
+                                    .build()),
+                            new Chart(toChartData(projections, config.getZoneId(), utcDateTo))),
+                    createTabs(),
+                    simulationMode);
+
+        } catch (RuntimeException ex) {
+            return new Projection("Proyecciones",
+                    getDateSelector(utcDateFrom, DAYS_TO_SHOW),
+                    ex.getMessage(),
+                    null,
+                    createTabs(),
+                    simulationMode
+            );
+        }
     }
 
     private boolean hasSimulatedResults(List<ProjectionResult> projectionResults) {

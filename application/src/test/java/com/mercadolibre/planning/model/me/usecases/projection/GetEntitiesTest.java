@@ -1,8 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;

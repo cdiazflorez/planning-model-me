@@ -88,6 +88,17 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
 
     @Override
     public List<Backlog> getBacklog(final String warehouseId) {
+
+        final ZonedDateTime dateFrom = getCurrentUtcDate();
+        final ZonedDateTime dateTo = dateFrom.plusDays(1).plusHours(1);
+
+        return this.getBacklog(warehouseId, dateFrom, dateTo);
+    }
+
+    @Override
+    public List<Backlog> getBacklog(final String warehouseId,
+                                    final ZonedDateTime dateFrom,
+                                    final ZonedDateTime dateTo) {
         final SearchUnitRequest request = SearchUnitRequest.builder()
                 .limit(0)
                 .offset(0)
@@ -121,7 +132,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .flatMap(Collection::stream)
                 .filter(this::validCptKeys)
                 .map(this::toBacklog)
-                .filter(this::workingCpts)
+                .filter(backlog -> workingCpts(backlog, dateFrom, dateTo))
                 .collect(Collectors.toList());
     }
 
@@ -219,12 +230,12 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .ifPresent(date -> defaultParams.put(paramLabel, date.toString()));
     }
 
-    private boolean workingCpts(final Backlog backlog) {
-        final ZonedDateTime currentTime = getCurrentUtcDate();
+    private boolean workingCpts(final Backlog backlog,
+                                final ZonedDateTime dateFrom,
+                                final ZonedDateTime dateTo) {
         final ZonedDateTime backlogCptDate = backlog.getDate();
 
-        return backlogCptDate.isAfter(currentTime)
-                && backlogCptDate.isBefore(currentTime.plusDays(1).plusHours(1));
+        return backlogCptDate.isAfter(dateFrom) && backlogCptDate.isBefore(dateTo);
     }
 
     private boolean validCptKeys(final AggregationResponseBucket bucket) {
