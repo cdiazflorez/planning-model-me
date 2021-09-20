@@ -1,5 +1,8 @@
 package com.mercadolibre.planning.model.me.utils;
 
+import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
+import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -8,12 +11,17 @@ import java.time.temporal.WeekFields;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
 import static java.time.ZoneOffset.UTC;
+import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.TemporalAdjusters.previous;
 import static java.time.temporal.WeekFields.SUNDAY_START;
 
 public class DateUtils {
+
+    public static final DateTimeFormatter FORMATTER_ID = ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+    public static final DateTimeFormatter FORMATTER_NAME = ofPattern("dd/MM/yyyy");
 
     private DateUtils() { }
 
@@ -61,14 +69,38 @@ public class DateUtils {
         final WeekFields fistDayRule =
                 WeekFields.of(SUNDAY_START.getFirstDayOfWeek(),
                         SUNDAY_START.getMinimalDaysInFirstWeek());
-        return ZonedDateTime.of(year, 1, 1, 0,0,0,0, ZoneId.of("UTC"))
+        return ZonedDateTime.of(year, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"))
                 .truncatedTo(DAYS)
                 .with(previous(fistDayRule.getFirstDayOfWeek()));
+    }
+
+    public static DateSelector getDateSelector(final ZonedDateTime dateFrom, final int daysToShow) {
+
+        DateSelector dateSelector = new DateSelector("Fecha:", new Date[daysToShow + 1]);
+
+        final ZonedDateTime utcDateNow = getCurrentUtcDate();
+        final ZonedDateTime utcDateTo = utcDateNow.plusDays(daysToShow);
+        int i = 0;
+
+        while (!utcDateNow.plusDays(i).isAfter(utcDateTo)) {
+
+            boolean isDateSelected = utcDateNow.plusDays(i).format(FORMATTER_NAME)
+                    .equals(dateFrom.format(FORMATTER_NAME));
+
+            dateSelector.dates[i] = new Date(
+                    utcDateNow.plusDays(i).truncatedTo(HOURS).format(FORMATTER_ID),
+                    utcDateNow.plusDays(i).format(FORMATTER_NAME),
+                    isDateSelected);
+            i++;
+        }
+
+        return dateSelector;
     }
 
     public static Integer minutesFromWeekStart(ZonedDateTime date) {
         return date.getDayOfWeek().getValue() * 1440
                 + date.getHour() * 60
                 + date.getMinute();
+
     }
 }

@@ -2,8 +2,8 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -72,7 +72,8 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getWarehouseId());
 
-        final ZonedDateTime utcDateFrom = getCurrentUtcDate();
+        final ZonedDateTime utcDateFrom = input.getDate() == null
+                ? getCurrentUtcDate() : input.getDate();
         final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
         final Map<EntityType, List<Entity>> entities = planningModelGateway.searchEntities(

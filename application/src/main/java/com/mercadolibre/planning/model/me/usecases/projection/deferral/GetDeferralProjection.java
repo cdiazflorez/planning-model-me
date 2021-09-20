@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.projection.deferral;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
@@ -17,8 +18,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogInputDto;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import lombok.AllArgsConstructor;
@@ -42,6 +43,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.MAX_CAPACITY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createData;
@@ -54,40 +56,55 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
     private static final List<ProcessName> PROCESS_NAMES = List.of(PICKING, PACKING, PACKING_WALL);
 
+    private static final int DAYS_TO_SHOW = 2;
+
     private static final int HOURS_TO_SHOW = 25;
 
     private final LogisticCenterGateway logisticCenterGateway;
 
     private final PlanningModelGateway planningModelGateway;
 
-    private final GetBacklog getBacklog;
+    private final GetBacklogByDate getBacklog;
 
     private final GetProjectionSummary getProjectionSummary;
 
     @Override
     public Projection execute(final GetProjectionInput input) {
-        final ZonedDateTime dateFrom = getCurrentUtcDate();
+        final ZonedDateTime dateFrom = input.getDate() == null
+                ? getCurrentUtcDate() : input.getDate();
         final ZonedDateTime dateTo = dateFrom.plusDays(1);
 
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getLogisticCenterId());
 
         final List<Backlog> backlogs = getBacklog.execute(
-                new GetBacklogInputDto(input.getWorkflow(), input.getLogisticCenterId())
-        );
+                new GetBacklogByDateDto(input.getWorkflow(),
+                        input.getLogisticCenterId(), dateFrom, dateTo));
 
-        final List<ProjectionResult> projection = getProjection(input, dateFrom, dateTo, backlogs);
-        setDeferral(projection, dateTo, config.getZoneId());
+        try {
+            final List<ProjectionResult> projection =
+                    getProjection(input, dateFrom, dateTo, backlogs);
+            setDeferral(projection, dateTo, config.getZoneId());
 
-        return new Projection(
-                "Proyección",
-                null,
-                getThroughput(config, input, dateFrom, dateTo),
-                getProjectionSummary(input, dateFrom, dateTo, backlogs, projection),
-                new Chart(toChartData(projection, config, dateTo)),
-                createTabs(),
-                null
-        );
+            return new Projection(
+                    "Proyección",
+                    getDateSelector(dateFrom, DAYS_TO_SHOW),
+                    null,
+                    new Data(null,
+                            getThroughput(config, input, dateFrom, dateTo),
+                            getProjectionSummary(input, dateFrom, dateTo, backlogs, projection),
+                            new Chart(toChartData(projection, config, dateTo))),
+                    createTabs(),
+                    null);
+
+        } catch (RuntimeException ex) {
+            return new Projection("Proyección",
+                    getDateSelector(dateFrom, DAYS_TO_SHOW),
+                    ex.getMessage(),
+                    null,
+                    createTabs(),
+                    null);
+        }
     }
 
     private List<ChartData> toChartData(final List<ProjectionResult> projections,

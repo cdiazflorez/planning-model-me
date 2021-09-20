@@ -55,5 +55,36 @@
                 }
             ]
         }
-    ]
+    ],
+    "process": {
+        "process": "waving",
+        "total": {
+            "units": 125,
+            "minutes": 170
+        },
+        "backlogs": [
+            {
+                "date": "2021-08-12T01:00:00Z",
+                "current": {
+                    "units": 125,
+                    "minutes": 170
+                },
+                "historical": {
+                    "units": 115,
+                    "minutes": 160
+                }
+            },
+            {
+                "date": "2021-08-12T04:00:00Z",
+                "current": {
+                    "units": 50,
+                    "minutes": 120
+                },
+                "historical": {
+                    "units": 30,
+                    "minutes": 70
+                }
+            }
+        ]
+    }
 }

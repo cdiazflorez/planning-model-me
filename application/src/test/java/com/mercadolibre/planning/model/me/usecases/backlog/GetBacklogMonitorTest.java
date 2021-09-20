@@ -76,9 +76,6 @@ class GetBacklogMonitorTest {
     @Mock
     private GetHistoricalBacklog getHistoricalBacklog;
 
-    @Spy
-    private ProcessDetailBuilder processDetailBuilder;
-
     @Test
     void testExecuteOK() {
         // GIVEN
@@ -229,7 +226,7 @@ class GetBacklogMonitorTest {
         final BacklogsByDate wavingProjectedBacklog = waving.getBacklogs().get(3);
         assertEquals(DATES.get(3), wavingProjectedBacklog.getDate());
         assertEquals(250, wavingProjectedBacklog.getCurrent().getUnits());
-        assertEquals(12, wavingProjectedBacklog.getCurrent().getMinutes());
+        assertEquals(13, wavingProjectedBacklog.getCurrent().getMinutes());
     }
 
     private GetBacklogMonitorInputDto input() {

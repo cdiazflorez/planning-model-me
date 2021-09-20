@@ -27,6 +27,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.time.temporal.ChronoUnit.HOURS;
 
@@ -42,7 +43,9 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
     @Override
     public SimpleTable execute(final GetWaveSuggestionInputDto input) {
 
-        final ZonedDateTime now = getCurrentUtcDateTime();
+        final ZonedDateTime now = input.getDate() == null
+                ? getCurrentUtcDate() : input.getDate();
+
         final ZonedDateTime suggestionTimeFrom = getDateFrom(now);
         final ZonedDateTime suggestionTimeTo = suggestionTimeFrom.plusHours(1);
 

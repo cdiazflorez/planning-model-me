@@ -8,6 +8,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
@@ -66,18 +67,21 @@ class GetBacklogMonitorDetailsTest {
     @Mock
     private GetProcessThroughput getProcessThroughput;
 
+    @Mock
+    private GetHistoricalBacklog getHistoricalBacklog;
+
     @Test
-    void testGetBacklogDetails() {
+    void testGetBacklogDetailsWithAreas() {
         // GIVEN
         mockPastBacklogWithAreas();
         mockProjectedBacklog();
-        mockTargetBacklog();
-        mockThroughput(WAVING);
+        mockThroughput(PICKING);
+        mockHistoricalBacklog(PICKING);
 
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow("fbm-wms-outbound")
-                .process(WAVING)
+                .process(PICKING)
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
                 .callerId(999L)
@@ -93,14 +97,6 @@ class GetBacklogMonitorDetailsTest {
         var firstResult = results.get(0);
         assertEquals(DATE_FROM, firstResult.getDate());
 
-        var firstTotals = firstResult.getTotal();
-        assertEquals(90, firstTotals.getUnits());
-        assertEquals(9, firstTotals.getMinutes());
-
-        var firstTargets = firstResult.getTarget();
-        assertEquals(10, firstTargets.getUnits());
-        assertEquals(1, firstTargets.getMinutes());
-
         var firstAreas = firstResult.getAreas();
         assertEquals(2, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
@@ -113,11 +109,11 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(DATE_TO, lastResults.getDate());
         assertNotNull(lastResults.getAreas());
 
-        assertEquals(60, lastResults.getTarget().getUnits());
-        assertEquals(12, lastResults.getTarget().getMinutes());
-
-        assertEquals(500, lastResults.getTotal().getUnits());
-        assertEquals(100, lastResults.getTotal().getMinutes());
+        var graph = response.getProcess();
+        assertEquals("picking", graph.getProcess());
+        assertEquals(50, graph.getTotal().getUnits());
+        assertEquals(2, graph.getTotal().getMinutes());
+        assertEquals(4, graph.getBacklogs().size());
     }
 
     @Test
@@ -126,6 +122,7 @@ class GetBacklogMonitorDetailsTest {
         mockPastBacklogWithAreas();
         mockProjectedBacklog();
         mockThroughput(PICKING);
+        mockHistoricalBacklog(PICKING);
 
         // WHEN
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
@@ -175,6 +172,7 @@ class GetBacklogMonitorDetailsTest {
         mockProjectedBacklog();
         mockTargetBacklog();
         mockThroughput(WAVING);
+        mockHistoricalBacklog(WAVING);
 
         // WHEN
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
@@ -214,6 +212,12 @@ class GetBacklogMonitorDetailsTest {
 
         assertEquals(500, lastResults.getTotal().getUnits());
         assertEquals(100, lastResults.getTotal().getMinutes());
+
+        var graph = response.getProcess();
+        assertEquals("waving", graph.getProcess());
+        assertEquals(50, graph.getTotal().getUnits());
+        assertEquals(2, graph.getTotal().getMinutes());
+        assertEquals(4, graph.getBacklogs().size());
     }
 
     private void mockPastBacklogWithAreas() {
@@ -246,7 +250,11 @@ class GetBacklogMonitorDetailsTest {
         when(backlogProjection.execute(any()))
                 .thenReturn(
                         new ProjectedBacklog(List.of(
-                                new BacklogProjectionResponse(ProcessName.WAVING, of(
+                                new BacklogProjectionResponse(WAVING, of(
+                                        new ProjectionValue(DATES.get(2), 300),
+                                        new ProjectionValue(DATES.get(3), 500)
+                                )),
+                                new BacklogProjectionResponse(PICKING, of(
                                         new ProjectionValue(DATES.get(2), 300),
                                         new ProjectionValue(DATES.get(3), 500)
                                 ))
@@ -293,5 +301,11 @@ class GetBacklogMonitorDetailsTest {
                                 DATES.get(3), 5)
                         )
                 ));
+    }
+
+    private void mockHistoricalBacklog(ProcessName process) {
+        when(getHistoricalBacklog.execute(any())).thenReturn(
+                Map.of(process, HistoricalBacklog.emptyBacklog())
+        );
     }
 }

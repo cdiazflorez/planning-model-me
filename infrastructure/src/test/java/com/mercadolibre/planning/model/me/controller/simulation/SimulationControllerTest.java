@@ -2,13 +2,13 @@ package com.mercadolibre.planning.model.me.controller.simulation;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
@@ -79,10 +79,13 @@ public class SimulationControllerTest {
         // GIVEN
         when(runSimulation.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection("Test",
-                        mockSuggestedWaves(),
-                        mockComplexTable(),
                         null,
-                        mockProjectionChart(),
+                        null,
+                        new com.mercadolibre.planning.model.me.entities.projection.Data(
+                                mockSuggestedWaves(),
+                                mockComplexTable(),
+                                null,
+                                mockProjectionChart()),
                         createTabs(),
                         simulationMode));
 
@@ -129,10 +132,13 @@ public class SimulationControllerTest {
         // GIVEN
         when(saveSimulation.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection("Test",
-                        mockSuggestedWaves(),
-                        mockComplexTable(),
                         null,
-                        mockProjectionChart(),
+                        null,
+                        new com.mercadolibre.planning.model.me.entities.projection.Data(
+                                mockSuggestedWaves(),
+                                mockComplexTable(),
+                                null,
+                                mockProjectionChart()),
                         createTabs(),
                         simulationMode));
 

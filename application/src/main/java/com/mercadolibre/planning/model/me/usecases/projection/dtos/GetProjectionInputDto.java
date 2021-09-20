@@ -2,9 +2,11 @@ package com.mercadolibre.planning.model.me.usecases.projection.dtos;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Data
@@ -18,4 +20,6 @@ public class GetProjectionInputDto {
     private List<Simulation> simulations;
 
     private long userId;
+
+    private ZonedDateTime date;
 }

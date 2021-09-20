@@ -1,5 +1,30 @@
 {
-  "title": "Test",
+    "title": "Test",
+    "date_selector": {
+        "title": "Fecha:",
+        "dates": [
+            {
+                "id": "2021-09-06T02:00:00Z",
+                "name": "Lunes 06/09/2021",
+                "selected": true
+            },
+            {
+                "id": "2021-09-07T02:00:00Z",
+                "name": "Martes 07/09/2021",
+                "selected": false
+            },
+            {
+                "id": "2021-09-08T02:00:00Z",
+                "name": "Miercoles 08/09/2021",
+                "selected": false
+            },
+            {
+                "id": "2021-09-09T02:00:00Z",
+                "name": "Jueves 09/09/2021",
+                "selected": false
+            }
+        ]
+    },
     "tabs": [
         {
             "type": "cpt",
@@ -10,213 +35,215 @@
             "title": "Backlogs"
         }
     ],
-  "simple_table_1": {
-    "title": "Ondas sugeridas",
-    "columns": [
-      {
-        "id": "column_1",
-        "title": "Sig. hora 9:00-10:00"
-      },
-      {
-        "id": "column_2",
-        "title": "Tamaño de onda"
-      }
-    ],
-    "data": [
-      {
-        "column_1": {
-          "title": "Unidades por onda",
-          "subtitle": "mono_order_distribution"
-        },
-        "column_2": "130 uds."
-      },
-      {
-        "column_1": {
-          "title": "Unidades por onda",
-          "subtitle": "multi_batch_distribution"
-        },
-        "column_2": "0 uds."
-      },
-      {
-        "column_1": {
-          "title": "Unidades por onda",
-          "subtitle": "multi_order_distribution"
-        },
-        "column_2": "0 uds."
-      }
-    ]
-  },
-  "complex_table_1": {
-    "columns": [
-      {
-        "id": "column_1",
-        "title": "Horas de Operación"
-      }
-    ],
-    "data": [
-      {
-        "id": "headcount",
-        "title": "Headcount",
-            "open":true,
-            "content":[
-               {
-                  "column_1":{
-                      "title":"Picking",
-                      "id": "picking"
-                  },
-                  "column_2":{
-                     "title":"30",
-                     "date":"2020-07-27T10:00:00Z",
-                     "tooltip":{
-                        "title_1":"Hora de operación",
-                        "subtitle_1":"11:00 - 12:00",
-                        "title_2":"Cantidad de reps FCST",
-                        "subtitle_2":"30"
-                     }
-                  }
-               },
-               {
-                  "column_1":{
-                     "title":"Packing",
-                      "id": "packing"
-                  },
-                  "column_2":{
-                     "title":"30",
-                     "date":"2020-07-27T10:00:00Z"
-                  }
-               }
-            ]
-         },
-         {
-            "id":"productivity",
-            "title":"Productividad regular",
-            "open":true,
-            "content":[
-               {
-                  "column_1":{
-                     "title":"Picking",
-                      "id": "picking"
-                  },
-                  "column_2":{
-                     "title":"30",
-                     "tooltip":{
-                        "title_1":"Productividad polivalente",
-                        "subtitle_1":"30,4 uds/h"
-                     }
-                  }
-               },
-               {
-                  "column_1":{
-                     "title":"Packing",
-                      "id": "packing"
-                  },
-                  "column_2":{
-                     "title":"30"
-                  }
-               }
-            ]
-         },
-         {
-            "id":"throughput",
-            "title":"Throughput",
-            "open":true,
-            "content":[
-               {
-                  "column_1":{
-                     "title":"Picking"
-                  },
-                  "column_2":{
-                     "title":"1600"
-                  }
-               },
-               {
-                  "column_1":{
-                     "title":"Packing"
-                  },
-                  "column_2":{
-                     "title":"1600"
-                  }
-               }
-            ]
-         }
-      ]
-   },
-    "simple_table_2": {
-        "title": "Resumen de Proyección",
-        "columns": [
-            {
-                "id": "column_1",
-                "title": "CPT's"
-            },
-            {
-                "id": "column_2",
-                "title": "Backlog actual"
-            },
-            {
-                "id": "column_3",
-                "title": "Desv. vs forecast"
-            },
-            {
-                "id": "column_4",
-                "title": "Cierre proyectado"
-            }
-        ],
-        "data": [
-            {
-                "style": "none",
-                "column_1": "10:00",
-                "column_2": "57",
-                "column_3": "4%",
-                "column_4": "8:39",
-                "is_deferred": false
-            },
-            {
-                "style": "warning",
-                "column_1": "8:00",
-                "column_2": "34",
-                "column_3": "6%",
-                "column_4": "7:40",
-                "is_deferred": false
-            },
-            {
-                "style": "danger",
-                "column_1": "7:00",
-                "column_2": "78",
-                "column_3": "1%",
-                "column_4": "7:15",
-                "is_deferred": true
-            }
-        ]
-    },
-    "chart": {
-        "data": [
-            {
-                "title": "10:00",
-                "cpt": "2020-07-27T10:00:00Z",
-                "projected_end_time": "2020-07-27T08:39:00Z",
-                "processing_time": {
-                    "value": 240,
-                    "unit_metric": "minutes"
+    "data": {
+        "simple_table_1": {
+            "title": "Ondas sugeridas",
+            "columns": [
+                {
+                    "id": "column_1",
+                    "title": "Sig. hora 9:00-10:00"
+                },
+                {
+                    "id": "column_2",
+                    "title": "Tamaño de onda"
                 }
-            },
-            {
-                "title": "08:00",
-                "cpt": "2020-07-27T08:00:00Z",
-                "projected_end_time": "2020-07-27T07:40:00Z",
-                "processing_time": {
-                    "value": 240,
-                    "unit_metric": "minutes"
+            ],
+            "data": [
+                {
+                    "column_1": {
+                        "title": "Unidades por onda",
+                        "subtitle": "mono_order_distribution"
+                    },
+                    "column_2": "130 uds."
+                },
+                {
+                    "column_1": {
+                        "title": "Unidades por onda",
+                        "subtitle": "multi_batch_distribution"
+                    },
+                    "column_2": "0 uds."
+                },
+                {
+                    "column_1": {
+                        "title": "Unidades por onda",
+                        "subtitle": "multi_order_distribution"
+                    },
+                    "column_2": "0 uds."
                 }
-            },
-            {
-                "title": "07:00",
-                "cpt": "2020-07-27T07:00:00Z",
-                "projected_end_time": "2020-07-27T07:15:00Z",
-                "processing_time": {
-                    "value": 240,
-                    "unit_metric": "minutes"
+            ]
+        },
+        "complex_table_1": {
+            "columns": [
+                {
+                    "id": "column_1",
+                    "title": "Horas de Operación"
                 }
-            }
-        ]
+            ],
+            "data": [
+                {
+                    "id": "headcount",
+                    "title": "Headcount",
+                    "open": true,
+                    "content": [
+                        {
+                            "column_1": {
+                                "title": "Picking",
+                                "id": "picking"
+                            },
+                            "column_2": {
+                                "title": "30",
+                                "date": "2020-07-27T10:00:00Z",
+                                "tooltip": {
+                                    "title_1": "Hora de operación",
+                                    "subtitle_1": "11:00 - 12:00",
+                                    "title_2": "Cantidad de reps FCST",
+                                    "subtitle_2": "30"
+                                }
+                            }
+                        },
+                        {
+                            "column_1": {
+                                "title": "Packing",
+                                "id": "packing"
+                            },
+                            "column_2": {
+                                "title": "30",
+                                "date": "2020-07-27T10:00:00Z"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "productivity",
+                    "title": "Productividad regular",
+                    "open": true,
+                    "content": [
+                        {
+                            "column_1": {
+                                "title": "Picking",
+                                "id": "picking"
+                            },
+                            "column_2": {
+                                "title": "30",
+                                "tooltip": {
+                                    "title_1": "Productividad polivalente",
+                                    "subtitle_1": "30,4 uds/h"
+                                }
+                            }
+                        },
+                        {
+                            "column_1": {
+                                "title": "Packing",
+                                "id": "packing"
+                            },
+                            "column_2": {
+                                "title": "30"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "throughput",
+                    "title": "Throughput",
+                    "open": true,
+                    "content": [
+                        {
+                            "column_1": {
+                                "title": "Picking"
+                            },
+                            "column_2": {
+                                "title": "1600"
+                            }
+                        },
+                        {
+                            "column_1": {
+                                "title": "Packing"
+                            },
+                            "column_2": {
+                                "title": "1600"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "simple_table_2": {
+            "title": "Resumen de Proyección",
+            "columns": [
+                {
+                    "id": "column_1",
+                    "title": "CPT's"
+                },
+                {
+                    "id": "column_2",
+                    "title": "Backlog actual"
+                },
+                {
+                    "id": "column_3",
+                    "title": "Desv. vs forecast"
+                },
+                {
+                    "id": "column_4",
+                    "title": "Cierre proyectado"
+                }
+            ],
+            "data": [
+                {
+                    "style": "none",
+                    "column_1": "10:00",
+                    "column_2": "57",
+                    "column_3": "4%",
+                    "column_4": "8:39",
+                    "is_deferred": false
+                },
+                {
+                    "style": "warning",
+                    "column_1": "8:00",
+                    "column_2": "34",
+                    "column_3": "6%",
+                    "column_4": "7:40",
+                    "is_deferred": false
+                },
+                {
+                    "style": "danger",
+                    "column_1": "7:00",
+                    "column_2": "78",
+                    "column_3": "1%",
+                    "column_4": "7:15",
+                    "is_deferred": true
+                }
+            ]
+        },
+        "chart": {
+            "data": [
+                {
+                    "title": "10:00",
+                    "cpt": "2020-07-27T10:00:00Z",
+                    "projected_end_time": "2020-07-27T08:39:00Z",
+                    "processing_time": {
+                        "value": 240,
+                        "unit_metric": "minutes"
+                    }
+                },
+                {
+                    "title": "08:00",
+                    "cpt": "2020-07-27T08:00:00Z",
+                    "projected_end_time": "2020-07-27T07:40:00Z",
+                    "processing_time": {
+                        "value": 240,
+                        "unit_metric": "minutes"
+                    }
+                },
+                {
+                    "title": "07:00",
+                    "cpt": "2020-07-27T07:00:00Z",
+                    "projected_end_time": "2020-07-27T07:15:00Z",
+                    "processing_time": {
+                        "value": 240,
+                        "unit_metric": "minutes"
+                    }
+                }
+            ]
+        }
     }
 }

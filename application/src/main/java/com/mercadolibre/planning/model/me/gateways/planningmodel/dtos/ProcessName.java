@@ -10,43 +10,43 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ProcessName {
 
-    PICKING(1) {
+    PICKING(1, true, false) {
         @Override
         public <T, U> U accept(ProcessVisitor<T, U> visitor, T input) {
             return visitor.visitPicking(input);
         }
     },
-    PACKING(2) {
+    PACKING(2, false, false) {
         @Override
         public <T, U> U accept(ProcessVisitor<T, U> visitor, T input) {
             return visitor.visitPacking(input);
         }
     },
-    PACKING_WALL(3) {
+    PACKING_WALL(3, false, false) {
         @Override
         public <T, U> U accept(ProcessVisitor<T, U> visitor, T input) {
             return visitor.visitPackingWall(input);
         }
     },
-    WAVING(null) {
+    WAVING(null, false, true) {
         @Override
         public <T, U> U accept(ProcessVisitor<T, U> visitor, T input) {
             return visitor.visitWaving(input);
         }
     },
-    BATCH_SORTER(null) {
+    BATCH_SORTER(null, false, false) {
         @Override
         public <T, U> U accept(ProcessVisitor<T, U> visitor, T input) {
             return visitor.visitBatchSorter(input);
         }
     },
-    WALL_IN(null) {
+    WALL_IN(null, false, false) {
         @Override
         public <T, U> U accept(ProcessVisitor<T, U> visitor, T input) {
             return visitor.visitWallIn(input);
         }
     },
-    GLOBAL(null) {
+    GLOBAL(null, false, false) {
         @Override
         public <T, U> U accept(ProcessVisitor<T, U> visitor, T input) {
             return visitor.visitGlobal(input);
@@ -54,6 +54,10 @@ public enum ProcessName {
     };
 
     private final Integer index;
+
+    private final boolean hasAreas;
+
+    private final boolean hasTargetBacklog;
 
     public abstract <T, U> U accept(ProcessVisitor<T, U> visitor, T input);
 
@@ -65,6 +69,14 @@ public enum ProcessName {
     @JsonValue
     public String getName() {
         return name().toLowerCase();
+    }
+
+    public boolean hasAreas() {
+        return hasAreas;
+    }
+
+    public boolean hasTargetBacklog() {
+        return hasTargetBacklog;
     }
 
 }

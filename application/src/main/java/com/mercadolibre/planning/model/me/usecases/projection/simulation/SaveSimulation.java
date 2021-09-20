@@ -6,7 +6,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklog;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
@@ -28,7 +28,7 @@ public class SaveSimulation extends GetProjection {
                              final GetWaveSuggestion getWaveSuggestion,
                              final GetEntities getEntities,
                              final GetProjectionSummary getProjectionSummary,
-                             final GetBacklog getBacklog) {
+                             final GetBacklogByDate getBacklog) {
 
         super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities,
                 getProjectionSummary, getBacklog);
@@ -56,5 +56,4 @@ public class SaveSimulation extends GetProjection {
                         .applyDeviation(true)
                         .build());
     }
-
 }
