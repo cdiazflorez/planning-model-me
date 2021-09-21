@@ -14,12 +14,18 @@ import com.mercadolibre.planning.model.me.usecases.projection.entities.Projected
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,9 +77,23 @@ class GetBacklogMonitorDetailsTest {
     @Mock
     private GetHistoricalBacklog getHistoricalBacklog;
 
+    private MockedStatic<DateUtils> mockDt;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        mockDt = mockStatic(DateUtils.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockDt.close();
+    }
+
     @Test
     void testGetBacklogDetailsWithAreas() {
         // GIVEN
+        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
+
         mockPastBacklogWithAreas();
         mockProjectedBacklog();
         mockThroughput(PICKING);
@@ -114,11 +135,13 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(50, graph.getTotal().getUnits());
         assertEquals(2, graph.getTotal().getMinutes());
         assertEquals(4, graph.getBacklogs().size());
+
     }
 
     @Test
     void testGetBacklogDetailsWithoutTargets() {
         // GIVEN
+        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
         mockPastBacklogWithAreas();
         mockProjectedBacklog();
         mockThroughput(PICKING);
@@ -163,11 +186,13 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(100, lastResults.getTotal().getMinutes());
 
         verify(planningModelGateway, never()).getPerformedProcessing(any());
+
     }
 
     @Test
     void testGetBacklogDetailsWithoutAreas() {
         // GIVEN
+        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
         mockPastBacklogWithoutAreas();
         mockProjectedBacklog();
         mockTargetBacklog();
@@ -308,4 +333,5 @@ class GetBacklogMonitorDetailsTest {
                 Map.of(process, HistoricalBacklog.emptyBacklog())
         );
     }
+
 }
