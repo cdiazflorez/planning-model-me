@@ -45,6 +45,7 @@ public class ProjectBacklog implements UseCase<BacklogProjectionInput, Projected
         final ZonedDateTime dateFrom = input.getDateFrom();
         final List<Map<String, String>> statuses = List.of(
                 Map.of("status", OUTBOUND_PLANNING.getStatus()),
+                Map.of("status", ProcessInfo.PICKING.getStatus()),
                 Map.of("status", ProcessInfo.PACKING.getStatus())
         );
 
@@ -55,7 +56,7 @@ public class ProjectBacklog implements UseCase<BacklogProjectionInput, Projected
                 backlogGateway.getBacklog(statuses,
                         input.getWarehouseId(),
                         dateFrom,
-                        input.getDateTo(),
+                        dateFrom.plusDays(1),
                         true
                 );
 

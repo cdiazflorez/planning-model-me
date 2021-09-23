@@ -19,13 +19,17 @@ import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughput
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.planning.model.me.utils.TestException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,9 +81,22 @@ class GetBacklogMonitorTest {
     @Mock
     private GetHistoricalBacklog getHistoricalBacklog;
 
+    private MockedStatic<DateUtils> mockDt;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        mockDt = mockStatic(DateUtils.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockDt.close();
+    }
+
     @Test
     void testExecuteOK() {
         // GIVEN
+        mockDateUtils(mockDt);
         mockBacklogApiResponse();
         mockHistoricalBacklog();
         mockProjectedBacklog();
@@ -99,6 +117,7 @@ class GetBacklogMonitorTest {
         assertEquals(80, waving.getBacklogs().get(3).getHistorical().getUnits());
         assertNull(waving.getBacklogs().get(0).getHistorical().getMinutes());
         assertNull(waving.getBacklogs().get(3).getHistorical().getMinutes());
+
     }
 
     @Test
@@ -117,6 +136,7 @@ class GetBacklogMonitorTest {
     @Test
     void testGetProjectedBacklogError() {
         // GIVEN
+        mockDateUtils(mockDt);
         mockBacklogApiResponse();
         mockHistoricalBacklog();
         mockThroughput();
@@ -139,6 +159,7 @@ class GetBacklogMonitorTest {
     @Test
     void testGetHistoricalBacklogError() {
         // GIVEN
+        mockDateUtils(mockDt);
         mockBacklogApiResponse();
         mockProjectedBacklog();
         mockThroughput();
@@ -174,6 +195,7 @@ class GetBacklogMonitorTest {
     @Test
     void testGetThroughputError() {
         // GIVEN
+        mockDateUtils(mockDt);
         mockBacklogApiResponse();
         mockHistoricalBacklog();
         mockProjectedBacklog();
@@ -262,10 +284,10 @@ class GetBacklogMonitorTest {
     }
 
     private void mockHistoricalBacklog() {
-        final var firstDate = DateUtils.minutesFromWeekStart(DATES.get(0));
-        final var secondDate = DateUtils.minutesFromWeekStart(DATES.get(1));
-        final var thirdDate = DateUtils.minutesFromWeekStart(DATES.get(2));
-        final var fourthDate = DateUtils.minutesFromWeekStart(DATES.get(3));
+        final var firstDate = 5820;
+        final var secondDate = 5880;
+        final var thirdDate = 5940;
+        final var fourthDate = 6000;
 
 
         final var input = GetHistoricalBacklogInput.builder()
@@ -366,5 +388,14 @@ class GetBacklogMonitorTest {
                                         DATES.get(3), 300)
                         )
                 ));
+    }
+
+    private void mockDateUtils(MockedStatic<DateUtils> mockDt) {
+        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
+
+        mockDt.when(() -> DateUtils.minutesFromWeekStart(DATES.get(0))).thenReturn(5820);
+        mockDt.when(() -> DateUtils.minutesFromWeekStart(DATES.get(1))).thenReturn(5880);
+        mockDt.when(() -> DateUtils.minutesFromWeekStart(DATES.get(2))).thenReturn(5940);
+        mockDt.when(() -> DateUtils.minutesFromWeekStart(DATES.get(3))).thenReturn(6000);
     }
 }

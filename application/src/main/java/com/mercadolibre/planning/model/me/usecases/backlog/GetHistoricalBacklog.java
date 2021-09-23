@@ -27,10 +27,8 @@ import static java.util.List.of;
 class GetHistoricalBacklog {
     private final BacklogApiGateway backlogApiGateway;
 
-    Map<ProcessName, HistoricalBacklog> execute(
-            GetHistoricalBacklogInput input) {
-
-        Map<ProcessName, Map<Integer, Integer>> averages =
+    Map<ProcessName, HistoricalBacklog> execute(final GetHistoricalBacklogInput input) {
+        final Map<ProcessName, Map<Integer, Integer>> averages =
                 averageBacklogByProcessAndDate(getBacklog(input));
 
         return input.getProcesses()
@@ -43,7 +41,7 @@ class GetHistoricalBacklog {
                 );
     }
 
-    private List<Backlog> getBacklog(GetHistoricalBacklogInput input) {
+    private List<Backlog> getBacklog(final GetHistoricalBacklogInput input) {
         return backlogApiGateway.getBacklog(
                 BacklogRequest.builder()
                         .warehouseId(input.getWarehouseId())
@@ -57,7 +55,7 @@ class GetHistoricalBacklog {
     }
 
     private Map<ProcessName, Map<Integer, Integer>> averageBacklogByProcessAndDate(
-            List<Backlog> backlogs) {
+            final List<Backlog> backlogs) {
 
         return backlogs.stream()
                 .collect(Collectors.groupingBy(
@@ -73,13 +71,13 @@ class GetHistoricalBacklog {
                 );
     }
 
-    private List<String> processes(List<ProcessName> processNames) {
+    private List<String> processes(final List<ProcessName> processNames) {
         return processNames.stream()
                 .map(ProcessName::getName)
                 .collect(Collectors.toList());
     }
 
-    private ProcessName processNameFromBacklog(Backlog b) {
+    private ProcessName processNameFromBacklog(final Backlog b) {
         final Map<String, String> keys = b.getKeys();
         return ProcessName.from(keys.get("process"));
     }

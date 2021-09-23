@@ -18,7 +18,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonito
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.ProcessDetailBuilderInput;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
@@ -37,6 +36,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,7 +45,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.usecases.backlog.ProcessDetailBuilder.inMinutes;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.List.of;
@@ -53,7 +52,7 @@ import static java.util.List.of;
 @Slf4j
 @Named
 @AllArgsConstructor
-public class GetBacklogMonitorDetails {
+public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private static final long BACKLOG_WEEKS_LOOKBACK = 3L;
 
     private static final String NO_AREA = "N/A";
@@ -70,10 +69,10 @@ public class GetBacklogMonitorDetails {
 
     private final GetHistoricalBacklog getHistoricalBacklog;
 
-    public GetBacklogMonitorDetailsResponse execute(GetBacklogMonitorDetailsInput input) {
+    public GetBacklogMonitorDetailsResponse execute(final GetBacklogMonitorDetailsInput input) {
         final List<ProcessStatsByDate> backlog = getData(input);
 
-        final ZonedDateTime currentDatetime = currentDatetime(backlog);
+        final ZonedDateTime currentDatetime = getCurrentDatetime(backlog);
         final List<String> areas = input.getProcess().hasAreas()
                 ? areas(backlog)
                 : emptyList();
@@ -85,7 +84,7 @@ public class GetBacklogMonitorDetails {
         );
     }
 
-    private List<String> areas(List<ProcessStatsByDate> backlog) {
+    private List<String> areas(final List<ProcessStatsByDate> backlog) {
         return backlog.stream()
                 .map(ProcessStatsByDate::getUnitsByArea)
                 .flatMap(units -> units.keySet().stream())
@@ -95,7 +94,7 @@ public class GetBacklogMonitorDetails {
                 .collect(Collectors.toList());
     }
 
-    private ZonedDateTime currentDatetime(List<ProcessStatsByDate> backlog) {
+    private ZonedDateTime getCurrentDatetime(final List<ProcessStatsByDate> backlog) {
         return backlog.stream()
                 .filter(stats -> !stats.isProjection())
                 .map(ProcessStatsByDate::getDate)
@@ -103,7 +102,7 @@ public class GetBacklogMonitorDetails {
                 .orElseGet(DateUtils::getCurrentUtcDateTime);
     }
 
-    private List<ProcessStatsByDate> getData(GetBacklogMonitorDetailsInput input) {
+    private List<ProcessStatsByDate> getData(final GetBacklogMonitorDetailsInput input) {
         final Map<ZonedDateTime, List<BacklogByArea>> historicBacklog = getPastBacklog(input);
         final Map<ZonedDateTime, List<BacklogByArea>> projectedBacklog = getProjectedBacklog(input);
         final Map<ZonedDateTime, Integer> targetBacklog = getTargetBacklog(input);
@@ -134,22 +133,22 @@ public class GetBacklogMonitorDetails {
         ).collect(Collectors.toList());
     }
 
-    private ProcessStatsByDate toProcessStats(boolean isProjection,
-                                              ZonedDateTime date,
-                                              List<BacklogByArea> areas,
-                                              Map<ZonedDateTime, Integer> targetBacklog,
-                                              Map<ZonedDateTime, Integer> throughput,
-                                              HistoricalBacklog historicalBacklog) {
+    private ProcessStatsByDate toProcessStats(final boolean isProjection,
+                                              final ZonedDateTime date,
+                                              final List<BacklogByArea> areas,
+                                              final Map<ZonedDateTime, Integer> targetBacklog,
+                                              final Map<ZonedDateTime, Integer> throughput,
+                                              final HistoricalBacklog historicalBacklog) {
 
-        final var truncatedDate = date.truncatedTo(ChronoUnit.HOURS);
+        final ZonedDateTime truncatedDate = date.truncatedTo(ChronoUnit.HOURS);
 
-        final var unitsByArea = areas.stream()
+        final Map<String, Integer> unitsByArea = areas.stream()
                 .collect(Collectors.toMap(
                         BacklogByArea::getArea,
                         backlog -> backlog.getUnits() >= 0 ? backlog.getUnits() : 0
                 ));
 
-        final var totalUnits = unitsByArea.values()
+        final Integer totalUnits = unitsByArea.values()
                 .stream()
                 .reduce(0, Integer::sum);
 
@@ -164,7 +163,7 @@ public class GetBacklogMonitorDetails {
     }
 
     private Map<ZonedDateTime, List<BacklogByArea>> getPastBacklog(
-            GetBacklogMonitorDetailsInput input) {
+            final GetBacklogMonitorDetailsInput input) {
 
         final List<Backlog> backlog = backlogApiGateway.getBacklog(
                 BacklogRequest.builder()
@@ -177,7 +176,13 @@ public class GetBacklogMonitorDetails {
                         .build()
         );
 
-        return backlog.stream()
+        final List<Backlog> fixedBacklog = fixBacklog(
+                backlog,
+                input.getDateFrom(),
+                date -> new Backlog(date, Map.of("area", NO_AREA), 0)
+        );
+
+        return fixedBacklog.stream()
                 .collect(Collectors.groupingBy(
                         Backlog::getDate,
                         Collectors.mapping(
@@ -187,8 +192,17 @@ public class GetBacklogMonitorDetails {
                 ));
     }
 
+    private List<Backlog> fixBacklog(final List<Backlog> backlog,
+                                     final ZonedDateTime dateFrom,
+                                     final Function<ZonedDateTime, Backlog> backlogSupplier) {
+
+        final ZonedDateTime currentDatetime = currentDatetime(backlog);
+        final List<Backlog> truncatedBacklog = truncateHours(backlog, currentDatetime);
+        return fillMissing(truncatedBacklog, dateFrom, currentDatetime, backlogSupplier);
+    }
+
     private Map<ZonedDateTime, List<BacklogByArea>> getProjectedBacklog(
-            GetBacklogMonitorDetailsInput input) {
+            final GetBacklogMonitorDetailsInput input) {
 
         final ZonedDateTime dateFrom = DateUtils.getCurrentUtcDateTime()
                 .truncatedTo(ChronoUnit.HOURS);
@@ -224,12 +238,14 @@ public class GetBacklogMonitorDetails {
                 .orElseGet(Collections::emptyMap);
     }
 
-    private Map<ZonedDateTime, Integer> getTargetBacklog(GetBacklogMonitorDetailsInput input) {
+    private Map<ZonedDateTime, Integer> getTargetBacklog(
+            final GetBacklogMonitorDetailsInput input) {
+
         if (!input.getProcess().hasTargetBacklog()) {
             return Collections.emptyMap();
         }
 
-        EntityRequest request = EntityRequest.builder()
+        final EntityRequest request = EntityRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(input.getWarehouseId())
                 .processName(of(input.getProcess()))
@@ -244,7 +260,7 @@ public class GetBacklogMonitorDetails {
 
     }
 
-    private Map<ZonedDateTime, Integer> getThroughput(GetBacklogMonitorDetailsInput input) {
+    private Map<ZonedDateTime, Integer> getThroughput(final GetBacklogMonitorDetailsInput input) {
         return getProcessThroughput.execute(GetThroughputInput.builder()
                         .warehouseId(input.getWarehouseId())
                         .workflow(FBM_WMS_OUTBOUND)
@@ -255,7 +271,7 @@ public class GetBacklogMonitorDetails {
                 .get(input.getProcess());
     }
 
-    private HistoricalBacklog getHistoricalBacklog(GetBacklogMonitorDetailsInput input) {
+    private HistoricalBacklog getHistoricalBacklog(final GetBacklogMonitorDetailsInput input) {
         final ZonedDateTime dateFrom = input.getDateFrom().minusWeeks(BACKLOG_WEEKS_LOOKBACK);
         final ZonedDateTime dateTo = input.getDateFrom();
 
@@ -270,9 +286,9 @@ public class GetBacklogMonitorDetails {
         ).get(input.getProcess());
     }
 
-    private List<ProcessBacklogDetail> getBacklogDetails(List<ProcessStatsByDate> backlog,
-                                                         List<String> areas,
-                                                         ZonedDateTime currentDatetime) {
+    private List<ProcessBacklogDetail> getBacklogDetails(final List<ProcessStatsByDate> backlog,
+                                                         final List<String> areas,
+                                                         final ZonedDateTime currentDatetime) {
 
         return backlog.stream()
                 .map(b -> this.toProcessDetail(b, areas, currentDatetime))
@@ -280,11 +296,11 @@ public class GetBacklogMonitorDetails {
                 .collect(Collectors.toList());
     }
 
-    private ProcessDetail getResumedBacklog(ProcessName process,
-                                            ZonedDateTime currentDatetime,
-                                            List<ProcessStatsByDate> backlog) {
+    private ProcessDetail getResumedBacklog(final ProcessName process,
+                                            final ZonedDateTime currentDatetime,
+                                            final List<ProcessStatsByDate> backlog) {
 
-        ProcessDetailBuilderInput input = new ProcessDetailBuilderInput(
+        return build(
                 process,
                 currentDatetime,
                 backlog.stream()
@@ -295,15 +311,12 @@ public class GetBacklogMonitorDetails {
                                         current.getThroughput(),
                                         current.getHistorical()
                                 ))
-                        .collect(Collectors.toList())
-        );
-
-        return ProcessDetailBuilder.build(input);
+                        .collect(Collectors.toList()));
     }
 
-    private ProcessBacklogDetail toProcessDetail(ProcessStatsByDate data,
-                                                 List<String> processAreas,
-                                                 ZonedDateTime currentDatetime) {
+    private ProcessBacklogDetail toProcessDetail(final ProcessStatsByDate data,
+                                                 final List<String> processAreas,
+                                                 final ZonedDateTime currentDatetime) {
 
         final Integer throughput = data.getThroughput();
         final Integer totalMinutes = inMinutes(data.getTotalUnits(), throughput);
@@ -324,7 +337,9 @@ public class GetBacklogMonitorDetails {
         return new ProcessBacklogDetail(date, targetBacklog, totalBacklog, areas);
     }
 
-    private List<AreaBacklogDetail> toAreas(ProcessStatsByDate stats, List<String> areas) {
+    private List<AreaBacklogDetail> toAreas(final ProcessStatsByDate stats,
+                                            final List<String> areas) {
+
         return areas.stream()
                 .map(area -> {
                             Integer units = stats.getUnitsByArea().getOrDefault(area, 0);
@@ -340,14 +355,14 @@ public class GetBacklogMonitorDetails {
                 ).collect(Collectors.toList());
     }
 
-    private BacklogByArea backlogToAreas(Backlog backlog) {
+    private BacklogByArea backlogToAreas(final Backlog backlog) {
         return new BacklogByArea(
                 backlog.getKeys().get("area"),
                 backlog.getTotal()
         );
     }
 
-    private List<ProcessName> getProcesses(ProcessName to) {
+    private List<ProcessName> getProcesses(final ProcessName to) {
         return PROCESSES.subList(0, PROCESSES.indexOf(to) + 1);
     }
 

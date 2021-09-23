@@ -57,11 +57,12 @@ public class ProjectBacklogTest {
         when(backlogGateway.getBacklog(
                 List.of(
                         Map.of("status", "pending"),
+                        Map.of("status", "to_pick"),
                         Map.of("status", "to_pack")
                 ),
                 WAREHOUSE_ID,
                 A_DATE,
-                A_DATE.plusHours(25),
+                A_DATE.plusDays(1),
                 true)
         ).thenReturn(
                 new ArrayList<>(
