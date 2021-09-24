@@ -24,7 +24,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static java.time.ZonedDateTime.parse;
@@ -40,6 +39,7 @@ class BacklogMonitorControllerTest {
     private static final String A_DATE = "2021-08-12T01:00:00Z";
     private static final String ANOTHER_DATE = "2021-08-12T04:00:00Z";
 
+    private static final String WAREHOUSE_ID = "COCU01";
     private static final String PROCESS = "picking";
     private static final String OUTBOUND = "fbm-wms-outbound";
     private static final String OUTBOUND_ORDERS = "outbound-orders";
@@ -136,6 +136,43 @@ class BacklogMonitorControllerTest {
 
         // THEN
         result.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetMonitorWarehouseNotEnabled() throws Exception {
+        // GIVEN
+        String warehouseId = "ARBA01";
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(
+                MockMvcRequestBuilders.get(format(BASE_URL, warehouseId) + "/monitor")
+                        .param("workflow", OUTBOUND)
+                        .param("date_from", A_DATE)
+                        .param("date_to", ANOTHER_DATE)
+                        .param("caller.id", "999")
+        );
+
+        // THEN
+        result.andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testGetDetailsWarehouseNotEnabled() throws Exception {
+        // GIVEN
+        String warehouseId = "ARBA01";
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(
+                MockMvcRequestBuilders.get(format(BASE_URL, warehouseId) + "/details")
+                        .param("workflow", OUTBOUND)
+                        .param("process", PROCESS)
+                        .param("date_from", A_DATE)
+                        .param("date_to", ANOTHER_DATE)
+                        .param("caller.id", "999")
+        );
+
+        // THEN
+        result.andExpect(status().isNotFound());
     }
 
     private GetBacklogMonitorDetailsResponse getDetailsMockedResponse() {

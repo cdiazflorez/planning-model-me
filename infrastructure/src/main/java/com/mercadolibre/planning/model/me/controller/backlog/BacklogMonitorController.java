@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
+import com.mercadolibre.planning.model.me.controller.backlog.exception.EmptyStateException;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitor;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
@@ -29,6 +31,11 @@ import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
 @AllArgsConstructor
 @RequestMapping("/wms/flow/middleend/logistic_centers/{warehouseId}/backlog")
 public class BacklogMonitorController {
+    // TODO: replace this variable with a fury configuration
+    private static final List<String> WAREHOUSES = List.of(
+            "COCU01", "BRMG01"
+    );
+
     private static final Map<String, String> WORKFLOW_ADAPTER = Map.of(
             FBM_WMS_OUTBOUND.getName(), "outbound-orders"
     );
@@ -50,18 +57,19 @@ public class BacklogMonitorController {
             final ZonedDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
+        if (!WAREHOUSES.contains(warehouseId)) {
+            throw new EmptyStateException();
+        }
+
         ZonedDateTime now = DateUtils.getCurrentUtcDateTime().truncatedTo(ChronoUnit.HOURS);
-
-        ZonedDateTime from = dateFrom == null
-                ? now.minusHours(DEFAULT_HOURS_LOOKBACK)
-                : dateFrom.withZoneSameInstant(UTC);
-
-        ZonedDateTime to = dateTo == null
-                ? now.plusHours(DEFAULT_HOURS_LOOKAHEAD) : dateTo.withZoneSameInstant(UTC);
 
         WorkflowBacklogDetail response = getBacklogMonitor.execute(
                 new GetBacklogMonitorInputDto(
-                        warehouseId, WORKFLOW_ADAPTER.get(workflow), from, to, callerId
+                        warehouseId,
+                        WORKFLOW_ADAPTER.get(workflow),
+                        dateFrom(dateFrom, now),
+                        dateTo(dateTo, now),
+                        callerId
                 )
         );
 
@@ -85,14 +93,11 @@ public class BacklogMonitorController {
             final ZonedDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
+        if (!WAREHOUSES.contains(warehouseId)) {
+            throw new EmptyStateException();
+        }
+
         ZonedDateTime now = DateUtils.getCurrentUtcDateTime().truncatedTo(ChronoUnit.HOURS);
-
-        ZonedDateTime from = dateFrom == null
-                ? now.minusHours(DEFAULT_HOURS_LOOKBACK)
-                : dateFrom.withZoneSameInstant(UTC);
-
-        ZonedDateTime to = dateTo == null
-                ? now.plusHours(DEFAULT_HOURS_LOOKAHEAD) : dateTo.withZoneSameInstant(UTC);
 
         return ResponseEntity.ok(
                 getBacklogMonitorDetails.execute(
@@ -100,11 +105,23 @@ public class BacklogMonitorController {
                                 .warehouseId(warehouseId)
                                 .workflow(WORKFLOW_ADAPTER.get(workflow))
                                 .process(ProcessName.from(process))
-                                .dateFrom(from)
-                                .dateTo(to)
+                                .dateFrom(dateFrom(dateFrom, now))
+                                .dateTo(dateTo(dateTo, now))
                                 .callerId(callerId)
                                 .build()
                 )
         );
+    }
+
+    private ZonedDateTime dateFrom(ZonedDateTime date, ZonedDateTime now) {
+        return date == null
+                ? now.minusHours(DEFAULT_HOURS_LOOKBACK)
+                : date.withZoneSameInstant(UTC);
+    }
+
+    private ZonedDateTime dateTo(ZonedDateTime date, ZonedDateTime now) {
+        return date == null
+                ? now.plusHours(DEFAULT_HOURS_LOOKAHEAD)
+                : date.withZoneSameInstant(UTC);
     }
 }
