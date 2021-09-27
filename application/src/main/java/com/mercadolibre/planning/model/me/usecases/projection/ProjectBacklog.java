@@ -56,7 +56,7 @@ public class ProjectBacklog implements UseCase<BacklogProjectionInput, Projected
                 backlogGateway.getBacklog(statuses,
                         input.getWarehouseId(),
                         dateFrom,
-                        dateFrom.plusDays(1),
+                        dateFrom.plusHours(25),
                         true
                 );
 

@@ -93,8 +93,7 @@ public class ProjectionController {
             @RequestParam("caller.id") @NotNull final Long callerId,
             final GetBacklogProjectionRequest request) {
 
-        authorizeUser
-                .execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
 
         datadogMetricService.trackProjection(request.getWarehouseId(),
                 workflow,
