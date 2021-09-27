@@ -16,7 +16,7 @@ import java.util.function.Function;
 @Component
 public class ApiLoggingFilter extends LoggingFilter {
 
-    private static final Set<String> METHOD_NAMES = Set.of("POST", "PUT");
+    private static final Set<String> METHOD_NAMES = Set.of("GET", "POST", "PUT");
 
     @Override
     protected Logger getLog() {
@@ -38,7 +38,7 @@ public class ApiLoggingFilter extends LoggingFilter {
     @Override
     protected boolean shouldLogInfo(final HttpServletRequest httpServletRequest,
                                     final HttpServletResponse httpServletResponse) {
-        return isPostOrPut(httpServletRequest.getMethod());
+        return METHOD_NAMES.contains(httpServletRequest.getMethod().toUpperCase());
     }
 
     @Override
@@ -60,9 +60,5 @@ public class ApiLoggingFilter extends LoggingFilter {
 
         final HttpStatus httpStatus = HttpStatus.resolve(responseStatus);
         return httpStatus != null && mapper.apply(httpStatus);
-    }
-
-    private boolean isPostOrPut(final String method) {
-        return METHOD_NAMES.contains(method.toUpperCase());
     }
 }
