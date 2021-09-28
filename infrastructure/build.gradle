@@ -25,10 +25,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'com.mercadolibre:lockclient:2.1.0'
+    implementation 'com.mercadolibre:spring-boot-starter-config:2.0.1'
     implementation 'com.mercadolibre.metrics:datadog-metric-wrapper:0.0.13'
     implementation 'com.mercadolibre.fbm.wms.outbound:commons:0.1.2'
-    implementation "com.mercadolibre.restclient:meli-restclient-default:0.3.53"
-    implementation "com.mercadolibre.resilience:resilience-core:1.1.1"
+    implementation 'com.mercadolibre.restclient:meli-restclient-default:0.3.53'
+    implementation 'com.mercadolibre.resilience:resilience-core:1.1.1'
     implementation 'com.mercadolibre.library:kraken-client-java:1.0.2-beta'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -43,7 +44,19 @@ configurations {
     }
 }
 
+task runLocal {
+    run {
+        systemProperty "configFileName", "src/test/resources/configuration.properties"
+        systemProperty "checksumEnabled", "false"
+    }
+}
+
+runLocal.finalizedBy run
+
 test {
+    systemProperty "configFileName", "src/test/resources/configuration.properties"
+    systemProperty "checksumEnabled", "false"
+
     useJUnitPlatform()
 
     testLogging {

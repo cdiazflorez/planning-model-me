@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
+import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.EmptyStateException;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
@@ -31,10 +31,6 @@ import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
 @AllArgsConstructor
 @RequestMapping("/wms/flow/middleend/logistic_centers/{warehouseId}/backlog")
 public class BacklogMonitorController {
-    // TODO: replace this variable with a fury configuration
-    private static final List<String> WAREHOUSES = List.of(
-            "COCU01", "BRMG01"
-    );
 
     private static final Map<String, String> WORKFLOW_ADAPTER = Map.of(
             FBM_WMS_OUTBOUND.getName(), "outbound-orders"
@@ -47,6 +43,8 @@ public class BacklogMonitorController {
 
     private final GetBacklogMonitorDetails getBacklogMonitorDetails;
 
+    private final FeatureToggle featureToggle;
+
     @GetMapping("/monitor")
     public ResponseEntity<WorkflowBacklogDetail> monitor(
             @PathVariable final String warehouseId,
@@ -57,7 +55,7 @@ public class BacklogMonitorController {
             final ZonedDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
-        if (!WAREHOUSES.contains(warehouseId)) {
+        if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
             throw new EmptyStateException();
         }
 
@@ -93,7 +91,7 @@ public class BacklogMonitorController {
             final ZonedDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
-        if (!WAREHOUSES.contains(warehouseId)) {
+        if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
             throw new EmptyStateException();
         }
 

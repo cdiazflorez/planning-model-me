@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
+import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.entities.monitor.AreaBacklogDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.BacklogsByDate;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessBacklogDetail;
@@ -13,6 +14,7 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonito
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -52,6 +54,14 @@ class BacklogMonitorControllerTest {
 
     @MockBean
     private GetBacklogMonitorDetails getBacklogMonitorDetails;
+
+    @MockBean
+    private FeatureToggle featureToggle;
+
+    @BeforeEach
+    void setUp() {
+        mockFeatureToggle();
+    }
 
     @Test
     void testGetMonitor() throws Exception {
@@ -219,6 +229,11 @@ class BacklogMonitorControllerTest {
                                         .build()
                         )
                 ));
+    }
+
+    private void mockFeatureToggle() {
+        when(featureToggle.hasBacklogMonitorFeatureEnabled("COCU01")).thenReturn(true);
+        when(featureToggle.hasBacklogMonitorFeatureEnabled("ARBA01")).thenReturn(false);
     }
 
     private WorkflowBacklogDetail getMockedResponse() {
