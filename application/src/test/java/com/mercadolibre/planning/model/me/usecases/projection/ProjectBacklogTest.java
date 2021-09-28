@@ -62,7 +62,7 @@ public class ProjectBacklogTest {
                 ),
                 WAREHOUSE_ID,
                 A_DATE,
-                A_DATE.plusDays(1),
+                A_DATE.plusHours(25),
                 true)
         ).thenReturn(
                 new ArrayList<>(

@@ -184,8 +184,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     private Map<ProcessName, List<QuantityByDate>> getProjectedBacklog(
             final GetBacklogMonitorInputDto input) {
 
-        final ZonedDateTime dateFrom = DateUtils.getCurrentUtcDateTime()
-                .truncatedTo(ChronoUnit.HOURS);
+        final ZonedDateTime dateFrom = DateUtils.getCurrentUtcDateTime();
 
         final ZonedDateTime dateTo = input.getDateTo()
                 .truncatedTo(ChronoUnit.HOURS)
