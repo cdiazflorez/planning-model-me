@@ -43,6 +43,7 @@ public class GetBacklogProjectionRequest {
                 .dateTo(dateTo)
                 .userId(callerId)
                 .processName(processName)
+                .groupType("order")
                 .build();
     }
 }
