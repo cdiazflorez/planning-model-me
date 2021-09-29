@@ -186,17 +186,13 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
         final ZonedDateTime dateFrom = DateUtils.getCurrentUtcDateTime();
 
-        final ZonedDateTime dateTo = input.getDateTo()
-                .truncatedTo(ChronoUnit.HOURS)
-                .minusHours(1L);
-
         final List<BacklogProjectionResponse> projectedBacklog = backlogProjection.execute(
                 BacklogProjectionInput.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .warehouseId(input.getWarehouseId())
                         .processName(WORKFLOWS.get(input.getWorkflow()))
                         .dateFrom(dateFrom)
-                        .dateTo(dateTo)
+                        .dateTo(dateFrom.plusHours(25))
                         .groupType("order")
                         .userId(input.getCallerId())
                         .build()
@@ -207,8 +203,10 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                         BacklogProjectionResponse::getProcessName,
                         Collectors.flatMapping(p -> p.getValues()
                                         .stream()
-                                        .map(v ->
-                                                new QuantityByDate(v.getDate(), v.getQuantity())),
+                                        .filter(v -> !v.getDate().isAfter(input.getDateTo()))
+                                        .map(v -> new QuantityByDate(
+                                                v.getDate(),
+                                                v.getQuantity())),
                                 Collectors.toList()))
                 );
     }
