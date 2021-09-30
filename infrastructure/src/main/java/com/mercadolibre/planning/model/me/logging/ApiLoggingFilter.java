@@ -38,6 +38,11 @@ public class ApiLoggingFilter extends LoggingFilter {
     @Override
     protected boolean shouldLogInfo(final HttpServletRequest httpServletRequest,
                                     final HttpServletResponse httpServletResponse) {
+        String uri = httpServletRequest.getRequestURI();
+
+        if (uri != null && uri.equals("/ping")) {
+            return false;
+        }
         return METHOD_NAMES.contains(httpServletRequest.getMethod().toUpperCase());
     }
 
