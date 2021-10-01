@@ -56,5 +56,4 @@ public class RunSimulation extends GetProjection {
                         .applyDeviation(true)
                         .build());
     }
-
 }

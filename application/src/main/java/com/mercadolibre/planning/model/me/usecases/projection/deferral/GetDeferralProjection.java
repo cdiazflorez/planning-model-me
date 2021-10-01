@@ -60,6 +60,10 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
     private static final int HOURS_TO_SHOW = 25;
 
+    private static final int DEFERRAL_DAYS = 3;
+
+    private static final int PROJECTION_DAYS_TO_SHOW = 1;
+
     private final LogisticCenterGateway logisticCenterGateway;
 
     private final PlanningModelGateway planningModelGateway;
@@ -70,36 +74,52 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
     @Override
     public Projection execute(final GetProjectionInput input) {
-        final ZonedDateTime dateFrom = input.getDate() == null
-                ? getCurrentUtcDate() : input.getDate();
-        final ZonedDateTime dateTo = dateFrom.plusDays(1);
+
+        final ZonedDateTime dateFromToProject = getCurrentUtcDate();
+        final ZonedDateTime dateToToProject = dateFromToProject.plusDays(DEFERRAL_DAYS);
+
+        final ZonedDateTime dateFromToShow = input.getDate() == null
+                ? dateFromToProject : input.getDate();
+
+        final ZonedDateTime dateToToShow = dateFromToShow.plusDays(PROJECTION_DAYS_TO_SHOW);
 
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getLogisticCenterId());
 
-        final List<Backlog> backlogs = getBacklog.execute(
+        final List<Backlog> backlogsToProject = getBacklog.execute(
                 new GetBacklogByDateDto(input.getWorkflow(),
-                        input.getLogisticCenterId(), dateFrom, dateTo));
+                        input.getLogisticCenterId(), dateFromToProject, dateToToProject));
+
+        final List<Backlog> backlogsToShow =
+                filterBacklogsInRange(dateFromToShow, dateToToShow, backlogsToProject);
 
         try {
-            final List<ProjectionResult> projection =
-                    getProjection(input, dateFrom, dateTo, backlogs);
-            setDeferral(projection, dateTo, config.getZoneId());
+            final List<ProjectionResult> projections =
+                    getProjection(input, dateFromToProject, dateToToProject, backlogsToProject);
+
+            setDeferrals(projections, config.getZoneId());
+
+            final List<ProjectionResult> projectionsToShow =
+                    filterProjectionsInRange(dateFromToShow, dateToToShow, projections);
 
             return new Projection(
                     "Proyección",
-                    getDateSelector(dateFrom, DAYS_TO_SHOW),
+                    getDateSelector(dateFromToShow, DAYS_TO_SHOW),
                     null,
                     new Data(null,
-                            getThroughput(config, input, dateFrom, dateTo),
-                            getProjectionSummary(input, dateFrom, dateTo, backlogs, projection),
-                            new Chart(toChartData(projection, config, dateTo))),
+                            getThroughput(config, input, dateFromToShow, dateToToShow),
+                            getProjectionSummary(input,
+                                    dateFromToShow,
+                                    dateToToShow,
+                                    backlogsToShow,
+                                    projectionsToShow),
+                            new Chart(toChartData(projectionsToShow, config, dateToToShow))),
                     createTabs(),
                     null);
 
         } catch (RuntimeException ex) {
             return new Projection("Proyección",
-                    getDateSelector(dateFrom, DAYS_TO_SHOW),
+                    getDateSelector(dateFromToShow, DAYS_TO_SHOW),
                     ex.getMessage(),
                     null,
                     createTabs(),
@@ -149,23 +169,22 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                 .collect(toList());
     }
 
-    private void setDeferral(final List<ProjectionResult> projections,
-                             final ZonedDateTime dateTo,
-                             final ZoneId zoneId) {
+    private void setDeferrals(final List<ProjectionResult> projections,
+                              final ZoneId zoneId) {
 
-        boolean cascadeDeferred = false;
+        boolean isDeferred = false;
 
         for (ProjectionResult p : projections) {
-            final ZonedDateTime projectedTime = convertToTimeZone(zoneId,
-                    p.getProjectedEndDate() == null ? dateTo : p.getProjectedEndDate());
+            final ZonedDateTime projectedEndDate = p.getProjectedEndDate();
+            final ZonedDateTime cutOffDate =
+                    p.getDate().minusMinutes(p.getProcessingTime().getValue());
 
-            if (projectedTime.isAfter(p.getDate().minusMinutes(p.getProcessingTime().getValue()))) {
-                cascadeDeferred = true;
+            if (projectedEndDate == null || projectedEndDate.isAfter(cutOffDate)) {
+                isDeferred = true;
             }
-            p.setProjectedEndDate(projectedTime);
-            p.setDeferred(cascadeDeferred);
-        }
 
+            p.setDeferred(isDeferred);
+        }
     }
 
     private SimpleTable getProjectionSummary(final GetProjectionInput input,
@@ -225,5 +244,25 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                 action,
                 ""
         );
+    }
+
+    private List<ProjectionResult> filterProjectionsInRange(
+            final ZonedDateTime dateFrom,
+            final ZonedDateTime dateTo,
+            final List<ProjectionResult> projections) {
+
+        return projections.stream().filter(p -> p.getDate().isAfter(dateFrom)
+                        && p.getDate().isBefore(dateTo))
+                .collect(toList());
+    }
+
+    private List<Backlog> filterBacklogsInRange(
+            final ZonedDateTime dateFrom,
+            final ZonedDateTime dateTo,
+            final List<Backlog> backlogs) {
+
+        return backlogs.stream().filter(p -> p.getDate().isAfter(dateFrom)
+                        && p.getDate().isBefore(dateTo))
+                .collect(toList());
     }
 }

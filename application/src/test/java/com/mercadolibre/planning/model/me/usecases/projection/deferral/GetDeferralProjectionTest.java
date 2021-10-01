@@ -65,13 +65,17 @@ public class GetDeferralProjectionTest {
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(
                 new LogisticCenterConfiguration(getDefault()));
+
         when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                currentUtcDateTime, currentUtcDateTime.plusDays(1))))
+                currentUtcDateTime, currentUtcDateTime.plusDays(3))))
                 .thenReturn(mockBacklog());
+
         when(planningModelGateway.runDeferralProjection(any(ProjectionRequest.class)))
                 .thenReturn(mockProjections());
+
         when(planningModelGateway.getEntities(any(EntityRequest.class))).thenReturn(
                 mockHeadcountEntities());
+
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
                 .thenReturn(mockSimpleTable());
 
@@ -90,7 +94,6 @@ public class GetDeferralProjectionTest {
                 .get(0).getId());
         assertEquals("Throughput", projection.getData().getComplexTable1().getData()
                 .get(0).getTitle());
-
     }
 
     @Test
@@ -101,7 +104,7 @@ public class GetDeferralProjectionTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(
                 new LogisticCenterConfiguration(getDefault()));
         when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                currentUtcDateTime, currentUtcDateTime.plusDays(1))))
+                currentUtcDateTime, currentUtcDateTime.plusDays(3))))
                 .thenReturn(mockBacklog());
         when(planningModelGateway.runDeferralProjection(any(ProjectionRequest.class)))
                 .thenThrow(RuntimeException.class);

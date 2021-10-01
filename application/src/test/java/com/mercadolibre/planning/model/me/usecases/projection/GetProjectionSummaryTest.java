@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.DATE_HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
@@ -172,7 +173,7 @@ public class GetProjectionSummaryTest {
                 cpt1.get("column_1"));
         assertEquals("150", cpt1.get("column_2"));
         assertEquals("-14.4%", cpt1.get("column_3"));
-        assertEquals(currentTime.plusHours(3).plusMinutes(30).format(HOUR_MINUTES_FORMATTER),
+        assertEquals(currentTime.plusHours(3).plusMinutes(30).format(DATE_HOUR_MINUTES_FORMATTER),
                 cpt1.get("column_4"));
 
         assertEquals("warning", cpt2.get("style"));
@@ -180,14 +181,15 @@ public class GetProjectionSummaryTest {
                 cpt2.get("column_1"));
         assertEquals("235", cpt2.get("column_2"));
         assertEquals("17.5%", cpt2.get("column_3"));
-        assertEquals(currentTime.plusHours(3).format(HOUR_MINUTES_FORMATTER), cpt2.get("column_4"));
+        assertEquals(currentTime.plusHours(3).format(DATE_HOUR_MINUTES_FORMATTER),
+                cpt2.get("column_4"));
 
         assertEquals("warning", cpt3.get("style"));
         assertEquals(convertToTimeZone(zoneId, CPT_3).format(HOUR_MINUTES_FORMATTER),
                 cpt3.get("column_1"));
         assertEquals("300", cpt3.get("column_2"));
         assertEquals("-3.4%", cpt3.get("column_3"));
-        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(HOUR_MINUTES_FORMATTER),
+        assertEquals(currentTime.plusHours(3).plusMinutes(25).format(DATE_HOUR_MINUTES_FORMATTER),
                 cpt3.get("column_4"));
 
         assertEquals("danger", cpt4.get("style"));
@@ -195,7 +197,7 @@ public class GetProjectionSummaryTest {
                 cpt4.get("column_1"));
         assertEquals("120", cpt4.get("column_2"));
         assertEquals("-4.8%", cpt4.get("column_3"));
-        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(HOUR_MINUTES_FORMATTER),
+        assertEquals(currentTime.plusHours(8).plusMinutes(10).format(DATE_HOUR_MINUTES_FORMATTER),
                 cpt4.get("column_4"));
 
         assertEquals("danger", cpt5.get("style"));

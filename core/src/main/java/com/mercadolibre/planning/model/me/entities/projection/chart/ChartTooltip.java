@@ -50,7 +50,7 @@ public class ChartTooltip {
                                                   final long processingTime,
                                                   final boolean isDeferred) {
         final String subtitle2 = remainingQuantity == 0 ? "-" : String.valueOf(remainingQuantity);
-        final String subtitle3 =  projectedEndDate.isEqual(dateTo)
+        final String subtitle3 =  projectedEndDate == null
                 ? "Excede las 24hs" : projectedEndDate.format(HOUR_FORMAT);
 
         ChartTooltipBuilder chartTooltipBuilder = ChartTooltip.builder()

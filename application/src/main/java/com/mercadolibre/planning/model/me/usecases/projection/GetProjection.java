@@ -23,7 +23,6 @@ import lombok.AllArgsConstructor;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
@@ -33,6 +32,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
+import static java.util.stream.Collectors.toList;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
@@ -51,50 +51,61 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
     @Override
     public Projection execute(final GetProjectionInputDto input) {
-        final ZonedDateTime utcDateFrom = input.getDate() == null
-                ? getCurrentUtcDate() : input.getDate();
-        final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
-        final List<Backlog> backlogs = getBacklog.execute(
-                new GetBacklogByDateDto(input.getWorkflow(),
+        final ZonedDateTime dateFromToProject = getCurrentUtcDate();
+        final ZonedDateTime dateFromToShow = input.getDate() == null
+                ? dateFromToProject : input.getDate();
+
+        final ZonedDateTime dateTo = dateFromToShow.plusDays(1);
+
+        final List<Backlog> backlogsToProject = getBacklog.execute(
+                new GetBacklogByDateDto(
+                        input.getWorkflow(),
                         input.getWarehouseId(),
-                        utcDateFrom, utcDateTo)
+                        dateFromToProject,
+                        dateTo)
         );
+
+        final List<Backlog> backlogsToShow =
+                filterBacklogsInRange(dateFromToShow, dateTo, backlogsToProject);
 
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getWarehouseId());
 
         try {
             final List<ProjectionResult> projections = getProjection(
-                    input, utcDateFrom, utcDateTo, backlogs);
+                    input, dateFromToProject, dateTo, backlogsToProject);
+
+            final List<ProjectionResult> projectionsToShow =
+                    filterProjectionsInRange(dateFromToShow, dateTo, projections);
 
             return new Projection(
                     "Proyecciones",
-                    getDateSelector(utcDateFrom, DAYS_TO_SHOW),
+                    getDateSelector(dateFromToShow, DAYS_TO_SHOW),
                     null,
                     new Data(getWaveSuggestion.execute(GetWaveSuggestionInputDto.builder()
                             .zoneId(config.getZoneId())
                             .warehouseId(input.getWarehouseId())
                             .workflow(input.getWorkflow())
-                            .date(utcDateFrom)
+                            .date(dateFromToShow)
                             .build()),
                             getEntities.execute(input),
                             getProjectionSummary.execute(GetProjectionSummaryInput.builder()
                                     .workflow(input.getWorkflow())
                                     .warehouseId(input.getWarehouseId())
-                                    .dateFrom(utcDateFrom)
-                                    .dateTo(utcDateTo)
-                                    .projections(projections)
-                                    .backlogs(backlogs)
+                                    .dateFrom(dateFromToShow)
+                                    .dateTo(dateTo)
+                                    .projections(projectionsToShow)
+                                    .backlogs(backlogsToShow)
                                     .showDeviation(true)
                                     .build()),
-                            new Chart(toChartData(projections, config.getZoneId(), utcDateTo))),
+                            new Chart(toChartData(projectionsToShow, config.getZoneId(), dateTo))),
                     createTabs(),
                     simulationMode);
 
         } catch (RuntimeException ex) {
             return new Projection("Proyecciones",
-                    getDateSelector(utcDateFrom, DAYS_TO_SHOW),
+                    getDateSelector(dateFromToShow, DAYS_TO_SHOW),
                     ex.getMessage(),
                     null,
                     createTabs(),
@@ -120,14 +131,34 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
                     return ChartData.fromProjection(
                             convertToTimeZone(zoneId, projection.getDate()),
-                            convertToTimeZone(zoneId, projectedEndDate == null
-                                    ? dateTo : projectedEndDate),
+                            projectedEndDate == null
+                                    ? null : convertToTimeZone(zoneId, projectedEndDate),
                             convertToTimeZone(zoneId, dateTo),
                             projection.getRemainingQuantity(),
                             projection.getProcessingTime(),
                             projection.isDeferred());
                 })
-                .collect(Collectors.toList());
+                .collect(toList());
+    }
+
+    private List<ProjectionResult> filterProjectionsInRange(
+            final ZonedDateTime dateFrom,
+            final ZonedDateTime dateTo,
+            final List<ProjectionResult> projections) {
+
+        return projections.stream().filter(p -> p.getDate().isAfter(dateFrom)
+                        && p.getDate().isBefore(dateTo))
+                .collect(toList());
+    }
+
+    private List<Backlog> filterBacklogsInRange(
+            final ZonedDateTime dateFrom,
+            final ZonedDateTime dateTo,
+            final List<Backlog> backlogs) {
+
+        return backlogs.stream().filter(p -> p.getDate().isAfter(dateFrom)
+                        && p.getDate().isBefore(dateTo))
+                .collect(toList());
     }
 
     protected abstract List<ProjectionResult> getProjection(final GetProjectionInputDto input,

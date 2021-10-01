@@ -48,6 +48,4 @@ public class GetCptProjection extends GetProjection {
                         .applyDeviation(true)
                         .build());
     }
-
-
 }

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.DATE_HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static java.util.stream.Collectors.toList;
@@ -241,12 +242,13 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
 
         columns.put("column_" + index++, projectedEndDate == null
                 ? "Excede las 24hs"
-                : convertToTimeZone(zoneId, projectedEndDate).format(HOUR_MINUTES_FORMATTER));
+                : convertToTimeZone(zoneId, projectedEndDate).format(DATE_HOUR_MINUTES_FORMATTER));
 
         if (hasSimulatedResults) {
             columns.put("column_" + index, simulatedEndDate == null
                     ? "Excede las 24hs"
-                    : convertToTimeZone(zoneId, simulatedEndDate).format(HOUR_MINUTES_FORMATTER));
+                    : convertToTimeZone(zoneId, simulatedEndDate)
+                    .format(DATE_HOUR_MINUTES_FORMATTER));
         }
 
         if (projection.isDeferred()) {
