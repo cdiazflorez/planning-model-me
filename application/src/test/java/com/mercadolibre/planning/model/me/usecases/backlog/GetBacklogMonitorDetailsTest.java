@@ -15,7 +15,6 @@ import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughp
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +24,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +78,7 @@ class GetBacklogMonitorDetailsTest {
     private MockedStatic<DateUtils> mockDt;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         mockDt = mockStatic(DateUtils.class);
     }
 
@@ -122,7 +120,7 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(2, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
-        assertEquals(2, firstAreas.get(0).getValue().getMinutes());
+        assertEquals(90, firstAreas.get(0).getValue().getMinutes());
 
         assertEquals(2, results.get(1).getAreas().size());
 
@@ -133,7 +131,7 @@ class GetBacklogMonitorDetailsTest {
         var graph = response.getProcess();
         assertEquals("picking", graph.getProcess());
         assertEquals(50, graph.getTotal().getUnits());
-        assertEquals(2, graph.getTotal().getMinutes());
+        assertEquals(120, graph.getTotal().getMinutes());
         assertEquals(4, graph.getBacklogs().size());
 
     }
@@ -170,23 +168,22 @@ class GetBacklogMonitorDetailsTest {
 
         var firstTotals = firstResult.getTotal();
         assertEquals(90, firstTotals.getUnits());
-        assertEquals(9, firstTotals.getMinutes());
+        assertEquals(540, firstTotals.getMinutes());
 
         var firstAreas = firstResult.getAreas();
         assertEquals(2, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
-        assertEquals(2, firstAreas.get(0).getValue().getMinutes());
+        assertEquals(90, firstAreas.get(0).getValue().getMinutes());
 
         var lastResults = results.get(3);
         assertEquals(DATE_TO, lastResults.getDate());
         assertNotNull(lastResults.getAreas());
         assertNull(lastResults.getTarget());
         assertEquals(500, lastResults.getTotal().getUnits());
-        assertEquals(100, lastResults.getTotal().getMinutes());
+        assertEquals(6000, lastResults.getTotal().getMinutes());
 
         verify(planningModelGateway, never()).getPerformedProcessing(any());
-
     }
 
     @Test
@@ -221,27 +218,27 @@ class GetBacklogMonitorDetailsTest {
         assertNull(firstResult.getAreas());
 
         var firstTotals = firstResult.getTotal();
-        assertEquals(15, firstTotals.getUnits());
-        assertEquals(2, firstTotals.getMinutes());
+        assertEquals(28, firstTotals.getUnits());
+        assertEquals(168, firstTotals.getMinutes());
 
         var firstTargets = firstResult.getTarget();
         assertEquals(10, firstTargets.getUnits());
-        assertEquals(1, firstTargets.getMinutes());
+        assertEquals(60, firstTargets.getMinutes());
 
         var lastResults = results.get(3);
         assertEquals(DATE_TO, lastResults.getDate());
         assertNull(lastResults.getAreas());
 
         assertEquals(60, lastResults.getTarget().getUnits());
-        assertEquals(12, lastResults.getTarget().getMinutes());
+        assertEquals(720, lastResults.getTarget().getMinutes());
 
         assertEquals(500, lastResults.getTotal().getUnits());
-        assertEquals(100, lastResults.getTotal().getMinutes());
+        assertEquals(6000, lastResults.getTotal().getMinutes());
 
         var graph = response.getProcess();
         assertEquals("waving", graph.getProcess());
         assertEquals(50, graph.getTotal().getUnits());
-        assertEquals(2, graph.getTotal().getMinutes());
+        assertEquals(120, graph.getTotal().getMinutes());
         assertEquals(4, graph.getBacklogs().size());
     }
 
@@ -266,7 +263,7 @@ class GetBacklogMonitorDetailsTest {
         when(backlogApiGateway.getBacklog(any()))
                 .thenReturn(
                         List.of(
-                                new Backlog(DATES.get(0), na, 15),
+                                new Backlog(DATES.get(0), na, 28),
                                 new Backlog(DATES.get(1), na, 50)
                         ));
     }

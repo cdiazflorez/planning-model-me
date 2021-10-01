@@ -21,6 +21,8 @@ import java.util.stream.IntStream;
 import static java.util.Comparator.naturalOrder;
 
 abstract class GetConsolidatedBacklog {
+    private static final double MINUTES_IN_HOUR = 60.0;
+
     private static final long MAX_ALLOWED_MINUTES_SHIFT = 5L;
 
     protected ZonedDateTime currentDatetime(final List<Backlog> backlogs) {
@@ -75,7 +77,9 @@ abstract class GetConsolidatedBacklog {
         if (quantity == null || throughput == null || throughput.equals(0)) {
             return null;
         }
-        return (int) Math.ceil((double) quantity / throughput);
+
+        final double minutes = MINUTES_IN_HOUR * quantity / throughput;
+        return (int) Math.ceil(minutes);
     }
 
     protected ProcessDetail build(final ProcessName process,

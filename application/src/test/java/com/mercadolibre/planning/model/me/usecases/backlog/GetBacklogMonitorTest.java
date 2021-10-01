@@ -19,7 +19,6 @@ import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughput
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.planning.model.me.utils.TestException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +82,7 @@ class GetBacklogMonitorTest {
     private MockedStatic<DateUtils> mockDt;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         mockDt = mockStatic(DateUtils.class);
     }
 
@@ -231,14 +229,14 @@ class GetBacklogMonitorTest {
         // waving
         assertEquals("waving", waving.getProcess());
         assertEquals(150, waving.getTotal().getUnits());
-        assertEquals(10, waving.getTotal().getMinutes());
+        assertEquals(600, waving.getTotal().getMinutes());
         assertEquals(4, waving.getBacklogs().size());
 
         // past backlog
         final BacklogsByDate wavingPastBacklog = waving.getBacklogs().get(0);
         assertEquals(DATE_FROM, wavingPastBacklog.getDate());
         assertEquals(100, wavingPastBacklog.getCurrent().getUnits());
-        assertEquals(10, wavingPastBacklog.getCurrent().getMinutes());
+        assertEquals(600, wavingPastBacklog.getCurrent().getMinutes());
 
         final BacklogsByDate wavingNullMinutesBacklog = waving.getBacklogs().get(2);
         assertEquals(DATES.get(2), wavingNullMinutesBacklog.getDate());
@@ -248,7 +246,7 @@ class GetBacklogMonitorTest {
         final BacklogsByDate wavingProjectedBacklog = waving.getBacklogs().get(3);
         assertEquals(DATES.get(3), wavingProjectedBacklog.getDate());
         assertEquals(250, wavingProjectedBacklog.getCurrent().getUnits());
-        assertEquals(13, wavingProjectedBacklog.getCurrent().getMinutes());
+        assertEquals(750, wavingProjectedBacklog.getCurrent().getMinutes());
     }
 
     private GetBacklogMonitorInputDto input() {
