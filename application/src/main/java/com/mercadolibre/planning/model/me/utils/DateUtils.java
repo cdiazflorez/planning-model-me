@@ -28,6 +28,9 @@ public class DateUtils {
     public static final DateTimeFormatter HOUR_MINUTES_FORMATTER =
             DateTimeFormatter.ofPattern("HH:mm");
 
+    public static final DateTimeFormatter DATE_HOUR_MINUTES_FORMATTER =
+            DateTimeFormatter.ofPattern("HH:mm - dd/MM");
+
     public static ZonedDateTime getCurrentUtcDate() {
         return ZonedDateTime.now(UTC).withMinute(0).withSecond(0).withNano(0);
     }
@@ -101,6 +104,5 @@ public class DateUtils {
         return date.getDayOfWeek().getValue() * 1440
                 + date.getHour() * 60
                 + date.getMinute();
-
     }
 }
