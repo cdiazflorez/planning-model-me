@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
+import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -8,6 +9,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
@@ -28,6 +30,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
@@ -91,6 +94,7 @@ class GetBacklogMonitorDetailsTest {
     void testGetBacklogDetailsWithAreas() {
         // GIVEN
         mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
+        mockDateUtils(mockDt);
 
         mockPastBacklogWithAreas();
         mockProjectedBacklog();
@@ -99,7 +103,7 @@ class GetBacklogMonitorDetailsTest {
 
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
                 .warehouseId(WAREHOUSE_ID)
-                .workflow("fbm-wms-outbound")
+                .workflow("outbound-orders")
                 .process(PICKING)
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
@@ -134,6 +138,10 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(120, graph.getTotal().getMinutes());
         assertEquals(4, graph.getBacklogs().size());
 
+        var graphFirstResult = graph.getBacklogs().get(0);
+        assertNotNull(graphFirstResult.getHistorical());
+        assertEquals(22, graphFirstResult.getHistorical().getUnits());
+        assertEquals(2, graphFirstResult.getHistorical().getMinutes());
     }
 
     @Test
@@ -148,7 +156,7 @@ class GetBacklogMonitorDetailsTest {
         // WHEN
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
                 .warehouseId(WAREHOUSE_ID)
-                .workflow("fbm-wms-outbound")
+                .workflow("outbound-orders")
                 .process(PICKING)
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
@@ -199,7 +207,7 @@ class GetBacklogMonitorDetailsTest {
         // WHEN
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
                 .warehouseId(WAREHOUSE_ID)
-                .workflow("fbm-wms-outbound")
+                .workflow("outbound-orders")
                 .process(WAVING)
                 .dateFrom(DATE_FROM)
                 .dateTo(DATE_TO)
@@ -326,9 +334,55 @@ class GetBacklogMonitorDetailsTest {
     }
 
     private void mockHistoricalBacklog(ProcessName process) {
-        when(getHistoricalBacklog.execute(any())).thenReturn(
-                Map.of(process, HistoricalBacklog.emptyBacklog())
-        );
+        final var firstDateHash = 5820;
+        final var secondDateHash = 5880;
+        final var thirdDateHash = 5940;
+        final var fourthDateHash = 6000;
+
+        final var input = GetHistoricalBacklogInput.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflows(of("outbound-orders"))
+                .processes(of(process))
+                .dateFrom(DATE_FROM)
+                .dateTo(DATE_TO)
+                .build();
+
+        when(getHistoricalBacklog.execute(input))
+                .thenReturn(Map.of(
+                        WAVING, new HistoricalBacklog(
+                                Map.of(
+                                        firstDateHash, new UnitMeasure(200, 20),
+                                        secondDateHash, new UnitMeasure(100, 10),
+                                        thirdDateHash, new UnitMeasure(50, 5),
+                                        fourthDateHash, new UnitMeasure(80, 8)
+                                )
+                        ),
+                        PICKING, new HistoricalBacklog(
+                                Map.of(
+                                        firstDateHash, new UnitMeasure(22, 2),
+                                        secondDateHash, new UnitMeasure(111, 11),
+                                        thirdDateHash, new UnitMeasure(150, 15),
+                                        fourthDateHash, new UnitMeasure(215, 21)
+                                )
+                        ),
+                        PACKING, new HistoricalBacklog(
+                                Map.of(
+                                        firstDateHash, new UnitMeasure(0, 0),
+                                        secondDateHash, new UnitMeasure(120, 12),
+                                        thirdDateHash, new UnitMeasure(220,22),
+                                        fourthDateHash, new UnitMeasure(420, 42)
+                                )
+                        )
+                ));
+    }
+
+    private void mockDateUtils(MockedStatic<DateUtils> mockDt) {
+        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
+
+        mockDt.when(() -> DateUtils.minutesFromWeekStart(DATES.get(0))).thenReturn(5820);
+        mockDt.when(() -> DateUtils.minutesFromWeekStart(DATES.get(1))).thenReturn(5880);
+        mockDt.when(() -> DateUtils.minutesFromWeekStart(DATES.get(2))).thenReturn(5940);
+        mockDt.when(() -> DateUtils.minutesFromWeekStart(DATES.get(3))).thenReturn(6000);
     }
 
 }
