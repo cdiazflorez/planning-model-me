@@ -75,7 +75,7 @@ public class ProjectBacklogTest {
         );
 
         when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput("to_pick",
-                WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25), null, ORDER_GROUP_TYPE, true))
+                WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25), null, ORDER_GROUP_TYPE, false))
         ).thenReturn(
                 ProcessBacklog.builder()
                         .process(ProcessInfo.PICKING.getStatus())
