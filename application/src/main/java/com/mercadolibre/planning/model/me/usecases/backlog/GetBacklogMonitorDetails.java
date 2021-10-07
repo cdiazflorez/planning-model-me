@@ -53,8 +53,6 @@ import static java.util.List.of;
 @Named
 @AllArgsConstructor
 public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
-    private static final long BACKLOG_WEEKS_LOOKBACK = 3L;
-
     private static final String NO_AREA = "N/A";
 
     private static final List<ProcessName> PROCESSES = of(WAVING, PICKING, PACKING);
@@ -152,13 +150,20 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 .stream()
                 .reduce(0, Integer::sum);
 
+        final Integer throughputValue = throughput.get(truncatedDate);
+
+        final UnitMeasure total = UnitMeasure.from(totalUnits, throughputValue);
+        final UnitMeasure target = Optional.ofNullable(targetBacklog.get(truncatedDate))
+                .map(t -> UnitMeasure.from(t, throughputValue))
+                .orElse(null);
+
         return new ProcessStatsByDate(
                 isProjection,
                 date,
-                totalUnits,
-                targetBacklog.get(truncatedDate),
-                throughput.get(truncatedDate),
-                historicalBacklog.get(truncatedDate),
+                total,
+                target,
+                throughputValue,
+                historicalBacklog.getOr(truncatedDate, GetConsolidatedBacklog::emptyMeasure),
                 unitsByArea);
     }
 
@@ -272,16 +277,13 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     }
 
     private HistoricalBacklog getHistoricalBacklog(final GetBacklogMonitorDetailsInput input) {
-        final ZonedDateTime dateFrom = input.getDateFrom().minusWeeks(BACKLOG_WEEKS_LOOKBACK);
-        final ZonedDateTime dateTo = input.getDateFrom();
-
         return getHistoricalBacklog.execute(
                 GetHistoricalBacklogInput.builder()
                         .warehouseId(input.getWarehouseId())
                         .workflows(of(input.getWorkflow()))
                         .processes(of(input.getProcess()))
-                        .dateFrom(dateFrom)
-                        .dateTo(dateTo)
+                        .dateFrom(input.getDateFrom())
+                        .dateTo(input.getDateTo())
                         .build()
         ).get(input.getProcess());
     }
@@ -307,8 +309,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                         .map(current ->
                                 new BacklogStatsByDate(
                                         current.getDate(),
-                                        current.getTotalUnits(),
-                                        current.getThroughput(),
+                                        current.getTotal(),
                                         current.getHistorical()
                                 ))
                         .collect(Collectors.toList()));
@@ -318,13 +319,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                                  final List<String> processAreas,
                                                  final ZonedDateTime currentDatetime) {
 
-        final Integer throughput = data.getThroughput();
-        final Integer totalMinutes = inMinutes(data.getTotalUnits(), throughput);
-        final UnitMeasure totalBacklog = new UnitMeasure(data.getTotalUnits(), totalMinutes);
-
-        final UnitMeasure targetBacklog = Optional.ofNullable(data.getTargetBacklog())
-                .map(t -> new UnitMeasure(t, inMinutes(t, throughput)))
-                .orElse(null);
+        final UnitMeasure totalBacklog = data.getTotal();
+        final UnitMeasure targetBacklog = data.getTarget();
 
         final List<AreaBacklogDetail> areas = processAreas.isEmpty()
                 ? null
@@ -348,8 +344,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                             return new AreaBacklogDetail(
                                     area,
                                     stats.isProjection()
-                                            ? new UnitMeasure(null, null)
-                                            : new UnitMeasure(units, inMinutes(units, throughput))
+                                            ? emptyMeasure()
+                                            : UnitMeasure.from(units, throughput)
                             );
                         }
                 ).collect(Collectors.toList());
@@ -376,10 +372,10 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private static class ProcessStatsByDate {
         boolean isProjection;
         ZonedDateTime date;
-        Integer totalUnits;
-        Integer targetBacklog;
+        UnitMeasure total;
+        UnitMeasure target;
         Integer throughput;
-        Integer historical;
+        UnitMeasure historical;
         Map<String, Integer> unitsByArea;
     }
 }

@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
+import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
@@ -45,8 +46,6 @@ import static java.util.List.of;
 @Named
 @AllArgsConstructor
 public class GetBacklogMonitor extends GetConsolidatedBacklog {
-    private static final long BACKLOG_WEEKS_LOOKBACK = 3L;
-
     private static final String OUTBOUND_ORDERS = "outbound-orders";
 
     private static final Map<String, List<ProcessName>> WORKFLOWS = Map.of(
@@ -61,7 +60,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
     private final GetHistoricalBacklog getHistoricalBacklog;
 
-    public WorkflowBacklogDetail execute(GetBacklogMonitorInputDto input) {
+    public WorkflowBacklogDetail execute(final GetBacklogMonitorInputDto input) {
         final List<ProcessData> processData = getData(input);
         final ZonedDateTime currentDateTime = getCurrentDatetime(processData);
 
@@ -151,17 +150,14 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(
             final GetBacklogMonitorInputDto input) {
 
-        final ZonedDateTime dateFrom = input.getDateFrom().minusWeeks(BACKLOG_WEEKS_LOOKBACK);
-        final ZonedDateTime dateTo = input.getDateFrom();
-
         try {
             return getHistoricalBacklog.execute(
                     GetHistoricalBacklogInput.builder()
                             .warehouseId(input.getWarehouseId())
                             .workflows(of(input.getWorkflow()))
                             .processes(WORKFLOWS.get(input.getWorkflow()))
-                            .dateFrom(dateFrom)
-                            .dateTo(dateTo)
+                            .dateFrom(input.getDateFrom())
+                            .dateTo(input.getDateTo())
                             .build()
             );
         } catch (Exception e) {
@@ -260,9 +256,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                             ZonedDateTime date = d.getDate().truncatedTo(ChronoUnit.HOURS);
                             return new BacklogStatsByDate(
                                     d.getDate(),
-                                    d.getQuantity(),
-                                    throughput.get(date),
-                                    historical.get(date));
+                                    UnitMeasure.from(d.getQuantity(), throughput.get(date)),
+                                    historical.getOr(date, GetConsolidatedBacklog::emptyMeasure));
                         }
                 );
     }

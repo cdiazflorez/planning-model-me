@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.entities.monitor.BacklogsByDate;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
+import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
@@ -113,8 +114,8 @@ class GetBacklogMonitorTest {
         assertWavingBacklogResults(waving);
         assertEquals(200, waving.getBacklogs().get(0).getHistorical().getUnits());
         assertEquals(80, waving.getBacklogs().get(3).getHistorical().getUnits());
-        assertNull(waving.getBacklogs().get(0).getHistorical().getMinutes());
-        assertNull(waving.getBacklogs().get(3).getHistorical().getMinutes());
+        assertEquals(20, waving.getBacklogs().get(0).getHistorical().getMinutes());
+        assertEquals(8, waving.getBacklogs().get(3).getHistorical().getMinutes());
 
     }
 
@@ -282,44 +283,43 @@ class GetBacklogMonitorTest {
     }
 
     private void mockHistoricalBacklog() {
-        final var firstDate = 5820;
-        final var secondDate = 5880;
-        final var thirdDate = 5940;
-        final var fourthDate = 6000;
-
+        final var firstDateHash = 5820;
+        final var secondDateHash = 5880;
+        final var thirdDateHash = 5940;
+        final var fourthDateHash = 6000;
 
         final var input = GetHistoricalBacklogInput.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflows(of("outbound-orders"))
                 .processes(of(WAVING, PICKING, PACKING))
-                .dateFrom(DATE_FROM.minusWeeks(3L))
-                .dateTo(DATE_FROM)
+                .dateFrom(DATE_FROM)
+                .dateTo(DATE_TO)
                 .build();
 
         when(getHistoricalBacklog.execute(input))
                 .thenReturn(Map.of(
                         WAVING, new HistoricalBacklog(
                                 Map.of(
-                                        firstDate, 200,
-                                        secondDate, 100,
-                                        thirdDate, 50,
-                                        fourthDate, 80
+                                        firstDateHash, new UnitMeasure(200, 20),
+                                        secondDateHash, new UnitMeasure(100, 10),
+                                        thirdDateHash, new UnitMeasure(50, 5),
+                                        fourthDateHash, new UnitMeasure(80, 8)
                                 )
                         ),
                         PICKING, new HistoricalBacklog(
                                 Map.of(
-                                        firstDate, 22,
-                                        secondDate, 111,
-                                        thirdDate, 150,
-                                        fourthDate, 215
+                                        firstDateHash, new UnitMeasure(22, 2),
+                                        secondDateHash, new UnitMeasure(111, 11),
+                                        thirdDateHash, new UnitMeasure(150, 15),
+                                        fourthDateHash, new UnitMeasure(215, 21)
                                 )
                         ),
                         PACKING, new HistoricalBacklog(
                                 Map.of(
-                                        firstDate, 0,
-                                        secondDate, 120,
-                                        thirdDate, 220,
-                                        fourthDate, 420
+                                        firstDateHash, new UnitMeasure(0, 0),
+                                        secondDateHash, new UnitMeasure(120, 12),
+                                        thirdDateHash, new UnitMeasure(220,22),
+                                        fourthDateHash, new UnitMeasure(420, 42)
                                 )
                         )
                 ));

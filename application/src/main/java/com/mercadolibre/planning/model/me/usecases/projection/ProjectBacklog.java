@@ -68,7 +68,7 @@ public class ProjectBacklog implements UseCase<BacklogProjectionInput, Projected
                                 input.getDateTo(),
                                 null,
                                 input.getGroupType(),
-                                true)
+                                false)
                 );
 
         return List.of(
