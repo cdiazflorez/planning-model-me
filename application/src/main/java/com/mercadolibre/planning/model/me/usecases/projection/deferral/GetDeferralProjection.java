@@ -138,7 +138,8 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
             chart.add(ChartData.fromProjection(
                     convertToTimeZone(zoneId, p.getDate()),
-                    p.getProjectedEndDate(),
+                    p.getProjectedEndDate() == null
+                            ? null : convertToTimeZone(zoneId, p.getProjectedEndDate()),
                     convertToTimeZone(zoneId, dateTo),
                     p.getRemainingQuantity(),
                     p.getProcessingTime(),
