@@ -43,6 +43,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.MAX_CAPACITY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
@@ -97,7 +98,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
             final List<ProjectionResult> projections =
                     getProjection(input, dateFromToProject, dateToToProject, backlogsToProject);
 
-            setDeferrals(projections, config.getZoneId());
+            setDeferrals(projections, dateFromToProject);
 
             final List<ProjectionResult> projectionsToShow =
                     filterProjectionsInRange(dateFromToShow, dateToToShow, projections);
@@ -171,9 +172,8 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
     }
 
     private void setDeferrals(final List<ProjectionResult> projections,
-                              final ZoneId zoneId) {
-
-        boolean isDeferred = false;
+                              final ZonedDateTime currentDate) {
+        boolean isDeferredByCap5 = false;
 
         for (ProjectionResult p : projections) {
             final ZonedDateTime projectedEndDate = p.getProjectedEndDate();
@@ -181,10 +181,16 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                     p.getDate().minusMinutes(p.getProcessingTime().getValue());
 
             if (projectedEndDate == null || projectedEndDate.isAfter(cutOffDate)) {
-                isDeferred = true;
+                isDeferredByCap5 = true;
             }
 
-            p.setDeferred(isDeferred);
+            // If current date is after the 'pay before', the CPT is already not receiving sales
+            boolean cutOffIsExceeded = isDeferredByCap5;
+            if (cutOffDate.isBefore(currentDate)) {
+                cutOffIsExceeded = false;
+            }
+
+            p.setDeferred(isDeferredByCap5 && cutOffIsExceeded);
         }
     }
 
