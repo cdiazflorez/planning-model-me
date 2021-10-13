@@ -28,6 +28,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Met
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
@@ -38,10 +39,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class GetDeferralProjectionTest {
 
-    private static final ZonedDateTime CPT_0 = getCurrentUtcDate().plusHours(2);
-    private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
-    private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
-    private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(6);
+    private static final ZonedDateTime CPT_0 = getCurrentUtcDateTime().plusHours(2);
+    private static final ZonedDateTime CPT_1 = getCurrentUtcDateTime().plusHours(4);
+    private static final ZonedDateTime CPT_2 = getCurrentUtcDateTime().plusHours(5);
+    private static final ZonedDateTime CPT_3 = getCurrentUtcDateTime().plusHours(6);
 
     @InjectMocks
     private GetDeferralProjection getDeferralProjection;
@@ -86,7 +87,7 @@ public class GetDeferralProjectionTest {
         //THEN
         assertEquals("Proyección", projection.getTitle());
         assertEquals(2, projection.getTabs().size());
-        assertEquals(true, projection.getData().getChart().getData().get(0).getIsDeferred());
+        assertEquals(false, projection.getData().getChart().getData().get(0).getIsDeferred());
         assertEquals(true, projection.getData().getChart().getData().get(1).getIsDeferred());
         assertEquals(true, projection.getData().getChart().getData().get(2).getIsDeferred());
         assertEquals(false, projection.getData().getChart().getData().get(3).getIsDeferred());
