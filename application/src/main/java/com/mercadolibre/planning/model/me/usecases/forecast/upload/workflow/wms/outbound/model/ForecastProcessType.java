@@ -22,7 +22,9 @@ public enum ForecastProcessType {
     WORKERS(1, MetricUnit.WORKERS),
     ACTIVE_WORKERS(2, MetricUnit.WORKERS),
     HEADCOUNT_PRODUCTIVITY(3, UNITS_PER_HOUR),
-    MAX_CAPACITY(0, UNITS_PER_HOUR);
+    MAX_CAPACITY(0, UNITS_PER_HOUR),
+    BACKLOG_LOWER_LIMIT(20, MINUTES),
+    BACKLOG_UPPER_LIMIT(21, MINUTES);
 
     private final int columnOrder;
     private final MetricUnit metricUnit;

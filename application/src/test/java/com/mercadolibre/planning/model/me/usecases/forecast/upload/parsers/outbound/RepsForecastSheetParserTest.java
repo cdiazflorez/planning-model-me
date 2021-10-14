@@ -36,7 +36,7 @@ class RepsForecastSheetParserTest {
 
     private static final String VALID_FILE_PATH = "forecast_example.xlsx";
     private static final String INVALID_FILE_PATH = "forecast_example_invalid_date.xlsx";
-
+    private static final String LIMITOUT_FILE_PATH = "forecast_limit_out.xlsx";
     @InjectMocks
     private RepsForecastSheetParser repsForecastSheetParser;
 
@@ -62,6 +62,22 @@ class RepsForecastSheetParserTest {
     }
 
     @Test
+    @DisplayName("Cell value out of range")
+    void parseLimitOutRange() {
+        // GIVEN
+        givenAnLimitOutConfigurationAndMeliSheetBy();
+
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+            .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+
+        //WHEN
+        assertThrows(
+                ForecastParsingException.class,
+                () -> whenExcelIsParsedBy(WAREHOUSE_ID)
+        );
+    }
+
+    @Test
     @DisplayName("Excel parsed with unmatched warehouse error")
     void parseWhenUnmatchWarehouseId() {
         // GIVEN
@@ -69,6 +85,10 @@ class RepsForecastSheetParserTest {
         // WHEN - THEN
         assertThrows(UnmatchedWarehouseException.class,
                 () -> whenExcelIsParsedBy(incorrectWarehouseId));
+    }
+
+    private void givenAnLimitOutConfigurationAndMeliSheetBy() {
+        repsSheet = getMeliSheetFrom(WORKERS.getName(), LIMITOUT_FILE_PATH);
     }
 
     private void givenAnCorrectConfigurationAndMeliSheetBy() {
@@ -82,9 +102,9 @@ class RepsForecastSheetParserTest {
     private void thenForecastSheetDtoIsNotNull() {
         assertNotNull(forecastSheetDto);
         final Map<ForecastColumnName, Object> forecastSheetDtoMap = forecastSheetDto.getValues();
-        assertEquals(50.11, forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
-        assertEquals(30.56, forecastSheetDtoMap.get(MULTI_BATCH_DISTRIBUTION));
-        assertEquals(19.33, forecastSheetDtoMap.get(MULTI_ORDER_DISTRIBUTION));
+        assertEquals(41.80, forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
+        assertEquals(26.56, forecastSheetDtoMap.get(MULTI_BATCH_DISTRIBUTION));
+        assertEquals(31.65, forecastSheetDtoMap.get(MULTI_ORDER_DISTRIBUTION));
 
     }
 

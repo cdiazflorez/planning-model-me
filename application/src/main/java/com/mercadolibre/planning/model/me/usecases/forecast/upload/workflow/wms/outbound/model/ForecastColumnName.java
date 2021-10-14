@@ -12,7 +12,8 @@ public enum ForecastColumnName {
     PLANNING_DISTRIBUTION,
     CARRIER_ID,
     SERVICE_ID,
-    CANALIZATION;
+    CANALIZATION,
+    BACKLOG_LIMITS;
 
     public String getName() {
         return name().toLowerCase();

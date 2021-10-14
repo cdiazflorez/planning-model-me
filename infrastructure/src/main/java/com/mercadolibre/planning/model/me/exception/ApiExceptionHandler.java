@@ -118,6 +118,15 @@ public class ApiExceptionHandler {
         return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }
 
+    @ExceptionHandler(NullValueAtCellException.class)
+    public ResponseEntity<ErrorResponse> handleNullValueAtCellException(
+            NullValueAtCellException exception,
+            HttpServletRequest request) {
+
+        log.error(exception.getMessage(), exception);
+        return getBadRequestResponseEntity(exception, request);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             final Exception exception,

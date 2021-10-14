@@ -38,7 +38,7 @@ public class DefaultForecastParser implements ForecastParser {
                         );
                     }
 
-                    final ForecastSheetDto parsedSheet = sheetParser. parse(warehouseId, sheet);
+                    final ForecastSheetDto parsedSheet = sheetParser.parse(warehouseId, sheet);
 
                     return parsedSheet;
                 })
