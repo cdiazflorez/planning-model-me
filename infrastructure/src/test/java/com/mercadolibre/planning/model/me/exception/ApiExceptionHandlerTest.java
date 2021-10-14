@@ -132,6 +132,24 @@ class ApiExceptionHandlerTest {
         thenThrow(exception, expectedResponse);
     }
 
+    @Test
+    @DisplayName("Handle NullValueAtCellException")
+    void handleNullValueAtCellException() {
+        // GIVEN
+        final NullValueAtCellException exception = new NullValueAtCellException("C2");
+        final ErrorResponse expectedResponse = ErrorResponse.builder()
+                .error("bad_request")
+                .message("El buffer (C2) no puede estar vacío, y debe ser un número válido")
+                .status(HttpStatus.BAD_REQUEST)
+                .build();
+
+        // WHEN
+        response = apiExceptionHandler.handleException(exception, request);
+
+        // THEN
+        thenThrow(exception, expectedResponse);
+    }
+
     private void thenThrow(Exception exception, ErrorResponse expectedResponse) {
         verify(request).setAttribute(EXCEPTION_ATTRIBUTE, exception);
 

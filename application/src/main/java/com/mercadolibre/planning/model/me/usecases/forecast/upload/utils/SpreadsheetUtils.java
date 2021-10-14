@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.upload.utils;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
+import com.mercadolibre.planning.model.me.exception.NullValueAtCellException;
 import com.mercadolibre.spreadsheet.MeliCell;
 import com.mercadolibre.spreadsheet.MeliDocument;
 import com.mercadolibre.spreadsheet.MeliRow;
@@ -102,8 +103,7 @@ public class SpreadsheetUtils {
         }
     }
 
-    public static double getDoubleValueAt(final MeliSheet sheet, final int row,
-            final int column) {
+    public static double getDoubleValueAt(final MeliSheet sheet, final int row, final int column) {
         MeliCell cell = getCellAt(sheet, row, column);
         try {
             final String value = validateNumberValue(cell);
@@ -114,6 +114,25 @@ public class SpreadsheetUtils {
                     cell.getAddress(), sheet.getSheetName()), e);
         }
     }
+
+    public static double getDoubleValueOrFail(final MeliSheet sheet,
+                                              final int row,
+                                              final int column) {
+        MeliCell cell = getCellAt(sheet, row, column);
+        try {
+            if (cell.getValue() == null || cell.getValue().isEmpty()) {
+                throw new NullValueAtCellException(getCellAddress(column, row));
+            } else {
+                String value = cell.getValue().replace(".",",");
+                return numberFormatter.parse(value).doubleValue();
+            }
+
+        } catch (ParseException | NullPointerException e) {
+            throw new ForecastParsingException(
+                    format(PARSE_ERROR_MESSAGE, cell.getAddress(), sheet.getSheetName()), e);
+        }
+    }
+
 
     private static String validateNumberValue(MeliCell cell) {
         return cell.getValue() == null || cell.getValue().isEmpty() ? "0,00"
@@ -197,8 +216,8 @@ public class SpreadsheetUtils {
         return durationValue;
     }
 
-    private static String getCellAddress(final int row, final int column) {
-        return String.valueOf(((char) (((int) CHAR_LETTER_A) + row)) + "" + (column + 1));
+    private static String getCellAddress(final int column, final int row) {
+        return String.valueOf(((char) (((int) CHAR_LETTER_A) + column)) + "" + (row + 1));
     }
 
     private static MeliCell getCellAt(final MeliSheet sheet,final MeliRow row, final int column) {
@@ -210,7 +229,7 @@ public class SpreadsheetUtils {
             return sheet.getRowAt(row).getCellAt(column);
         } catch (NullPointerException e) {
             throw new ForecastParsingException(
-                    format("Error while trying to parse cell (%s)", getCellAddress(row, column)), e
+                    format("Error while trying to parse cell (%s)", getCellAddress(column, row)), e
             );
         }
     }

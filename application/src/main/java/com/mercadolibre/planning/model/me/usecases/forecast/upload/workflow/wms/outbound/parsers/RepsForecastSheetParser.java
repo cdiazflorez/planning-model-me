@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.AreaDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
@@ -11,9 +12,11 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PolyvalentProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistributionData;
+
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.RepsDistributionDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.parsers.SheetParser;
+import com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.GenerateBacklogLimitUtil;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastHeadcountProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessName;
@@ -37,6 +40,8 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getIntValueAtFromDuration;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getLongValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.getStringValueAt;
+
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
@@ -66,6 +71,7 @@ public class RepsForecastSheetParser implements SheetParser {
 
     @Override
     public ForecastSheetDto parse(final String warehouseId, final MeliSheet sheet) {
+
         validateIfWarehouseIdIsCorrect(warehouseId, sheet);
 
         final LogisticCenterConfiguration config =
@@ -83,7 +89,9 @@ public class RepsForecastSheetParser implements SheetParser {
                         PROCESSING_DISTRIBUTION, repsDistributionDto.getProcessingDistributions(),
                         HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet),
                         POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet),
-                        HEADCOUNT_PRODUCTIVITY, repsDistributionDto.getHeadcountProductivities()
+                        HEADCOUNT_PRODUCTIVITY, repsDistributionDto.getHeadcountProductivities(),
+                        BACKLOG_LIMITS, GenerateBacklogLimitUtil
+                                .generateBacklogLimitBody(config, sheet)
                 )
         );
     }

@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.upload;
 
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
@@ -7,6 +8,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PolyvalentProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
+
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.FileUploadDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastSheetDto;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils.createMeliDocumentFrom;
+import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
@@ -68,6 +71,8 @@ public class ParseForecastFromFile implements UseCase<FileUploadDto, Forecast> {
                         parsedValues.get(HEADCOUNT_PRODUCTIVITY))
                 .polyvalentProductivities((List<PolyvalentProductivity>)
                         parsedValues.get(POLYVALENT_PRODUCTIVITY))
+                .backlogLimits((List<BacklogLimit>)
+                        parsedValues.get(BACKLOG_LIMITS))
                 .build();
     }
 
