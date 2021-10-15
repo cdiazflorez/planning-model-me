@@ -13,7 +13,9 @@ public enum EntityType {
     THROUGHPUT("Throughput"),
     BACKLOG(null),
     ORDER_DISTRIBUTION(null),
-    REMAINING_PROCESSING(null);
+    REMAINING_PROCESSING(null),
+    BACKLOG_UPPER_LIMIT(null),
+    BACKLOG_LOWER_LIMIT(null);
 
     private String title;
 
