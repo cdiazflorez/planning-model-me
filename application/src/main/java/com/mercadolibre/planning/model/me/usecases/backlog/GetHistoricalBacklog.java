@@ -124,7 +124,7 @@ class GetHistoricalBacklog {
                 .stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> UnitMeasure.from(
+                        entry -> UnitMeasure.fromUnits(
                                 entry.getValue(),
                                 throughput.get(entry.getKey())
                         ))

@@ -24,10 +24,6 @@ abstract class GetConsolidatedBacklog {
 
     private static final long MAX_ALLOWED_MINUTES_SHIFT = 5L;
 
-    protected static UnitMeasure emptyMeasure() {
-        return new UnitMeasure(null, null);
-    }
-
     protected ZonedDateTime currentDatetime(final List<Backlog> backlogs) {
         final ZonedDateTime now = DateUtils.getCurrentUtcDateTime();
         return backlogs.stream()
@@ -109,6 +105,8 @@ abstract class GetConsolidatedBacklog {
                 .date(date)
                 .current(description.getTotal())
                 .historical(description.getHistorical())
+                .minLimit(description.getMinLimit())
+                .maxLimit(description.getMaxLimit())
                 .build();
     }
 }

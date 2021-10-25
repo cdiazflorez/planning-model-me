@@ -9,6 +9,8 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
@@ -80,6 +82,9 @@ class GetBacklogMonitorTest {
     @Mock
     private GetHistoricalBacklog getHistoricalBacklog;
 
+    @Mock
+    private GetBacklogLimits getBacklogLimits;
+
     private MockedStatic<DateUtils> mockDt;
 
     @BeforeEach
@@ -100,6 +105,7 @@ class GetBacklogMonitorTest {
         mockHistoricalBacklog();
         mockProjectedBacklog();
         mockThroughput();
+        mockBacklogLimits();
 
         // WHEN
         final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input());
@@ -113,8 +119,9 @@ class GetBacklogMonitorTest {
 
         assertWavingBacklogResults(waving);
         assertEquals(200, waving.getBacklogs().get(0).getHistorical().getUnits());
-        assertEquals(80, waving.getBacklogs().get(3).getHistorical().getUnits());
         assertEquals(20, waving.getBacklogs().get(0).getHistorical().getMinutes());
+
+        assertEquals(80, waving.getBacklogs().get(3).getHistorical().getUnits());
         assertEquals(8, waving.getBacklogs().get(3).getHistorical().getMinutes());
 
     }
@@ -125,10 +132,12 @@ class GetBacklogMonitorTest {
         when(backlogApiGateway.getBacklog(any(BacklogRequest.class)))
                 .thenThrow(new TestException());
 
+        final var input = input();
+
         // WHEN
         assertThrows(
                 TestException.class,
-                () -> getBacklogMonitor.execute(input())
+                () -> getBacklogMonitor.execute(input)
         );
     }
 
@@ -139,6 +148,7 @@ class GetBacklogMonitorTest {
         mockBacklogApiResponse();
         mockHistoricalBacklog();
         mockThroughput();
+        mockBacklogLimits();
 
         when(backlogProjection.execute(any(BacklogProjectionInput.class)))
                 .thenThrow(new TestException());
@@ -162,6 +172,7 @@ class GetBacklogMonitorTest {
         mockBacklogApiResponse();
         mockProjectedBacklog();
         mockThroughput();
+        mockBacklogLimits();
 
         final var request = GetHistoricalBacklogInput.builder()
                 .warehouseId(WAREHOUSE_ID)
@@ -198,6 +209,7 @@ class GetBacklogMonitorTest {
         mockBacklogApiResponse();
         mockHistoricalBacklog();
         mockProjectedBacklog();
+        mockBacklogLimits();
 
         final GetThroughputInput request = GetThroughputInput.builder()
                 .warehouseId(WAREHOUSE_ID)
@@ -318,7 +330,7 @@ class GetBacklogMonitorTest {
                                 Map.of(
                                         firstDateHash, new UnitMeasure(0, 0),
                                         secondDateHash, new UnitMeasure(120, 12),
-                                        thirdDateHash, new UnitMeasure(220,22),
+                                        thirdDateHash, new UnitMeasure(220, 22),
                                         fourthDateHash, new UnitMeasure(420, 42)
                                 )
                         )
@@ -386,6 +398,36 @@ class GetBacklogMonitorTest {
                                         DATES.get(3), 300)
                         )
                 ));
+    }
+
+    private void mockBacklogLimits() {
+        final var input = GetBacklogLimitsInput.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(FBM_WMS_OUTBOUND)
+                .processes(of(WAVING, PICKING, PACKING))
+                .dateFrom(DATE_FROM)
+                .dateTo(DATE_TO)
+                .build();
+
+        when(getBacklogLimits.execute(input)).thenReturn(
+                Map.of(
+                        WAVING, Map.of(
+                                DATES.get(0), new BacklogLimit(5, 15),
+                                DATES.get(1), new BacklogLimit(7, 21),
+                                DATES.get(2), new BacklogLimit(3, 21),
+                                DATES.get(3), new BacklogLimit(0, -1)),
+                        PICKING, Map.of(
+                                DATES.get(0), new BacklogLimit(-1, -1),
+                                DATES.get(1), new BacklogLimit(-1, -1),
+                                DATES.get(2), new BacklogLimit(-1, -1),
+                                DATES.get(3), new BacklogLimit(-1, -1)),
+                        PACKING, Map.of(
+                                DATES.get(0), new BacklogLimit(0, 20),
+                                DATES.get(1), new BacklogLimit(0, 15),
+                                DATES.get(2), new BacklogLimit(0, 10),
+                                DATES.get(3), new BacklogLimit(0, 10))
+                )
+        );
     }
 
     private void mockDateUtils(MockedStatic<DateUtils> mockDt) {

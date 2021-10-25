@@ -8,6 +8,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
@@ -78,6 +80,9 @@ class GetBacklogMonitorDetailsTest {
     @Mock
     private GetHistoricalBacklog getHistoricalBacklog;
 
+    @Mock
+    private GetBacklogLimits getBacklogLimits;
+
     private MockedStatic<DateUtils> mockDt;
 
     @BeforeEach
@@ -100,6 +105,7 @@ class GetBacklogMonitorDetailsTest {
         mockProjectedBacklog();
         mockThroughput(PICKING);
         mockHistoricalBacklog(PICKING);
+        mockBacklogLimits(PICKING);
 
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
                 .warehouseId(WAREHOUSE_ID)
@@ -152,6 +158,7 @@ class GetBacklogMonitorDetailsTest {
         mockProjectedBacklog();
         mockThroughput(PICKING);
         mockHistoricalBacklog(PICKING);
+        mockBacklogLimits(PICKING);
 
         // WHEN
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
@@ -203,6 +210,7 @@ class GetBacklogMonitorDetailsTest {
         mockTargetBacklog();
         mockThroughput(WAVING);
         mockHistoricalBacklog(WAVING);
+        mockBacklogLimits(WAVING);
 
         // WHEN
         GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
@@ -374,6 +382,27 @@ class GetBacklogMonitorDetailsTest {
                                 )
                         )
                 ));
+    }
+
+    private void mockBacklogLimits(ProcessName process) {
+        final var input = GetBacklogLimitsInput.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(FBM_WMS_OUTBOUND)
+                .processes(of(process))
+                .dateFrom(DATE_FROM)
+                .dateTo(DATE_TO)
+                .build();
+
+        final var result = Map.of(
+                DATES.get(0), new BacklogLimit(5, 15),
+                DATES.get(1), new BacklogLimit(7, 21),
+                DATES.get(2), new BacklogLimit(3, 21),
+                DATES.get(3), new BacklogLimit(0, -1)
+        );
+
+        when(getBacklogLimits.execute(input)).thenReturn(
+                Map.of(process, result)
+        );
     }
 
     private void mockDateUtils(MockedStatic<DateUtils> mockDt) {
