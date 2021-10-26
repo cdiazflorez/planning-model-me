@@ -5,9 +5,8 @@ import lombok.Value;
 import java.util.List;
 
 @Value
-public class Aggregation {
-
-    final String name;
-
-    final List<Result> results;
+public class StaffingProcess {
+    private String name;
+    private ProcessTotals totals;
+    private List<Area> areas;
 }

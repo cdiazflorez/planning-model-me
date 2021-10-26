@@ -73,7 +73,8 @@ public class RestClientConfig {
                                 outboundWaveClientProperties),
                         restPool(OUTBOUND_UNIT_SEARCH.name(),
                                 outboundUnitSearchClientProperties),
-                        restPool(STAFFING.name(), staffingClientProperties),
+                        restPool(STAFFING.name(), staffingClientProperties, localCache(
+                                "staffing", 25)),
                         restPool(BACKLOG.name(), backlogClientProperties)
                 )
                 .build();

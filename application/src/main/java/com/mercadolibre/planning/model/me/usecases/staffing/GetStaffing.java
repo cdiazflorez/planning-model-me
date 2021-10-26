@@ -13,11 +13,11 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.staffing.StaffingGateway;
-import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Aggregation;
-import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.GetStaffingRequest;
-import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Operation;
-import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Result;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.ProcessTotals;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingProcess;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingResponse;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingWorkflowResponse;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Totals;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInput;
 import lombok.AllArgsConstructor;
@@ -28,9 +28,14 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalDouble;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.util.stream.Collectors.toList;
@@ -39,12 +44,6 @@ import static java.util.stream.Collectors.toList;
 @AllArgsConstructor
 public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
-    private static final int AREA_INDEX = 3;
-
-    private final PlanningModelGateway planningModelGateway;
-
-    private final StaffingGateway staffingGateway;
-
     //TODO: Unificar esta config que esta repetida en staffing-api
     private static final Map<String, List<String>> WORKFLOWS = Map.of(
             "fbm-wms-outbound", List.of(
@@ -52,186 +51,132 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
             ),
             "fbm-wms-inbound", List.of("receiving", "check_in", "put_away")
     );
+    private final PlanningModelGateway planningModelGateway;
+    private final StaffingGateway staffingGateway;
 
     @Override
     public Staffing execute(final GetStaffingInput input) {
-
         final String logisticCenterId = input.getLogisticCenterId();
         final ZonedDateTime now = getCurrentUtcDateTime();
 
-        final StaffingResponse lastHourMetrics = getStaffingMetrics(
-                logisticCenterId, now, 60, aggregateByProcess());
+        final StaffingResponse staffing = staffingGateway.getStaffing(input.getLogisticCenterId());
 
-        final StaffingResponse lastMinutesMetrics = getStaffingMetrics(
-                logisticCenterId, now, 11, aggregateByProcess(), aggregateByArea());
-
-        return mapMetricsResults(logisticCenterId, now, lastHourMetrics, lastMinutesMetrics);
+        return mapMetricsResults(logisticCenterId, now, staffing);
     }
 
     private Staffing mapMetricsResults(final String logisticCenterId,
                                        final ZonedDateTime now,
-                                       final StaffingResponse lastHourMetrics,
-                                       final StaffingResponse lastMinutesMetrics) {
+                                       final StaffingResponse staffing) {
 
         final List<StaffingWorkflow> workflows = new ArrayList<>();
 
-        final List<Result> productivityMetrics =
-                findResultsInAggregation(lastHourMetrics, "staffing_by_process");
-        final List<Result> quantityMetrics =
-                findResultsInAggregation(lastMinutesMetrics, "staffing_by_process");
-        final List<Result> areaMetrics =
-                findResultsInAggregation(lastMinutesMetrics, "staffing_by_area");
+        final Map<String, StaffingWorkflowResponse> staffingByWorkflow = staffing.getWorkflows()
+                .stream()
+                .collect(Collectors.toMap(StaffingWorkflowResponse::getName, Function.identity()));
 
         WORKFLOWS.forEach((workflow, processNames) -> {
             final Map<EntityType, List<Entity>> forecastStaffing;
             //TODO: Eliminar este IF cuando planning model api devuelva otros workflows
             if ("fbm-wms-outbound".equals(workflow)) {
-                forecastStaffing = getForecastStaffing(logisticCenterId,
-                        processNames, now);
+                forecastStaffing = getForecastStaffing(logisticCenterId, processNames, now);
             } else {
                 forecastStaffing = Map.of(EntityType.PRODUCTIVITY, Collections.emptyList());
             }
 
-            final List<Process> processes = processNames.stream().map(p -> {
-                final Worker lastMinutesWorker = calculateWorkersQty(quantityMetrics, workflow, p);
-                final Worker lastHourWorker = calculateWorkersQty(productivityMetrics, workflow, p);
-                final Integer productivity =
-                        calculateNetProductivity(productivityMetrics, workflow, p);
+            final StaffingWorkflowResponse staffingWorkflow = staffingByWorkflow.get(workflow);
+            final Map<String, StaffingProcess> staffingByProcess = staffingWorkflow.getProcesses()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            StaffingProcess::getName,
+                            Function.identity()
+                    ));
 
-                return Process.builder()
-                        .process(p)
-                        .netProductivity(productivity)
-                        .workers(lastMinutesWorker)
-                        .areas(createAreas(areaMetrics, workflow, p))
-                        .throughput(productivity * lastHourWorker.getBusy())
-                        .targetProductivity(filterProductivity(forecastStaffing, p))
-                        .build();
-            }).collect(toList());
+            final List<Process> processes = processNames.stream()
+                    .map(process -> toProcess(
+                            process,
+                            staffingByProcess.get(process),
+                            filterProductivity(forecastStaffing, process))
+                    ).collect(toList());
 
-            final int totalNonSystemic = calculateNonSystemicWorkersQty(quantityMetrics, workflow);
+            final Integer totalNonSystemic = staffingWorkflow.getTotals().getWorkingNonSystemic();
+            final Integer totalSystemic = staffingWorkflow.getTotals().getWorkingSystemic();
+            final Integer totalIdle = staffingWorkflow.getTotals().getIdle();
+
+            final Integer totalWorkers =
+                    total(Stream.of(totalIdle, totalSystemic, totalNonSystemic));
+
             workflows.add(StaffingWorkflow.builder()
                     .workflow(workflow)
                     .processes(processes)
-                    .totalWorkers(calculateTotalWorkers(processes, totalNonSystemic))
+                    .totalWorkers(totalWorkers)
                     .totalNonSystemicWorkers(totalNonSystemic)
                     .build());
         });
 
+        final Integer totalWorkers =
+                total(workflows.stream().map(StaffingWorkflow::getTotalWorkers));
+
         return Staffing.builder()
-                .totalWorkers(workflows.stream().mapToInt(StaffingWorkflow::getTotalWorkers).sum())
+                .totalWorkers(totalWorkers)
                 .workflows(workflows)
                 .build();
     }
 
-    private Integer calculateTotalWorkers(final List<Process> processes,
-                                          final int nonSystemicWorkers) {
-
-        final int systemicWorkers = processes.stream()
-                .mapToInt(process ->
-                        process.getWorkers().getBusy() + process.getWorkers().getIdle())
-                .sum();
-
-        return nonSystemicWorkers + systemicWorkers;
-    }
-
-    private Integer calculateNetProductivity(final List<Result> results,
-                                             final String workflow,
-                                             final String process) {
-        return (int) findResultByKey(results, workflow, process, "working_systemic").stream()
-                .mapToInt(result -> result.getResult("net_productivity"))
-                .average()
-                .orElse(0);
-    }
-
-    private Integer calculateNonSystemicWorkersQty(final List<Result> results,
-                                                   final String workflow) {
-
-        return calculateWorkersQtyByKeys(results, workflow, "working_non_systemic");
-    }
-
-    private Worker calculateWorkersQty(final List<Result> results,
-                                       final String workflow,
-                                       final String process) {
-
-        final Integer idle = calculateWorkersQtyByKeys(results,
-                workflow, process, "idle");
-
-        final Integer working = calculateWorkersQtyByKeys(results,
-                workflow, process, "working_systemic");
-
-        return new Worker(idle, working);
-    }
-
-    private Integer calculateWorkersQtyByKeys(final List<Result> results, final String... keys) {
-
-        return findResultByKey(results, keys).stream()
-                .mapToInt(result -> result.getResult("total_workers"))
-                .sum();
-    }
-
-    private List<Area> createAreas(final List<Result> results,
-                                   final String workflow,
-                                   final String process) {
-
-        return findResultByKey(results, workflow, process, "working_systemic").stream()
-                .filter(result -> !result.getKeys().get(AREA_INDEX).equals(""))
-                .map(result -> new Area(
-                        result.getKeys().get(AREA_INDEX),
-                        result.getResult("effective_productivity"),
-                        new Worker(null, result.getResult("total_workers"))
-                )).collect(toList());
-    }
-
-    private List<Result> findResultByKey(final List<Result> results, final String... keys) {
-        return results.stream()
-                .filter(result -> result.getKeys().containsAll(List.of(keys)))
+    private Integer total(Stream<Integer> values) {
+        final List<Integer> validValues = values
+                .filter(Objects::nonNull)
                 .collect(toList());
+
+        return validValues.isEmpty() ? null : validValues.stream().mapToInt(i -> i).sum();
     }
 
-    private Aggregation aggregateByProcess() {
-        return new Aggregation(
-                "staffing_by_process",
-                List.of("workflow", "process", "worker_status"),
-                List.of(
-                        new Operation("total_workers", "worker_id", "count"),
-                        new Operation("net_productivity", "net_productivity", "avg")
-                )
-        );
+    private Double getProductivity(String process, ProcessTotals totals) {
+        if ("packing".equals(process) || "packing_wall".equals(process)) {
+            return totals.getEffProductivity();
+        }
+
+        return totals.getNetProductivity();
     }
 
-    private Aggregation aggregateByArea() {
-        return new Aggregation(
-                "staffing_by_area",
-                List.of("workflow", "process", "worker_status", "area"),
-                List.of(
-                        new Operation("total_workers", "worker_id", "count"),
-                        new Operation(
-                                "effective_productivity",
-                                "effective_productivity",
-                                "avg"))
-        );
-    }
+    private Process toProcess(final String process,
+                              final StaffingProcess processStaffing,
+                              final Integer targetProductivity) {
 
-    private StaffingResponse getStaffingMetrics(final String logisticCenterId,
-                                            final ZonedDateTime now,
-                                            final long minutes,
-                                            final Aggregation... aggregations) {
+        final ProcessTotals totals = processStaffing.getTotals();
 
-        return staffingGateway.getStaffing(new GetStaffingRequest(
-                now.minusMinutes(minutes),
-                now,
-                logisticCenterId,
-                List.of(aggregations))
-        );
-    }
+        final Double productivity = getProductivity(process, totals);
+        final Integer idle = totals.getIdle();
+        final Integer working = totals.getWorkingSystemic();
+        final Double throughput = totals.getThroughput();
 
-    private List<Result> findResultsInAggregation(final StaffingResponse results,
-                                                  final String name) {
-        return results.getAggregations().stream()
-                .filter(aggregation -> aggregation.getName().equals(name))
-                .findFirst()
-                .map(aggregation -> aggregation.getResults())
-                .orElse(new ArrayList<>());
+        final Integer realProductivity = productivity == null ? null : productivity.intValue();
+        final Integer realThroughput = throughput == null ? null : throughput.intValue();
+
+        final List<Area> areas = processStaffing.getAreas()
+                .stream()
+                .map(area -> {
+                    final Totals areaTotals = area.getTotals();
+                    final Double areaProductivity = areaTotals.getProductivity();
+                    return new Area(
+                            area.getName(),
+                            areaProductivity == null ? null : areaProductivity.intValue(),
+                            new Worker(
+                                    areaTotals.getIdle(),
+                                    areaTotals.getWorkingSystemic()
+                            )
+                    );
+                })
+                .sorted(Comparator.comparing(Area::getArea, Comparator.naturalOrder()))
+                .collect(toList());
+
+        return Process.builder()
+                .process(process)
+                .netProductivity(realProductivity)
+                .workers(new Worker(idle, working))
+                .areas(areas)
+                .throughput(realThroughput)
+                .targetProductivity(targetProductivity)
+                .build();
     }
 
     private Map<EntityType, List<Entity>> getForecastStaffing(final String logisticCenterId,
@@ -259,13 +204,13 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     }
 
     private Integer filterProductivity(final Map<EntityType, List<Entity>> staffingForecast,
-                                            final String process) {
+                                       final String process) {
         final OptionalDouble productivity = staffingForecast.get(EntityType.PRODUCTIVITY).stream()
                 .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
                 .mapToInt(Entity::getValue)
                 .average();
 
-        return productivity.isPresent() ? (int)productivity.getAsDouble() : null;
+        return productivity.isPresent() ? (int) productivity.getAsDouble() : null;
     }
 
 }

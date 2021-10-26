@@ -7,5 +7,6 @@ import java.util.List;
 @Value
 public class StaffingResponse {
 
-    private List<Aggregation> aggregations;
+    private List<StaffingWorkflowResponse> workflows;
+
 }
