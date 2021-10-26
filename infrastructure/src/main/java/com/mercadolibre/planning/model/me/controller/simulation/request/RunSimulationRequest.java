@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.controller.simulation.request;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 

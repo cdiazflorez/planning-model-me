@@ -13,13 +13,14 @@ import com.mercadolibre.planning.model.me.entities.projection.complextable.Compl
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
@@ -35,7 +36,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TimeZone;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
@@ -49,7 +49,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.PROCESSING_TIME;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
@@ -91,12 +90,15 @@ public class GetCptProjectionTest {
     @Mock
     private GetBacklogByDate getBacklog;
 
+    @Mock
+    private GetSimpleDeferralProjection getSimpleDeferralProjection;
+
     @Test
     void testExecute() {
         // Given
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
         final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
-        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(1);
+        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(4);
 
         final GetProjectionInputDto input = GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
@@ -129,6 +131,13 @@ public class GetCptProjectionTest {
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
                 .thenReturn(mockSimpleTable());
 
+        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                currentUtcDateTime,
+                mockBacklog()))).thenReturn(new GetSimpleDeferralProjectionOutput(
+                mockProjections(utcDateTimeFrom),
+                new LogisticCenterConfiguration(getDefault())));
+
         // When
         final Projection projection = getProjection.execute(input);
 
@@ -146,7 +155,7 @@ public class GetCptProjectionTest {
         // Given
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
         final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
-        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(1);
+        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(4);
 
         final GetProjectionInputDto input = GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
@@ -219,14 +228,14 @@ public class GetCptProjectionTest {
         assertEquals(cpt1.format(DATE_SHORT_FORMATTER), chartData1.getTitle());
         assertEquals(cpt1.format(DATE_FORMATTER), chartData1.getCpt());
         assertEquals(projectedEndDate1.format(DATE_FORMATTER), chartData1.getProjectedEndTime());
-        assertEquals(45, chartData1.getProcessingTime().getValue());
+        assertEquals(240, chartData1.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData1.getTooltip(),
                 cpt1.format(HOUR_MINUTES_FORMATTER),
                 "-",
                 projectedEndDate1.format(HOUR_MINUTES_FORMATTER),
-                "45 minutos",
-                null);
+                "4 horas",
+                "Diferido");
 
         final ZonedDateTime cpt2 = convertToTimeZone(zoneId, CPT_2);
         final ZonedDateTime projectedEndDate2 = convertToTimeZone(zoneId,
@@ -241,7 +250,7 @@ public class GetCptProjectionTest {
                 "-",
                 projectedEndDate2.format(HOUR_MINUTES_FORMATTER),
                 "4 horas",
-                null);
+                "Diferido");
 
         final ZonedDateTime cpt3 = convertToTimeZone(zoneId, CPT_3);
         final ZonedDateTime projectedEndDate3 = convertToTimeZone(zoneId,
@@ -256,7 +265,7 @@ public class GetCptProjectionTest {
                 "100",
                 projectedEndDate3.format(HOUR_MINUTES_FORMATTER),
                 "4 horas",
-                null);
+                "Diferido");
 
         final ZonedDateTime cpt4 = convertToTimeZone(zoneId, CPT_4);
         final ZonedDateTime projectedEndDate4 = convertToTimeZone(zoneId,
@@ -264,14 +273,14 @@ public class GetCptProjectionTest {
         assertEquals(cpt4.format(DATE_SHORT_FORMATTER), chartData4.getTitle());
         assertEquals(cpt4.format(DATE_FORMATTER), chartData4.getCpt());
         assertEquals(projectedEndDate4.format(DATE_FORMATTER), chartData4.getProjectedEndTime());
-        assertEquals(250, chartData4.getProcessingTime().getValue());
+        assertEquals(240, chartData4.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData4.getTooltip(),
                 cpt4.format(HOUR_MINUTES_FORMATTER),
                 "180",
                 projectedEndDate4.format(HOUR_MINUTES_FORMATTER),
-                "4 horas y 10 minutos",
-                null);
+                "4 horas",
+                "Diferido");
 
         final ZonedDateTime cpt5 = convertToTimeZone(zoneId, CPT_5);
         final ZonedDateTime projectedEndDate5 = convertToTimeZone(zoneId,
@@ -279,13 +288,13 @@ public class GetCptProjectionTest {
         assertEquals(cpt5.format(DATE_SHORT_FORMATTER), chartData5.getTitle());
         assertEquals(cpt5.format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(projectedEndDate5.format(DATE_FORMATTER), chartData5.getProjectedEndTime());
-        assertEquals(300, chartData5.getProcessingTime().getValue());
+        assertEquals(240, chartData5.getProcessingTime().getValue());
         assertChartTooltip(
                 chartData5.getTooltip(),
                 cpt5.format(HOUR_MINUTES_FORMATTER),
                 "100",
                 "Excede las 24hs",
-                "5 horas",
+                "4 horas",
                 "Diferido");
     }
 
@@ -368,30 +377,6 @@ public class GetCptProjectionTest {
                 new Backlog(CPT_3, 300),
                 new Backlog(CPT_4, 120)
         );
-    }
-
-    private List<Backlog> mockSales() {
-        return List.of(
-                new Backlog(CPT_1, 350),
-                new Backlog(CPT_2, 235),
-                new Backlog(CPT_3, 200),
-                new Backlog(CPT_4, 120)
-        );
-    }
-
-    private ConfigurationRequest createConfigurationRequest() {
-        return  ConfigurationRequest
-                .builder()
-                .warehouseId(WAREHOUSE_ID)
-                .key(PROCESSING_TIME)
-                .build();
-    }
-
-    private Optional<ConfigurationResponse> mockProcessingTimeConfiguration() {
-        return Optional.ofNullable(ConfigurationResponse.builder()
-                .metricUnit(MINUTES)
-                .value(60)
-                .build());
     }
 
     private SimpleTable mockSuggestedWaves(final ZonedDateTime utcDateTimeFrom,

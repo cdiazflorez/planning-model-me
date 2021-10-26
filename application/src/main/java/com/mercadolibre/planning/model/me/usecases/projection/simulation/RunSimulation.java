@@ -10,6 +10,7 @@ import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 
@@ -28,10 +29,11 @@ public class RunSimulation extends GetProjection {
                             final GetWaveSuggestion getWaveSuggestion,
                             final GetEntities getEntities,
                             final GetProjectionSummary getProjectionSummary,
-                            final GetBacklogByDate getBacklog) {
+                            final GetBacklogByDate getBacklog,
+                            final GetSimpleDeferralProjection getSimpleDeferralProjection) {
 
         super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities,
-                getProjectionSummary, getBacklog);
+                getProjectionSummary, getBacklog, getSimpleDeferralProjection);
     }
 
     @Override
@@ -41,19 +43,19 @@ public class RunSimulation extends GetProjection {
                                                    final List<Backlog> backlogs) {
 
         return planningModelGateway.runSimulation(SimulationRequest.builder()
-                        .warehouseId(input.getWarehouseId())
-                        .workflow(input.getWorkflow())
-                        .processName(PROJECTION_PROCESS_NAMES)
-                        .dateFrom(dateFrom)
-                        .dateTo(dateTo)
-                        .backlog(backlogs.stream()
-                                .map(backlog -> new QuantityByDate(
-                                        backlog.getDate(),
-                                        backlog.getQuantity()))
-                                .collect(toList()))
-                        .simulations(input.getSimulations())
-                        .userId(input.getUserId())
-                        .applyDeviation(true)
-                        .build());
+                .warehouseId(input.getWarehouseId())
+                .workflow(input.getWorkflow())
+                .processName(PROJECTION_PROCESS_NAMES)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .backlog(backlogs.stream()
+                        .map(backlog -> new QuantityByDate(
+                                backlog.getDate(),
+                                backlog.getQuantity()))
+                        .collect(toList()))
+                .simulations(input.getSimulations())
+                .userId(input.getUserId())
+                .applyDeviation(true)
+                .build());
     }
 }

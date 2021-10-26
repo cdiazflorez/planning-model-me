@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.BACKLOG_LOWER_LIMIT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.BACKLOG_UPPER_LIMIT;
 import static java.util.List.of;
 
 @Named
@@ -30,7 +32,7 @@ class GetBacklogLimits {
         final Map<EntityType, List<Entity>> entitiesByType =
                 planningModelGateway.searchEntities(SearchEntitiesRequest.builder()
                         .workflow(input.getWorkflow())
-                        .entityTypes(of(EntityType.BACKLOG_LOWER_LIMIT, EntityType.BACKLOG_UPPER_LIMIT))
+                        .entityTypes(of(BACKLOG_LOWER_LIMIT, BACKLOG_UPPER_LIMIT))
                         .warehouseId(input.getWarehouseId())
                         .dateFrom(input.getDateFrom())
                         .dateTo(input.getDateTo())
@@ -39,7 +41,7 @@ class GetBacklogLimits {
                 );
 
         final Map<ProcessName, Map<ZonedDateTime, Integer>> lowerLimitsByProcessAndDate =
-                entitiesByType.get(EntityType.BACKLOG_LOWER_LIMIT)
+                entitiesByType.get(BACKLOG_LOWER_LIMIT)
                         .stream()
                         .collect(Collectors.groupingBy(
                                 Entity::getProcessName,
@@ -50,7 +52,7 @@ class GetBacklogLimits {
                         ));
 
         final Map<ProcessName, List<Entity>> entitiesByProcess =
-                entitiesByType.get(EntityType.BACKLOG_UPPER_LIMIT)
+                entitiesByType.get(BACKLOG_UPPER_LIMIT)
                         .stream()
                         .collect(Collectors.groupingBy(
                                 Entity::getProcessName,

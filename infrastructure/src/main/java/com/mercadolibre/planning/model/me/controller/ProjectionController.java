@@ -82,7 +82,7 @@ public class ProjectionController {
         datadogMetricService.trackProjection(warehouseId, workflow, "deferral");
 
         return ResponseEntity.of(of(getDeferralProjection.execute(
-                new GetProjectionInput(warehouseId, workflow, date)))
+                new GetProjectionInput(warehouseId, workflow, date, null)))
         );
     }
 
