@@ -21,6 +21,9 @@ import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
@@ -86,6 +89,9 @@ public class RunSimulationTest {
     @Mock
     private GetBacklogByDate getBacklog;
 
+    @Mock
+    private GetSimpleDeferralProjection getSimpleDeferralProjection;
+
     @Test
     public void testExecute() {
         // Given
@@ -96,7 +102,7 @@ public class RunSimulationTest {
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                utcCurrentTime, utcCurrentTime.plusDays(1))))
+                utcCurrentTime, utcCurrentTime.plusDays(4))))
                 .thenReturn(mockedBacklog);
 
         when(planningModelGateway.runSimulation(
@@ -119,8 +125,17 @@ public class RunSimulationTest {
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
                 .thenReturn(mockSimpleTable());
 
+        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                utcDateTimeFrom,
+                mockBacklog())))
+                .thenReturn(new GetSimpleDeferralProjectionOutput(
+                        mockProjections(utcDateTimeFrom),
+                        new LogisticCenterConfiguration(getDefault())));
+
         // When
         final Projection projection = runSimulation.execute(GetProjectionInputDto.builder()
+                .date(utcDateTimeFrom)
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
@@ -228,7 +243,7 @@ public class RunSimulationTest {
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .dateFrom(currentTime)
-                .dateTo(currentTime.plusDays(1))
+                .dateTo(currentTime.plusDays(4))
                 .backlog(backlogs.stream()
                         .map(backlog -> new QuantityByDate(
                                 backlog.getDate(),
@@ -269,17 +284,17 @@ public class RunSimulationTest {
         );
         final List<Map<String, Object>> data = List.of(
                 Map.of("column_1",
-                        Map.of("title","Unidades por onda","subtitle",
+                        Map.of("title", "Unidades por onda", "subtitle",
                                 MONO_ORDER_DISTRIBUTION.getTitle()),
                         "column_2", "0 uds."
                 ),
                 Map.of("column_1",
-                        Map.of("title","Unidades por onda","subtitle",
+                        Map.of("title", "Unidades por onda", "subtitle",
                                 MULTI_BATCH_DISTRIBUTION.getTitle()),
                         "column_2", "100 uds."
                 ),
                 Map.of("column_1",
-                        Map.of("title","Unidades por onda","subtitle",
+                        Map.of("title", "Unidades por onda", "subtitle",
                                 MULTI_ORDER_DISTRIBUTION.getTitle()),
                         "column_2", "100 uds."
                 )

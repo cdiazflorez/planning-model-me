@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 
@@ -24,10 +25,11 @@ public class GetCptProjection extends GetProjection {
                             final GetWaveSuggestion getWaveSuggestion,
                             final GetEntities getEntities,
                             final GetProjectionSummary getProjectionSummary,
-                            final GetBacklogByDate getBacklog) {
+                            final GetBacklogByDate getBacklog,
+                            final GetSimpleDeferralProjection getSimpleDeferralProjection) {
 
         super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities,
-                getProjectionSummary, getBacklog);
+                getProjectionSummary, getBacklog, getSimpleDeferralProjection);
     }
 
     @Override

@@ -4,12 +4,10 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
@@ -28,7 +26,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Met
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
@@ -39,40 +36,30 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class GetDeferralProjectionTest {
 
-    private static final ZonedDateTime CPT_0 = getCurrentUtcDateTime().plusHours(2);
-    private static final ZonedDateTime CPT_1 = getCurrentUtcDateTime().plusHours(4);
-    private static final ZonedDateTime CPT_2 = getCurrentUtcDateTime().plusHours(5);
-    private static final ZonedDateTime CPT_3 = getCurrentUtcDateTime().plusHours(6);
+    private static final ZonedDateTime CPT_0 = getCurrentUtcDate().plusHours(2);
+    private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
+    private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
+    private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(6);
 
     @InjectMocks
     private GetDeferralProjection getDeferralProjection;
 
     @Mock
-    private LogisticCenterGateway logisticCenterGateway;
+    private PlanningModelGateway planningModelGateway;
 
     @Mock
-    private PlanningModelGateway planningModelGateway;
+    private GetProjectionSummary getProjectionSummary;
 
     @Mock
     private GetBacklogByDate getBacklog;
 
     @Mock
-    private GetProjectionSummary getProjectionSummary;
+    private GetSimpleDeferralProjection getSimpleDeferralProjection;
 
     @Test
     public void testExecute() {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(
-                new LogisticCenterConfiguration(getDefault()));
-
-        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                currentUtcDateTime, currentUtcDateTime.plusDays(3))))
-                .thenReturn(mockBacklog());
-
-        when(planningModelGateway.runDeferralProjection(any(ProjectionRequest.class)))
-                .thenReturn(mockProjections());
 
         when(planningModelGateway.getEntities(any(EntityRequest.class))).thenReturn(
                 mockHeadcountEntities());
@@ -80,16 +67,30 @@ public class GetDeferralProjectionTest {
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
                 .thenReturn(mockSimpleTable());
 
+        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
+                currentUtcDateTime, currentUtcDateTime.plusDays(3))))
+                .thenReturn(mockBacklog());
+
+        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                currentUtcDateTime,
+                mockBacklog())))
+                .thenReturn(new GetSimpleDeferralProjectionOutput(
+                        mockProjections(),
+                        new LogisticCenterConfiguration(getDefault())));
+
         // WHEN
         final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND, null));
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                currentUtcDateTime,
+                mockBacklog()));
 
         //THEN
         assertEquals("Proyección", projection.getTitle());
         assertEquals(2, projection.getTabs().size());
         assertEquals(false, projection.getData().getChart().getData().get(0).getIsDeferred());
-        assertEquals(true, projection.getData().getChart().getData().get(1).getIsDeferred());
-        assertEquals(true, projection.getData().getChart().getData().get(2).getIsDeferred());
+        assertEquals(false, projection.getData().getChart().getData().get(1).getIsDeferred());
+        assertEquals(false, projection.getData().getChart().getData().get(2).getIsDeferred());
         assertEquals(false, projection.getData().getChart().getData().get(3).getIsDeferred());
         assertEquals("throughput", projection.getData().getComplexTable1().getData()
                 .get(0).getId());
@@ -102,17 +103,19 @@ public class GetDeferralProjectionTest {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
 
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(
-                new LogisticCenterConfiguration(getDefault()));
-        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                currentUtcDateTime, currentUtcDateTime.plusDays(3))))
-                .thenReturn(mockBacklog());
-        when(planningModelGateway.runDeferralProjection(any(ProjectionRequest.class)))
-                .thenThrow(RuntimeException.class);
+        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                currentUtcDateTime,
+                mockBacklog())))
+                .thenReturn(new GetSimpleDeferralProjectionOutput(
+                        mockProjections(),
+                        new LogisticCenterConfiguration(getDefault())));
 
         // WHEN
         final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND, null));
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                currentUtcDateTime,
+                mockBacklog()));
 
         //THEN
         assertEquals("Proyección", projection.getTitle());

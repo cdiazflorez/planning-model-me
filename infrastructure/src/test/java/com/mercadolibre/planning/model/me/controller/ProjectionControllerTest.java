@@ -144,7 +144,7 @@ public class ProjectionControllerTest {
     void getDeferralProjection() throws Exception {
         // GIVEN
         when(getDeferralProjection.execute(
-                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null)))
+                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any())))
                 .thenReturn(new Projection(
                         "Test",
                         null,
