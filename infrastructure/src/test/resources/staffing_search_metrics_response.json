@@ -1,0 +1,92 @@
+{
+    "workflows": [
+        {
+            "name": "fbm-wms-inbound",
+            "totals": {
+                "idle": 3,
+                "working_systemic": 10,
+                "working_non_systemic": 5
+            },
+            "processes": [
+                {
+                    "name": "receving",
+                    "totals": {
+                        "idle": 10,
+                        "working_systemic": 10,
+                        "net_productivity": 100,
+                        "throughput": 150
+                    }
+                },
+                {
+                    "name": "put_away",
+                    "totals": {
+                        "idle": 1,
+                        "working_systemic": 8,
+                        "net_productivity": 102.30,
+                        "eff_productivity": 92.30,
+                        "throughput": 150.00
+                    },
+                    "areas": [
+                        {
+                            "name": "RK-H",
+                            "totals": {
+                                "idle": 0,
+                                "working_systemic": 2,
+                                "productivity": 183.03,
+                                "throughput": 23.0
+                            }
+                        },
+                        {
+                            "name": "RK-L",
+                            "totals": {
+                                "idle": 10,
+                                "working_systemic": 10,
+                                "productivity": 100,
+                                "throughput": 150
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "fbm-wms-outbound",
+            "totals": {
+                "idle": 10,
+                "working_systemic": 10,
+                "working_non_systemic": 5
+            },
+            "processes": [
+                {
+                    "name": "picking",
+                    "totals": {
+                        "idle": 10,
+                        "working_systemic": 10,
+                        "net_productivity": 100,
+                        "throughput": 150
+                    },
+                    "areas": [
+                        {
+                            "name": "RK-H",
+                            "totals": {
+                                "idle": 10,
+                                "working_systemic": 10,
+                                "productivity": 100,
+                                "throughput": 150
+                            }
+                        },
+                        {
+                            "name": "RK-L",
+                            "totals": {
+                                "idle": 10,
+                                "working_systemic": 10,
+                                "productivity": 100,
+                                "throughput": 150
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
