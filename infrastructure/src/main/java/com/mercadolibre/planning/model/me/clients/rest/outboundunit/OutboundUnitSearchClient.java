@@ -32,6 +32,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.UnitSearchFilters.GROUP_ETD_TO;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.UnitSearchFilters.GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.UnitSearchFilters.GROUP_WAREHOUSE_ID;
+import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
 @Component
@@ -39,7 +40,8 @@ public class OutboundUnitSearchClient extends HttpClient implements UnitSearchGa
 
     private static final String AGGREGATION_BY_ETD = "by_etd";
     private static final String CLIENT_ID = "9999";
-    private static final String SEARCH_REPORTS_URL = "/wms/outbound/units/search/reports";
+    private static final String SEARCH_REPORTS_URL = "/wms/warehouses/%s/outbound/units/search";
+
 
     private final ObjectMapper objectMapper;
 
@@ -61,7 +63,7 @@ public class OutboundUnitSearchClient extends HttpClient implements UnitSearchGa
                         .build()))
                 .build();
         final HttpRequest httpRequest = HttpRequest.builder()
-                .url(SEARCH_REPORTS_URL)
+                .url(format(SEARCH_REPORTS_URL, filters.getWarehouseId()))
                 .POST(requestSupplier(request))
                 .queryParams(defaultParams())
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK))
