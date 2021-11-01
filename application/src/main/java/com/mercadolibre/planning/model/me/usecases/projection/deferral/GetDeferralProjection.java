@@ -8,6 +8,7 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
@@ -62,13 +63,12 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
     private final GetSimpleDeferralProjection getSimpleDeferralProjection;
 
-    private final GetBacklogByDate getBacklog;
+    private final BacklogGateway backlogGateway;
 
     @Override
     public Projection execute(final GetProjectionInput input) {
 
         try {
-
             final ZonedDateTime dateFromToProject = getCurrentUtcDate();
             final ZonedDateTime dateToToProject = dateFromToProject
                     .plusDays(DEFERRAL_DAYS_TO_PROJECT);
@@ -78,9 +78,21 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
             final ZonedDateTime dateToToShow = dateFromToShow.plusDays(DEFERRAL_DAYS_TO_SHOW);
 
-            final List<Backlog> backlogsToProject = getBacklog.execute(
-                    new GetBacklogByDateDto(input.getWorkflow(),
-                            input.getLogisticCenterId(), dateFromToProject, dateToToProject));
+            final List<Backlog> backlogsToProject;
+            if (input.isNewCap5Logic()) {
+                backlogsToProject = mapBacklog(backlogGateway.getBacklog(
+                        input.getLogisticCenterId(),
+                        dateFromToProject,
+                        dateToToProject,
+                        List.of("pending", "planning", "to_pick", "picking", "sorting",
+                                "to_group", "grouping", "grouped", "to_pack")));
+            } else {
+                backlogsToProject = backlogGateway.getBacklog(
+                        input.getLogisticCenterId(),
+                        dateFromToProject,
+                        dateToToProject,
+                        List.of("pending"));
+            }
 
             final GetSimpleDeferralProjectionOutput deferralBaseOutput =
                     getSimpleDeferralProjection.execute(
@@ -88,10 +100,13 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                     input.getLogisticCenterId(),
                                     input.getWorkflow(),
                                     input.getDate(),
-                                    backlogsToProject));
+                                    backlogsToProject,
+                                    input.isNewCap5Logic()));
 
-            final List<Backlog> backlogsToShow =
-                    filterBacklogsInRange(dateFromToShow, dateToToShow, backlogsToProject);
+            final List<Backlog> backlogsToShow = filterBacklogsInRange(
+                    dateFromToShow,
+                    dateToToShow,
+                    backlogsToProject);
 
             final List<ProjectionResult> projectionsToShow =
                     filterProjectionsInRange(dateFromToShow, dateToToShow,
@@ -231,5 +246,25 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                         (p.getDate().isEqual(dateFrom) || p.getDate().isAfter(dateFrom))
                                 && (p.getDate().isEqual(dateTo) || p.getDate().isBefore(dateTo)))
                 .collect(toList());
+    }
+
+    private List<Backlog> mapBacklog(final List<Backlog> backlogByCptAndStatus) {
+        int backlogInProcess = 0;
+        final List<Backlog> backlog = new ArrayList<>();
+        backlogByCptAndStatus.sort(Comparator.comparing(Backlog::getDate));
+
+        for(final Backlog b : backlogByCptAndStatus) {
+            if ("pending".equals(b.getStatus())) {
+                backlog.add(b);
+            } else {
+                backlogInProcess += b.getQuantity();
+            }
+        }
+
+        if (!backlog.isEmpty()) {
+            backlog.get(0).setQuantity(backlog.get(0).getQuantity() + backlogInProcess);
+        }
+
+        return backlog;
     }
 }

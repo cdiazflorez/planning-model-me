@@ -22,6 +22,6 @@ public class GetBacklogByDate implements UseCase<GetBacklogByDateDto, List<Backl
         return backlogGatewayProvider
                 .getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()))
-                .getBacklog(input.getWarehouseId(), input.getDateFrom(), input.getDateTo());
+                .getBacklog(input.getWarehouseId(), input.getDateFrom(), input.getDateTo(), List.of("pending"));
     }
 }

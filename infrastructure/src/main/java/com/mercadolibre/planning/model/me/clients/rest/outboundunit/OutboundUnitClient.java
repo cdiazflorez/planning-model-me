@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitAggregationRequestTotalOperation.SUM;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.DATE_CREATED_FROM;
@@ -58,6 +57,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Component
@@ -92,25 +92,27 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         final ZonedDateTime dateFrom = getCurrentUtcDate();
         final ZonedDateTime dateTo = dateFrom.plusDays(1).plusHours(1);
 
-        return this.getBacklog(warehouseId, dateFrom, dateTo);
+        return this.getBacklog(warehouseId, dateFrom, dateTo, List.of("pending"));
     }
 
     @Override
     public List<Backlog> getBacklog(final String warehouseId,
                                     final ZonedDateTime dateFrom,
-                                    final ZonedDateTime dateTo) {
+                                    final ZonedDateTime dateTo,
+                                    final List<String> statuses) {
+
         final SearchUnitRequest request = SearchUnitRequest.builder()
                 .limit(0)
                 .offset(0)
                 .filter(createFilters(BacklogFilters.builder()
                         .groupType(ORDER_VALUE)
                         .warehouseId(warehouseId)
-                        .statuses("pending")
-                        .build(), STATUS.toJson()))
+                        .statuses(statuses.stream().map(s -> Map.of("status", s)).collect(toList()))
+                        .build(), "or"))
                 .aggregations(List.of(
                         SearchUnitAggregationRequest.builder()
                                 .name(AGGREGATION_BY_ETD)
-                                .keys(List.of("etd"))
+                                .keys(List.of("etd", "status"))
                                 .totals(List.of(
                                         SearchUnitAggregationRequestTotal.builder()
                                                 .alias("total_units")
@@ -133,7 +135,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .filter(this::validCptKeys)
                 .map(this::toBacklog)
                 .filter(backlog -> workingCpts(backlog, dateFrom, dateTo))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Override
@@ -174,7 +176,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .map(AggregationResponse::getBuckets)
                 .flatMap(Collection::stream)
                 .map(this::toProcessBacklog)
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     private SearchUnitAggregationFilterRequest createFilters(
@@ -243,9 +245,16 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     }
 
     private Backlog toBacklog(final AggregationResponseBucket bucket) {
-        return new Backlog(
-                ZonedDateTime.parse(bucket.getKeys().get(0)),
-                Math.toIntExact(bucket.getTotals().get(0).getResult()));
+        if (bucket.getKeys().size() > 1) {
+            return new Backlog(
+                    ZonedDateTime.parse(bucket.getKeys().get(0)),
+                    bucket.getKeys().get(1),
+                    Math.toIntExact(bucket.getTotals().get(0).getResult()));
+        } else {
+            return new Backlog(
+                    ZonedDateTime.parse(bucket.getKeys().get(0)),
+                    Math.toIntExact(bucket.getTotals().get(0).getResult()));
+        }
     }
 
     private ProcessBacklog toProcessBacklog(final AggregationResponseBucket bucket) {
@@ -286,7 +295,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .flatMap(Collection::stream)
                 .filter(this::validCptKeys)
                 .map(this::toBacklog)
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Trace(metricName = "API/outboundUnit/searchGroups")
