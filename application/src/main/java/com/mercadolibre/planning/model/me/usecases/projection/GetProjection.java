@@ -79,6 +79,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 ? dateFromToProject : input.getDate();
         final ZonedDateTime dateToToShow = dateFromToShow.plusDays(PROJECTION_DAYS_TO_SHOW);
 
+        // Obtains the pending backlog
         final List<Backlog> backlogsToProject = getBacklog.execute(
                 new GetBacklogByDateDto(
                         input.getWorkflow(),
