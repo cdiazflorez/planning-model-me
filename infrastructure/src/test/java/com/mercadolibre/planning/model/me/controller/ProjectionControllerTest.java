@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
@@ -82,6 +83,9 @@ public class ProjectionControllerTest {
     private GetDeferralProjection getDeferralProjection;
 
     @MockBean
+    private FeatureToggle featureToggle;
+
+    @MockBean
     private DatadogMetricService datadogMetricService;
 
     @Test
@@ -144,7 +148,7 @@ public class ProjectionControllerTest {
     void getDeferralProjection() throws Exception {
         // GIVEN
         when(getDeferralProjection.execute(
-                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any())))
+                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any(), true)))
                 .thenReturn(new Projection(
                         "Test",
                         null,
@@ -156,6 +160,8 @@ public class ProjectionControllerTest {
                                 mockProjectionChart()),
                         createTabs(),
                         simulationMode));
+
+        when(featureToggle.hasNewCap5Logic(WAREHOUSE_ID)).thenReturn(true);
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders

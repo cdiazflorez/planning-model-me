@@ -65,7 +65,8 @@ public class GetSimpleDeferralProjectionTest {
                         WAREHOUSE_ID,
                         FBM_WMS_OUTBOUND,
                         currentUtcDateTime,
-                        mockBacklog()));
+                        mockBacklog(),
+                        false));
 
         // THEN
         assertEquals(false, results.getProjections().get(0).isDeferred());

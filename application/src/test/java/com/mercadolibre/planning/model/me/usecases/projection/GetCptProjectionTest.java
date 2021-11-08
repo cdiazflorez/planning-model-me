@@ -134,7 +134,8 @@ public class GetCptProjectionTest {
         when(getSimpleDeferralProjection.execute(new GetProjectionInput(
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
-                mockBacklog()))).thenReturn(new GetSimpleDeferralProjectionOutput(
+                mockBacklog(),
+                false))).thenReturn(new GetSimpleDeferralProjectionOutput(
                 mockProjections(utcDateTimeFrom),
                 new LogisticCenterConfiguration(getDefault())));
 

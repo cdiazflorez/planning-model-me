@@ -17,4 +17,6 @@ public class GetProjectionInput {
     private ZonedDateTime date;
 
     private List<Backlog> backlogToProject;
+
+    private boolean isNewCap5Logic;
 }

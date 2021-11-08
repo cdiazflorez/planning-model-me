@@ -37,7 +37,7 @@ import static org.springframework.http.HttpStatus.OK;
 public class OutboundUnitSearchClientTest extends BaseClientTest {
 
     private static final String UNITS_SEARCH_URL =
-            "/wms/outbound/units/search/reports?client.id=%d";
+            "/wms/warehouses/%s/outbound/units/search?client.id=%d";
     private OutboundUnitSearchClient outboundUnitSearchClient;
 
     @Autowired
@@ -75,7 +75,7 @@ public class OutboundUnitSearchClientTest extends BaseClientTest {
 
         MockResponse.builder()
                 .withMethod(POST)
-                .withURL(BASE_URL + format(UNITS_SEARCH_URL, 9999))
+                .withURL(BASE_URL + format(UNITS_SEARCH_URL, WAREHOUSE_ID,  9999))
                 .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withRequestBody(getResourceAsString("unit_search_reports_request.json"))

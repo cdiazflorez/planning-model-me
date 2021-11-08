@@ -133,7 +133,8 @@ public class SaveSimulationTest {
         when(getSimpleDeferralProjection.execute(new GetProjectionInput(
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 utcDateTimeFrom,
-                mockBacklog())))
+                mockBacklog(),
+                false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(utcDateTimeFrom),
                         new LogisticCenterConfiguration(getDefault())));
