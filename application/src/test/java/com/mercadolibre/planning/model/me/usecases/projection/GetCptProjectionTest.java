@@ -52,7 +52,6 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
-import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
@@ -62,7 +61,8 @@ public class GetCptProjectionTest {
 
     private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static final TimeZone TIME_ZONE = getDefault();
+    private static final TimeZone TIME_ZONE =
+            TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
     private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
     private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
     private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
@@ -137,7 +137,7 @@ public class GetCptProjectionTest {
                 mockBacklog(),
                 false))).thenReturn(new GetSimpleDeferralProjectionOutput(
                 mockProjections(utcDateTimeFrom),
-                new LogisticCenterConfiguration(getDefault())));
+                new LogisticCenterConfiguration(TIME_ZONE)));
 
         // When
         final Projection projection = getProjection.execute(input);
@@ -328,6 +328,7 @@ public class GetCptProjectionTest {
                 .type(ProjectionType.CPT)
                 .backlog(backlogs)
                 .applyDeviation(true)
+                .timeZone("America/Argentina/Buenos_Aires")
                 .build();
     }
 

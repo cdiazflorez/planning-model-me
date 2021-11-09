@@ -10,6 +10,7 @@ import java.util.List;
 @Value
 @Builder
 public class ProjectionRequest {
+
     private Workflow workflow;
     private String warehouseId;
     private ProjectionType type;
@@ -19,5 +20,5 @@ public class ProjectionRequest {
     private List<Backlog> backlog;
     private long userId;
     private boolean applyDeviation;
-
+    private String timeZone;
 }

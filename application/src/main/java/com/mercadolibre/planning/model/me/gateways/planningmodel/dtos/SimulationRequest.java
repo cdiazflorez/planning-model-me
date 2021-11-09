@@ -18,4 +18,5 @@ public class SimulationRequest {
     private List<Simulation> simulations;
     private long userId;
     private boolean applyDeviation;
+    private String timeZone;
 }

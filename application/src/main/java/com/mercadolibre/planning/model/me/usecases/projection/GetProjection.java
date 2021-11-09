@@ -97,8 +97,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 input.getWarehouseId());
 
         try {
-            List<ProjectionResult> projectionsCpt = getProjection(
-                    input, dateFromToProject, dateToToProject, backlogsToProject);
+            List<ProjectionResult> projectionsCpt = getProjection(input, dateFromToProject,
+                    dateToToProject, backlogsToProject, config.getTimeZone().getID());
 
             final GetSimpleDeferralProjectionOutput deferralsCpt =
                     getSimpleDeferralProjection.execute(
@@ -238,5 +238,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     protected abstract List<ProjectionResult> getProjection(final GetProjectionInputDto input,
                                                             final ZonedDateTime dateFrom,
                                                             final ZonedDateTime dateTo,
-                                                            final List<Backlog> backlogs);
+                                                            final List<Backlog> backlogs,
+                                                            final String timeZone);
 }

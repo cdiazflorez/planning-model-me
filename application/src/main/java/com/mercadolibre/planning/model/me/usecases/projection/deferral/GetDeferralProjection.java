@@ -253,7 +253,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
         final List<Backlog> backlog = new ArrayList<>();
         backlogByCptAndStatus.sort(Comparator.comparing(Backlog::getDate));
 
-        for(final Backlog b : backlogByCptAndStatus) {
+        for (final Backlog b : backlogByCptAndStatus) {
             if ("pending".equals(b.getStatus())) {
                 backlog.add(b);
             } else {

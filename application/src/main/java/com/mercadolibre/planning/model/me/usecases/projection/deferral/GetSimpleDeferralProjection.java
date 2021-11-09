@@ -46,7 +46,7 @@ public class GetSimpleDeferralProjection implements
 
         List<ProjectionResult> deferralProjections =
                 getSortedDeferralProjections(input, dateFromToProject, dateToToProject,
-                        input.getBacklogToProject());
+                        input.getBacklogToProject(), config.getTimeZone().getID());
 
         setDeferralCascade(deferralProjections, dateFromToProject, config.getZoneId());
 
@@ -56,7 +56,8 @@ public class GetSimpleDeferralProjection implements
     private List<ProjectionResult> getSortedDeferralProjections(final GetProjectionInput input,
                                                                 final ZonedDateTime dateFrom,
                                                                 final ZonedDateTime dateTo,
-                                                                final List<Backlog> backlogs) {
+                                                                final List<Backlog> backlogs,
+                                                                final String timeZone) {
 
         final List<ProjectionResult> projection = planningModelGateway.runDeferralProjection(
                 ProjectionRequest.builder()
@@ -66,6 +67,7 @@ public class GetSimpleDeferralProjection implements
                         .dateFrom(dateFrom)
                         .dateTo(dateTo)
                         .backlog(backlogs)
+                        .timeZone(timeZone)
                         .build());
 
         return projection.stream()
