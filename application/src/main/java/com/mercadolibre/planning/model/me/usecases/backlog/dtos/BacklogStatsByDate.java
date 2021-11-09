@@ -4,12 +4,12 @@ import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import lombok.Builder;
 import lombok.Value;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 @Value
 @Builder
 public class BacklogStatsByDate {
-    ZonedDateTime date;
+    Instant date;
     UnitMeasure total;
     UnitMeasure historical;
     UnitMeasure minLimit;

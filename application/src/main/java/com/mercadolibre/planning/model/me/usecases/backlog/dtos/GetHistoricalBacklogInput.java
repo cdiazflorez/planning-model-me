@@ -4,15 +4,15 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import lombok.Builder;
 import lombok.Value;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Value
-@Builder
 public class GetHistoricalBacklogInput {
+    private Instant requestDate;
     private String warehouseId;
     private List<String> workflows;
     private List<ProcessName> processes;
-    private ZonedDateTime dateFrom;
-    private ZonedDateTime dateTo;
+    private Instant dateFrom;
+    private Instant dateTo;
 }

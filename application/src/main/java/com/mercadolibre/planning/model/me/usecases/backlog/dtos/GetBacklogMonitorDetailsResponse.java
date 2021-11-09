@@ -4,12 +4,12 @@ import com.mercadolibre.planning.model.me.entities.monitor.ProcessBacklogDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import lombok.Value;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Value
 public class GetBacklogMonitorDetailsResponse {
-    private ZonedDateTime currentDatetime;
+    private Instant currentDatetime;
     private List<ProcessBacklogDetail> dates;
     private ProcessDetail process;
 }

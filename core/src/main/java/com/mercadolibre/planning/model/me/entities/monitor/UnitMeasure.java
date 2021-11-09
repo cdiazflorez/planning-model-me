@@ -2,6 +2,10 @@ package com.mercadolibre.planning.model.me.entities.monitor;
 
 import lombok.Value;
 
+/**
+ * The y coordinate of a point in the backlog over time graph, expressed both in units and in
+ * minutes required to process them.
+ */
 @Value
 public class UnitMeasure {
     private static final double MINUTES_IN_HOUR = 60.0;

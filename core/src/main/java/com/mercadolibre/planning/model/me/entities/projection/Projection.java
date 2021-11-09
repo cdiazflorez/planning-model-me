@@ -11,18 +11,22 @@ public class Projection {
 
     private String title;
 
-    /** Projection/Deferrer date selector*/
+    /**
+     * Projection/Deferrer date selector.
+     */
     private DateSelector dateSelector;
 
-    /** Mensaje cuando no hay forecast */
+    /** Message to show when the forecast is missing. */
     private String emptyStateMessage;
 
-    /** Todo el payload */
     private Data data;
 
-    /** Tabs que se le muestran al usuario. Los principale son diferimiento y proyección */
+    /** Tabs shown to the user. Los main ones are deferral and projection.
+     * Note: This field is probably ignored by the front-end */
     List<Tab> tabs;
 
-    /** no se usa para GetProjection. Solo se usa pasando por botón simulation */
+    /**
+     * Used only when the entering though the simulation button.
+     */
     SimulationMode simulationMode;
 }

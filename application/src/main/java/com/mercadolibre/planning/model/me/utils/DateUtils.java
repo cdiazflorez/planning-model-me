@@ -3,7 +3,10 @@ package com.mercadolibre.planning.model.me.utils;
 import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
 import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
@@ -100,7 +103,8 @@ public class DateUtils {
         return dateSelector;
     }
 
-    public static Integer minutesFromWeekStart(ZonedDateTime date) {
+    public static Integer minutesFromWeekStart(Instant instant) {
+        var date = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
         return date.getDayOfWeek().getValue() * 1440
                 + date.getHour() * 60
                 + date.getMinute();
