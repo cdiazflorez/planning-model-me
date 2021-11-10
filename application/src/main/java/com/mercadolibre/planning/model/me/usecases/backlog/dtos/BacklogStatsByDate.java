@@ -1,13 +1,13 @@
 package com.mercadolibre.planning.model.me.usecases.backlog.dtos;
 
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
-import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 import java.time.Instant;
 
 @Value
-@Builder
+@RequiredArgsConstructor
 public class BacklogStatsByDate {
     Instant date;
     UnitMeasure total;

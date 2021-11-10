@@ -26,6 +26,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.time.ZoneOffset.UTC;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -56,11 +57,11 @@ class GetBacklogLimitTest {
         // THEN
         final var waving = result.get(WAVING);
 
-        assertEquals(0, waving.get(A_DATE).getMin());
-        assertEquals(15, waving.get(A_DATE).getMax());
+        assertEquals(0, waving.get(A_DATE.toInstant()).getMin());
+        assertEquals(15, waving.get(A_DATE.toInstant()).getMax());
 
-        assertEquals(-1, waving.get(ANOTHER_DATE).getMin());
-        assertEquals(-1, waving.get(ANOTHER_DATE).getMax());
+        assertEquals(-1, waving.get(ANOTHER_DATE.toInstant()).getMin());
+        assertEquals(-1, waving.get(ANOTHER_DATE.toInstant()).getMax());
     }
 
 
@@ -84,8 +85,8 @@ class GetBacklogLimitTest {
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                 .processes(List.of(WAVING, PICKING, PACKING))
-                .dateFrom(A_DATE)
-                .dateTo(ANOTHER_DATE)
+                .dateFrom(A_DATE.toInstant())
+                .dateTo(ANOTHER_DATE.toInstant())
                 .build();
     }
 
@@ -109,7 +110,7 @@ class GetBacklogLimitTest {
                                 entity(ANOTHER_DATE, PICKING, -1),
                                 entity(ANOTHER_DATE, PACKING, -1)
                         ),
-                    BACKLOG_UPPER_LIMIT, of(
+                        BACKLOG_UPPER_LIMIT, of(
                                 entity(A_DATE, WAVING, 15),
                                 entity(A_DATE, PICKING, 10),
                                 entity(A_DATE, PACKING, 5),

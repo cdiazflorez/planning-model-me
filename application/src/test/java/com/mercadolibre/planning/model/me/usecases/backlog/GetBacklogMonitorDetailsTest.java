@@ -396,20 +396,18 @@ class GetBacklogMonitorDetailsTest {
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
                 .processes(of(process))
-                .dateFrom(DATE_FROM)
-                .dateTo(DATE_TO)
+                .dateFrom(DATE_FROM.toInstant())
+                .dateTo(DATE_TO.toInstant())
                 .build();
 
         final var result = Map.of(
-                DATES.get(0), new BacklogLimit(5, 15),
-                DATES.get(1), new BacklogLimit(7, 21),
-                DATES.get(2), new BacklogLimit(3, 21),
-                DATES.get(3), new BacklogLimit(0, -1)
+                DATES.get(0).toInstant(), new BacklogLimit(5, 15),
+                DATES.get(1).toInstant(), new BacklogLimit(7, 21),
+                DATES.get(2).toInstant(), new BacklogLimit(3, 21),
+                DATES.get(3).toInstant(), new BacklogLimit(0, -1)
         );
 
-        when(getBacklogLimits.execute(input)).thenReturn(
-                Map.of(process, result)
-        );
+        when(getBacklogLimits.execute(input)).thenReturn(Map.of(process, result));
     }
 
     private void mockDateUtils(MockedStatic<DateUtils> mockDt) {

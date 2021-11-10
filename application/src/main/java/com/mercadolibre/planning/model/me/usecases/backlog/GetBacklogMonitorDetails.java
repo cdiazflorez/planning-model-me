@@ -12,7 +12,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
@@ -116,7 +115,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         final Map<Instant, List<NumberOfUnitsInAnArea>> historicBacklog = getPastBacklog(input);
         final Map<Instant, List<NumberOfUnitsInAnArea>> projectedBacklog =
                 getProjectedBacklog(input);
-        final Map<ZonedDateTime, BacklogLimit> limits = getBacklogLimits(input);
+        final Map<Instant, BacklogLimit> limits = getBacklogLimits(input);
         final Map<Instant, Integer> targetBacklog = getTargetBacklog(input);
         final Map<Instant, Integer> throughput = getThroughput(input);
         final HistoricalBacklog historicalBacklog = getHistoricalBacklog(input);
@@ -153,7 +152,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                                final Map<Instant, Integer> targetBacklog,
                                                final Map<Instant, Integer> throughput,
                                                final HistoricalBacklog historicalBacklog,
-                                               final Map<ZonedDateTime, BacklogLimit> limits) {
+                                               final Map<Instant, BacklogLimit> limits) {
 
         final Instant truncatedDate = date.truncatedTo(ChronoUnit.HOURS);
 
@@ -327,7 +326,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         ).get(input.getProcess());
     }
 
-    private Map<ZonedDateTime, BacklogLimit> getBacklogLimits(
+    private Map<Instant, BacklogLimit> getBacklogLimits(
             final GetBacklogMonitorDetailsInput input) {
 
         try {
@@ -365,15 +364,13 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 process,
                 currentDatetime,
                 backlog.stream()
-                        .map(current ->
-                                BacklogStatsByDate.builder()
-                                        .date(current.getDate())
-                                        .total(current.getTotal())
-                                        .historical(current.getHistorical())
-                                        .minLimit(current.getMinLimit())
-                                        .maxLimit(current.getMaxLimit())
-                                        .build()
-                        )
+                        .map(current -> new BacklogStatsByDate(
+                                current.getDate(),
+                                current.getTotal(),
+                                current.getHistorical(),
+                                current.getMinLimit(),
+                                current.getMaxLimit()
+                        ))
                         .collect(Collectors.toList()));
     }
 

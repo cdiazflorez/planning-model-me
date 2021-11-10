@@ -88,7 +88,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         final Map<ProcessName, List<TotaledBacklogPhoto>> projectedBacklog =
                 projectedBacklog(input);
         final Map<ProcessName, HistoricalBacklog> historicalBacklog = getHistoricalBacklog(input);
-        Map<ProcessName, Map<ZonedDateTime, BacklogLimit>> backlogLimits = getBacklogLimits(input);
+        final Map<ProcessName, Map<Instant, BacklogLimit>> backlogLimits = getBacklogLimits(input);
 
         final GetThroughputResult throughput = getThroughput(input);
 
@@ -277,7 +277,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         return GetThroughputResult.emptyThroughput();
     }
 
-    private Map<ProcessName, Map<ZonedDateTime, BacklogLimit>> getBacklogLimits(
+    private Map<ProcessName, Map<Instant, BacklogLimit>> getBacklogLimits(
             final GetBacklogMonitorInputDto input) {
 
         try {
@@ -311,7 +311,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     private List<BacklogStatsByDate> toProcessDescription(final ProcessData data) {
         final Map<Instant, Integer> throughput = data.getThroughputByDate();
         final HistoricalBacklog historical = data.getHistoricalBacklog();
-        final Map<ZonedDateTime, BacklogLimit> limits = data.getBacklogLimits();
+        final Map<Instant, BacklogLimit> limits = data.getBacklogLimits();
 
         return Stream.concat(
                 toBacklogStatsByDate(data.getCurrentBacklog(), throughput, historical, limits),
@@ -323,35 +323,34 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             final List<TotaledBacklogPhoto> totaledBacklogPhotos,
             final Map<Instant, Integer> throughputByHour,
             final HistoricalBacklog historical,
-            final Map<ZonedDateTime, BacklogLimit> limits
-        ) {
-
+            final Map<Instant, BacklogLimit> limits
+    ) {
         return totaledBacklogPhotos.stream()
-                .map(d -> {
-                            Instant date = d.getTakenOn().truncatedTo(ChronoUnit.HOURS);
-                            final Integer tph = throughputByHour.get(date);
-                            final BacklogLimit limit = limits.get(date);
+                .map(photo -> {
+                    final Instant truncatedDateOfPhoto =
+                            photo.getTakenOn().truncatedTo(ChronoUnit.HOURS);
+                    final Integer tph = throughputByHour.get(truncatedDateOfPhoto);
+                    final BacklogLimit limit = limits.get(truncatedDateOfPhoto);
 
-                            final UnitMeasure total = fromUnits(d.getQuantity(), tph);
+                    final UnitMeasure total = fromUnits(photo.getQuantity(), tph);
 
-                            final UnitMeasure min = limit == null || limit.getMin() < 0
-                                    ? emptyMeasure() : fromMinutes(limit.getMin(), tph);
+                    final UnitMeasure min = limit == null || limit.getMin() < 0
+                            ? emptyMeasure() : fromMinutes(limit.getMin(), tph);
 
-                            final UnitMeasure max = limit == null || limit.getMax() < 0
-                                    ? emptyMeasure() : fromMinutes(limit.getMax(), tph);
+                    final UnitMeasure max = limit == null || limit.getMax() < 0
+                            ? emptyMeasure() : fromMinutes(limit.getMax(), tph);
 
-                            final UnitMeasure average = historical
-                                    .getOr(date, UnitMeasure::emptyMeasure);
+                    final UnitMeasure average = historical
+                            .getOr(truncatedDateOfPhoto, UnitMeasure::emptyMeasure);
 
-                            return new BacklogStatsByDate(
-                                    d.getDate(),
-                                    total,
-                                    average
-                                    min,
-                                    max
-                            );
-                        }
-                );
+                    return new BacklogStatsByDate(
+                            photo.getTakenOn(),
+                            total,
+                            average,
+                            min,
+                            max
+                    );
+                });
     }
 
     private List<String> outboundProcessesNames() {
@@ -389,6 +388,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         List<TotaledBacklogPhoto> projectedBacklog;
         HistoricalBacklog historicalBacklog;
         Map<Instant, Integer> throughputByDate;
-        Map<ZonedDateTime, BacklogLimit> backlogLimits;
+        Map<Instant, BacklogLimit> backlogLimits;
     }
 }

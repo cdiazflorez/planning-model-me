@@ -31,7 +31,8 @@ abstract class GetConsolidatedBacklog {
         return consolidations.stream()
                 .map(Consolidation::getDate)
                 .max(naturalOrder())
-                .filter(date -> date.until(requestDate, ChronoUnit.MINUTES) < MAX_ALLOWED_MINUTES_SHIFT)
+                .filter(date -> date.until(requestDate, ChronoUnit.MINUTES)
+                        < MAX_ALLOWED_MINUTES_SHIFT)
                 .orElse(requestDate);
     }
 

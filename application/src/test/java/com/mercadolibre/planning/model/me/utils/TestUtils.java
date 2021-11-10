@@ -12,7 +12,6 @@ import com.mercadolibre.spreadsheet.implementations.poi.PoiDocument;
 import com.mercadolibre.spreadsheet.implementations.poi.PoiMeliDocumentFactory;
 
 import java.io.IOException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -22,25 +21,23 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static java.time.ZoneOffset.UTC;
 
 public class TestUtils {
 
     public static final String WAREHOUSE_ID = "ARTW01";
     public static final Workflow WORKFLOW = FBM_WMS_OUTBOUND;
-    public static final ZonedDateTime A_DATE = ZonedDateTime.of(2020, 8, 19, 17, 40, 0, 0,
-            ZoneId.of("UTC"));
-    public static final String PROCESSING_TIME = "processing_time";
+    public static final ZonedDateTime A_DATE = ZonedDateTime.of(2020, 8, 19, 17, 40, 0, 0, UTC);
     public static final Long USER_ID = 1234L;
     public static final String ORDER_GROUP_TYPE = "order";
-    private static final String FORECAST_EXAMPLE_FILE = "forecast_example.xlsx";
 
-    private static MeliDocumentFactory meliDocumentFactory = new PoiMeliDocumentFactory();
+    private final static MeliDocumentFactory meliDocumentFactory = new PoiMeliDocumentFactory();
 
     public static MeliDocument createMeliDocument(final List<String> sheetNames) {
         try {
             final MeliDocument meliDocument = meliDocumentFactory.newDocument();
 
-            sheetNames.forEach((sheetName) -> meliDocument.addSheet(sheetName));
+            sheetNames.forEach(meliDocument::addSheet);
 
             return meliDocument;
         } catch (final MeliDocument.MeliDocumentException e) {
@@ -50,7 +47,8 @@ public class TestUtils {
 
     public static byte[] createMeliDocumentAsByteArray(final List<String> sheetNames) {
         try {
-            return createMeliDocument(sheetNames).toBytes();
+            var meliDocument = createMeliDocument(sheetNames);
+            return meliDocument == null ? null : meliDocument.toBytes();
         } catch (final MeliDocument.MeliDocumentException e) {
             return null;
         }
@@ -58,9 +56,10 @@ public class TestUtils {
 
     public static MeliSheet getMeliSheetFrom(final String name, final String filePath) {
         final byte[] forecastExampleFile = getResource(filePath);
-
         try {
-            return new PoiDocument(forecastExampleFile).getSheetByName(name);
+            return forecastExampleFile == null
+                    ? null
+                    : new PoiDocument(forecastExampleFile).getSheetByName(name);
         } catch (MeliDocument.MeliDocumentException e) {
             e.printStackTrace();
             return null;
@@ -69,8 +68,9 @@ public class TestUtils {
 
     public static byte[] getResource(final String resourceName) {
         try {
-            return TestUtils.class.getClassLoader()
-                    .getResourceAsStream(resourceName).readAllBytes();
+            var resource = TestUtils.class.getClassLoader()
+                    .getResourceAsStream(resourceName);
+            return resource == null ? null : resource.readAllBytes();
         } catch (IOException exception) {
             exception.printStackTrace();
             return null;

@@ -11,13 +11,14 @@ import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.BACKLOG_LOWER_LIMIT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.BACKLOG_UPPER_LIMIT;
+import static java.time.ZoneOffset.UTC;
 import static java.util.List.of;
 
 @Named
@@ -26,7 +27,7 @@ class GetBacklogLimits {
 
     private final PlanningModelGateway planningModelGateway;
 
-    public Map<ProcessName, Map<ZonedDateTime, BacklogLimit>> execute(
+    public Map<ProcessName, Map<Instant, BacklogLimit>> execute(
             final GetBacklogLimitsInput input) {
 
         final Map<EntityType, List<Entity>> entitiesByType =
@@ -34,19 +35,19 @@ class GetBacklogLimits {
                         .workflow(input.getWorkflow())
                         .entityTypes(of(BACKLOG_LOWER_LIMIT, BACKLOG_UPPER_LIMIT))
                         .warehouseId(input.getWarehouseId())
-                        .dateFrom(input.getDateFrom())
-                        .dateTo(input.getDateTo())
+                        .dateFrom(input.getDateFrom().atZone(UTC))
+                        .dateTo(input.getDateTo().atZone(UTC))
                         .processName(input.getProcesses())
                         .build()
                 );
 
-        final Map<ProcessName, Map<ZonedDateTime, Integer>> lowerLimitsByProcessAndDate =
+        final Map<ProcessName, Map<Instant, Integer>> lowerLimitsByProcessAndDate =
                 entitiesByType.get(BACKLOG_LOWER_LIMIT)
                         .stream()
                         .collect(Collectors.groupingBy(
                                 Entity::getProcessName,
                                 Collectors.toMap(
-                                        Entity::getDate,
+                                        entry -> entry.getDate().toInstant(),
                                         Entity::getValue
                                 )
                         ));
@@ -70,15 +71,15 @@ class GetBacklogLimits {
                 ));
     }
 
-    private Map<ZonedDateTime, BacklogLimit> buildProcess(
-            final Map<ZonedDateTime, Integer> lowerLimits,
+    private Map<Instant, BacklogLimit> buildProcess(
+            final Map<Instant, Integer> lowerLimits,
             final List<Entity> upperLimits) {
 
         return upperLimits.stream()
                 .collect(Collectors.toMap(
-                        Entity::getDate,
+                        entity -> entity.getDate().toInstant(),
                         entity -> new BacklogLimit(
-                                lowerLimits.get(entity.getDate()),
+                                lowerLimits.get(entity.getDate().toInstant()),
                                 entity.getValue()
                         )
                 ));

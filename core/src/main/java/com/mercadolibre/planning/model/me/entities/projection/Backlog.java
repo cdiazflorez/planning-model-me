@@ -12,12 +12,16 @@ import java.time.ZonedDateTime;
 @Data
 @AllArgsConstructor
 public class Backlog {
-    /** When the photo was taken. */
+    /**
+     * When the photo was taken.
+     */
     private ZonedDateTime date;
 
     String status;
 
-    /** Quantity of units whose status is {@link #status}. */
+    /**
+     * Quantity of units whose status is {@link #status}.
+     */
     private int quantity;
 
     public Backlog(final ZonedDateTime date, final int quantity) {
