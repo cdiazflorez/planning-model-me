@@ -112,7 +112,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .aggregations(List.of(
                         SearchUnitAggregationRequest.builder()
                                 .name(AGGREGATION_BY_ETD)
-                                .keys(List.of("etd", "status"))
+                                .keys(List.of("etd"))
                                 .totals(List.of(
                                         SearchUnitAggregationRequestTotal.builder()
                                                 .alias("total_units")
@@ -245,16 +245,9 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
     }
 
     private Backlog toBacklog(final AggregationResponseBucket bucket) {
-        if (bucket.getKeys().size() > 1) {
-            return new Backlog(
-                    ZonedDateTime.parse(bucket.getKeys().get(0)),
-                    bucket.getKeys().get(1),
-                    Math.toIntExact(bucket.getTotals().get(0).getResult()));
-        } else {
-            return new Backlog(
-                    ZonedDateTime.parse(bucket.getKeys().get(0)),
-                    Math.toIntExact(bucket.getTotals().get(0).getResult()));
-        }
+        return new Backlog(
+                ZonedDateTime.parse(bucket.getKeys().get(0)),
+                Math.toIntExact(bucket.getTotals().get(0).getResult()));
     }
 
     private ProcessBacklog toProcessBacklog(final AggregationResponseBucket bucket) {

@@ -13,14 +13,7 @@ public class FeatureToggle {
     @Value("${backlog.monitor.enabled-warehouses}")
     private Set<String> backlogMonitorEnabledWarehouses;
 
-    @Value("${newcap5.logistic-center}")
-    private Set<String> newCap5LogisticCenters;
-
     public boolean hasBacklogMonitorFeatureEnabled(String warehouseId) {
         return backlogMonitorEnabledWarehouses.contains(warehouseId);
-    }
-
-    public boolean hasNewCap5Logic(String logisticCenterId) {
-        return newCap5LogisticCenters.contains(logisticCenterId);
     }
 }

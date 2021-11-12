@@ -16,8 +16,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequ
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import lombok.AllArgsConstructor;
@@ -57,6 +55,10 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
     private static final int HOURS_TO_SHOW = 25;
 
+    private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "planning", "to_pick", "picking", "sorting",
+            "to_group", "grouping", "grouped", "to_pack");
+    private static final List<String> CAP5_RTW_STATUSES = List.of("pending");
+
     private final PlanningModelGateway planningModelGateway;
 
     private final GetProjectionSummary getProjectionSummary;
@@ -77,22 +79,13 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                     ? dateFromToProject : input.getDate();
 
             final ZonedDateTime dateToToShow = dateFromToShow.plusDays(DEFERRAL_DAYS_TO_SHOW);
+            final List<String> backlogStatuses = input.isNewCap5Logic() ? CAP5_TO_PACK_STATUSES : CAP5_RTW_STATUSES;
 
-            final List<Backlog> backlogsToProject;
-            if (input.isNewCap5Logic()) {
-                backlogsToProject = mapBacklog(backlogGateway.getBacklog(
-                        input.getLogisticCenterId(),
-                        dateFromToProject,
-                        dateToToProject,
-                        List.of("pending", "planning", "to_pick", "picking", "sorting",
-                                "to_group", "grouping", "grouped", "to_pack")));
-            } else {
-                backlogsToProject = backlogGateway.getBacklog(
-                        input.getLogisticCenterId(),
-                        dateFromToProject,
-                        dateToToProject,
-                        List.of("pending"));
-            }
+            final List<Backlog> backlogsToProject = backlogGateway.getBacklog(
+                    input.getLogisticCenterId(),
+                    dateFromToProject,
+                    dateToToProject,
+                    backlogStatuses);
 
             final GetSimpleDeferralProjectionOutput deferralBaseOutput =
                     getSimpleDeferralProjection.execute(
@@ -203,7 +196,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
         final  List<Entity> throughput = planningModelGateway.getEntities(
                 EntityRequest.builder()
-                        .warehouseId(input.getLogisticCenterId())
+                        .warehouseId(getCap5LogisticCenterId(input))
                         .workflow(input.getWorkflow())
                         .entityType(HEADCOUNT)
                         .dateFrom(dateFrom)
@@ -248,23 +241,10 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                 .collect(toList());
     }
 
-    private List<Backlog> mapBacklog(final List<Backlog> backlogByCptAndStatus) {
-        int backlogInProcess = 0;
-        final List<Backlog> backlog = new ArrayList<>();
-        backlogByCptAndStatus.sort(Comparator.comparing(Backlog::getDate));
-
-        for (final Backlog b : backlogByCptAndStatus) {
-            if ("pending".equals(b.getStatus())) {
-                backlog.add(b);
-            } else {
-                backlogInProcess += b.getQuantity();
-            }
-        }
-
-        if (!backlog.isEmpty()) {
-            backlog.get(0).setQuantity(backlog.get(0).getQuantity() + backlogInProcess);
-        }
-
-        return backlog;
+    // This method is only for test in MXCD01 and should be deleted in the future
+    public static String getCap5LogisticCenterId(final GetProjectionInput input) {
+        return "MXCD01".equals(input.getLogisticCenterId()) && input.isNewCap5Logic()
+                ? "MXTP01"
+                : input.getLogisticCenterId();
     }
 }

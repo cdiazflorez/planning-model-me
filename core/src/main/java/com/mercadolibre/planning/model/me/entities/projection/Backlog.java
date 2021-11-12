@@ -9,11 +9,5 @@ import java.time.ZonedDateTime;
 @AllArgsConstructor
 public class Backlog {
     private ZonedDateTime date;
-    private String status;
     private int quantity;
-
-    public Backlog(final ZonedDateTime date, final int quantity) {
-        this.date = date;
-        this.quantity = quantity;
-    }
 }

@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
@@ -40,6 +39,7 @@ public class GetDeferralProjectionTest {
     private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
     private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
     private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(6);
+    private static final String MX_LOGISTIC_CENTER = "MXCD01";
 
     @InjectMocks
     private GetDeferralProjection getDeferralProjection;
@@ -115,20 +115,17 @@ public class GetDeferralProjectionTest {
                 .thenReturn(mockSimpleTable());
 
         when(backlogGateway.getBacklog(
-                WAREHOUSE_ID,
+                MX_LOGISTIC_CENTER,
                 currentUtcDateTime,
                 currentUtcDateTime.plusDays(3),
                 List.of("pending", "planning", "to_pick", "picking", "sorting",
                         "to_group", "grouping", "grouped", "to_pack")))
-                .thenReturn(mockBacklogAndBacklogInProcess());
+                .thenReturn(mockBacklog());
 
         when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                MX_LOGISTIC_CENTER, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
-                List.of(
-                        new Backlog(CPT_1, "pending",750),
-                        new Backlog(CPT_2, "pending",235),
-                        new Backlog(CPT_3, "pending",300)),
+                mockBacklog(),
                 true)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(),
@@ -136,7 +133,8 @@ public class GetDeferralProjectionTest {
 
         // WHEN
         final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                MX_LOGISTIC_CENTER,
+                FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 null,
                 true));
@@ -183,21 +181,10 @@ public class GetDeferralProjectionTest {
 
     private List<Backlog> mockBacklog() {
         return List.of(
-                new Backlog(CPT_1, "pending",150),
-                new Backlog(CPT_2, "pending",235),
-                new Backlog(CPT_3, "pending",300)
+                new Backlog(CPT_1, 150),
+                new Backlog(CPT_2, 235),
+                new Backlog(CPT_3, 300)
         );
-    }
-
-    private List<Backlog> mockBacklogAndBacklogInProcess() {
-        final List<Backlog> backlogs = new ArrayList<>();
-        backlogs.add(new Backlog(CPT_1, "pending", 150));
-        backlogs.add(new Backlog(CPT_2, "pending", 235));
-        backlogs.add(new Backlog(CPT_3, "pending", 300));
-        backlogs.add(new Backlog(CPT_2, "to_pick", 200));
-        backlogs.add(new Backlog(CPT_2, "sorting", 200));
-        backlogs.add(new Backlog(CPT_2, "to_pack", 200));
-        return backlogs;
     }
 
     private List<ProjectionResult> mockProjections() {
