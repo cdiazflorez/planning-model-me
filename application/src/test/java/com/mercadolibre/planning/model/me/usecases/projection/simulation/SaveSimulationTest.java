@@ -137,7 +137,7 @@ public class SaveSimulationTest {
                 false,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
-                        mockProjections(utcDateTimeFrom),
+                        mockProjections(utcCurrentTime),
                         new LogisticCenterConfiguration(TIME_ZONE)));
 
         // When
@@ -213,7 +213,7 @@ public class SaveSimulationTest {
         assertEquals(currentTime.plusHours(8).format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(currentTime.plusDays(1).plusHours(1).format(DATE_FORMATTER),
                 chartData5.getProjectedEndTime());
-        assertEquals(240, chartData5.getProcessingTime().getValue());
+        assertEquals(300, chartData5.getProcessingTime().getValue());
     }
 
     private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {

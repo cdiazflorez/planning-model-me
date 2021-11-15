@@ -55,8 +55,8 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
     private static final int HOURS_TO_SHOW = 25;
 
-    private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "planning", "to_pick", "picking", "sorting",
-            "to_group", "grouping", "grouped", "to_pack");
+    private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "planning",
+            "to_pick", "picking", "sorting", "to_group", "grouping", "grouped", "to_pack");
     private static final List<String> CAP5_RTW_STATUSES = List.of("pending");
 
     private final PlanningModelGateway planningModelGateway;

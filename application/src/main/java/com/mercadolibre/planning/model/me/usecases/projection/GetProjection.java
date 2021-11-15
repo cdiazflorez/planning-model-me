@@ -5,7 +5,6 @@ import com.mercadolibre.planning.model.me.entities.projection.Data;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -23,7 +22,9 @@ import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggest
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -31,7 +32,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -40,10 +40,9 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
-import static java.util.Comparator.comparing;
-import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.toList;
 
+@Slf4j
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
 
@@ -55,8 +54,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     protected static final int PROJECTION_DAYS_TO_SHOW = 1;
 
     protected static final int SELECTOR_DAYS_TO_SHOW = 3;
-
-    protected static final int PROCESSING_TIME_DEFAULT = 240;
 
     protected final PlanningModelGateway planningModelGateway;
 
@@ -97,10 +94,10 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 input.getWarehouseId());
 
         try {
-            List<ProjectionResult> projectionsCpt = getProjection(input, dateFromToProject,
+            List<ProjectionResult> projectionsSlaCpt = getProjection(input, dateFromToProject,
                     dateToToProject, backlogsToProject, config.getTimeZone().getID());
 
-            final GetSimpleDeferralProjectionOutput deferralsCpt =
+            final GetSimpleDeferralProjectionOutput deferralProjectionOutput =
                     getSimpleDeferralProjection.execute(
                             new GetProjectionInput(
                                     input.getWarehouseId(),
@@ -110,10 +107,10 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                     false,
                                     false));
 
-            setDeferralCascade(projectionsCpt, dateFromToProject, deferralsCpt);
+            transferDeferralFlag(projectionsSlaCpt, deferralProjectionOutput.getProjections());
 
             final List<ProjectionResult> projectionsToShow =
-                    filterProjectionsInRange(dateFromToShow, dateToToShow, projectionsCpt);
+                    filterProjectionsInRange(dateFromToShow, dateToToShow, projectionsSlaCpt);
 
             return new Projection(
                     "Proyecciones",
@@ -179,40 +176,30 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     }
 
     /**
-     * This method sets the deferral in cascade, from two lists, the projected cpts and the deferred
-     * cpts, the projected cpts are iterated
-     * and we consult the list of deferred cpts when finding the first deferred cpt, the following
-     * are set in the property isDeferral = true.
+     * Transfers the deferral flag from the deferral projections to the corresponding cpt
+     * projections.
+     *
+     * <p>Note that the elements of the received `cptProjections` list is mutated.
      */
+    private static void transferDeferralFlag(final List<ProjectionResult> cptProjections,
+                                             final  List<ProjectionResult> deferralProjections) {
 
-    private void setDeferralCascade(final List<ProjectionResult> projectionsCpt,
-                                    final ZonedDateTime currentDate,
-                                    final GetSimpleDeferralProjectionOutput deferralsCpt) {
+        final Map<Instant, ProjectionResult> deferralProjectionsByDateOut =
+                deferralProjections.stream().collect(Collectors.toMap(
+                    pt -> pt.getDate().toInstant(),
+                    Function.identity(),
+                    (pd1, pd2) ->  pd2
+                ));
 
-        final Map<ZonedDateTime, ProjectionResult> deferralsCptMap = deferralsCpt
-                .getProjections().stream().collect(Collectors.toMap(ProjectionResult::getDate,
-                        Function.identity(), (pd1, pd2) -> pd2));
-
-        boolean isDeferred = false;
-
-        for (ProjectionResult p : projectionsCpt.stream()
-                .sorted(comparing(ProjectionResult::getDate, reverseOrder()))
-                .collect(toList())) {
-
-            final boolean cptFound = deferralsCptMap.containsKey(p.getDate());
-
-            final ZonedDateTime cutOffDate =
-                    p.getDate().minusMinutes(p.getProcessingTime().getValue());
-
-            if (cptFound && deferralsCptMap.get(p.getDate()).isDeferred()) {
-                isDeferred = true;
+        for (ProjectionResult cptProjection : cptProjections) {
+            final ProjectionResult deferralProjection =
+                    deferralProjectionsByDateOut.get(cptProjection.getDate().toInstant());
+            if (deferralProjection != null) {
+                cptProjection.setDeferred(deferralProjection.isDeferred());
+            } else {
+                log.info("Not found cptProjection [{}] in cptDeferral", cptProjection.getDate()
+                        .toInstant());
             }
-            p.setDeferred(isDeferred && cutOffDate.isAfter(currentDate));
-
-            p.setProcessingTime(
-                    new ProcessingTime(
-                            PROCESSING_TIME_DEFAULT,
-                            MINUTES.getName()));
         }
     }
 
@@ -221,9 +208,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             final ZonedDateTime dateTo,
             final List<ProjectionResult> projections) {
 
-        return projections.stream().filter(p -> p.getDate().isAfter(dateFrom)
-                        && p.getDate().isBefore(dateTo))
-                .collect(toList());
+        return projections.stream().filter(p -> p.getDate().isAfter(dateFrom) && p.getDate()
+                .isBefore(dateTo)).collect(toList());
     }
 
     private List<Backlog> filterBacklogsInRange(

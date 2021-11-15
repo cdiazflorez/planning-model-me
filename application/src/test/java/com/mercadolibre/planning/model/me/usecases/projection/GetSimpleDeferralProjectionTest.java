@@ -56,8 +56,10 @@ public class GetSimpleDeferralProjectionTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(
                 new LogisticCenterConfiguration(getDefault()));
 
+        final List<ProjectionResult> p = mockProjections();
+
         when(planningModelGateway.runDeferralProjection(any(ProjectionRequest.class)))
-                .thenReturn(mockProjections());
+                .thenReturn(p);
 
         // WHEN
         final GetSimpleDeferralProjectionOutput results = getSimpleDeferralProjection.execute(
@@ -70,31 +72,13 @@ public class GetSimpleDeferralProjectionTest {
                         false));
 
         // THEN
-        assertEquals(false, results.getProjections().get(0).isDeferred());
-        assertEquals(false, results.getProjections().get(1).isDeferred());
-        assertEquals(true, results.getProjections().get(2).isDeferred());
-        assertEquals(true, results.getProjections().get(3).isDeferred());
-        assertEquals(false, results.getProjections().get(4).isDeferred());
+        assertEquals(p, results.getProjections());
     }
 
     private List<ProjectionResult> mockProjections() {
         return List.of(
                 ProjectionResult.builder()
-                        .date(CPT_DATE_1)
-                        .projectedEndDate(PROJECT_DATE)
-                        .remainingQuantity(0)
-                        .processingTime(new ProcessingTime(30, MINUTES.getName()))
-                        .isDeferred(false)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(CPT_DATE_2)
-                        .projectedEndDate(PROJECT_DATE)
-                        .remainingQuantity(0)
-                        .processingTime(new ProcessingTime(30, MINUTES.getName()))
-                        .isDeferred(false)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(CPT_DATE_3)
+                        .date(CPT_DATE_5)
                         .projectedEndDate(PROJECT_DATE)
                         .remainingQuantity(0)
                         .processingTime(new ProcessingTime(30, MINUTES.getName()))
@@ -108,7 +92,21 @@ public class GetSimpleDeferralProjectionTest {
                         .isDeferred(false)
                         .build(),
                 ProjectionResult.builder()
-                        .date(CPT_DATE_5)
+                        .date(CPT_DATE_3)
+                        .projectedEndDate(PROJECT_DATE)
+                        .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(30, MINUTES.getName()))
+                        .isDeferred(false)
+                        .build(),
+                ProjectionResult.builder()
+                        .date(CPT_DATE_2)
+                        .projectedEndDate(PROJECT_DATE)
+                        .remainingQuantity(0)
+                        .processingTime(new ProcessingTime(30, MINUTES.getName()))
+                        .isDeferred(false)
+                        .build(),
+                ProjectionResult.builder()
+                        .date(CPT_DATE_1)
                         .projectedEndDate(PROJECT_DATE)
                         .remainingQuantity(0)
                         .processingTime(new ProcessingTime(30, MINUTES.getName()))
