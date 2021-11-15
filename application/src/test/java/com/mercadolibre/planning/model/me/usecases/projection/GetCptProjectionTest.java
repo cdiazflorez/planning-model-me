@@ -135,7 +135,9 @@ public class GetCptProjectionTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
-                false))).thenReturn(new GetSimpleDeferralProjectionOutput(
+                false,
+                false)))
+                .thenReturn(new GetSimpleDeferralProjectionOutput(
                 mockProjections(utcDateTimeFrom),
                 new LogisticCenterConfiguration(TIME_ZONE)));
 

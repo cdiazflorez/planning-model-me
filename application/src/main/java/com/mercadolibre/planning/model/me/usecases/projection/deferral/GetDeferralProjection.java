@@ -79,13 +79,26 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                     ? dateFromToProject : input.getDate();
 
             final ZonedDateTime dateToToShow = dateFromToShow.plusDays(DEFERRAL_DAYS_TO_SHOW);
-            final List<String> backlogStatuses = input.isNewCap5Logic() ? CAP5_TO_PACK_STATUSES : CAP5_RTW_STATUSES;
 
-            final List<Backlog> backlogsToProject = backlogGateway.getBacklog(
-                    input.getLogisticCenterId(),
-                    dateFromToProject,
-                    dateToToProject,
-                    backlogStatuses);
+            final List<String> backlogStatuses = input.is20Cap5Logic() || input.is21Cap5Logic()
+                    ? CAP5_TO_PACK_STATUSES : CAP5_RTW_STATUSES;
+
+            final List<Backlog> backlogsToProject;
+            if (input.is20Cap5Logic()) {
+                backlogsToProject = mapBacklog(backlogGateway.getBacklog(
+                        input.getLogisticCenterId(),
+                        dateFromToProject,
+                        dateToToProject,
+                        backlogStatuses,
+                        List.of("etd", "status")));
+            } else {
+                backlogsToProject = backlogGateway.getBacklog(
+                        input.getLogisticCenterId(),
+                        dateFromToProject,
+                        dateToToProject,
+                        backlogStatuses,
+                        List.of("etd"));
+            }
 
             final GetSimpleDeferralProjectionOutput deferralBaseOutput =
                     getSimpleDeferralProjection.execute(
@@ -94,7 +107,8 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                     input.getWorkflow(),
                                     input.getDate(),
                                     backlogsToProject,
-                                    input.isNewCap5Logic()));
+                                    input.is20Cap5Logic(),
+                                    input.is21Cap5Logic()));
 
             final List<Backlog> backlogsToShow = filterBacklogsInRange(
                     dateFromToShow,
@@ -243,8 +257,28 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
     // This method is only for test in MXCD01 and should be deleted in the future
     public static String getCap5LogisticCenterId(final GetProjectionInput input) {
-        return "MXCD01".equals(input.getLogisticCenterId()) && input.isNewCap5Logic()
+        return "MXCD01".equals(input.getLogisticCenterId()) && input.is21Cap5Logic()
                 ? "MXTP01"
                 : input.getLogisticCenterId();
+    }
+
+    private List<Backlog> mapBacklog(final List<Backlog> backlogByCptAndStatus) {
+        int backlogInProcess = 0;
+        final List<Backlog> backlog = new ArrayList<>();
+        backlogByCptAndStatus.sort(Comparator.comparing(Backlog::getDate));
+
+        for (final Backlog b : backlogByCptAndStatus) {
+            if ("pending".equals(b.getStatus())) {
+                backlog.add(b);
+            } else {
+                backlogInProcess += b.getQuantity();
+            }
+        }
+
+        if (!backlog.isEmpty()) {
+            backlog.get(0).setQuantity(backlog.get(0).getQuantity() + backlogInProcess);
+        }
+
+        return backlog;
     }
 }

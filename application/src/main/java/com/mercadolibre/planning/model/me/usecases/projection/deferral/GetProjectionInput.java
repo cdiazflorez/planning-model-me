@@ -18,5 +18,7 @@ public class GetProjectionInput {
 
     private List<Backlog> backlogToProject;
 
-    private boolean isNewCap5Logic;
+    private boolean is20Cap5Logic;
+
+    private boolean is21Cap5Logic;
 }

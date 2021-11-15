@@ -18,7 +18,8 @@ public interface BacklogGateway {
     List<Backlog> getBacklog(final String warehouseId,
                              final ZonedDateTime dateFrom,
                              final ZonedDateTime dateTo,
-                             final List<String> statuses);
+                             final List<String> statuses,
+                             final List<String> aggregationKeys);
 
     List<ProcessBacklog> getBacklog(final List<Map<String, String>> statuses,
                                     final String warehouseId,

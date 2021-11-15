@@ -129,6 +129,7 @@ public class RunSimulationTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 utcDateTimeFrom,
                 mockBacklog(),
+                false,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(utcDateTimeFrom),

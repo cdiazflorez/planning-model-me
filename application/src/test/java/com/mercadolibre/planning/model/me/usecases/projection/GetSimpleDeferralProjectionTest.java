@@ -66,6 +66,7 @@ public class GetSimpleDeferralProjectionTest {
                         FBM_WMS_OUTBOUND,
                         currentUtcDateTime,
                         mockBacklog(),
+                        false,
                         false));
 
         // THEN

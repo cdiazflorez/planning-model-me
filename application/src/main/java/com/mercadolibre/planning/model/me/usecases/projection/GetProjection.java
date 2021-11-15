@@ -107,6 +107,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                     input.getWorkflow(),
                                     input.getDate(),
                                     backlogsToProject,
+                                    false,
                                     false));
 
             setDeferralCascade(projectionsCpt, dateFromToProject, deferralsCpt);

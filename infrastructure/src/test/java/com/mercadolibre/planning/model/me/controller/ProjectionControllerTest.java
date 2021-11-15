@@ -83,6 +83,9 @@ public class ProjectionControllerTest {
     private GetDeferralProjection getDeferralProjection;
 
     @MockBean
+    private FeatureToggle featureToggle;
+
+    @MockBean
     private DatadogMetricService datadogMetricService;
 
     @Test
@@ -145,7 +148,7 @@ public class ProjectionControllerTest {
     void getDeferralProjection() throws Exception {
         // GIVEN
         when(getDeferralProjection.execute(
-                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any(), false)))
+                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any(), false,false)))
                 .thenReturn(new Projection(
                         "Test",
                         null,
@@ -157,6 +160,8 @@ public class ProjectionControllerTest {
                                 mockProjectionChart()),
                         createTabs(),
                         simulationMode));
+
+        when(featureToggle.hasNewCap5Logic(WAREHOUSE_ID)).thenReturn(false);
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -173,10 +178,10 @@ public class ProjectionControllerTest {
     }
 
     @Test
-    void getDeferralProjectionNewCap5Logic() throws Exception {
+    void getDeferralProjection21Cap5Logic() throws Exception {
         // GIVEN
         when(getDeferralProjection.execute(
-                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, null, true)))
+                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, null, false,true)))
                 .thenReturn(new Projection(
                         "Test",
                         null,
@@ -197,6 +202,8 @@ public class ProjectionControllerTest {
                 .param("caller.id", String.valueOf(USER_ID))
                 .contentType(APPLICATION_JSON)
         );
+
+        when(featureToggle.hasNewCap5Logic(WAREHOUSE_ID)).thenReturn(false);
 
         // THEN
         result.andExpect(status().isOk());

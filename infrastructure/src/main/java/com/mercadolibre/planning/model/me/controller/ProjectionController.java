@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller;
 
+import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.controller.editor.ProcessNameEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
@@ -46,6 +47,7 @@ public class ProjectionController {
     private final GetBacklogProjection getBacklogProjection;
     private final GetDeferralProjection getDeferralProjection;
     private final DatadogMetricService datadogMetricService;
+    private final FeatureToggle featureToggle;
 
     @Trace
     @GetMapping("/projections/cpt")
@@ -87,6 +89,7 @@ public class ProjectionController {
                 workflow,
                 date,
                 null,
+                featureToggle.hasNewCap5Logic(warehouseId),
                 cap5ToPack)))
         );
     }

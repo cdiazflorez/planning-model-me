@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
@@ -29,6 +30,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -71,13 +73,15 @@ public class GetDeferralProjectionTest {
                 WAREHOUSE_ID,
                 currentUtcDateTime,
                 currentUtcDateTime.plusDays(3),
-                List.of("pending")))
+                List.of("pending"),
+                List.of("etd")))
                 .thenReturn(mockBacklog());
 
         when(getSimpleDeferralProjection.execute(new GetProjectionInput(
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
+                false,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(),
@@ -88,6 +92,7 @@ public class GetDeferralProjectionTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
+                false,
                 false));
 
         //THEN
@@ -104,7 +109,7 @@ public class GetDeferralProjectionTest {
     }
 
     @Test
-    public void testExecuteNewCap5Logic() {
+    public void testExecute20Cap5Logic() {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
 
@@ -119,13 +124,70 @@ public class GetDeferralProjectionTest {
                 currentUtcDateTime,
                 currentUtcDateTime.plusDays(3),
                 List.of("pending", "planning", "to_pick", "picking", "sorting",
-                        "to_group", "grouping", "grouped", "to_pack")))
+                        "to_group", "grouping", "grouped", "to_pack"),
+                List.of("etd", "status")))
+                .thenReturn(mockBacklogAndBacklogInProcess());
+
+        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+                MX_LOGISTIC_CENTER, FBM_WMS_OUTBOUND,
+                currentUtcDateTime,
+                List.of(
+                        new Backlog(CPT_1, "pending",750),
+                        new Backlog(CPT_2, "pending",235),
+                        new Backlog(CPT_3, "pending",300)),
+                true,
+                false)))
+                .thenReturn(new GetSimpleDeferralProjectionOutput(
+                        mockProjections(),
+                        new LogisticCenterConfiguration(getDefault())));
+
+        // WHEN
+        final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
+                MX_LOGISTIC_CENTER,
+                FBM_WMS_OUTBOUND,
+                currentUtcDateTime,
+                null,
+                true,
+                false));
+
+        //THEN
+        assertEquals("Proyección", projection.getTitle());
+        assertEquals(2, projection.getTabs().size());
+        assertEquals(false, projection.getData().getChart().getData().get(0).getIsDeferred());
+        assertEquals(false, projection.getData().getChart().getData().get(1).getIsDeferred());
+        assertEquals(false, projection.getData().getChart().getData().get(2).getIsDeferred());
+        assertEquals(false, projection.getData().getChart().getData().get(3).getIsDeferred());
+        assertEquals("throughput", projection.getData().getComplexTable1().getData()
+                .get(0).getId());
+        assertEquals("Throughput", projection.getData().getComplexTable1().getData()
+                .get(0).getTitle());
+    }
+
+    @Test
+    public void testExecute21Cap5Logic() {
+        // GIVEN
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+
+        when(planningModelGateway.getEntities(any(EntityRequest.class))).thenReturn(
+                mockHeadcountEntities());
+
+        when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
+                .thenReturn(mockSimpleTable());
+
+        when(backlogGateway.getBacklog(
+                MX_LOGISTIC_CENTER,
+                currentUtcDateTime,
+                currentUtcDateTime.plusDays(3),
+                List.of("pending", "planning", "to_pick", "picking", "sorting",
+                        "to_group", "grouping", "grouped", "to_pack"),
+                List.of("etd")))
                 .thenReturn(mockBacklog());
 
         when(getSimpleDeferralProjection.execute(new GetProjectionInput(
                 MX_LOGISTIC_CENTER, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
+                false,
                 true)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(),
@@ -137,6 +199,7 @@ public class GetDeferralProjectionTest {
                 FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 null,
+                false,
                 true));
 
         //THEN
@@ -161,6 +224,7 @@ public class GetDeferralProjectionTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
+                false,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(),
@@ -171,12 +235,13 @@ public class GetDeferralProjectionTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
+                false,
                 false));
 
         //THEN
         assertEquals("Proyección", projection.getTitle());
         assertEquals(2, projection.getTabs().size());
-        assertEquals(null, projection.getData());
+        assertNull(projection.getData());
     }
 
     private List<Backlog> mockBacklog() {
@@ -185,6 +250,17 @@ public class GetDeferralProjectionTest {
                 new Backlog(CPT_2, 235),
                 new Backlog(CPT_3, 300)
         );
+    }
+
+    private List<Backlog> mockBacklogAndBacklogInProcess() {
+        final List<Backlog> backlogs = new ArrayList<>();
+        backlogs.add(new Backlog(CPT_1, "pending", 150));
+        backlogs.add(new Backlog(CPT_2, "pending", 235));
+        backlogs.add(new Backlog(CPT_3, "pending", 300));
+        backlogs.add(new Backlog(CPT_2, "to_pick", 200));
+        backlogs.add(new Backlog(CPT_2, "sorting", 200));
+        backlogs.add(new Backlog(CPT_2, "to_pack", 200));
+        return backlogs;
     }
 
     private List<ProjectionResult> mockProjections() {
