@@ -227,7 +227,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     private Map<ProcessName, List<TotaledBacklogPhoto>> getProjectedBacklog(
             final GetBacklogMonitorInputDto input) {
 
-        // Note that the zone is not necessary but the ProjectBacklog use requires it to no avail.
+        /* Note that the zone is not necessary but the ProjectBacklog use case requires it to no
+        avail. */
         final ZonedDateTime requestDate = ZonedDateTime.ofInstant(input.getRequestInstant(), UTC);
 
         final List<BacklogProjectionResponse> projectedBacklog = backlogProjection.execute(
@@ -263,8 +264,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                 .warehouseId(input.getWarehouseId())
                 .workflow(FBM_WMS_OUTBOUND)
                 .processes(WORKFLOWS.get(input.getWorkflow()))
-                /* Note that the zone is not necessary but the GetProcessThroughput use requires it
-                to no avail. */
+                /* Note that the zone is not necessary but the GetProcessThroughput use case
+                requires it to no avail. */
                 .dateFrom(ZonedDateTime.ofInstant(input.getDateFrom(), UTC))
                 .dateTo(ZonedDateTime.ofInstant(input.getDateTo(), UTC))
                 .build();

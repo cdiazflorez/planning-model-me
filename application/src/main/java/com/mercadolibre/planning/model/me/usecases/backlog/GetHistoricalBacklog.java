@@ -114,6 +114,8 @@ class GetHistoricalBacklog {
                         .warehouseId(input.getWarehouseId())
                         .workflow(FBM_WMS_OUTBOUND)
                         .processes(input.getProcesses())
+                        /* Note that the zone is not necessary but the GetProcessThroughput use case
+                         requires it to no avail. */
                         .dateFrom(ZonedDateTime.ofInstant(dateFrom, UTC))
                         .dateTo(ZonedDateTime.ofInstant(dateTo, UTC))
                         .build()

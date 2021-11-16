@@ -5,7 +5,6 @@ import com.mercadolibre.planning.model.me.utils.DateUtils;
 import lombok.Value;
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.function.Supplier;
 

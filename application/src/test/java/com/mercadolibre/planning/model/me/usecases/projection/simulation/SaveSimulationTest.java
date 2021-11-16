@@ -106,7 +106,7 @@ public class SaveSimulationTest {
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                utcCurrentTime, utcCurrentTime.plusDays(4))))
+                utcCurrentTime.toInstant(), utcCurrentTime.plusDays(4).toInstant())))
                 .thenReturn(mockedBacklog);
 
         when(planningModelGateway.saveSimulation(

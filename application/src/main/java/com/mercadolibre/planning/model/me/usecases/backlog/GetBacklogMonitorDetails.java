@@ -286,6 +286,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(input.getWarehouseId())
                 .processName(of(input.getProcess()))
+                /* Note that the zone is not necessary but the PlanningModelGateway requires it to
+                no avail. */
                 .dateFrom(ZonedDateTime.ofInstant(input.getDateFrom(), UTC))
                 .dateTo(ZonedDateTime.ofInstant(input.getDateTo(), UTC))
                 .source(FORECAST)

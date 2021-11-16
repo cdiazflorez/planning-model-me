@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -36,10 +37,10 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
+import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.toList;
 
 @Slf4j
@@ -72,11 +73,11 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     @Override
     public Projection execute(final GetProjectionInputDto input) {
 
-        final ZonedDateTime dateFromToProject = getCurrentUtcDate();
-        final ZonedDateTime dateToToProject = dateFromToProject.plusDays(PROJECTION_DAYS);
+        final Instant dateFromToProject = Instant.now().truncatedTo(ChronoUnit.HOURS);
+        final Instant dateToToProject = dateFromToProject.plus(PROJECTION_DAYS, ChronoUnit.DAYS);
 
         final ZonedDateTime dateFromToShow = input.getDate() == null
-                ? dateFromToProject : input.getDate();
+                ? dateFromToProject.atZone(UTC) : input.getDate();
         final ZonedDateTime dateToToShow = dateFromToShow.plusDays(PROJECTION_DAYS_TO_SHOW);
 
         // Obtains the pending backlog
@@ -95,8 +96,15 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 input.getWarehouseId());
 
         try {
-            List<ProjectionResult> projectionsSlaCpt = getProjection(input, dateFromToProject,
-                    dateToToProject, backlogsToProject, config.getTimeZone().getID());
+            List<ProjectionResult> projectionsSlaCpt = getProjection(
+                    input,
+                    /* Note that the zone is not necessary but the getProjection method requires
+                    it to no avail. */
+                    dateFromToProject.atZone(UTC),
+                    dateToToProject.atZone(UTC),
+                    backlogsToProject,
+                    config.getTimeZone().getID()
+            );
 
             final GetSimpleDeferralProjectionOutput deferralProjectionOutput =
                     getSimpleDeferralProjection.execute(

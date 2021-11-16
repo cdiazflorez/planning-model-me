@@ -31,7 +31,7 @@ public class TestUtils {
     public static final Long USER_ID = 1234L;
     public static final String ORDER_GROUP_TYPE = "order";
 
-    private final static MeliDocumentFactory meliDocumentFactory = new PoiMeliDocumentFactory();
+    private static final MeliDocumentFactory meliDocumentFactory = new PoiMeliDocumentFactory();
 
     public static MeliDocument createMeliDocument(final List<String> sheetNames) {
         try {
