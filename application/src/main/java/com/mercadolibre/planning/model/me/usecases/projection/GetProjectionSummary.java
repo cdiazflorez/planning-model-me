@@ -30,6 +30,9 @@ import java.util.Optional;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.DATE_HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static java.time.ZoneOffset.UTC;
+import static java.time.ZonedDateTime.now;
+import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.stream.Collectors.toList;
 
 @Named
@@ -240,9 +243,9 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             columns.put("column_" + index++, getDeviation(cpt, soldItems, planningDistribution));
         }
 
-        columns.put("column_" + index++, projectedEndDate == null
-                ? "Excede las 24hs"
-                : convertToTimeZone(zoneId, projectedEndDate).format(DATE_HOUR_MINUTES_FORMATTER));
+        columns.put("column_" + index++,
+                getProjectedEndDateLabel(projectedEndDate, backlog, zoneId));
+
 
         if (hasSimulatedResults) {
             columns.put("column_" + index, simulatedEndDate == null
@@ -256,6 +259,22 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
         }
 
         return columns;
+    }
+
+    private String getProjectedEndDateLabel(final ZonedDateTime projectedEndDate,
+                                            final int backlog,
+                                            final ZoneId zoneId) {
+        if (projectedEndDate == null) {
+            return "Excede las 24hs";
+        } else {
+            if (backlog == 0
+                    && projectedEndDate.isEqual(now().withZoneSameInstant(UTC).truncatedTo(HOURS))) {
+                return "-";
+            } else {
+                return convertToTimeZone(zoneId, projectedEndDate)
+                        .format(DATE_HOUR_MINUTES_FORMATTER);
+            }
+        }
     }
 
     private Map<String, Object> addTotalsRow(final List<Backlog> backlogs,

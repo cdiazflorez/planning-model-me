@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FO
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,6 +47,7 @@ public class GetProjectionSummaryTest {
     private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
     private static final ZonedDateTime CPT_4 = getCurrentUtcDate().plusHours(6);
     private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
+    private static final ZonedDateTime CPT_6 = getCurrentUtcDate().plusHours(8);
 
     @InjectMocks
     private GetProjectionSummary getProjectionSummary;
@@ -118,6 +121,12 @@ public class GetProjectionSummaryTest {
                         .projectedEndDate(null)
                         .remainingQuantity(100)
                         .processingTime(null)
+                        .build(),
+                ProjectionResult.builder()
+                        .date(CPT_6)
+                        .projectedEndDate(utcCurrentTime.truncatedTo(HOURS))
+                        .remainingQuantity(100)
+                        .processingTime(null)
                         .build()
         );
     }
@@ -127,7 +136,8 @@ public class GetProjectionSummaryTest {
                 new Backlog(CPT_1, 150),
                 new Backlog(CPT_2, 235),
                 new Backlog(CPT_3, 300),
-                new Backlog(CPT_4, 120)
+                new Backlog(CPT_4, 120),
+                new Backlog(CPT_6, 0)
         );
     }
 
@@ -159,14 +169,15 @@ public class GetProjectionSummaryTest {
 
         assertEquals("Resumen de Proyección", projectionDetailsTable.getTitle());
         assertEquals(4, projectionDetailsTable.getColumns().size());
-        assertEquals(6, projectionDetailsTable.getData().size());
+        assertEquals(7, projectionDetailsTable.getData().size());
 
-        final Map<String, Object> cpt0 = projectionDetailsTable.getData().get(5);
-        final Map<String, Object> cpt1 = projectionDetailsTable.getData().get(4);
-        final Map<String, Object> cpt2 = projectionDetailsTable.getData().get(3);
-        final Map<String, Object> cpt3 = projectionDetailsTable.getData().get(2);
-        final Map<String, Object> cpt4 = projectionDetailsTable.getData().get(1);
-        final Map<String, Object> cpt5 = projectionDetailsTable.getData().get(0);
+        final Map<String, Object> cpt0 = projectionDetailsTable.getData().get(6);
+        final Map<String, Object> cpt1 = projectionDetailsTable.getData().get(5);
+        final Map<String, Object> cpt2 = projectionDetailsTable.getData().get(4);
+        final Map<String, Object> cpt3 = projectionDetailsTable.getData().get(3);
+        final Map<String, Object> cpt4 = projectionDetailsTable.getData().get(2);
+        final Map<String, Object> cpt5 = projectionDetailsTable.getData().get(1);
+        final Map<String, Object> cpt6 = projectionDetailsTable.getData().get(0);
 
         assertEquals("warning", cpt1.get("style"));
         assertEquals(convertToTimeZone(zoneId, CPT_1).format(HOUR_MINUTES_FORMATTER),
@@ -206,6 +217,13 @@ public class GetProjectionSummaryTest {
         assertEquals("0", cpt5.get("column_2"));
         assertEquals("0.0%", cpt5.get("column_3"));
         assertEquals("Excede las 24hs", cpt5.get("column_4"));
+
+        assertEquals("none", cpt6.get("style"));
+        assertEquals(convertToTimeZone(zoneId, CPT_6).format(HOUR_MINUTES_FORMATTER),
+                cpt6.get("column_1"));
+        assertEquals("0", cpt6.get("column_2"));
+        assertEquals("0.0%", cpt6.get("column_3"));
+        assertEquals("-", cpt6.get("column_4"));
 
         assertEquals("none", cpt0.get("style"));
         assertEquals("Total", cpt0.get("column_1"));
