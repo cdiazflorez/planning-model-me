@@ -109,7 +109,7 @@ public class GetDeferralProjectionTest {
     }
 
     @Test
-    public void testExecute20Cap5Logic() {
+    public void testExecute21Cap5Logic() {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
 
@@ -125,16 +125,13 @@ public class GetDeferralProjectionTest {
                 currentUtcDateTime.plusDays(3),
                 List.of("pending", "planning", "to_pick", "picking", "sorting",
                         "to_group", "grouping", "grouped", "to_pack"),
-                List.of("etd", "status")))
-                .thenReturn(mockBacklogAndBacklogInProcess());
+                List.of("etd")))
+                .thenReturn(mockBacklog());
 
         when(getSimpleDeferralProjection.execute(new GetProjectionInput(
                 MX_LOGISTIC_CENTER, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
-                List.of(
-                        new Backlog(CPT_1, "pending",750),
-                        new Backlog(CPT_2, "pending",235),
-                        new Backlog(CPT_3, "pending",300)),
+                mockBacklog(),
                 true,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
@@ -164,7 +161,7 @@ public class GetDeferralProjectionTest {
     }
 
     @Test
-    public void testExecute21Cap5Logic() {
+    public void testSimulate21Cap5Logic() {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
 
