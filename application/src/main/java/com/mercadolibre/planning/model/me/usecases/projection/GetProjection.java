@@ -188,7 +188,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
      * Transfers the deferral flag from the deferral projections to the corresponding cpt
      * projections.
      *
-     * <p>Note that the elements of the received `cptProjections` list is mutated.
+     * <p>Note that the elements of the received `cptProjections` list are mutated.
      */
     private static void transferDeferralFlag(final List<ProjectionResult> cptProjections,
                                              final  List<ProjectionResult> deferralProjections) {

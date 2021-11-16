@@ -3,10 +3,10 @@ package com.mercadolibre.planning.model.me.controller.backlog;
 import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.entities.monitor.AreaBacklogDetail;
-import com.mercadolibre.planning.model.me.entities.monitor.BacklogsByDate;
-import com.mercadolibre.planning.model.me.entities.monitor.ProcessBacklogDetail;
+import com.mercadolibre.planning.model.me.entities.monitor.DetailedBacklogPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
+import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitor;
@@ -202,7 +202,7 @@ class BacklogMonitorControllerTest {
         return new GetBacklogMonitorDetailsResponse(
                 OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant(),
                 List.of(
-                        new ProcessBacklogDetail(
+                        new DetailedBacklogPhoto(
                                 date,
                                 new UnitMeasure(100, 150),
                                 new UnitMeasure(125, 170),
@@ -212,7 +212,7 @@ class BacklogMonitorControllerTest {
                                         new AreaBacklogDetail("RK-L",
                                                 new UnitMeasure(300, 15))
                                 )),
-                        new ProcessBacklogDetail(
+                        new DetailedBacklogPhoto(
                                 anotherDate,
                                 new UnitMeasure(30, 90),
                                 new UnitMeasure(50, 120),
@@ -227,12 +227,12 @@ class BacklogMonitorControllerTest {
                         "waving",
                         new UnitMeasure(125, 170),
                         List.of(
-                                BacklogsByDate.builder()
+                                VariablesPhoto.builder()
                                         .date(date)
                                         .current(new UnitMeasure(125, 170))
                                         .historical(new UnitMeasure(115, 160))
                                         .build(),
-                                BacklogsByDate.builder()
+                                VariablesPhoto.builder()
                                         .date(anotherDate)
                                         .current(new UnitMeasure(50, 120))
                                         .historical(new UnitMeasure(30, 70))
@@ -258,12 +258,12 @@ class BacklogMonitorControllerTest {
                                 "waving",
                                 new UnitMeasure(100, 150),
                                 List.of(
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(10, 30))
                                                 .historical(new UnitMeasure(23, null))
                                                 .build(),
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(25, 75))
                                                 .historical(new UnitMeasure(44, null))
@@ -273,12 +273,12 @@ class BacklogMonitorControllerTest {
                                 "picking",
                                 new UnitMeasure(30, 90),
                                 List.of(
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(30, 90))
                                                 .historical(new UnitMeasure(60, null))
                                                 .build(),
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(45, 120))
                                                 .historical(new UnitMeasure(100, null))
@@ -288,12 +288,12 @@ class BacklogMonitorControllerTest {
                                 "packing",
                                 new UnitMeasure(200, 60),
                                 List.of(
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(200, 60))
                                                 .historical(new UnitMeasure(190, null))
                                                 .build(),
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(120, 30))
                                                 .historical(new UnitMeasure(115, null))

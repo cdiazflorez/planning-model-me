@@ -1,8 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
-import com.mercadolibre.planning.model.me.entities.monitor.BacklogsByDate;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
+import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
@@ -250,17 +250,17 @@ class GetBacklogMonitorTest {
         assertEquals(4, waving.getBacklogs().size());
 
         // past backlog
-        final BacklogsByDate wavingPastBacklog = waving.getBacklogs().get(0);
+        final VariablesPhoto wavingPastBacklog = waving.getBacklogs().get(0);
         assertEquals(DATE_FROM.toInstant(), wavingPastBacklog.getDate());
         assertEquals(100, wavingPastBacklog.getCurrent().getUnits());
         assertEquals(600, wavingPastBacklog.getCurrent().getMinutes());
 
-        final BacklogsByDate wavingNullMinutesBacklog = waving.getBacklogs().get(2);
+        final VariablesPhoto wavingNullMinutesBacklog = waving.getBacklogs().get(2);
         assertEquals(DATES.get(2).toInstant(), wavingNullMinutesBacklog.getDate());
         assertNull(wavingNullMinutesBacklog.getCurrent().getMinutes());
 
         // projected backlog
-        final BacklogsByDate wavingProjectedBacklog = waving.getBacklogs().get(3);
+        final VariablesPhoto wavingProjectedBacklog = waving.getBacklogs().get(3);
         assertEquals(DATES.get(3).toInstant(), wavingProjectedBacklog.getDate());
         assertEquals(250, wavingProjectedBacklog.getCurrent().getUnits());
         assertEquals(750, wavingProjectedBacklog.getCurrent().getMinutes());
