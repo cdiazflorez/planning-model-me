@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
@@ -59,6 +60,14 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
             "to_pick", "picking", "sorting", "to_group", "grouping", "grouped", "to_pack");
 
     private static final List<String> CAP5_RTW_STATUSES = List.of("pending");
+
+    private static final Map<String, String> CAP5_TO_PACK_WHS = Map.of(
+            "MXCD01", "MXTP01",
+            "MXCD02", "MXTP02",
+            "MXCD03", "MXTP03",
+            "MXCD04", "MXTP04",
+            "MXNL01", "MXTP05"
+    );
 
     private final PlanningModelGateway planningModelGateway;
 
@@ -245,10 +254,12 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                 .collect(toList());
     }
 
-    // This method is only for test in MXCD01 and should be deleted in the future
+    // This method is only for test in MLM and should be deleted in the future
     public static String getCap5LogisticCenterId(final GetProjectionInput input) {
-        return "MXCD01".equals(input.getLogisticCenterId()) && input.isWantToSimulate21()
-                ? "MXTP01"
+        final String logisticCenterId = input.getLogisticCenterId();
+
+        return CAP5_TO_PACK_WHS.containsKey(logisticCenterId) && input.isWantToSimulate21()
+                ? CAP5_TO_PACK_WHS.get(logisticCenterId)
                 : input.getLogisticCenterId();
     }
 }
