@@ -74,7 +74,7 @@ public class RestClientConfig {
                         restPool(OUTBOUND_UNIT_SEARCH.name(),
                                 outboundUnitSearchClientProperties),
                         restPool(STAFFING.name(), staffingClientProperties, localCache(
-                                "staffing", 25)),
+                                "staffing", 100)),
                         restPool(BACKLOG.name(), backlogClientProperties)
                 )
                 .build();
