@@ -77,7 +77,8 @@ public class ProjectionController {
             @RequestParam("caller.id") @NotNull final Long callerId,
             @RequestParam final String warehouseId,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime date) {
+            final ZonedDateTime date,
+            @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
 
@@ -88,7 +89,8 @@ public class ProjectionController {
                 workflow,
                 date,
                 null,
-                featureToggle.hasNewCap5Logic(warehouseId))))
+                featureToggle.hasNewCap5Logic(warehouseId),
+                cap5ToPack)))
         );
     }
 

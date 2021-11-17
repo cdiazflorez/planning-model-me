@@ -92,14 +92,15 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         final ZonedDateTime dateFrom = getCurrentUtcDate();
         final ZonedDateTime dateTo = dateFrom.plusDays(1).plusHours(1);
 
-        return this.getBacklog(warehouseId, dateFrom, dateTo, List.of("pending"));
+        return this.getBacklog(warehouseId, dateFrom, dateTo, List.of("pending"), List.of("etd"));
     }
 
     @Override
     public List<Backlog> getBacklog(final String warehouseId,
                                     final ZonedDateTime dateFrom,
                                     final ZonedDateTime dateTo,
-                                    final List<String> statuses) {
+                                    final List<String> statuses,
+                                    final List<String> aggregationKeys) {
 
         final SearchUnitRequest request = SearchUnitRequest.builder()
                 .limit(0)
@@ -112,7 +113,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .aggregations(List.of(
                         SearchUnitAggregationRequest.builder()
                                 .name(AGGREGATION_BY_ETD)
-                                .keys(List.of("etd", "status"))
+                                .keys(aggregationKeys)
                                 .totals(List.of(
                                         SearchUnitAggregationRequestTotal.builder()
                                                 .alias("total_units")

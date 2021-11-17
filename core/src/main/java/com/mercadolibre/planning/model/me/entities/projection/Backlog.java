@@ -12,7 +12,7 @@ public class Backlog {
     private String status;
     private int quantity;
 
-    public Backlog (final ZonedDateTime date, final int quantity) {
+    public Backlog(final ZonedDateTime date, final int quantity) {
         this.date = date;
         this.quantity = quantity;
     }

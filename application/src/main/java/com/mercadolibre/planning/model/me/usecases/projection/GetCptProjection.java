@@ -36,7 +36,8 @@ public class GetCptProjection extends GetProjection {
     protected List<ProjectionResult> getProjection(final GetProjectionInputDto input,
                                             final ZonedDateTime dateFrom,
                                             final ZonedDateTime dateTo,
-                                            final List<Backlog> backlogs) {
+                                            final List<Backlog> backlogs,
+                                            final String timeZone) {
 
         return planningModelGateway.runProjection(ProjectionRequest.builder()
                         .warehouseId(input.getWarehouseId())
@@ -48,6 +49,7 @@ public class GetCptProjection extends GetProjection {
                         .backlog(backlogs)
                         .userId(input.getUserId())
                         .applyDeviation(true)
+                        .timeZone(timeZone)
                         .build());
     }
 }

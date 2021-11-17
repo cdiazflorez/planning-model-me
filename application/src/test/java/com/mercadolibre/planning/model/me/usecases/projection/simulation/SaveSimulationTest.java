@@ -58,7 +58,6 @@ import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
-import static java.util.TimeZone.getDefault;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
@@ -69,7 +68,8 @@ public class SaveSimulationTest {
 
     private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static final TimeZone TIME_ZONE = getDefault();
+    private static final TimeZone TIME_ZONE =
+            TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
 
     @InjectMocks
     private SaveSimulation saveSimulation;
@@ -134,10 +134,11 @@ public class SaveSimulationTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 utcDateTimeFrom,
                 mockBacklog(),
+                false,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
-                        mockProjections(utcDateTimeFrom),
-                        new LogisticCenterConfiguration(getDefault())));
+                        mockProjections(utcCurrentTime),
+                        new LogisticCenterConfiguration(TIME_ZONE)));
 
         // When
         final Projection projection = saveSimulation.execute(GetProjectionInputDto.builder()
@@ -212,7 +213,7 @@ public class SaveSimulationTest {
         assertEquals(currentTime.plusHours(8).format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(currentTime.plusDays(1).plusHours(1).format(DATE_FORMATTER),
                 chartData5.getProjectedEndTime());
-        assertEquals(240, chartData5.getProcessingTime().getValue());
+        assertEquals(300, chartData5.getProcessingTime().getValue());
     }
 
     private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
@@ -271,6 +272,7 @@ public class SaveSimulationTest {
                                 HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
                         )))))
                 .applyDeviation(true)
+                .timeZone("America/Argentina/Buenos_Aires")
                 .build();
     }
 

@@ -40,7 +40,8 @@ public class SaveSimulation extends GetProjection {
     protected List<ProjectionResult> getProjection(final GetProjectionInputDto input,
                                                    final ZonedDateTime dateFrom,
                                                    final ZonedDateTime dateTo,
-                                                   final List<Backlog> backlogs) {
+                                                   final List<Backlog> backlogs,
+                                                   final String timeZone) {
 
         return planningModelGateway.saveSimulation(SimulationRequest.builder()
                 .warehouseId(input.getWarehouseId())
@@ -56,6 +57,7 @@ public class SaveSimulation extends GetProjection {
                 .simulations(input.getSimulations())
                 .userId(input.getUserId())
                 .applyDeviation(true)
+                .timeZone(timeZone)
                 .build());
     }
 }

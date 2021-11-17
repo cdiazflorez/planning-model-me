@@ -55,7 +55,6 @@ import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
-import static java.util.TimeZone.getDefault;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,7 +65,8 @@ public class RunSimulationTest {
 
     private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static final TimeZone TIME_ZONE = getDefault();
+    private static final TimeZone TIME_ZONE =
+            TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
 
     @InjectMocks
     private RunSimulation runSimulation;
@@ -129,10 +129,11 @@ public class RunSimulationTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 utcDateTimeFrom,
                 mockBacklog(),
+                false,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(utcDateTimeFrom),
-                        new LogisticCenterConfiguration(getDefault())));
+                        new LogisticCenterConfiguration(TIME_ZONE)));
 
         // When
         final Projection projection = runSimulation.execute(GetProjectionInputDto.builder()
@@ -254,6 +255,7 @@ public class RunSimulationTest {
                         HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
                 )))))
                 .applyDeviation(true)
+                .timeZone("America/Argentina/Buenos_Aires")
                 .build();
     }
 
