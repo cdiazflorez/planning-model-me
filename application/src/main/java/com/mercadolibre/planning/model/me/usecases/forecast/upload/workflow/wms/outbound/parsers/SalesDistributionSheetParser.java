@@ -9,6 +9,7 @@ import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastS
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.parsers.SheetParser;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastColumnName;
+import com.mercadolibre.planning.model.me.utils.TestLogisticCenterMapper;
 import com.mercadolibre.spreadsheet.MeliCell;
 import com.mercadolibre.spreadsheet.MeliRow;
 import com.mercadolibre.spreadsheet.MeliSheet;
@@ -67,8 +68,9 @@ public class SalesDistributionSheetParser implements SheetParser {
     private PlanningDistribution createPlanningDistributionFrom(final String warehouseId,
                                                                 final MeliRow row,
                                                                 final MeliSheet sheet) {
-        final LogisticCenterConfiguration configuration =
-                logisticCenterGateway.getConfiguration(warehouseId);
+        final LogisticCenterConfiguration configuration = logisticCenterGateway.getConfiguration(
+                TestLogisticCenterMapper.toRealLogisticCenter(warehouseId));
+
         final ZoneId zoneId = configuration.getZoneId();
 
         return PlanningDistribution.builder()
