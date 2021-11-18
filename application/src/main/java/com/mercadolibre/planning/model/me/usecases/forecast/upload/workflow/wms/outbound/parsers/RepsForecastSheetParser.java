@@ -22,6 +22,7 @@ import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProcessType;
 import com.mercadolibre.planning.model.me.usecases.forecast.upload.workflow.wms.outbound.model.ForecastProductivityProcessName;
+import com.mercadolibre.planning.model.me.utils.TestLogisticCenterMapper;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import lombok.AllArgsConstructor;
 
@@ -74,8 +75,8 @@ public class RepsForecastSheetParser implements SheetParser {
 
         validateIfWarehouseIdIsCorrect(warehouseId, sheet);
 
-        final LogisticCenterConfiguration config =
-                logisticCenterGateway.getConfiguration(warehouseId);
+        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
+                TestLogisticCenterMapper.toRealLogisticCenter(warehouseId));
 
         final RepsDistributionDto repsDistributionDto = getProcessingDistribution(config, sheet);
 

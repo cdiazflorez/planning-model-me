@@ -18,6 +18,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
+import com.mercadolibre.planning.model.me.utils.TestLogisticCenterMapper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -60,14 +61,6 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
             "to_pick", "picking", "sorting", "to_group", "grouping", "grouped", "to_pack");
 
     private static final List<String> CAP5_RTW_STATUSES = List.of("pending");
-
-    private static final Map<String, String> CAP5_TO_PACK_WHS = Map.of(
-            "MXCD01", "MXTP01",
-            "MXCD02", "MXTP02",
-            "MXCD03", "MXTP03",
-            "MXCD04", "MXTP04",
-            "MXNL01", "MXTP05"
-    );
 
     private final PlanningModelGateway planningModelGateway;
 
@@ -258,8 +251,8 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
     public static String getCap5LogisticCenterId(final GetProjectionInput input) {
         final String logisticCenterId = input.getLogisticCenterId();
 
-        return CAP5_TO_PACK_WHS.containsKey(logisticCenterId) && input.isWantToSimulate21()
-                ? CAP5_TO_PACK_WHS.get(logisticCenterId)
-                : input.getLogisticCenterId();
+        return input.isWantToSimulate21()
+                ? TestLogisticCenterMapper.toFakeLogisticCenter(logisticCenterId)
+                : logisticCenterId;
     }
 }
