@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
@@ -53,9 +53,9 @@ public class BacklogMonitorController {
             @PathVariable final String warehouseId,
             @RequestParam final String workflow,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime dateFrom,
+            final OffsetDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime dateTo,
+            final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
         if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
@@ -70,8 +70,8 @@ public class BacklogMonitorController {
                         requestInstant,
                         warehouseId,
                         WORKFLOW_ADAPTER.get(workflow),
-                        dateFrom(dateFrom.toInstant(), startOfCurrentHour),
-                        dateTo(dateTo.toInstant(), startOfCurrentHour),
+                        dateFrom(dateFrom, startOfCurrentHour),
+                        dateTo(dateTo, startOfCurrentHour),
                         callerId
                 )
         );
@@ -91,9 +91,9 @@ public class BacklogMonitorController {
             @RequestParam(required = false) final String workflow,
             @RequestParam final String process,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime dateFrom,
+            final OffsetDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime dateTo,
+            final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
         if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
@@ -109,22 +109,22 @@ public class BacklogMonitorController {
                                 warehouseId,
                                 WORKFLOW_ADAPTER.get(workflow),
                                 ProcessName.from(process),
-                                dateFrom(dateFrom.toInstant(), startOfCurrentHour),
-                                dateTo(dateTo.toInstant(), startOfCurrentHour),
+                                dateFrom(dateFrom, startOfCurrentHour),
+                                dateTo(dateTo, startOfCurrentHour),
                                 callerId
                 ))
         );
     }
 
-    private Instant dateFrom(Instant date, Instant now) {
+    private Instant dateFrom(OffsetDateTime date, Instant now) {
         return date == null
                 ? now.minus(DEFAULT_HOURS_LOOKBACK)
-                : date;
+                : date.toInstant();
     }
 
-    private Instant dateTo(Instant date, Instant now) {
+    private Instant dateTo(OffsetDateTime date, Instant now) {
         return date == null
                 ? now.plus(DEFAULT_HOURS_LOOKAHEAD)
-                : date;
+                : date.toInstant();
     }
 }
