@@ -224,16 +224,15 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 ));
     }
 
-    private List<Consolidation> fixBacklog(final Instant requestInstant,
+    private List<Consolidation> fixBacklog(final Instant requestDate,
                                            final List<Consolidation> consolidation,
                                            final Instant dateFrom,
                                            final Function<Instant, Consolidation> backlogSupplier) {
 
-        final Instant currentDatetime =
-                getDateWhenLatestPhotoWasTaken(consolidation, requestInstant);
+        final Instant latestPhotoDate = getDateWhenLatestPhotoWasTaken(consolidation, requestDate);
         final List<Consolidation> truncatedConsolidation =
-                truncateToHoursTheTakenOnDatesExceptFor(consolidation, currentDatetime);
-        return fillMissing(truncatedConsolidation, dateFrom, currentDatetime, backlogSupplier);
+                truncateToHoursTheTakenOnDatesExceptFor(consolidation, latestPhotoDate);
+        return fillMissing(truncatedConsolidation, dateFrom, latestPhotoDate, backlogSupplier);
     }
 
     private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklog(

@@ -62,12 +62,12 @@ public class BacklogMonitorController {
             throw new EmptyStateException();
         }
 
-        final Instant requestInstant = requestClock.now();
-        final Instant startOfCurrentHour = requestInstant.truncatedTo(ChronoUnit.HOURS);
+        final Instant requestDate = requestClock.now();
+        final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
         WorkflowBacklogDetail response = getBacklogMonitor.execute(
                 new GetBacklogMonitorInputDto(
-                        requestInstant,
+                        requestDate,
                         warehouseId,
                         WORKFLOW_ADAPTER.get(workflow),
                         dateFrom(dateFrom, startOfCurrentHour),
@@ -100,12 +100,12 @@ public class BacklogMonitorController {
             throw new EmptyStateException();
         }
 
-        final Instant requestInstant = requestClock.now();
-        final Instant startOfCurrentHour = requestInstant.truncatedTo(ChronoUnit.HOURS);
+        final Instant requestDate = requestClock.now();
+        final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
         return ResponseEntity.ok(
                 getBacklogMonitorDetails.execute(new GetBacklogMonitorDetailsInput(
-                                requestInstant,
+                                requestDate,
                                 warehouseId,
                                 WORKFLOW_ADAPTER.get(workflow),
                                 ProcessName.from(process),
@@ -116,15 +116,15 @@ public class BacklogMonitorController {
         );
     }
 
-    private Instant dateFrom(OffsetDateTime date, Instant now) {
+    private Instant dateFrom(OffsetDateTime date, Instant startOfCurrentHour) {
         return date == null
-                ? now.minus(DEFAULT_HOURS_LOOKBACK)
+                ? startOfCurrentHour.minus(DEFAULT_HOURS_LOOKBACK)
                 : date.toInstant();
     }
 
-    private Instant dateTo(OffsetDateTime date, Instant now) {
+    private Instant dateTo(OffsetDateTime date, Instant startOfCurrentHour) {
         return date == null
-                ? now.plus(DEFAULT_HOURS_LOOKAHEAD)
+                ? startOfCurrentHour.plus(DEFAULT_HOURS_LOOKAHEAD)
                 : date.toInstant();
     }
 }

@@ -26,16 +26,17 @@ abstract class GetConsolidatedBacklog {
 
     protected Instant getDateWhenLatestPhotoWasTaken(
             final List<Consolidation> consolidations,
-            final Instant requestDate
+            final Instant defaultDate
     ) {
         return consolidations.stream()
                 .map(Consolidation::getDate)
                 .max(naturalOrder())
-                .filter(date -> date.until(requestDate, ChronoUnit.MINUTES)
+                .filter(date -> date.until(defaultDate, ChronoUnit.MINUTES)
                         < MAX_ALLOWED_MINUTES_SHIFT)
-                .orElse(requestDate);
+                .orElse(defaultDate);
     }
 
+    /** Truncates to hours the dates at which the backlog photos were taken on.*/
     protected List<Consolidation> truncateToHoursTheTakenOnDatesExceptFor(
             final List<Consolidation> consolidations,
             final Instant theDateThatIsKeptAsIs
