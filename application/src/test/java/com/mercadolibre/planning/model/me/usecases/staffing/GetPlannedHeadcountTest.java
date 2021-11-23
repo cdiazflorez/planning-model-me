@@ -8,8 +8,8 @@ import com.mercadolibre.planning.model.me.exception.NoPlannedDataException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetPlannedHeadcountInput;
@@ -56,7 +56,7 @@ public class GetPlannedHeadcountTest {
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
-        when(planningModelGateway.searchEntities(any())).thenReturn(mockEntities());
+        when(planningModelGateway.searchTrajectories(any())).thenReturn(mockEntities());
 
         // WHEN
         final PlannedHeadcount plannedHeadcount = useCase.execute(input);
@@ -74,7 +74,7 @@ public class GetPlannedHeadcountTest {
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
 
-        when(planningModelGateway.searchEntities(any()))
+        when(planningModelGateway.searchTrajectories(any()))
                 .thenThrow(NoPlannedDataException.class);
 
         // WHEN - THEN
@@ -108,47 +108,47 @@ public class GetPlannedHeadcountTest {
         ));
     }
 
-    private Map<EntityType, List<Entity>> mockEntities() {
+    private Map<MagnitudeType, List<MagVarPhoto>> mockEntities() {
         final ZonedDateTime now = ZonedDateTime.now().truncatedTo(DAYS);
 
         return Map.of(
-                EntityType.HEADCOUNT, List.of(
-                        Entity.builder()
+                MagnitudeType.HEADCOUNT, List.of(
+                        MagVarPhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PICKING)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(10)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PICKING)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(15)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PACKING)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(5)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PACKING)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(8)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(WALL_IN)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(2)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(WALL_IN)
@@ -156,43 +156,43 @@ public class GetPlannedHeadcountTest {
                                 .value(3)
                                 .build()
                 ),
-                EntityType.THROUGHPUT, List.of(
-                        Entity.builder()
+                MagnitudeType.THROUGHPUT, List.of(
+                        MagVarPhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PICKING)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(100)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PICKING)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(120)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PACKING)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(58)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PACKING)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(82)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(WALL_IN)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(22)
                                 .build(),
-                        Entity.builder()
+                        MagVarPhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(WALL_IN)

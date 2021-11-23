@@ -36,7 +36,7 @@ import static java.util.List.of;
 @Named
 @AllArgsConstructor
 class GetHistoricalBacklog {
-    private static final long BACKLOG_WEEKS_DATE_FROM_LOOKBACK = 2L;
+    private static final long BACKLOG_WEEKS_DATE_FROM_LOOKBACK = 3L;
 
     private final BacklogApiGateway backlogApiGateway;
 

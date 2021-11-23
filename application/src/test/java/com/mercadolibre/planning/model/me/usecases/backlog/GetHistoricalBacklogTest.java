@@ -63,7 +63,7 @@ class GetHistoricalBacklogTest {
     @Test
     void testExecuteOK() {
         // GIVEN
-        final var dateFrom = DATE_FROM.minusWeeks(2L);
+        final var dateFrom = DATE_FROM.minusWeeks(3L);
         final var dateTo = DATE_TO.minusWeeks(1L).plusHours(1L);
 
         mockHistoricalBacklog(dateFrom, dateTo);

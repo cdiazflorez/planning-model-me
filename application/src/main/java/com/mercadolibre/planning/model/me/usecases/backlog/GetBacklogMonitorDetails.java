@@ -8,9 +8,9 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
@@ -281,7 +281,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
             return Collections.emptyMap();
         }
 
-        final EntityRequest request = EntityRequest.builder()
+        final TrajectoriesRequest request = TrajectoriesRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(input.getWarehouseId())
                 .processName(of(input.getProcess()))
@@ -296,7 +296,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 .stream()
                 .collect(Collectors.toMap(
                         entity -> entity.getDate().toInstant(),
-                        Entity::getValue)
+                        MagVarPhoto::getValue)
                 );
 
     }

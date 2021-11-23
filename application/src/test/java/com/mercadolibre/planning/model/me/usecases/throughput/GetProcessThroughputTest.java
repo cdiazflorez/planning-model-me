@@ -1,16 +1,15 @@
 package com.mercadolibre.planning.model.me.usecases.throughput;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.utils.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
@@ -19,7 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.BATCH_SORTER;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
@@ -44,21 +43,18 @@ class GetProcessThroughputTest {
     @Mock
     private PlanningModelGateway planningModelGateway;
 
-    @Spy
-    private ThroughputResultMapper mapper;
-
     @Test
     void testGetWavingThroughput() {
         // GIVEN
-        final GetThroughputInput input = getMockInput(ProcessName.WAVING);
+        final GetThroughputInput input = buildThroughputInput(ProcessName.WAVING);
 
-        when(planningModelGateway.searchEntities(
-                getSearchEntitiesRequest(of(PICKING, PACKING, PACKING_WALL))
+        when(planningModelGateway.searchTrajectories(
+                buildSearchTrajectoriesRequest(of(PICKING, PACKING, PACKING_WALL))
         )).thenReturn(
                 Map.of(THROUGHPUT, Stream.of(
-                                pickingEntities(),
-                                packingEntities(),
-                                packingWallEntities())
+                                pickingTrajectory(),
+                                packingTrajectory(),
+                                packingWallTrajectory())
                         .flatMap(e -> e)
                         .collect(Collectors.toList())
                 )
@@ -75,12 +71,12 @@ class GetProcessThroughputTest {
     @Test
     void testGetPickingThroughput() {
         // GIVEN
-        final GetThroughputInput input = getMockInput(PICKING);
+        final GetThroughputInput input = buildThroughputInput(PICKING);
 
-        when(planningModelGateway.searchEntities(
-                getSearchEntitiesRequest(of(PICKING))
+        when(planningModelGateway.searchTrajectories(
+                buildSearchTrajectoriesRequest(of(PICKING))
         )).thenReturn(
-                Map.of(THROUGHPUT, pickingEntities().collect(Collectors.toList()))
+                Map.of(THROUGHPUT, pickingTrajectory().collect(Collectors.toList()))
         );
 
         // WHEN
@@ -94,12 +90,12 @@ class GetProcessThroughputTest {
     @Test
     void testGetBatchSorterThroughput() {
         // GIVEN
-        final GetThroughputInput input = getMockInput(ProcessName.BATCH_SORTER);
+        final GetThroughputInput input = buildThroughputInput(ProcessName.BATCH_SORTER);
 
-        when(planningModelGateway.searchEntities(
-                getSearchEntitiesRequest(of(BATCH_SORTER))
+        when(planningModelGateway.searchTrajectories(
+                buildSearchTrajectoriesRequest(of(BATCH_SORTER))
         )).thenReturn(
-                Map.of(THROUGHPUT, batchSorterEntities().collect(Collectors.toList()))
+                Map.of(THROUGHPUT, batchSorterTrajectory().collect(Collectors.toList()))
         );
 
         // WHEN
@@ -113,12 +109,12 @@ class GetProcessThroughputTest {
     @Test
     void testGetWallInThroughput() {
         // GIVEN
-        final GetThroughputInput input = getMockInput(ProcessName.WALL_IN);
+        final GetThroughputInput input = buildThroughputInput(ProcessName.WALL_IN);
 
-        when(planningModelGateway.searchEntities(
-                getSearchEntitiesRequest(of(WALL_IN))
+        when(planningModelGateway.searchTrajectories(
+                buildSearchTrajectoriesRequest(of(WALL_IN))
         )).thenReturn(
-                Map.of(THROUGHPUT, wallInEntities().collect(Collectors.toList()))
+                Map.of(THROUGHPUT, wallInTrajectory().collect(Collectors.toList()))
         );
 
         // WHEN
@@ -132,14 +128,14 @@ class GetProcessThroughputTest {
     @Test
     void testGetPackingThroughput() {
         // GIVEN
-        final GetThroughputInput input = getMockInput(PACKING);
+        final GetThroughputInput input = buildThroughputInput(PACKING);
 
-        when(planningModelGateway.searchEntities(
-                getSearchEntitiesRequest(of(PACKING, PACKING_WALL))
+        when(planningModelGateway.searchTrajectories(
+                buildSearchTrajectoriesRequest(of(PACKING, PACKING_WALL))
         )).thenReturn(
                 Map.of(THROUGHPUT,
                         Stream.concat(
-                                packingEntities(), packingWallEntities()
+                                packingTrajectory(), packingWallTrajectory()
                         ).collect(Collectors.toList()))
         );
 
@@ -154,12 +150,12 @@ class GetProcessThroughputTest {
     @Test
     void testGetPackingWallThroughput() {
         // GIVEN
-        final GetThroughputInput input = getMockInput(PACKING_WALL);
+        final GetThroughputInput input = buildThroughputInput(PACKING_WALL);
 
-        when(planningModelGateway.searchEntities(
-                getSearchEntitiesRequest(of(PACKING_WALL))
+        when(planningModelGateway.searchTrajectories(
+                buildSearchTrajectoriesRequest(of(PACKING_WALL))
         )).thenReturn(
-                Map.of(THROUGHPUT, packingWallEntities().collect(Collectors.toList()))
+                Map.of(THROUGHPUT, packingWallTrajectory().collect(Collectors.toList()))
         );
 
         // WHEN
@@ -173,12 +169,12 @@ class GetProcessThroughputTest {
     @Test
     void testGetGlobalThroughput() {
         // GIVEN
-        final var input = getMockInput(ProcessName.GLOBAL);
+        final var input = buildThroughputInput(ProcessName.GLOBAL);
 
-        when(planningModelGateway.searchEntities(
-                getSearchEntitiesRequest(of(GLOBAL))
+        when(planningModelGateway.searchTrajectories(
+                buildSearchTrajectoriesRequest(of(GLOBAL))
         )).thenReturn(
-                Map.of(THROUGHPUT, globalEntities().collect(Collectors.toList()))
+                Map.of(THROUGHPUT, globalTrajectory().collect(Collectors.toList()))
         );
 
         // WHEN
@@ -189,7 +185,7 @@ class GetProcessThroughputTest {
         assertThroughputs(results.get(GLOBAL), 300, 400, 500);
     }
 
-    private GetThroughputInput getMockInput(ProcessName process) {
+    private GetThroughputInput buildThroughputInput(ProcessName process) {
         final ZonedDateTime dateFrom = TestUtils.A_DATE;
 
         return GetThroughputInput.builder()
@@ -202,10 +198,10 @@ class GetProcessThroughputTest {
                 .build();
     }
 
-    private SearchEntitiesRequest getSearchEntitiesRequest(List<ProcessName> processes) {
+    private SearchTrajectoriesRequest buildSearchTrajectoriesRequest(List<ProcessName> processes) {
         final ZonedDateTime dateFrom = TestUtils.A_DATE;
 
-        return SearchEntitiesRequest.builder()
+        return SearchTrajectoriesRequest.builder()
                 .warehouseId(TestUtils.WAREHOUSE_ID)
                 .workflow(FBM_WMS_OUTBOUND)
                 .processName(processes)
@@ -216,28 +212,28 @@ class GetProcessThroughputTest {
                 .build();
     }
 
-    private Stream<Entity> pickingEntities() {
-        return mockEntities(PICKING, 10, 75, 40);
+    private Stream<MagVarPhoto> pickingTrajectory() {
+        return mockTrajectory(PICKING, 10, 75, 40);
     }
 
-    private Stream<Entity> batchSorterEntities() {
-        return mockEntities(BATCH_SORTER, 25, 30, 45);
+    private Stream<MagVarPhoto> batchSorterTrajectory() {
+        return mockTrajectory(BATCH_SORTER, 25, 30, 45);
     }
 
-    private Stream<Entity> wallInEntities() {
-        return mockEntities(WALL_IN, 50, 75, 95);
+    private Stream<MagVarPhoto> wallInTrajectory() {
+        return mockTrajectory(WALL_IN, 50, 75, 95);
     }
 
-    private Stream<Entity> packingEntities() {
-        return mockEntities(PACKING, 10, 30, 40);
+    private Stream<MagVarPhoto> packingTrajectory() {
+        return mockTrajectory(PACKING, 10, 30, 40);
     }
 
-    private Stream<Entity> packingWallEntities() {
-        return mockEntities(PACKING_WALL, 5, 40, 40);
+    private Stream<MagVarPhoto> packingWallTrajectory() {
+        return mockTrajectory(PACKING_WALL, 5, 40, 40);
     }
 
-    private Stream<Entity> globalEntities() {
-        return mockEntities(GLOBAL, 300, 400, 500);
+    private Stream<MagVarPhoto> globalTrajectory() {
+        return mockTrajectory(GLOBAL, 300, 400, 500);
     }
 
     private void assertThroughputs(
@@ -255,24 +251,24 @@ class GetProcessThroughputTest {
         assertEquals(thirdVal, throughputs.get(dateFrom.plusHours(2L)));
     }
 
-    private Stream<Entity> mockEntities(ProcessName process,
-                                        Integer firstVal,
-                                        Integer secondVal,
-                                        Integer thirdVal) {
+    private Stream<MagVarPhoto> mockTrajectory(ProcessName process,
+                                               Integer firstVal,
+                                               Integer secondVal,
+                                               Integer thirdVal) {
 
         final var dateFrom = TestUtils.A_DATE;
         return Stream.of(
-                Entity.builder()
+                MagVarPhoto.builder()
                         .date(dateFrom)
                         .processName(process)
                         .value(firstVal)
                         .build(),
-                Entity.builder()
+                MagVarPhoto.builder()
                         .date(dateFrom.plusHours(1L))
                         .processName(process)
                         .value(secondVal)
                         .build(),
-                Entity.builder()
+                MagVarPhoto.builder()
                         .date(dateFrom.plusHours(2L))
                         .processName(process)
                         .value(thirdVal)

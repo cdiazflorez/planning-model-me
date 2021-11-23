@@ -9,7 +9,7 @@ import java.util.List;
 @Value
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class ProductivityRequest extends EntityRequest {
+public class ProductivityRequest extends TrajectoriesRequest {
 
     private List<Integer> abilityLevel;
 

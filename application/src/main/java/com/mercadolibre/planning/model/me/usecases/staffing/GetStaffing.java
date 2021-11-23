@@ -6,11 +6,11 @@ import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
 import com.mercadolibre.planning.model.me.entities.staffing.Worker;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.staffing.StaffingGateway;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.ProcessTotals;
@@ -75,12 +75,12 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .collect(Collectors.toMap(StaffingWorkflowResponse::getName, Function.identity()));
 
         WORKFLOWS.forEach((workflow, processNames) -> {
-            final Map<EntityType, List<Entity>> forecastStaffing;
+            final Map<MagnitudeType, List<MagVarPhoto>> forecastStaffing;
             //TODO: Eliminar este IF cuando planning model api devuelva otros workflows
             if ("fbm-wms-outbound".equals(workflow)) {
                 forecastStaffing = getForecastStaffing(logisticCenterId, processNames, now);
             } else {
-                forecastStaffing = Map.of(EntityType.PRODUCTIVITY, Collections.emptyList());
+                forecastStaffing = Map.of(MagnitudeType.PRODUCTIVITY, Collections.emptyList());
             }
 
             final StaffingWorkflowResponse staffingWorkflow = staffingByWorkflow.get(workflow);
@@ -179,35 +179,36 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .build();
     }
 
-    private Map<EntityType, List<Entity>> getForecastStaffing(final String logisticCenterId,
-                                                              final List<String> processes,
-                                                              final ZonedDateTime now) {
+    private Map<MagnitudeType, List<MagVarPhoto>> getForecastStaffing(final String logisticCenterId,
+                                                                      final List<String> processes,
+                                                                      final ZonedDateTime now) {
 
         try {
-            return planningModelGateway.searchEntities(SearchEntitiesRequest.builder()
+            return planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
                     .warehouseId(logisticCenterId)
                     .workflow(Workflow.FBM_WMS_OUTBOUND)
-                    .entityTypes(List.of(EntityType.PRODUCTIVITY))
+                    .entityTypes(List.of(MagnitudeType.PRODUCTIVITY))
                     .dateFrom(now.truncatedTo(ChronoUnit.HOURS).minusHours(1))
                     .dateTo(now.truncatedTo(ChronoUnit.HOURS))
                     .processName(processes.stream().map(ProcessName::from).collect(toList()))
                     .entityFilters(Map.of(
-                            EntityType.PRODUCTIVITY, Map.of(
+                            MagnitudeType.PRODUCTIVITY, Map.of(
                                     EntityFilters.ABILITY_LEVEL.toJson(),
                                     List.of(String.valueOf(1))
                             )
                     ))
                     .build());
         } catch (Exception exception) {
-            return Map.of(EntityType.PRODUCTIVITY, Collections.emptyList());
+            return Map.of(MagnitudeType.PRODUCTIVITY, Collections.emptyList());
         }
     }
 
-    private Integer filterProductivity(final Map<EntityType, List<Entity>> staffingForecast,
+    private Integer filterProductivity(final Map<MagnitudeType, List<MagVarPhoto>> staffingForecast,
                                        final String process) {
-        final OptionalDouble productivity = staffingForecast.get(EntityType.PRODUCTIVITY).stream()
+        final OptionalDouble productivity = staffingForecast
+                .get(MagnitudeType.PRODUCTIVITY).stream()
                 .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-                .mapToInt(Entity::getValue)
+                .mapToInt(MagVarPhoto::getValue)
                 .average();
 
         return productivity.isPresent() ? (int) productivity.getAsDouble() : null;

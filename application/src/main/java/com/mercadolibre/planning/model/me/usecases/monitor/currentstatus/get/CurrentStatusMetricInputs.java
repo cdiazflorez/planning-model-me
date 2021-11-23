@@ -2,7 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get;
 
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,5 +15,5 @@ public class CurrentStatusMetricInputs {
     final ProcessBacklog processBacklog;
     final GetCurrentStatusInput input;
     final List<UnitsResume> processedUnitsLastHour;
-    final List<Entity> productivityHeadCounts;
+    final List<MagVarPhoto> productivityHeadCounts;
 }

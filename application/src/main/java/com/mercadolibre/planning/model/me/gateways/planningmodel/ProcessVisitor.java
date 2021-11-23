@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel;
 
+@Deprecated
 public interface ProcessVisitor<T, U> {
     U visitWaving(T input);
 

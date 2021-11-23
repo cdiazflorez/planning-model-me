@@ -1,10 +1,10 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
@@ -19,14 +19,13 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.BACKLOG_LOWER_LIMIT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.BACKLOG_UPPER_LIMIT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.BACKLOG_LOWER_LIMIT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.BACKLOG_UPPER_LIMIT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static java.time.ZoneOffset.UTC;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,7 +67,7 @@ class GetBacklogLimitTest {
     @Test
     void testSearchEntitiesError() {
         // GIVEN
-        when(planningModelGateway.searchEntities(any(SearchEntitiesRequest.class)))
+        when(planningModelGateway.searchTrajectories(any(SearchTrajectoriesRequest.class)))
                 .thenThrow(new TestException());
 
         final var input = input();
@@ -91,7 +90,7 @@ class GetBacklogLimitTest {
     }
 
     void mockPlanningResponse() {
-        final var input = SearchEntitiesRequest.builder()
+        final var input = SearchTrajectoriesRequest.builder()
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                 .entityTypes(of(BACKLOG_LOWER_LIMIT, BACKLOG_UPPER_LIMIT))
                 .warehouseId(WAREHOUSE_ID)
@@ -100,30 +99,30 @@ class GetBacklogLimitTest {
                 .dateTo(ANOTHER_DATE)
                 .build();
 
-        when(planningModelGateway.searchEntities(input)).thenReturn(
+        when(planningModelGateway.searchTrajectories(input)).thenReturn(
                 Map.of(
                         BACKLOG_LOWER_LIMIT, of(
-                                entity(A_DATE, WAVING, 0),
-                                entity(A_DATE, PICKING, 1),
-                                entity(A_DATE, PACKING, 2),
-                                entity(ANOTHER_DATE, WAVING, -1),
-                                entity(ANOTHER_DATE, PICKING, -1),
-                                entity(ANOTHER_DATE, PACKING, -1)
+                                mvp(A_DATE, WAVING, 0),
+                                mvp(A_DATE, PICKING, 1),
+                                mvp(A_DATE, PACKING, 2),
+                                mvp(ANOTHER_DATE, WAVING, -1),
+                                mvp(ANOTHER_DATE, PICKING, -1),
+                                mvp(ANOTHER_DATE, PACKING, -1)
                         ),
                         BACKLOG_UPPER_LIMIT, of(
-                                entity(A_DATE, WAVING, 15),
-                                entity(A_DATE, PICKING, 10),
-                                entity(A_DATE, PACKING, 5),
-                                entity(ANOTHER_DATE, WAVING, -1),
-                                entity(ANOTHER_DATE, PICKING, -1),
-                                entity(ANOTHER_DATE, PACKING, -1)
+                                mvp(A_DATE, WAVING, 15),
+                                mvp(A_DATE, PICKING, 10),
+                                mvp(A_DATE, PACKING, 5),
+                                mvp(ANOTHER_DATE, WAVING, -1),
+                                mvp(ANOTHER_DATE, PICKING, -1),
+                                mvp(ANOTHER_DATE, PACKING, -1)
                         )
                 )
         );
     }
 
-    private Entity entity(ZonedDateTime date, ProcessName process, Integer value) {
-        return Entity.builder()
+    private MagVarPhoto mvp(ZonedDateTime date, ProcessName process, Integer value) {
+        return MagVarPhoto.builder()
                 .date(date)
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                 .processName(process)

@@ -10,7 +10,7 @@ import com.mercadolibre.planning.model.me.entities.projection.simulationmode.Sim
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.Snackbar;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 
 import java.time.ZonedDateTime;
@@ -82,7 +82,7 @@ public class ResponseUtils {
     //TODO: analizar si vale la pena refactorizar este metodo para que se llame
     // desde las 2 proyecciones
     public static Data createData(final LogisticCenterConfiguration config,
-                                  final EntityType entityType,
+                                  final MagnitudeType magnitudeType,
                                   final List<EntityRow> entities,
                                   final List<ColumnHeader> headers) {
 
@@ -90,8 +90,8 @@ public class ResponseUtils {
                 .collect(groupingBy(EntityRow::getRowName));
 
         return new Data(
-                entityType.getName(),
-                capitalize(entityType.getTitle()),
+                magnitudeType.getName(),
+                capitalize(magnitudeType.getTitle()),
                 true,
                 entitiesByProcess.entrySet().stream()
                         .sorted(Comparator.comparing(entry -> entry.getKey().getIndex()))

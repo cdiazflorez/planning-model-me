@@ -7,11 +7,10 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
@@ -22,13 +21,14 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -60,8 +60,8 @@ import java.util.stream.Stream;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.PERCENTAGE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
@@ -126,7 +126,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
     @ParameterizedTest
     @MethodSource("entityRequests")
-    void testGetEntities(final EntityRequest request) throws JSONException {
+    void testGetEntities(final TrajectoriesRequest request) throws JSONException {
         // Given
         final JSONArray apiResponse = new JSONArray()
                 .put(new JSONObject()
@@ -148,18 +148,18 @@ class PlanningModelApiClientTest extends BaseClientTest {
         mockPostEntity(apiResponse);
 
         // When
-        final List<Entity> headcounts = client.getEntities(request);
+        final List<MagVarPhoto> headcounts = client.getTrajectories(request);
 
         // Then
         assertEquals(2, headcounts.size());
 
-        final Entity headcount0 = headcounts.get(0);
+        final MagVarPhoto headcount0 = headcounts.get(0);
         assertTrue(request.getDateFrom().isEqual(headcount0.getDate()));
         assertEquals(PICKING, headcount0.getProcessName());
         assertEquals(30, headcount0.getValue());
         assertEquals(Source.FORECAST, headcount0.getSource());
 
-        final Entity headcount1 = headcounts.get(1);
+        final MagVarPhoto headcount1 = headcounts.get(1);
         assertTrue(request.getDateTo().isEqual(headcount1.getDate()));
         assertEquals(PACKING, headcount1.getProcessName());
         assertEquals(20, headcount1.getValue());
@@ -173,7 +173,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             final String response
     ) {
         // GIVEN
-        final EntityRequest request = EntityRequest.builder()
+        final TrajectoriesRequest request = TrajectoriesRequest.builder()
                 .entityType(HEADCOUNT)
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId("ARBA01")
@@ -193,7 +193,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .build();
 
         // WHEN - THEN
-        assertThrows(exceptionClass, () -> client.getEntities(request));
+        assertThrows(exceptionClass, () -> client.getTrajectories(request));
     }
 
     @Test
@@ -321,7 +321,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         // Given
         ZonedDateTime now = DateUtils.getCurrentUtcDateTime();
 
-        final EntityRequest request = EntityRequest.builder()
+        final TrajectoriesRequest request = TrajectoriesRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId("ARTW01")
                 .dateFrom(now)
@@ -354,18 +354,18 @@ class PlanningModelApiClientTest extends BaseClientTest {
         mockGetPerformedProcessing(apiResponse);
 
         // When
-        final List<Entity> targetBacklog = client.getPerformedProcessing(request);
+        final List<MagVarPhoto> targetBacklog = client.getPerformedProcessing(request);
 
         // Then
         assertEquals(2, targetBacklog.size());
 
-        final Entity target1 = targetBacklog.get(0);
+        final MagVarPhoto target1 = targetBacklog.get(0);
         assertEquals(request.getDateFrom(), target1.getDate());
         assertEquals(WAVING, target1.getProcessName());
         assertEquals(30, target1.getValue());
         assertEquals(Source.FORECAST, target1.getSource());
 
-        final Entity target2 = targetBacklog.get(1);
+        final MagVarPhoto target2 = targetBacklog.get(1);
         assertEquals(request.getDateTo(), target2.getDate());
         assertEquals(WAVING, target2.getProcessName());
         assertEquals(20, target2.getValue());
@@ -381,7 +381,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         // GIVEN
         ZonedDateTime now = DateUtils.getCurrentUtcDateTime();
 
-        final EntityRequest request = EntityRequest.builder()
+        final TrajectoriesRequest request = TrajectoriesRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId("ARTW01")
                 .dateFrom(now)
@@ -405,7 +405,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     @Test
     void testCreateEntityParams() {
         // GIVEN
-        final EntityRequest request = EntityRequest.builder()
+        final TrajectoriesRequest request = TrajectoriesRequest.builder()
                 .entityType(HEADCOUNT)
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId("ARTW01")
@@ -947,8 +947,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .build();
 
         // When
-        final Map<EntityType, List<Entity>> entities = client.searchEntities(
-                SearchEntitiesRequest.builder()
+        final Map<MagnitudeType, List<MagVarPhoto>> entities = client.searchTrajectories(
+                SearchTrajectoriesRequest.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .entityTypes(List.of(HEADCOUNT, PRODUCTIVITY))
                         .processName(List.of(PICKING, PACKING))
@@ -960,7 +960,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(6, entities.get(HEADCOUNT).size());
         assertEquals(2, entities.get(PRODUCTIVITY).size());
 
-        final Entity headcount = entities.get(HEADCOUNT).get(0);
+        final MagVarPhoto headcount = entities.get(HEADCOUNT).get(0);
         final Productivity productivity = (Productivity)entities.get(PRODUCTIVITY).get(0);
 
         assertEquals(FBM_WMS_OUTBOUND, headcount.getWorkflow());
@@ -980,7 +980,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     private static Stream<Arguments> entityRequests() {
         return Stream.of(
                 of(
-                        EntityRequest.builder()
+                        TrajectoriesRequest.builder()
                                 .entityType(HEADCOUNT)
                                 .workflow(FBM_WMS_OUTBOUND)
                                 .warehouseId("ARTW01")
@@ -991,7 +991,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                                 .build()
                 ),
                 of(
-                        EntityRequest.builder()
+                        TrajectoriesRequest.builder()
                                 .entityType(HEADCOUNT)
                                 .workflow(FBM_WMS_OUTBOUND)
                                 .warehouseId("ARTW01")

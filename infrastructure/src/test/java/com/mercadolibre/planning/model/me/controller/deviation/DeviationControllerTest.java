@@ -31,7 +31,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsSt
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;

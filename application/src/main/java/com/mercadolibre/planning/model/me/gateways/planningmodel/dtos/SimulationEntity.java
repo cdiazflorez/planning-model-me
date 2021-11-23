@@ -6,6 +6,6 @@ import java.util.List;
 
 @Value
 public class SimulationEntity {
-    private EntityType type;
+    private MagnitudeType type;
     private List<QuantityByDate> values;
 }

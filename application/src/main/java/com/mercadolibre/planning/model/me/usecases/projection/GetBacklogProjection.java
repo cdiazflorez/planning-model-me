@@ -7,9 +7,9 @@ import com.mercadolibre.planning.model.me.entities.projection.Selections;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.REMAINING_PROCESSING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.REMAINING_PROCESSING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
@@ -61,14 +61,17 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
         final List<ColumnHeader> headers = createColumnHeaders(
                 convertToTimeZone(zoneId, getNextHour(dateFrom)), HOURS_TO_SHOW);
 
-        final List<Entity> remainingProcessing = planningModel.getEntities(EntityRequest.builder()
-                .workflow(input.getWorkflow())
-                .warehouseId(input.getWarehouseId())
-                .processName(List.of(PICKING))
-                .entityType(REMAINING_PROCESSING)
-                .dateFrom(dateFrom)
-                .dateTo(dateFrom.plusHours(HOURS_TO_SHOW))
-                .build());
+        final List<MagVarPhoto> remainingProcessing = planningModel
+                .getTrajectories(
+                        TrajectoriesRequest.builder()
+                                .workflow(input.getWorkflow())
+                                .warehouseId(input.getWarehouseId())
+                                .processName(List.of(PICKING))
+                                .entityType(REMAINING_PROCESSING)
+                                .dateFrom(dateFrom)
+                                .dateTo(dateFrom.plusHours(HOURS_TO_SHOW))
+                                .build()
+                );
 
         return com.mercadolibre.planning.model.me.entities.projection.BacklogProjection.builder()
                 .title("Proyecciones")
@@ -96,7 +99,7 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
     private SimpleTable createWavingTable(final ZoneId zoneId,
                                           final List<ColumnHeader> headers,
                                           final BacklogProjectionResponse projection,
-                                          final List<Entity> remainingProcessing) {
+                                          final List<MagVarPhoto> remainingProcessing) {
         return new SimpleTable("Ready to wave FCST vs Real", headers, List.of(
                 createTableValues(
                         zoneId,
