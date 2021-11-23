@@ -49,11 +49,12 @@ public class ParseForecastFromFile implements UseCase<FileUploadDto, Forecast> {
         final MeliDocument document = createMeliDocumentFrom(input.getBytes());
         final List<ForecastSheetDto> parsedSheets = forecastParser.parse(warehouseId, document);
 
-        return createForecastFrom(warehouseId, parsedSheets);
+        return createForecastFrom(warehouseId, parsedSheets, input.getUserId());
     }
 
     private static Forecast createForecastFrom(final String warehouseId,
-                                               final List<ForecastSheetDto> sheets) {
+                                               final List<ForecastSheetDto> sheets,
+                                               final long userId) {
         final Map<ForecastColumnName, Object> parsedValues = sheets.stream()
                 .map(ForecastSheetDto::getValues)
                 .flatMap(m -> m.entrySet().stream())
@@ -73,6 +74,7 @@ public class ParseForecastFromFile implements UseCase<FileUploadDto, Forecast> {
                         parsedValues.get(POLYVALENT_PRODUCTIVITY))
                 .backlogLimits((List<BacklogLimit>)
                         parsedValues.get(BACKLOG_LIMITS))
+                .userID(userId)
                 .build();
     }
 

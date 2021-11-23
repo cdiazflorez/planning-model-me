@@ -62,7 +62,7 @@ public class ForecastControllerTest {
                 MediaType.APPLICATION_JSON_VALUE,
                 fileContent
         );
-        final FileUploadDto fileUploadDto = new FileUploadDto(WAREHOUSE_ID, fileContent);
+        final FileUploadDto fileUploadDto = new FileUploadDto(WAREHOUSE_ID, fileContent, 1234);
 
         when(parseForecastFromFile.execute(fileUploadDto)).thenReturn(Forecast.builder().build());
 

@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
-import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastCreationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -29,7 +28,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.constraints.NotNull;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -64,8 +62,8 @@ public class ForecastController {
         final byte[] bytes = getFileBytes(file);
 
         final Forecast forecast = parseForecastFromFile.execute(
-                    new FileUploadDto(warehouseId, bytes)
-            );
+                new FileUploadDto(warehouseId, bytes, callerId)
+        );
 
         final ForecastCreationResponse createdForecast =
                 createForecast.execute(ForecastDto.builder()
