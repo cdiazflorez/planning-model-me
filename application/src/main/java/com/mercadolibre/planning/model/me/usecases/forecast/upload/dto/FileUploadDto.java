@@ -8,9 +8,12 @@ import lombok.Data;
 public class FileUploadDto {
     private String warehouseId;
     private byte[] bytes;
+    private long userId;
 
-    public FileUploadDto(final String warehouseId, final byte[] bytes) {
+    public FileUploadDto(final String warehouseId, final byte[] bytes,
+                         final long userId) {
         this.warehouseId = warehouseId;
         this.bytes = bytes.clone();
+        this.userId = userId;
     }
 }

@@ -15,4 +15,5 @@ public class Forecast {
     private List<HeadcountProductivity> headcountProductivities;
     private List<PlanningDistribution> planningDistributions;
     private List<BacklogLimit> backlogLimits;
+    private long userID;
 }
