@@ -230,9 +230,9 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                            final Function<Instant, Consolidation> backlogSupplier) {
 
         final Instant latestPhotoDate = getDateWhenLatestPhotoWasTaken(consolidation, requestDate);
-        final List<Consolidation> truncatedConsolidation =
+        final List<Consolidation> truncatedConsolidations =
                 truncateToHoursTheTakenOnDatesExceptFor(consolidation, latestPhotoDate);
-        return fillMissing(truncatedConsolidation, dateFrom, latestPhotoDate, backlogSupplier);
+        return fillMissing(truncatedConsolidations, dateFrom, latestPhotoDate, backlogSupplier);
     }
 
     private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklog(
