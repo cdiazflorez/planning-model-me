@@ -359,7 +359,11 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         return ProcessName.from(b.getKeys().get("process"));
     }
 
-    /** FIXME this method is similar to {@link GetConsolidatedBacklog#getDateWhenLatestPhotoWasTaken(List, Instant)}. Low cohesion detected! */
+    /**
+     * FIXME this method is similar to
+     * {@link GetConsolidatedBacklog#getDateWhenLatestPhotoWasTaken(List, Instant)}. Low cohesion
+     * detected!
+     */
     private Instant getDateWhenLatestPhotoOfAllCurrentBacklogsWasTaken(
             final List<ProcessData> processesData,
             final Instant defaultDate) {
