@@ -1,8 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
@@ -44,6 +44,8 @@ class GetHistoricalBacklogTest {
             parse("2021-08-28T04:00:00Z", ISO_OFFSET_DATE_TIME)
     );
 
+    private static final ZonedDateTime DATE_CURRENT = DATES.get(1);
+
     private static final ZonedDateTime DATE_FROM = DATES.get(0);
 
     private static final ZonedDateTime DATE_TO = DATES.get(3);
@@ -61,19 +63,20 @@ class GetHistoricalBacklogTest {
     @Test
     void testExecuteOK() {
         // GIVEN
-        final var dateFrom = DATE_FROM.minusWeeks(2L);
+        final var dateFrom = DATE_FROM.minusWeeks(3L);
         final var dateTo = DATE_TO.minusWeeks(1L).plusHours(1L);
 
         mockHistoricalBacklog(dateFrom, dateTo);
         mockThroughput(dateFrom, dateTo);
 
-        final var input = GetHistoricalBacklogInput.builder()
-                .warehouseId(WAREHOUSE_ID)
-                .workflows(of("outbound-orders"))
-                .processes(of(WAVING, PICKING, PACKING))
-                .dateFrom(DATE_FROM)
-                .dateTo(DATE_TO)
-                .build();
+        final var input = new GetHistoricalBacklogInput(
+                DATE_CURRENT.toInstant(),
+                WAREHOUSE_ID,
+                of("outbound-orders"),
+                of(WAVING, PICKING, PACKING),
+                DATE_FROM.toInstant(),
+                DATE_TO.toInstant()
+        );
 
         // WHEN
         final Map<ProcessName, HistoricalBacklog> backlogs = getHistoricalBacklog.execute(input);
@@ -83,11 +86,11 @@ class GetHistoricalBacklogTest {
 
         // waving
         final var waving = backlogs.get(WAVING);
-        assertEquals(239, waving.get(DATE_FROM).getUnits()); // 232, 239, 246
-        assertEquals(181, waving.get(DATE_FROM).getMinutes()); // 77, 79, 82
+        assertEquals(239, waving.get(DATE_FROM.toInstant()).getUnits()); // 232, 239, 246
+        assertEquals(181, waving.get(DATE_FROM.toInstant()).getMinutes()); // 77, 79, 82
 
-        assertEquals(938, waving.get(DATE_TO).getUnits()); // 910, 938, 966
-        assertEquals(180, waving.get(DATE_TO).getMinutes()); // 303, 312, 322
+        assertEquals(938, waving.get(DATE_TO.toInstant()).getUnits()); // 910, 938, 966
+        assertEquals(180, waving.get(DATE_TO.toInstant()).getMinutes()); // 303, 312, 322
     }
 
     private void mockThroughput(ZonedDateTime dateFrom, ZonedDateTime dateTo) {
@@ -119,26 +122,27 @@ class GetHistoricalBacklogTest {
         final List<ZonedDateTime> dates = dates(DATE_FROM, DATE_TO, 3);
         final List<String> processes = of("waving", "packing", "picking");
 
-        List<Backlog> backlogs = processes.stream()
+        List<Consolidation> consolidations = processes.stream()
                 .flatMap(process -> dates.stream()
-                        .map(date -> new Backlog(
-                                date,
+                        .map(date -> new Consolidation(
+                                date.toInstant(),
                                 Map.of("process", process),
                                 dateValue(date) * (processes.indexOf(process) + 1)
                         ))
                 )
                 .collect(Collectors.toList());
 
-        final BacklogRequest request = BacklogRequest.builder()
-                .warehouseId(WAREHOUSE_ID)
-                .workflows(of("outbound-orders"))
-                .processes(of("waving", "picking", "packing"))
-                .groupingFields(of("process"))
-                .dateFrom(dateFrom)
-                .dateTo(dateTo)
-                .build();
+        final BacklogRequest request = new BacklogRequest(
+                DATE_CURRENT.toInstant(),
+                WAREHOUSE_ID,
+                of("outbound-orders"),
+                of("waving", "picking", "packing"),
+                of("process"),
+                dateFrom.toInstant(),
+                dateTo.toInstant()
+        );
 
-        when(backlogApiGateway.getBacklog(request)).thenReturn(backlogs);
+        when(backlogApiGateway.getBacklog(request)).thenReturn(consolidations);
     }
 
     private List<ZonedDateTime> dates(ZonedDateTime dateFrom, ZonedDateTime dateTo, int weeks) {

@@ -5,19 +5,19 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.restclient.MeliRestClient;
 import org.springframework.stereotype.Component;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
-import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.springframework.http.HttpStatus.OK;
 
 @Component
@@ -28,7 +28,7 @@ public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
         super(client, RestPool.BACKLOG.name());
     }
 
-    public List<Backlog> getBacklog(BacklogRequest request) {
+    public List<Consolidation> getBacklog(BacklogRequest request) {
         final HttpRequest httpRequest = HttpRequest.builder()
                 .url(format(BACKLOG_URL, request.getWarehouseId()))
                 .GET()
@@ -44,6 +44,7 @@ public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
 
     private Map<String, String> getQueryParams(BacklogRequest request) {
         Map<String, String> params = new HashMap<>();
+        addAsQueryParam(params, "requestDate", request.getRequestDate());
         addAsQueryParam(params, "workflows", request.getWorkflows());
         addAsQueryParam(params, "processes", request.getProcesses());
         addAsQueryParam(params, "group_by", request.getGroupingFields());
@@ -59,9 +60,9 @@ public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
         }
     }
 
-    private void addAsQueryParam(Map<String, String> map, String key, ZonedDateTime value) {
+    private void addAsQueryParam(Map<String, String> map, String key, Instant value) {
         if (value != null) {
-            map.put(key, value.format(ISO_OFFSET_DATE_TIME));
+            map.put(key, ISO_INSTANT.format(value));
         }
     }
 }

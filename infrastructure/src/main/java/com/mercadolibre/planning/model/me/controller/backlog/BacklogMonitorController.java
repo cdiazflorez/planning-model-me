@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
 import com.mercadolibre.planning.model.me.config.FeatureToggle;
+import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.EmptyStateException;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
@@ -9,7 +10,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDeta
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
-import com.mercadolibre.planning.model.me.utils.DateUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +19,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.ZonedDateTime;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static java.time.ZoneOffset.UTC;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 @RestController
@@ -36,8 +37,8 @@ public class BacklogMonitorController {
             FBM_WMS_OUTBOUND.getName(), "outbound-orders"
     );
 
-    private static final long DEFAULT_HOURS_LOOKBACK = 2L;
-    private static final long DEFAULT_HOURS_LOOKAHEAD = 8L;
+    private static final Duration DEFAULT_HOURS_LOOKBACK = Duration.ofHours(2);
+    private static final Duration DEFAULT_HOURS_LOOKAHEAD = Duration.ofHours(8);
 
     private final GetBacklogMonitor getBacklogMonitor;
 
@@ -45,28 +46,32 @@ public class BacklogMonitorController {
 
     private final FeatureToggle featureToggle;
 
+    private final RequestClock requestClock;
+
     @GetMapping("/monitor")
     public ResponseEntity<WorkflowBacklogDetail> monitor(
             @PathVariable final String warehouseId,
             @RequestParam final String workflow,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime dateFrom,
+            final OffsetDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime dateTo,
+            final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
         if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
             throw new EmptyStateException();
         }
 
-        ZonedDateTime now = DateUtils.getCurrentUtcDateTime().truncatedTo(ChronoUnit.HOURS);
+        final Instant requestDate = requestClock.now();
+        final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
         WorkflowBacklogDetail response = getBacklogMonitor.execute(
                 new GetBacklogMonitorInputDto(
+                        requestDate,
                         warehouseId,
                         WORKFLOW_ADAPTER.get(workflow),
-                        dateFrom(dateFrom, now),
-                        dateTo(dateTo, now),
+                        dateFrom(dateFrom, startOfCurrentHour),
+                        dateTo(dateTo, startOfCurrentHour),
                         callerId
                 )
         );
@@ -86,40 +91,40 @@ public class BacklogMonitorController {
             @RequestParam(required = false) final String workflow,
             @RequestParam final String process,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime dateFrom,
+            final OffsetDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime dateTo,
+            final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
         if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
             throw new EmptyStateException();
         }
 
-        ZonedDateTime now = DateUtils.getCurrentUtcDateTime().truncatedTo(ChronoUnit.HOURS);
+        final Instant requestDate = requestClock.now();
+        final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
         return ResponseEntity.ok(
-                getBacklogMonitorDetails.execute(
-                        GetBacklogMonitorDetailsInput.builder()
-                                .warehouseId(warehouseId)
-                                .workflow(WORKFLOW_ADAPTER.get(workflow))
-                                .process(ProcessName.from(process))
-                                .dateFrom(dateFrom(dateFrom, now))
-                                .dateTo(dateTo(dateTo, now))
-                                .callerId(callerId)
-                                .build()
-                )
+                getBacklogMonitorDetails.execute(new GetBacklogMonitorDetailsInput(
+                                requestDate,
+                                warehouseId,
+                                WORKFLOW_ADAPTER.get(workflow),
+                                ProcessName.from(process),
+                                dateFrom(dateFrom, startOfCurrentHour),
+                                dateTo(dateTo, startOfCurrentHour),
+                                callerId
+                ))
         );
     }
 
-    private ZonedDateTime dateFrom(ZonedDateTime date, ZonedDateTime now) {
+    private Instant dateFrom(OffsetDateTime date, Instant startOfCurrentHour) {
         return date == null
-                ? now.minusHours(DEFAULT_HOURS_LOOKBACK)
-                : date.withZoneSameInstant(UTC);
+                ? startOfCurrentHour.minus(DEFAULT_HOURS_LOOKBACK)
+                : date.toInstant();
     }
 
-    private ZonedDateTime dateTo(ZonedDateTime date, ZonedDateTime now) {
+    private Instant dateTo(OffsetDateTime date, Instant startOfCurrentHour) {
         return date == null
-                ? now.plusHours(DEFAULT_HOURS_LOOKAHEAD)
-                : date.withZoneSameInstant(UTC);
+                ? startOfCurrentHour.plus(DEFAULT_HOURS_LOOKAHEAD)
+                : date.toInstant();
     }
 }

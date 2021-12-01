@@ -7,10 +7,10 @@ import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByWo
 import com.mercadolibre.planning.model.me.exception.NoPlannedDataException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetPlannedHeadcountInput;
@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -57,11 +57,11 @@ public class GetPlannedHeadcount implements UseCase<GetPlannedHeadcountInput, Pl
                 .getConfiguration(input.getLogisticCenterId()).getZoneId();
         final ZonedDateTime dateTimeFrom = ZonedDateTime.now(zoneId).truncatedTo(DAYS);
         final ZonedDateTime dateTimeTo = dateTimeFrom.plusHours(23);
-        Map<EntityType, List<Entity>> entities;
+        Map<MagnitudeType, List<MagnitudePhoto>> entities;
 
         try {
-            entities = planningModelGateway.searchEntities(
-                    SearchEntitiesRequest.builder()
+            entities = planningModelGateway.searchTrajectories(
+                    SearchTrajectoriesRequest.builder()
                             .warehouseId(input.getLogisticCenterId())
                             .workflow(FBM_WMS_OUTBOUND)
                             .entityTypes(List.of(HEADCOUNT, THROUGHPUT))
@@ -81,11 +81,11 @@ public class GetPlannedHeadcount implements UseCase<GetPlannedHeadcountInput, Pl
         }
 
         final List<PlannedEntity> headcount = entities.get(HEADCOUNT).stream()
-                .map((Entity entity) -> PlannedEntity.fromEntity(entity, HEADCOUNT))
+                .map((MagnitudePhoto entity) -> PlannedEntity.fromEntity(entity, HEADCOUNT))
                 .collect(Collectors.toList());
 
         final List<PlannedEntity> throughput = entities.get(THROUGHPUT).stream()
-                .map((Entity entity) -> PlannedEntity.fromEntity(entity, THROUGHPUT))
+                .map((MagnitudePhoto entity) -> PlannedEntity.fromEntity(entity, THROUGHPUT))
                 .collect(Collectors.toList());
 
         final Map<ZonedDateTime, Map<Workflow, Map<ProcessName, List<PlannedEntity>>>>

@@ -4,8 +4,8 @@ import com.mercadolibre.planning.model.me.entities.staffing.Process;
 import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.staffing.StaffingGateway;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Area;
@@ -52,7 +52,7 @@ class GetStaffingTest {
         when(staffingGateway.getStaffing(WAREHOUSE_ID))
                 .thenReturn(mockStaffingResponse());
 
-        when(planningModelGateway.searchEntities(any()))
+        when(planningModelGateway.searchTrajectories(any()))
                 .thenReturn(mockForecastEntities());
 
         //WHEN
@@ -132,7 +132,7 @@ class GetStaffingTest {
         when(staffingGateway.getStaffing(WAREHOUSE_ID))
                 .thenReturn(mockStaffingResponseError());
 
-        when(planningModelGateway.searchEntities(any()))
+        when(planningModelGateway.searchTrajectories(any()))
                 .thenReturn(mockForecastEntities());
 
         //WHEN
@@ -236,12 +236,12 @@ class GetStaffingTest {
         );
     }
 
-    private Map<EntityType, List<Entity>> mockForecastEntities() {
-        return Map.of(EntityType.PRODUCTIVITY, List.of(
-                Entity.builder().processName(ProcessName.PICKING).value(30).build(),
-                Entity.builder().processName(ProcessName.WALL_IN).value(20).build(),
-                Entity.builder().processName(ProcessName.WAVING).value(40).build(),
-                Entity.builder().processName(ProcessName.PACKING).value(35).build())
-        );
+    private Map<MagnitudeType, List<MagnitudePhoto>> mockForecastEntities() {
+        return Map.of(MagnitudeType.PRODUCTIVITY, List.of(
+            MagnitudePhoto.builder().processName(ProcessName.PICKING).value(30).build(),
+            MagnitudePhoto.builder().processName(ProcessName.WALL_IN).value(20).build(),
+            MagnitudePhoto.builder().processName(ProcessName.WAVING).value(40).build(),
+            MagnitudePhoto.builder().processName(ProcessName.PACKING).value(35).build()
+        ));
     }
 }

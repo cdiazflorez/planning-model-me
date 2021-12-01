@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.clients.rest.staffing.request;
 
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.Aggregation;
-import lombok.Builder;
 import lombok.Value;
 
 import java.util.List;

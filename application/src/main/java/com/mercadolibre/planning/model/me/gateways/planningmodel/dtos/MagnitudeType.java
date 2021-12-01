@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum EntityType {
+public enum MagnitudeType {
     ORDER_UNITS(null),
     PRODUCTIVITY("Productividad regular"),
     HEADCOUNT("Headcount"),
@@ -19,7 +19,7 @@ public enum EntityType {
 
     private String title;
 
-    public static EntityType from(final String value) {
+    public static MagnitudeType from(final String value) {
         return valueOf(value.toUpperCase());
     }
 

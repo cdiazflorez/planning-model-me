@@ -11,6 +11,8 @@ import javax.inject.Named;
 
 import java.util.List;
 
+import static java.time.ZoneOffset.UTC;
+
 @Named
 @AllArgsConstructor
 public class GetBacklogByDate implements UseCase<GetBacklogByDateDto, List<Backlog>> {
@@ -22,7 +24,14 @@ public class GetBacklogByDate implements UseCase<GetBacklogByDateDto, List<Backl
         return backlogGatewayProvider
                 .getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()))
-                .getBacklog(input.getWarehouseId(), input.getDateFrom(), input.getDateTo(),
-                        List.of("pending"), List.of("etd"));
+                .getBacklog(
+                        input.getWarehouseId(),
+                        /* Note that the zone is not necessary but the BacklogGateway requires it to
+                        no avail. */
+                        input.getDateFrom().atZone(UTC),
+                        input.getDateTo().atZone(UTC),
+                        List.of("pending"),
+                        List.of("etd")
+                );
     }
 }
