@@ -28,7 +28,7 @@ public class EntityRow {
         return this;
     }
 
-    public static EntityRow fromEntity(final MagVarPhoto response) {
+    public static EntityRow fromEntity(final MagnitudePhoto response) {
         RowName rowName = null;
 
         switch (response.getProcessName()) {

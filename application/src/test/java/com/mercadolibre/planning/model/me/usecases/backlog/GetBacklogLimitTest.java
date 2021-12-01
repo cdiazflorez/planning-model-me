@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -121,8 +121,8 @@ class GetBacklogLimitTest {
         );
     }
 
-    private MagVarPhoto mvp(ZonedDateTime date, ProcessName process, Integer value) {
-        return MagVarPhoto.builder()
+    private MagnitudePhoto mvp(ZonedDateTime date, ProcessName process, Integer value) {
+        return MagnitudePhoto.builder()
                 .date(date)
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                 .processName(process)

@@ -6,7 +6,7 @@ import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
@@ -102,39 +102,39 @@ public class GetEntitiesTest {
         assertComplexTable(response);
     }
 
-    private List<MagVarPhoto> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
+    private List<MagnitudePhoto> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
         return List.of(
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime)
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(10)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime)
                         .processName(PICKING)
                         .source(Source.SIMULATION)
                         .value(20)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime.plusHours(2))
                         .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(15)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime.plusDays(1))
                         .processName(PICKING)
                         .source(Source.FORECAST)
                         .value(30)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime.plusHours(3))
                         .processName(PACKING_WALL)
                         .source(Source.FORECAST)
                         .value(79)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime.plusDays(3))
                         .processName(PACKING_WALL)
                         .source(Source.FORECAST)
@@ -143,7 +143,7 @@ public class GetEntitiesTest {
         );
     }
 
-    private List<MagVarPhoto> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
+    private List<MagnitudePhoto> mockProductivityEntities(final ZonedDateTime utcCurrentTime) {
         return List.of(
                 Productivity.builder()
                         .date(utcCurrentTime)

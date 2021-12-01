@@ -7,7 +7,7 @@ import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
 import com.mercadolibre.planning.model.me.entities.staffing.Worker;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -75,7 +75,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .collect(Collectors.toMap(StaffingWorkflowResponse::getName, Function.identity()));
 
         WORKFLOWS.forEach((workflow, processNames) -> {
-            final Map<MagnitudeType, List<MagVarPhoto>> forecastStaffing;
+            final Map<MagnitudeType, List<MagnitudePhoto>> forecastStaffing;
             //TODO: Eliminar este IF cuando planning model api devuelva otros workflows
             if ("fbm-wms-outbound".equals(workflow)) {
                 forecastStaffing = getForecastStaffing(logisticCenterId, processNames, now);
@@ -179,10 +179,11 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .build();
     }
 
-    private Map<MagnitudeType, List<MagVarPhoto>> getForecastStaffing(final String logisticCenterId,
-                                                                      final List<String> processes,
-                                                                      final ZonedDateTime now) {
-
+    private Map<MagnitudeType, List<MagnitudePhoto>> getForecastStaffing(
+            final String logisticCenterId,
+            final List<String> processes,
+            final ZonedDateTime now
+    ) {
         try {
             return planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
                     .warehouseId(logisticCenterId)
@@ -203,12 +204,13 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
         }
     }
 
-    private Integer filterProductivity(final Map<MagnitudeType, List<MagVarPhoto>> staffingForecast,
-                                       final String process) {
+    private Integer filterProductivity(
+            final Map<MagnitudeType, List<MagnitudePhoto>> staffingForecast,
+            final String process) {
         final OptionalDouble productivity = staffingForecast
                 .get(MagnitudeType.PRODUCTIVITY).stream()
                 .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-                .mapToInt(MagVarPhoto::getValue)
+                .mapToInt(MagnitudePhoto::getValue)
                 .average();
 
         return productivity.isPresent() ? (int) productivity.getAsDouble() : null;

@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.throughput;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
@@ -33,12 +33,12 @@ public class GetProcessThroughput implements UseCase<GetThroughputInput, GetThro
 
     @Override
     public GetThroughputResult execute(GetThroughputInput input) {
-        final Map<ProcessName, List<MagVarPhoto>> throughputTrajectoriesByProcess =
+        final Map<ProcessName, List<MagnitudePhoto>> throughputTrajectoriesByProcess =
                 planningModelGateway.searchTrajectories(request(input))
                         .get(THROUGHPUT)
                         .stream()
                         .collect(Collectors.groupingBy(
-                                MagVarPhoto::getProcessName,
+                                MagnitudePhoto::getProcessName,
                                 Collectors.toList()
                         ));
 
@@ -80,12 +80,12 @@ public class GetProcessThroughput implements UseCase<GetThroughputInput, GetThro
      */
     public Map<ZonedDateTime, Integer> calcPessimisticThroughputTrajectory(
             final ProcessName.Graph graph,
-            final Map<ProcessName, List<MagVarPhoto>> trajectoryBySubprocess
+            final Map<ProcessName, List<MagnitudePhoto>> trajectoryBySubprocess
     ) {
         if (graph instanceof ProcessName.Single) {
             var single = (ProcessName.Single) graph;
             return trajectoryBySubprocess.getOrDefault(single.getProcessName(), List.of()).stream()
-                    .collect(Collectors.toMap(MagVarPhoto::getDate, MagVarPhoto::getValue));
+                    .collect(Collectors.toMap(MagnitudePhoto::getDate, MagnitudePhoto::getValue));
 
         } else if (graph instanceof ProcessName.Multiple) {
             var multiple = (ProcessName.Multiple) graph;

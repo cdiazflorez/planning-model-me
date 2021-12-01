@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -30,7 +30,7 @@ class GetBacklogLimits {
     public Map<ProcessName, Map<Instant, BacklogLimit>> execute(
             final GetBacklogLimitsInput input) {
 
-        final Map<MagnitudeType, List<MagVarPhoto>> entitiesByType =
+        final Map<MagnitudeType, List<MagnitudePhoto>> entitiesByType =
                 planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
                         .workflow(input.getWorkflow())
                         .entityTypes(of(BACKLOG_LOWER_LIMIT, BACKLOG_UPPER_LIMIT))
@@ -45,18 +45,18 @@ class GetBacklogLimits {
                 entitiesByType.get(BACKLOG_LOWER_LIMIT)
                         .stream()
                         .collect(Collectors.groupingBy(
-                                MagVarPhoto::getProcessName,
+                                MagnitudePhoto::getProcessName,
                                 Collectors.toMap(
                                         entry -> entry.getDate().toInstant(),
-                                        MagVarPhoto::getValue
+                                        MagnitudePhoto::getValue
                                 )
                         ));
 
-        final Map<ProcessName, List<MagVarPhoto>> entitiesByProcess =
+        final Map<ProcessName, List<MagnitudePhoto>> entitiesByProcess =
                 entitiesByType.get(BACKLOG_UPPER_LIMIT)
                         .stream()
                         .collect(Collectors.groupingBy(
-                                MagVarPhoto::getProcessName,
+                                MagnitudePhoto::getProcessName,
                                 Collectors.toList()
                         ));
 
@@ -73,7 +73,7 @@ class GetBacklogLimits {
 
     private Map<Instant, BacklogLimit> buildProcess(
             final Map<Instant, Integer> lowerLimits,
-            final List<MagVarPhoto> upperLimits) {
+            final List<MagnitudePhoto> upperLimits) {
 
         return upperLimits.stream()
                 .collect(Collectors.toMap(

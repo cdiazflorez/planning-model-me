@@ -8,7 +8,7 @@ import java.time.ZonedDateTime;
 /** A tagged photo of a scalar magnitude variable. */
 @Data
 @SuperBuilder
-public class MagVarPhoto {
+public class MagnitudePhoto {
 
     /** The date when the photo was taken. */
     private ZonedDateTime date;

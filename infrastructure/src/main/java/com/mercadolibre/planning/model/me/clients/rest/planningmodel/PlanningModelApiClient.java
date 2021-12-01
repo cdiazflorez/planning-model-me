@@ -16,7 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
@@ -83,7 +83,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<MagVarPhoto> getTrajectories(final TrajectoriesRequest trajectoriesRequest) {
+    public List<MagnitudePhoto> getTrajectories(final TrajectoriesRequest trajectoriesRequest) {
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL + "/entities/%s",
                             trajectoriesRequest.getWorkflow().getName(),
@@ -131,7 +131,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<MagVarPhoto> getPerformedProcessing(final TrajectoriesRequest request) {
+    public List<MagnitudePhoto> getPerformedProcessing(final TrajectoriesRequest request) {
         final HttpRequest httpRequest = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL + "/entities/performed_processing",
                         request.getWorkflow().getName()))
@@ -144,7 +144,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public Map<MagnitudeType, List<MagVarPhoto>> searchTrajectories(
+    public Map<MagnitudeType, List<MagnitudePhoto>> searchTrajectories(
             final SearchTrajectoriesRequest request
     ) {
         final HttpRequest httpRequest = HttpRequest.builder()
@@ -157,7 +157,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 response.getData(new TypeReference<>() {})
         );
 
-        final Map<MagnitudeType, List<MagVarPhoto>> response = new HashMap<>();
+        final Map<MagnitudeType, List<MagnitudePhoto>> response = new HashMap<>();
         apiResponse.forEach((key, value) -> {
             if (PRODUCTIVITY.getName().equals(key)) {
                 response.put(PRODUCTIVITY, value.stream()
@@ -401,7 +401,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .collect(joining(","));
     }
 
-    private List<MagVarPhoto> executeGetEntities(HttpRequest request) {
+    private List<MagnitudePhoto> executeGetEntities(HttpRequest request) {
         try {
             final List<EntityResponse> apiResponse = send(request, response ->
                     response.getData(new TypeReference<>() {
@@ -417,8 +417,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         }
     }
 
-    private MagVarPhoto toEntity(final EntityResponse response) {
-        return MagVarPhoto.builder()
+    private MagnitudePhoto toEntity(final EntityResponse response) {
+        return MagnitudePhoto.builder()
                 .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
                 .processName(ProcessName.from(response.getProcessName()))
                 .workflow(Workflow.from(response.getWorkflow()).orElseThrow())

@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.staffing.dtos;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -19,7 +19,7 @@ public class PlannedEntity {
     private Integer value;
 
     public static PlannedEntity fromEntity(
-            final MagVarPhoto magVarPhoto,
+            final MagnitudePhoto magVarPhoto,
             final MagnitudeType type
     ) {
         return PlannedEntity.builder()

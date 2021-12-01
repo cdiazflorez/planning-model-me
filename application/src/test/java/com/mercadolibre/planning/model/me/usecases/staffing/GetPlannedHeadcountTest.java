@@ -8,7 +8,7 @@ import com.mercadolibre.planning.model.me.exception.NoPlannedDataException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -108,47 +108,47 @@ public class GetPlannedHeadcountTest {
         ));
     }
 
-    private Map<MagnitudeType, List<MagVarPhoto>> mockEntities() {
+    private Map<MagnitudeType, List<MagnitudePhoto>> mockEntities() {
         final ZonedDateTime now = ZonedDateTime.now().truncatedTo(DAYS);
 
         return Map.of(
                 MagnitudeType.HEADCOUNT, List.of(
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PICKING)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(10)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PICKING)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(15)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PACKING)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(5)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PACKING)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(8)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(WALL_IN)
                                 .metricUnit(MetricUnit.WORKERS)
                                 .value(2)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(WALL_IN)
@@ -157,42 +157,42 @@ public class GetPlannedHeadcountTest {
                                 .build()
                 ),
                 MagnitudeType.THROUGHPUT, List.of(
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PICKING)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(100)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PICKING)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(120)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PACKING)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(58)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(PACKING)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(82)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now)
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(WALL_IN)
                                 .metricUnit(MetricUnit.UNITS_PER_HOUR)
                                 .value(22)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(now.plusHours(1))
                                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                                 .processName(WALL_IN)

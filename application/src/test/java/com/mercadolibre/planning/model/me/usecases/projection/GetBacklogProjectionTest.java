@@ -5,7 +5,7 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
@@ -71,13 +71,13 @@ public class GetBacklogProjectionTest {
                 .dateTo(A_DATE.plusHours(25))
                 .build())
         ).thenReturn(List.of(
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .processName(PICKING)
                         .date(firstDate)
                         .value(150)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .processName(PICKING)
                         .date(firstDate.plusHours(1))

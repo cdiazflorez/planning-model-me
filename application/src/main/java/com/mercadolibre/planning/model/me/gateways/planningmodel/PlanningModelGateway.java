@@ -5,7 +5,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -32,16 +32,16 @@ import java.util.Optional;
 
 public interface PlanningModelGateway {
 
-    List<MagVarPhoto> getTrajectories(final TrajectoriesRequest request);
+    List<MagnitudePhoto> getTrajectories(final TrajectoriesRequest request);
 
     List<Metadata> getForecastMetadata(final Workflow workflow,
                                        final ForecastMetadataRequest request);
 
     List<Productivity> getProductivity(final ProductivityRequest request);
 
-    List<MagVarPhoto> getPerformedProcessing(final TrajectoriesRequest request);
+    List<MagnitudePhoto> getPerformedProcessing(final TrajectoriesRequest request);
 
-    Map<MagnitudeType, List<MagVarPhoto>> searchTrajectories(
+    Map<MagnitudeType, List<MagnitudePhoto>> searchTrajectories(
             final SearchTrajectoriesRequest request
     );
 

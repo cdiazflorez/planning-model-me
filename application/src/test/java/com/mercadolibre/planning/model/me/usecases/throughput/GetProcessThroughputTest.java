@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.throughput;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
@@ -212,27 +212,27 @@ class GetProcessThroughputTest {
                 .build();
     }
 
-    private Stream<MagVarPhoto> pickingTrajectory() {
+    private Stream<MagnitudePhoto> pickingTrajectory() {
         return mockTrajectory(PICKING, 10, 75, 40);
     }
 
-    private Stream<MagVarPhoto> batchSorterTrajectory() {
+    private Stream<MagnitudePhoto> batchSorterTrajectory() {
         return mockTrajectory(BATCH_SORTER, 25, 30, 45);
     }
 
-    private Stream<MagVarPhoto> wallInTrajectory() {
+    private Stream<MagnitudePhoto> wallInTrajectory() {
         return mockTrajectory(WALL_IN, 50, 75, 95);
     }
 
-    private Stream<MagVarPhoto> packingTrajectory() {
+    private Stream<MagnitudePhoto> packingTrajectory() {
         return mockTrajectory(PACKING, 10, 30, 40);
     }
 
-    private Stream<MagVarPhoto> packingWallTrajectory() {
+    private Stream<MagnitudePhoto> packingWallTrajectory() {
         return mockTrajectory(PACKING_WALL, 5, 40, 40);
     }
 
-    private Stream<MagVarPhoto> globalTrajectory() {
+    private Stream<MagnitudePhoto> globalTrajectory() {
         return mockTrajectory(GLOBAL, 300, 400, 500);
     }
 
@@ -251,24 +251,24 @@ class GetProcessThroughputTest {
         assertEquals(thirdVal, throughputs.get(dateFrom.plusHours(2L)));
     }
 
-    private Stream<MagVarPhoto> mockTrajectory(ProcessName process,
-                                               Integer firstVal,
-                                               Integer secondVal,
-                                               Integer thirdVal) {
+    private Stream<MagnitudePhoto> mockTrajectory(ProcessName process,
+                                                  Integer firstVal,
+                                                  Integer secondVal,
+                                                  Integer thirdVal) {
 
         final var dateFrom = TestUtils.A_DATE;
         return Stream.of(
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(dateFrom)
                         .processName(process)
                         .value(firstVal)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(dateFrom.plusHours(1L))
                         .processName(process)
                         .value(secondVal)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(dateFrom.plusHours(2L))
                         .processName(process)
                         .value(thirdVal)

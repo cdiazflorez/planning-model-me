@@ -8,7 +8,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
@@ -76,7 +76,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                 ? getCurrentUtcDate() : input.getDate();
         final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
-        final Map<MagnitudeType, List<MagVarPhoto>> entities = planningModelGateway
+        final Map<MagnitudeType, List<MagnitudePhoto>> entities = planningModelGateway
                 .searchTrajectories(
                         SearchTrajectoriesRequest.builder()
                                 .warehouseId(input.getWarehouseId())

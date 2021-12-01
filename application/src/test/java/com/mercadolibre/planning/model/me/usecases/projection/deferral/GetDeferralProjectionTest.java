@@ -7,7 +7,7 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTi
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
@@ -292,34 +292,34 @@ public class GetDeferralProjectionTest {
         );
     }
 
-    private List<MagVarPhoto> mockHeadcountEntities() {
+    private List<MagnitudePhoto> mockHeadcountEntities() {
         return List.of(
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusHours(-4))
                         .processName(GLOBAL)
                         .value(10)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusHours(-3))
                         .processName(GLOBAL)
                         .value(20)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusHours(-2))
                         .processName(GLOBAL)
                         .value(15)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusHours(-1))
                         .processName(GLOBAL)
                         .value(30)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1)
                         .processName(GLOBAL)
                         .value(79)
                         .build(),
-                MagVarPhoto.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusDays(1))
                         .processName(GLOBAL)
                         .value(32)

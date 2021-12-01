@@ -7,7 +7,7 @@ import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByWo
 import com.mercadolibre.planning.model.me.exception.NoPlannedDataException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -57,7 +57,7 @@ public class GetPlannedHeadcount implements UseCase<GetPlannedHeadcountInput, Pl
                 .getConfiguration(input.getLogisticCenterId()).getZoneId();
         final ZonedDateTime dateTimeFrom = ZonedDateTime.now(zoneId).truncatedTo(DAYS);
         final ZonedDateTime dateTimeTo = dateTimeFrom.plusHours(23);
-        Map<MagnitudeType, List<MagVarPhoto>> entities;
+        Map<MagnitudeType, List<MagnitudePhoto>> entities;
 
         try {
             entities = planningModelGateway.searchTrajectories(
@@ -81,11 +81,11 @@ public class GetPlannedHeadcount implements UseCase<GetPlannedHeadcountInput, Pl
         }
 
         final List<PlannedEntity> headcount = entities.get(HEADCOUNT).stream()
-                .map((MagVarPhoto entity) -> PlannedEntity.fromEntity(entity, HEADCOUNT))
+                .map((MagnitudePhoto entity) -> PlannedEntity.fromEntity(entity, HEADCOUNT))
                 .collect(Collectors.toList());
 
         final List<PlannedEntity> throughput = entities.get(THROUGHPUT).stream()
-                .map((MagVarPhoto entity) -> PlannedEntity.fromEntity(entity, THROUGHPUT))
+                .map((MagnitudePhoto entity) -> PlannedEntity.fromEntity(entity, THROUGHPUT))
                 .collect(Collectors.toList());
 
         final Map<ZonedDateTime, Map<Workflow, Map<ProcessName, List<PlannedEntity>>>>

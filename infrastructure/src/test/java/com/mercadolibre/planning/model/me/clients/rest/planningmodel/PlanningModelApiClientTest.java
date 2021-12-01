@@ -9,7 +9,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Configurat
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -148,18 +148,18 @@ class PlanningModelApiClientTest extends BaseClientTest {
         mockPostEntity(apiResponse);
 
         // When
-        final List<MagVarPhoto> headcounts = client.getTrajectories(request);
+        final List<MagnitudePhoto> headcounts = client.getTrajectories(request);
 
         // Then
         assertEquals(2, headcounts.size());
 
-        final MagVarPhoto headcount0 = headcounts.get(0);
+        final MagnitudePhoto headcount0 = headcounts.get(0);
         assertTrue(request.getDateFrom().isEqual(headcount0.getDate()));
         assertEquals(PICKING, headcount0.getProcessName());
         assertEquals(30, headcount0.getValue());
         assertEquals(Source.FORECAST, headcount0.getSource());
 
-        final MagVarPhoto headcount1 = headcounts.get(1);
+        final MagnitudePhoto headcount1 = headcounts.get(1);
         assertTrue(request.getDateTo().isEqual(headcount1.getDate()));
         assertEquals(PACKING, headcount1.getProcessName());
         assertEquals(20, headcount1.getValue());
@@ -354,18 +354,18 @@ class PlanningModelApiClientTest extends BaseClientTest {
         mockGetPerformedProcessing(apiResponse);
 
         // When
-        final List<MagVarPhoto> targetBacklog = client.getPerformedProcessing(request);
+        final List<MagnitudePhoto> targetBacklog = client.getPerformedProcessing(request);
 
         // Then
         assertEquals(2, targetBacklog.size());
 
-        final MagVarPhoto target1 = targetBacklog.get(0);
+        final MagnitudePhoto target1 = targetBacklog.get(0);
         assertEquals(request.getDateFrom(), target1.getDate());
         assertEquals(WAVING, target1.getProcessName());
         assertEquals(30, target1.getValue());
         assertEquals(Source.FORECAST, target1.getSource());
 
-        final MagVarPhoto target2 = targetBacklog.get(1);
+        final MagnitudePhoto target2 = targetBacklog.get(1);
         assertEquals(request.getDateTo(), target2.getDate());
         assertEquals(WAVING, target2.getProcessName());
         assertEquals(20, target2.getValue());
@@ -947,7 +947,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .build();
 
         // When
-        final Map<MagnitudeType, List<MagVarPhoto>> entities = client.searchTrajectories(
+        final Map<MagnitudeType, List<MagnitudePhoto>> entities = client.searchTrajectories(
                 SearchTrajectoriesRequest.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .entityTypes(List.of(HEADCOUNT, PRODUCTIVITY))
@@ -960,7 +960,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(6, entities.get(HEADCOUNT).size());
         assertEquals(2, entities.get(PRODUCTIVITY).size());
 
-        final MagVarPhoto headcount = entities.get(HEADCOUNT).get(0);
+        final MagnitudePhoto headcount = entities.get(HEADCOUNT).get(0);
         final Productivity productivity = (Productivity)entities.get(PRODUCTIVITY).get(0);
 
         assertEquals(FBM_WMS_OUTBOUND, headcount.getWorkflow());

@@ -7,7 +7,7 @@ import com.mercadolibre.planning.model.me.entities.projection.Selections;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -61,7 +61,7 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
         final List<ColumnHeader> headers = createColumnHeaders(
                 convertToTimeZone(zoneId, getNextHour(dateFrom)), HOURS_TO_SHOW);
 
-        final List<MagVarPhoto> remainingProcessing = planningModel
+        final List<MagnitudePhoto> remainingProcessing = planningModel
                 .getTrajectories(
                         TrajectoriesRequest.builder()
                                 .workflow(input.getWorkflow())
@@ -99,7 +99,7 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
     private SimpleTable createWavingTable(final ZoneId zoneId,
                                           final List<ColumnHeader> headers,
                                           final BacklogProjectionResponse projection,
-                                          final List<MagVarPhoto> remainingProcessing) {
+                                          final List<MagnitudePhoto> remainingProcessing) {
         return new SimpleTable("Ready to wave FCST vs Real", headers, List.of(
                 createTableValues(
                         zoneId,

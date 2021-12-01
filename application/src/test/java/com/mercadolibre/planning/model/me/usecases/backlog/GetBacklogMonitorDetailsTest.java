@@ -4,7 +4,7 @@ import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
@@ -308,19 +308,19 @@ class GetBacklogMonitorDetailsTest {
     private void mockTargetBacklog() {
         when(planningModelGateway.getPerformedProcessing(any()))
                 .thenReturn(List.of(
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(DATES.get(0))
                                 .value(10)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(DATES.get(1))
                                 .value(15)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(DATES.get(2))
                                 .value(30)
                                 .build(),
-                        MagVarPhoto.builder()
+                        MagnitudePhoto.builder()
                                 .date(DATES.get(3))
                                 .value(60)
                                 .build()

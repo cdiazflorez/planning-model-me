@@ -12,7 +12,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
@@ -200,7 +200,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                        final ZonedDateTime dateFrom,
                                        final ZonedDateTime dateTo) {
 
-        final  List<MagVarPhoto> throughput = planningModelGateway.getTrajectories(
+        final  List<MagnitudePhoto> throughput = planningModelGateway.getTrajectories(
                 TrajectoriesRequest.builder()
                         .warehouseId(getCap5LogisticCenterId(input))
                         .workflow(input.getWorkflow())

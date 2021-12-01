@@ -4,7 +4,7 @@ import com.mercadolibre.planning.model.me.entities.staffing.Process;
 import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagVarPhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.staffing.StaffingGateway;
@@ -236,12 +236,12 @@ class GetStaffingTest {
         );
     }
 
-    private Map<MagnitudeType, List<MagVarPhoto>> mockForecastEntities() {
+    private Map<MagnitudeType, List<MagnitudePhoto>> mockForecastEntities() {
         return Map.of(MagnitudeType.PRODUCTIVITY, List.of(
-                MagVarPhoto.builder().processName(ProcessName.PICKING).value(30).build(),
-                MagVarPhoto.builder().processName(ProcessName.WALL_IN).value(20).build(),
-                MagVarPhoto.builder().processName(ProcessName.WAVING).value(40).build(),
-                MagVarPhoto.builder().processName(ProcessName.PACKING).value(35).build())
-        );
+            MagnitudePhoto.builder().processName(ProcessName.PICKING).value(30).build(),
+            MagnitudePhoto.builder().processName(ProcessName.WALL_IN).value(20).build(),
+            MagnitudePhoto.builder().processName(ProcessName.WAVING).value(40).build(),
+            MagnitudePhoto.builder().processName(ProcessName.PACKING).value(35).build()
+        ));
     }
 }
