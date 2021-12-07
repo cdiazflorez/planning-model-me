@@ -5,7 +5,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.Builder;
 import lombok.Value;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Value
@@ -14,6 +14,6 @@ public class GetBacklogLimitsInput {
     String warehouseId;
     Workflow workflow;
     List<ProcessName> processes;
-    ZonedDateTime dateFrom;
-    ZonedDateTime dateTo;
+    Instant dateFrom;
+    Instant dateTo;
 }

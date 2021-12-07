@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.simulation.request;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import lombok.Builder;
 import lombok.Value;
@@ -26,7 +26,7 @@ public class EntityRequest {
 
     public static SimulationEntity toSimulationEntity(final EntityRequest entity) {
         return new SimulationEntity(
-                EntityType.from(entity.getType()),
+                MagnitudeType.from(entity.getType()),
                 entity.getValues().stream().map(ValueRequest::toQuantityByDate).collect(toList())
         );
     }

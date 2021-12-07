@@ -2,13 +2,14 @@ package com.mercadolibre.planning.model.me.usecases.backlog.dtos;
 
 import lombok.Value;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 @Value
 public class GetBacklogMonitorInputDto {
+    private Instant requestDate;
     private String warehouseId;
     private String workflow;
-    private ZonedDateTime dateFrom;
-    private ZonedDateTime dateTo;
+    private Instant dateFrom;
+    private Instant dateTo;
     private Long callerId;
 }

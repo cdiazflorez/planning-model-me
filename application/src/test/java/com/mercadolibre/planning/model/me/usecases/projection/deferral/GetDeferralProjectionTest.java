@@ -7,9 +7,9 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTi
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import org.junit.jupiter.api.Test;
@@ -63,7 +63,7 @@ public class GetDeferralProjectionTest {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
 
-        when(planningModelGateway.getEntities(any(EntityRequest.class))).thenReturn(
+        when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(
                 mockHeadcountEntities());
 
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
@@ -113,7 +113,7 @@ public class GetDeferralProjectionTest {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
 
-        when(planningModelGateway.getEntities(any(EntityRequest.class))).thenReturn(
+        when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(
                 mockHeadcountEntities());
 
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
@@ -165,7 +165,7 @@ public class GetDeferralProjectionTest {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
 
-        when(planningModelGateway.getEntities(any(EntityRequest.class))).thenReturn(
+        when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(
                 mockHeadcountEntities());
 
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
@@ -292,34 +292,34 @@ public class GetDeferralProjectionTest {
         );
     }
 
-    private List<Entity> mockHeadcountEntities() {
+    private List<MagnitudePhoto> mockHeadcountEntities() {
         return List.of(
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusHours(-4))
                         .processName(GLOBAL)
                         .value(10)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusHours(-3))
                         .processName(GLOBAL)
                         .value(20)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusHours(-2))
                         .processName(GLOBAL)
                         .value(15)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusHours(-1))
                         .processName(GLOBAL)
                         .value(30)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1)
                         .processName(GLOBAL)
                         .value(79)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(CPT_1.plusDays(1))
                         .processName(GLOBAL)
                         .value(32)

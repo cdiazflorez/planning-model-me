@@ -10,7 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatew
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
@@ -431,27 +431,27 @@ class GetCurrentStatusTest {
         assertEquals(expectedValue, metric.getValue());
     }
 
-    private List<Entity> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
+    private List<MagnitudePhoto> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
         return List.of(
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime)
                         .processName(ProcessName.PICKING)
                         .source(Source.FORECAST)
                         .value(10)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime)
                         .processName(ProcessName.PICKING)
                         .source(Source.SIMULATION)
                         .value(20)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime.plusHours(2))
                         .processName(ProcessName.PACKING)
                         .source(Source.FORECAST)
                         .value(15)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .date(utcCurrentTime.plusDays(1))
                         .processName(ProcessName.PICKING)
                         .source(Source.FORECAST)

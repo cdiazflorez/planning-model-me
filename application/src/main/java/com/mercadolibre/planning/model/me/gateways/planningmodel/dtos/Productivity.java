@@ -7,7 +7,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class Productivity extends Entity {
+public class Productivity extends MagnitudePhoto {
 
     private int abilityLevel;
 

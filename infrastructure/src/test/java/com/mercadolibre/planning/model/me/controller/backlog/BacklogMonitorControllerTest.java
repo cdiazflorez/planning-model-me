@@ -1,11 +1,12 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
 import com.mercadolibre.planning.model.me.config.FeatureToggle;
+import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.entities.monitor.AreaBacklogDetail;
-import com.mercadolibre.planning.model.me.entities.monitor.BacklogsByDate;
-import com.mercadolibre.planning.model.me.entities.monitor.ProcessBacklogDetail;
+import com.mercadolibre.planning.model.me.entities.monitor.DetailedBacklogPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
+import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitor;
@@ -13,7 +14,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDeta
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
-import com.mercadolibre.planning.model.me.utils.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +23,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
-import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -58,6 +58,9 @@ class BacklogMonitorControllerTest {
     @MockBean
     private FeatureToggle featureToggle;
 
+    @MockBean
+    private RequestClock requestClock;
+
     @BeforeEach
     void setUp() {
         mockFeatureToggle();
@@ -66,13 +69,17 @@ class BacklogMonitorControllerTest {
     @Test
     void testGetMonitor() throws Exception {
         // GIVEN
+
+        var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
         GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
+                firstDate,
                 WAREHOUSE_ID,
                 OUTBOUND_ORDERS,
-                parse(A_DATE, ISO_DATE_TIME),
-                parse(ANOTHER_DATE, ISO_DATE_TIME),
+                firstDate,
+                OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
                 999L);
 
+        when(requestClock.now()).thenReturn(firstDate);
         when(getBacklogMonitor.execute(input)).thenReturn(getMockedResponse());
 
         // WHEN
@@ -93,15 +100,18 @@ class BacklogMonitorControllerTest {
     @Test
     void testGetDetails() throws Exception {
         // GIVEN
-        GetBacklogMonitorDetailsInput input = GetBacklogMonitorDetailsInput.builder()
-                .warehouseId(WAREHOUSE_ID)
-                .workflow(OUTBOUND_ORDERS)
-                .process(ProcessName.PICKING)
-                .dateFrom(parse(A_DATE, ISO_DATE_TIME))
-                .dateTo(parse(ANOTHER_DATE, ISO_DATE_TIME))
-                .callerId(999L)
-                .build();
+        var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
+        GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
+                firstDate,
+                WAREHOUSE_ID,
+                OUTBOUND_ORDERS,
+                ProcessName.PICKING,
+                firstDate,
+                OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
+                999L
+        );
 
+        when(requestClock.now()).thenReturn(firstDate);
         when(getBacklogMonitorDetails.execute(input)).thenReturn(getDetailsMockedResponse());
 
         // WHEN
@@ -186,13 +196,13 @@ class BacklogMonitorControllerTest {
     }
 
     private GetBacklogMonitorDetailsResponse getDetailsMockedResponse() {
-        ZonedDateTime date = parse(A_DATE, ISO_DATE_TIME);
-        ZonedDateTime anotherDate = parse(ANOTHER_DATE, ISO_DATE_TIME);
+        Instant date = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
+        Instant anotherDate = OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant();
 
         return new GetBacklogMonitorDetailsResponse(
-                parse(A_DATE, ISO_DATE_TIME),
+                OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant(),
                 List.of(
-                        new ProcessBacklogDetail(
+                        new DetailedBacklogPhoto(
                                 date,
                                 new UnitMeasure(100, 150),
                                 new UnitMeasure(125, 170),
@@ -202,7 +212,7 @@ class BacklogMonitorControllerTest {
                                         new AreaBacklogDetail("RK-L",
                                                 new UnitMeasure(300, 15))
                                 )),
-                        new ProcessBacklogDetail(
+                        new DetailedBacklogPhoto(
                                 anotherDate,
                                 new UnitMeasure(30, 90),
                                 new UnitMeasure(50, 120),
@@ -217,12 +227,12 @@ class BacklogMonitorControllerTest {
                         "waving",
                         new UnitMeasure(125, 170),
                         List.of(
-                                BacklogsByDate.builder()
+                                VariablesPhoto.builder()
                                         .date(date)
                                         .current(new UnitMeasure(125, 170))
                                         .historical(new UnitMeasure(115, 160))
                                         .build(),
-                                BacklogsByDate.builder()
+                                VariablesPhoto.builder()
                                         .date(anotherDate)
                                         .current(new UnitMeasure(50, 120))
                                         .historical(new UnitMeasure(30, 70))
@@ -237,23 +247,23 @@ class BacklogMonitorControllerTest {
     }
 
     private WorkflowBacklogDetail getMockedResponse() {
-        ZonedDateTime date = parse(A_DATE, ISO_DATE_TIME);
-        ZonedDateTime anotherDate = parse(ANOTHER_DATE, ISO_DATE_TIME);
+        Instant date = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
+        Instant anotherDate = OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant();
 
         return new WorkflowBacklogDetail(
                 "outbound-orders",
-                DateUtils.getCurrentUtcDateTime(),
+                Instant.now(),
                 List.of(
                         new ProcessDetail(
                                 "waving",
                                 new UnitMeasure(100, 150),
                                 List.of(
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(10, 30))
                                                 .historical(new UnitMeasure(23, null))
                                                 .build(),
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(25, 75))
                                                 .historical(new UnitMeasure(44, null))
@@ -263,12 +273,12 @@ class BacklogMonitorControllerTest {
                                 "picking",
                                 new UnitMeasure(30, 90),
                                 List.of(
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(30, 90))
                                                 .historical(new UnitMeasure(60, null))
                                                 .build(),
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(45, 120))
                                                 .historical(new UnitMeasure(100, null))
@@ -278,12 +288,12 @@ class BacklogMonitorControllerTest {
                                 "packing",
                                 new UnitMeasure(200, 60),
                                 List.of(
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(date)
                                                 .current(new UnitMeasure(200, 60))
                                                 .historical(new UnitMeasure(190, null))
                                                 .build(),
-                                        BacklogsByDate.builder()
+                                        VariablesPhoto.builder()
                                                 .date(anotherDate)
                                                 .current(new UnitMeasure(120, 30))
                                                 .historical(new UnitMeasure(115, null))

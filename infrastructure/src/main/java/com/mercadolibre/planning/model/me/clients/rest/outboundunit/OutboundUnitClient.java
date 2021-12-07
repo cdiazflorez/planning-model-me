@@ -34,7 +34,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -53,7 +52,6 @@ import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.LIMIT;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.STATUS;
 import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request.SearchUnitFilterRequestStringValue.WAREHOUSE_ID;
-
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;

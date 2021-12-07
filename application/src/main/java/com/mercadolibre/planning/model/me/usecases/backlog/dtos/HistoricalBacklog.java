@@ -4,7 +4,7 @@ import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import lombok.Value;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -18,11 +18,11 @@ public class HistoricalBacklog {
         return new HistoricalBacklog(emptyMap());
     }
 
-    public UnitMeasure get(ZonedDateTime date) {
+    public UnitMeasure get(Instant date) {
         return backlog.get(DateUtils.minutesFromWeekStart(date));
     }
 
-    public UnitMeasure getOr(ZonedDateTime date, Supplier<UnitMeasure> supplier) {
+    public UnitMeasure getOr(Instant date, Supplier<UnitMeasure> supplier) {
         UnitMeasure item = backlog.get(DateUtils.minutesFromWeekStart(date));
         if (item == null) {
             return supplier.get();

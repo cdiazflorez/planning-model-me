@@ -14,11 +14,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
@@ -28,11 +27,12 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -52,7 +52,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
@@ -83,13 +83,13 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<Entity> getEntities(final EntityRequest entityRequest) {
+    public List<MagnitudePhoto> getTrajectories(final TrajectoriesRequest trajectoriesRequest) {
         final HttpRequest request = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL + "/entities/%s",
-                        entityRequest.getWorkflow().getName(),
-                        entityRequest.getEntityType().getName()))
-                .POST(requestSupplier(entityRequest))
-                .queryParams(createEntityParams(entityRequest))
+                            trajectoriesRequest.getWorkflow().getName(),
+                            trajectoriesRequest.getEntityType().getName()))
+                .POST(requestSupplier(trajectoriesRequest))
+                .queryParams(createEntityParams(trajectoriesRequest))
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
@@ -131,7 +131,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public List<Entity> getPerformedProcessing(final EntityRequest request) {
+    public List<MagnitudePhoto> getPerformedProcessing(final TrajectoriesRequest request) {
         final HttpRequest httpRequest = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL + "/entities/performed_processing",
                         request.getWorkflow().getName()))
@@ -144,7 +144,9 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
 
     @Override
-    public Map<EntityType, List<Entity>> searchEntities(final SearchEntitiesRequest request) {
+    public Map<MagnitudeType, List<MagnitudePhoto>> searchTrajectories(
+            final SearchTrajectoriesRequest request
+    ) {
         final HttpRequest httpRequest = HttpRequest.builder()
                 .url(format(WORKFLOWS_URL + "/entities/search", request.getWorkflow().getName()))
                 .POST(requestSupplier(request))
@@ -155,7 +157,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 response.getData(new TypeReference<>() {})
         );
 
-        final Map<EntityType, List<Entity>> response = new HashMap<>();
+        final Map<MagnitudeType, List<MagnitudePhoto>> response = new HashMap<>();
         apiResponse.forEach((key, value) -> {
             if (PRODUCTIVITY.getName().equals(key)) {
                 response.put(PRODUCTIVITY, value.stream()
@@ -163,7 +165,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                                 o, ProductivityResponse.class)))
                         .collect(toList()));
             } else {
-                response.put(EntityType.from(key), value.stream()
+                response.put(MagnitudeType.from(key), value.stream()
                         .map(o -> toEntity(objectMapper.convertValue(o, EntityResponse.class)))
                         .collect(toList()));
             }
@@ -337,7 +339,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         return send(request, response -> response.getData(new TypeReference<>() {}));
     }
 
-    protected Map<String, String> createEntityParams(final EntityRequest request) {
+    protected Map<String, String> createEntityParams(final TrajectoriesRequest request) {
         final Map<String, String> params = getBaseParam(request.getWarehouseId(),
                 request.getDateFrom(),
                 request.getDateTo());
@@ -399,7 +401,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .collect(joining(","));
     }
 
-    private List<Entity> executeGetEntities(HttpRequest request) {
+    private List<MagnitudePhoto> executeGetEntities(HttpRequest request) {
         try {
             final List<EntityResponse> apiResponse = send(request, response ->
                     response.getData(new TypeReference<>() {
@@ -415,8 +417,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         }
     }
 
-    private Entity toEntity(final EntityResponse response) {
-        return Entity.builder()
+    private MagnitudePhoto toEntity(final EntityResponse response) {
+        return MagnitudePhoto.builder()
                 .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
                 .processName(ProcessName.from(response.getProcessName()))
                 .workflow(Workflow.from(response.getWorkflow()).orElseThrow())

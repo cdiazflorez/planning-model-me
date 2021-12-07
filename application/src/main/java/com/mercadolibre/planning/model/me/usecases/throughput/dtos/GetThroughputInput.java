@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.throughput.dtos;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
@@ -31,5 +31,5 @@ public class GetThroughputInput {
 
     private List<Simulation> simulations;
 
-    private Map<EntityType, Map<String, List<String>>> entityFilters;
+    private Map<MagnitudeType, Map<String, List<String>>> entityFilters;
 }

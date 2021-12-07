@@ -7,12 +7,12 @@ import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
@@ -29,9 +29,9 @@ import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.HEADCOUNT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -76,26 +76,31 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                 ? getCurrentUtcDate() : input.getDate();
         final ZonedDateTime utcDateTo = utcDateFrom.plusDays(1);
 
-        final Map<EntityType, List<Entity>> entities = planningModelGateway.searchEntities(
-                SearchEntitiesRequest.builder()
-                        .warehouseId(input.getWarehouseId())
-                        .workflow(input.getWorkflow())
-                        .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
-                        .dateFrom(utcDateFrom)
-                        .dateTo(utcDateTo)
-                        .processName(List.of(PICKING, PACKING, PACKING_WALL))
-                        .simulations(input.getSimulations())
-                        .entityFilters(Map.of(
-                                HEADCOUNT, Map.of(
-                                        PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName())
-                                ),
-                                PRODUCTIVITY, Map.of(ABILITY_LEVEL.toJson(), List.of(
-                                        String.valueOf(MAIN_ABILITY_LEVEL),
-                                        String.valueOf(POLYVALENT_ABILITY_LEVEL))
-                                )
-                        ))
-                        .build()
-        );
+        final Map<MagnitudeType, List<MagnitudePhoto>> entities = planningModelGateway
+                .searchTrajectories(
+                        SearchTrajectoriesRequest.builder()
+                                .warehouseId(input.getWarehouseId())
+                                .workflow(input.getWorkflow())
+                                .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
+                                .dateFrom(utcDateFrom)
+                                .dateTo(utcDateTo)
+                                .processName(List.of(PICKING, PACKING, PACKING_WALL))
+                                .simulations(input.getSimulations())
+                                .entityFilters(Map.of(
+                                        HEADCOUNT, Map.of(
+                                                PROCESSING_TYPE.toJson(),
+                                                List.of(ACTIVE_WORKERS.getName())
+                                        ),
+                                        PRODUCTIVITY, Map.of(
+                                                ABILITY_LEVEL.toJson(),
+                                                List.of(
+                                                        String.valueOf(MAIN_ABILITY_LEVEL),
+                                                        String.valueOf(POLYVALENT_ABILITY_LEVEL)
+                                                )
+                                        )
+                                ))
+                                .build()
+                );
 
         final List<EntityRow> headcount = entities.get(HEADCOUNT).stream()
                 .map(EntityRow::fromEntity)
@@ -103,7 +108,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
 
         final List<Productivity> productivities = entities.get(PRODUCTIVITY).stream()
                 .filter(entity -> entity instanceof Productivity)
-                .map(entity -> Productivity.class.cast(entity))
+                .map(Productivity.class::cast)
                 .collect(toList());
 
         final List<EntityRow> mainProductivities = productivities.stream()
@@ -137,7 +142,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
     }
 
     private Data createData(final LogisticCenterConfiguration config,
-                            final EntityType entityType,
+                            final MagnitudeType magnitudeType,
                             final List<EntityRow> entities,
                             final List<ColumnHeader> headers,
                             final List<EntityRow> polyvalentProductivity) {
@@ -147,17 +152,17 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
         final Map<RowName, List<EntityRow>> polyvalentPByProcess = polyvalentProductivity.stream()
                 .collect(groupingBy((EntityRow::getRowName)));
 
-        final boolean shouldOpenTab = entityType == HEADCOUNT;
+        final boolean shouldOpenTab = magnitudeType == HEADCOUNT;
 
         return new Data(
-                entityType.getName(),
-                capitalize(entityType.getTitle()),
+                magnitudeType.getName(),
+                capitalize(magnitudeType.getTitle()),
                 shouldOpenTab,
                 entitiesByProcess.entrySet().stream()
                         .sorted(Comparator.comparing(entry -> entry.getKey().getIndex()))
                         .map(entry -> createContent(
                                 config,
-                                entityType,
+                                magnitudeType,
                                 entry.getKey(),
                                 headers,
                                 entry.getValue(),
@@ -167,7 +172,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
     }
 
     private Map<String, Content> createContent(final LogisticCenterConfiguration config,
-                                               final EntityType entityType,
+                                               final MagnitudeType magnitudeType,
                                                final RowName processName,
                                                final List<ColumnHeader> headers,
                                                final List<EntityRow> entities,
@@ -201,7 +206,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                             valueOf(entityBySource.get(SIMULATION).getValue()),
                             entityBySource.get(SIMULATION).getDate(),
                             createTooltip(
-                                    entityType,
+                                    magnitudeType,
                                     entityBySource.get(FORECAST),
                                     polyvalentProductivityByHour.getOrDefault(
                                             header.getValue(), "-")
@@ -220,10 +225,10 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
         return content;
     }
 
-    private Map<String, String> createTooltip(final EntityType entityType,
+    private Map<String, String> createTooltip(final MagnitudeType magnitudeType,
                                               final EntityRow entity,
                                               final String polyvalentProductivity) {
-        switch (entityType) {
+        switch (magnitudeType) {
             case HEADCOUNT:
                 return Map.of(
                         "title_1", "Hora de operación",

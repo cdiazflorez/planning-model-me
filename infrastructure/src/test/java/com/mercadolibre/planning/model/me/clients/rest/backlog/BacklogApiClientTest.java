@@ -2,8 +2,8 @@ package com.mercadolibre.planning.model.me.clients.rest.backlog;
 
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.restclient.MockResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,7 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -24,8 +24,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
-import static java.time.ZonedDateTime.parse;
-import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,11 +39,11 @@ class BacklogApiClientTest extends BaseClientTest {
 
     private static final String WORKFLOW = "outbound_order";
 
-    private static final ZonedDateTime DATE_FROM =
-            parse("2021-08-12T01:00:00Z", ISO_OFFSET_DATE_TIME);
+    private static final Instant DATE_CURRENT = Instant.parse("2021-08-12T02:00:00Z");
 
-    private static final ZonedDateTime DATE_TO =
-            parse("2021-08-12T05:00:00Z", ISO_OFFSET_DATE_TIME);
+    private static final Instant DATE_FROM = Instant.parse("2021-08-12T01:00:00Z");
+
+    private static final Instant DATE_TO = Instant.parse("2021-08-12T05:00:00Z");
 
     private BacklogApiClient client;
 
@@ -94,16 +92,16 @@ class BacklogApiClientTest extends BaseClientTest {
         mockSuccessfulResponse(query);
 
         // WHEN
-        final List<Backlog> result = client.getBacklog(request);
+        final List<Consolidation> result = client.getBacklog(request);
 
         // THEN
         assertEquals(3, result.size());
 
-        final Backlog firstBacklog = result.get(0);
-        assertEquals(1255, firstBacklog.getTotal());
-        assertEquals(DATE_FROM, firstBacklog.getDate());
+        final Consolidation firstConsolidation = result.get(0);
+        assertEquals(1255, firstConsolidation.getTotal());
+        assertEquals(DATE_FROM, firstConsolidation.getDate());
 
-        final Map<String, String> keys = firstBacklog.getKeys();
+        final Map<String, String> keys = firstConsolidation.getKeys();
         assertEquals("wms-outbound", keys.get("workflow"));
         assertEquals("picking", keys.get("process"));
         assertEquals("MZ-0", keys.get("area"));
@@ -114,12 +112,15 @@ class BacklogApiClientTest extends BaseClientTest {
     void testGetBacklogErr() {
         // GIVEN
         mockErroneousResponse();
-        BacklogRequest request = BacklogRequest.builder()
-                .warehouseId(WAREHOUSE_ID)
-                .workflows(of(WORKFLOW))
-                .dateFrom(DATE_FROM)
-                .dateTo(DATE_TO)
-                .build();
+        BacklogRequest request = new BacklogRequest(
+                DATE_CURRENT,
+                WAREHOUSE_ID,
+                of(WORKFLOW),
+                of(),
+                of(),
+                DATE_FROM,
+                DATE_TO
+        );
 
         // WHEN
         assertThrows(ClientException.class, () ->

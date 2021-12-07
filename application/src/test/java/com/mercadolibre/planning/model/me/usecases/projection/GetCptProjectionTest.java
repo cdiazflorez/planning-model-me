@@ -112,7 +112,7 @@ public class GetCptProjectionTest {
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                utcDateTimeFrom, utcDateTimeTo)))
+                utcDateTimeFrom.toInstant(), utcDateTimeTo.toInstant())))
                 .thenReturn(mockedBacklog);
 
         when(planningModelGateway.runProjection(
@@ -172,7 +172,7 @@ public class GetCptProjectionTest {
 
         final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                utcDateTimeFrom, utcDateTimeTo)))
+                utcDateTimeFrom.toInstant(), utcDateTimeTo.toInstant())))
                 .thenReturn(mockedBacklog);
 
         when(planningModelGateway.runProjection(

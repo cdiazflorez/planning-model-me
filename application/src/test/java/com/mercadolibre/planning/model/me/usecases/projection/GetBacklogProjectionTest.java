@@ -5,8 +5,8 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
@@ -21,7 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.REMAINING_PROCESSING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.REMAINING_PROCESSING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
@@ -62,7 +62,7 @@ public class GetBacklogProjectionTest {
 
         final ZonedDateTime firstDate = getNextHour(A_DATE);
 
-        when(planningModel.getEntities(EntityRequest.builder()
+        when(planningModel.getTrajectories(TrajectoriesRequest.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .processName(List.of(PICKING))
@@ -71,13 +71,13 @@ public class GetBacklogProjectionTest {
                 .dateTo(A_DATE.plusHours(25))
                 .build())
         ).thenReturn(List.of(
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .processName(PICKING)
                         .date(firstDate)
                         .value(150)
                         .build(),
-                Entity.builder()
+                MagnitudePhoto.builder()
                         .workflow(FBM_WMS_OUTBOUND)
                         .processName(PICKING)
                         .date(firstDate.plusHours(1))

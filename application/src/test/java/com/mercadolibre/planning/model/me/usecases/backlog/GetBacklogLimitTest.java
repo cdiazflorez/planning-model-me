@@ -1,10 +1,10 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Entity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchEntitiesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
@@ -19,8 +19,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.BACKLOG_LOWER_LIMIT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityType.BACKLOG_UPPER_LIMIT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.BACKLOG_LOWER_LIMIT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.BACKLOG_UPPER_LIMIT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
@@ -56,18 +56,18 @@ class GetBacklogLimitTest {
         // THEN
         final var waving = result.get(WAVING);
 
-        assertEquals(0, waving.get(A_DATE).getMin());
-        assertEquals(15, waving.get(A_DATE).getMax());
+        assertEquals(0, waving.get(A_DATE.toInstant()).getMin());
+        assertEquals(15, waving.get(A_DATE.toInstant()).getMax());
 
-        assertEquals(-1, waving.get(ANOTHER_DATE).getMin());
-        assertEquals(-1, waving.get(ANOTHER_DATE).getMax());
+        assertEquals(-1, waving.get(ANOTHER_DATE.toInstant()).getMin());
+        assertEquals(-1, waving.get(ANOTHER_DATE.toInstant()).getMax());
     }
 
 
     @Test
     void testSearchEntitiesError() {
         // GIVEN
-        when(planningModelGateway.searchEntities(any(SearchEntitiesRequest.class)))
+        when(planningModelGateway.searchTrajectories(any(SearchTrajectoriesRequest.class)))
                 .thenThrow(new TestException());
 
         final var input = input();
@@ -84,13 +84,13 @@ class GetBacklogLimitTest {
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                 .processes(List.of(WAVING, PICKING, PACKING))
-                .dateFrom(A_DATE)
-                .dateTo(ANOTHER_DATE)
+                .dateFrom(A_DATE.toInstant())
+                .dateTo(ANOTHER_DATE.toInstant())
                 .build();
     }
 
     void mockPlanningResponse() {
-        final var input = SearchEntitiesRequest.builder()
+        final var input = SearchTrajectoriesRequest.builder()
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                 .entityTypes(of(BACKLOG_LOWER_LIMIT, BACKLOG_UPPER_LIMIT))
                 .warehouseId(WAREHOUSE_ID)
@@ -99,30 +99,30 @@ class GetBacklogLimitTest {
                 .dateTo(ANOTHER_DATE)
                 .build();
 
-        when(planningModelGateway.searchEntities(input)).thenReturn(
+        when(planningModelGateway.searchTrajectories(input)).thenReturn(
                 Map.of(
                         BACKLOG_LOWER_LIMIT, of(
-                                entity(A_DATE, WAVING, 0),
-                                entity(A_DATE, PICKING, 1),
-                                entity(A_DATE, PACKING, 2),
-                                entity(ANOTHER_DATE, WAVING, -1),
-                                entity(ANOTHER_DATE, PICKING, -1),
-                                entity(ANOTHER_DATE, PACKING, -1)
+                                mvp(A_DATE, WAVING, 0),
+                                mvp(A_DATE, PICKING, 1),
+                                mvp(A_DATE, PACKING, 2),
+                                mvp(ANOTHER_DATE, WAVING, -1),
+                                mvp(ANOTHER_DATE, PICKING, -1),
+                                mvp(ANOTHER_DATE, PACKING, -1)
                         ),
-                    BACKLOG_UPPER_LIMIT, of(
-                                entity(A_DATE, WAVING, 15),
-                                entity(A_DATE, PICKING, 10),
-                                entity(A_DATE, PACKING, 5),
-                                entity(ANOTHER_DATE, WAVING, -1),
-                                entity(ANOTHER_DATE, PICKING, -1),
-                                entity(ANOTHER_DATE, PACKING, -1)
+                        BACKLOG_UPPER_LIMIT, of(
+                                mvp(A_DATE, WAVING, 15),
+                                mvp(A_DATE, PICKING, 10),
+                                mvp(A_DATE, PACKING, 5),
+                                mvp(ANOTHER_DATE, WAVING, -1),
+                                mvp(ANOTHER_DATE, PICKING, -1),
+                                mvp(ANOTHER_DATE, PACKING, -1)
                         )
                 )
         );
     }
 
-    private Entity entity(ZonedDateTime date, ProcessName process, Integer value) {
-        return Entity.builder()
+    private MagnitudePhoto mvp(ZonedDateTime date, ProcessName process, Integer value) {
+        return MagnitudePhoto.builder()
                 .date(date)
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                 .processName(process)
