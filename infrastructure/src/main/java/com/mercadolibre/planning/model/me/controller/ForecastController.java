@@ -1,16 +1,12 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastCreationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.CreateForecast;
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.ParseForecastFromFile;
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.FileUploadDto;
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastDto;
+import com.mercadolibre.planning.model.me.usecases.forecast.UploadForecast;
 import com.newrelic.api.agent.Trace;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.constraints.NotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -42,8 +39,7 @@ import static org.springframework.http.ResponseEntity.ok;
 public class ForecastController {
 
     private final AuthorizeUser authorizeUser;
-    private final ParseForecastFromFile parseForecastFromFile;
-    private final CreateForecast createForecast;
+    private final UploadForecast uploadForecast;
     private final DatadogMetricService datadogMetricService;
 
     @Trace
@@ -61,16 +57,9 @@ public class ForecastController {
 
         final byte[] bytes = getFileBytes(file);
 
-        final Forecast forecast = parseForecastFromFile.execute(
-                new FileUploadDto(warehouseId, bytes, callerId)
+        final ForecastCreationResponse createdForecast = uploadForecast.upload(
+                warehouseId, workflow, bytes, callerId
         );
-
-        final ForecastCreationResponse createdForecast =
-                createForecast.execute(ForecastDto.builder()
-                        .workflow(workflow)
-                        .forecast(forecast)
-                        .build()
-                );
 
         datadogMetricService.trackForecastUpload(warehouseId);
 
