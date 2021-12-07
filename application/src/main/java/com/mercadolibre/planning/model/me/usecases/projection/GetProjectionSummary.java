@@ -267,9 +267,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
         if (projectedEndDate == null) {
             return "Excede las 24hs";
         } else {
-            if (backlog == 0 && projectedEndDate.isEqual(
-                    now().withZoneSameInstant(UTC).truncatedTo(HOURS)
-            )) {
+            final ZonedDateTime hourStart = now().withZoneSameInstant(UTC).truncatedTo(HOURS);
+            if (backlog == 0 && projectedEndDate.isEqual(hourStart)) {
                 return "-";
             } else {
                 return convertToTimeZone(zoneId, projectedEndDate)

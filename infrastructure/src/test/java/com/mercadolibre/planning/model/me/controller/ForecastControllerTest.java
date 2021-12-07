@@ -1,13 +1,9 @@
 package com.mercadolibre.planning.model.me.controller;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.CreateForecast;
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.ParseForecastFromFile;
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.FileUploadDto;
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.dto.ForecastDto;
+import com.mercadolibre.planning.model.me.usecases.forecast.UploadForecast;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -26,10 +22,8 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.lang.String.format;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = ForecastController.class)
@@ -44,10 +38,7 @@ public class ForecastControllerTest {
     private AuthorizeUser authorizeUser;
 
     @MockBean
-    private ParseForecastFromFile parseForecastFromFile;
-
-    @MockBean
-    private CreateForecast createForecast;
+    private UploadForecast uploadForecast;
 
     @MockBean
     private DatadogMetricService datadogMetricService;
@@ -62,9 +53,6 @@ public class ForecastControllerTest {
                 MediaType.APPLICATION_JSON_VALUE,
                 fileContent
         );
-        final FileUploadDto fileUploadDto = new FileUploadDto(WAREHOUSE_ID, fileContent, 1234);
-
-        when(parseForecastFromFile.execute(fileUploadDto)).thenReturn(Forecast.builder().build());
 
         // WHEN
         final ResultActions result = mvc.perform(MockMvcRequestBuilders
@@ -75,8 +63,7 @@ public class ForecastControllerTest {
 
         // THEN
         result.andExpect(status().isOk());
-        verify(parseForecastFromFile).execute(fileUploadDto);
-        verify(createForecast).execute(any(ForecastDto.class));
+        verify(uploadForecast).upload(WAREHOUSE_ID, FBM_WMS_OUTBOUND, fileContent, 1234L);
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_FORECAST)));
         verify(datadogMetricService).trackForecastUpload(WAREHOUSE_ID);
     }

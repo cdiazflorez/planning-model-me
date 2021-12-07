@@ -1,11 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.deviation;
 
-import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 
-import com.mercadolibre.planning.model.me.usecases.forecast.upload.utils.SpreadsheetUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

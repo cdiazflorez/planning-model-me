@@ -49,10 +49,7 @@ public class PlanningModelForecastClientTest extends BaseClientTest {
         final String date = new Date().toString();
         final Forecast forecast = Forecast.builder()
                 .metadata(List.of(
-                        Metadata.builder()
-                                .key("warehouse_id")
-                                .value(WAREHOUSE_ID)
-                                .build()
+                        new Metadata("warehouse_id", WAREHOUSE_ID)
                 ))
                 .build();
         final JSONObject request = new JSONObject()
@@ -75,10 +72,7 @@ public class PlanningModelForecastClientTest extends BaseClientTest {
         this.client = new PlanningModelForecastClient(getRestTestClient(), mockedObjectMapper);
         final Forecast forecast = Forecast.builder()
                 .metadata(List.of(
-                        Metadata.builder()
-                                .key("warehouse_id")
-                                .value(WAREHOUSE_ID)
-                                .build()
+                        new Metadata("warehouse_id", WAREHOUSE_ID)
                 ))
                 .build();
 
