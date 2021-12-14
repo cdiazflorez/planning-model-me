@@ -23,7 +23,9 @@ public enum ProcessName {
     ),
     BATCH_SORTER(false, false, new Single("BATCH_SORTER")),
     WALL_IN(false, false, new Single("WALL_IN")),
-    GLOBAL(false, false, new Single("GLOBAL"));
+    GLOBAL(false, false, new Single("GLOBAL")),
+    CHECK_IN(false, false, new Single("CHECK_IN")),
+    PUT_AWAY(false, false, new Single("PUT_AWAY"));
 
     public final boolean hasAreas;
 

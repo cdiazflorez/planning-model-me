@@ -63,7 +63,6 @@ class GetBacklogLimitTest {
         assertEquals(-1, waving.get(ANOTHER_DATE.toInstant()).getMax());
     }
 
-
     @Test
     void testSearchEntitiesError() {
         // GIVEN

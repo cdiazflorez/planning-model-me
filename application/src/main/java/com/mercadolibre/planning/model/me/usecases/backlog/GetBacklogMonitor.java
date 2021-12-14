@@ -3,11 +3,11 @@ package com.mercadolibre.planning.model.me.usecases.backlog;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
@@ -37,9 +37,12 @@ import java.util.stream.Stream;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromUnits;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog.emptyBacklog;
 import static java.time.ZoneOffset.UTC;
@@ -52,13 +55,13 @@ import static java.util.List.of;
 @Named
 @AllArgsConstructor
 public class GetBacklogMonitor extends GetConsolidatedBacklog {
-    private static final String OUTBOUND_ORDERS = "outbound-orders";
 
-    private static final Map<String, List<ProcessName>> WORKFLOWS = Map.of(
-            OUTBOUND_ORDERS, of(WAVING, PICKING, PACKING)
+    private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
+            FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
+            FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
     );
 
-    private final BacklogApiGateway backlogApiGateway;
+    private final BacklogApiAdapter backlogApiAdapter;
 
     private final ProjectBacklog backlogProjection;
 
@@ -76,7 +79,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         );
 
         return new WorkflowBacklogDetail(
-                input.getWorkflow(),
+                input.getWorkflow().getName(),
                 takenOnDateOfLastPhoto,
                 buildProcesses(processData, takenOnDateOfLastPhoto)
         );
@@ -85,13 +88,14 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     private List<ProcessData> getData(final GetBacklogMonitorInputDto input) {
         final Map<ProcessName, List<TotaledBacklogPhoto>> currentBacklog = getCurrentBacklog(input);
         final Map<ProcessName, List<TotaledBacklogPhoto>> projectedBacklog =
-                projectedBacklog(input);
+                input.getWorkflow() == FBM_WMS_OUTBOUND ? projectedBacklog(input) : emptyMap();
         final Map<ProcessName, HistoricalBacklog> historicalBacklog = getHistoricalBacklog(input);
-        final Map<ProcessName, Map<Instant, BacklogLimit>> backlogLimits = getBacklogLimits(input);
+        final Map<ProcessName, Map<Instant, BacklogLimit>> backlogLimits =
+                input.getWorkflow() == FBM_WMS_OUTBOUND ? getBacklogLimits(input) : emptyMap();
 
         final GetThroughputResult throughput = getThroughput(input);
 
-        return WORKFLOWS.get(input.getWorkflow())
+        return PROCESS_BY_WORKFLOWS.get(input.getWorkflow())
                 .stream()
                 .map(processName -> new ProcessData(
                         processName,
@@ -110,22 +114,20 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         /* Get the backlog photos taken between `dateFrom` and `dateTo`, consolidating all the cells
         corresponding to the same photo and process. */
         final List<Consolidation> cellsGroupedByTakenOnDateAndProcessName =
-                backlogApiGateway.getBacklog(
-                        new BacklogRequest(
+                backlogApiAdapter.execute(
                                 input.getRequestDate(),
                                 input.getWarehouseId(),
-                                of(OUTBOUND_ORDERS),
-                                outboundProcessesNames(),
+                                of(input.getWorkflow()),
+                                PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
                                 of("process"),
                                 input.getDateFrom(),
-                                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS)
-                ));
+                                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS));
 
         final Map<ProcessName, List<Consolidation>> consolidationsTrajectoriesByProcess =
                 groupBacklogSubsetsByProcess(
                     input.getRequestDate(),
                     cellsGroupedByTakenOnDateAndProcessName,
-                    WORKFLOWS.get(OUTBOUND_ORDERS),
+                    PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
                     input.getDateFrom()
                 );
 
@@ -196,7 +198,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                             input.getRequestDate(),
                             input.getWarehouseId(),
                             of(input.getWorkflow()),
-                            WORKFLOWS.get(input.getWorkflow()),
+                            PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
                             input.getDateFrom(),
                             input.getDateTo()
                     )
@@ -227,9 +229,9 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
         final List<BacklogProjectionResponse> projectedBacklog = backlogProjection.execute(
                 BacklogProjectionInput.builder()
-                        .workflow(FBM_WMS_OUTBOUND)
+                        .workflow(input.getWorkflow())
                         .warehouseId(input.getWarehouseId())
-                        .processName(WORKFLOWS.get(input.getWorkflow()))
+                        .processName(PROCESS_BY_WORKFLOWS.get(input.getWorkflow()))
                         .dateFrom(requestDate)
                         .dateTo(requestDate.plusHours(25))
                         .groupType("order")
@@ -256,8 +258,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     private GetThroughputResult getThroughput(final GetBacklogMonitorInputDto input) {
         final GetThroughputInput request = GetThroughputInput.builder()
                 .warehouseId(input.getWarehouseId())
-                .workflow(FBM_WMS_OUTBOUND)
-                .processes(WORKFLOWS.get(input.getWorkflow()))
+                .workflow(input.getWorkflow())
+                .processes(PROCESS_BY_WORKFLOWS.get(input.getWorkflow()))
                 /* Note that the zone is not necessary but the GetProcessThroughput use case
                 requires it to no avail. */
                 .dateFrom(ZonedDateTime.ofInstant(input.getDateFrom(), UTC))
@@ -279,8 +281,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             return getBacklogLimits.execute(
                     GetBacklogLimitsInput.builder()
                             .warehouseId(input.getWarehouseId())
-                            .workflow(FBM_WMS_OUTBOUND)
-                            .processes(WORKFLOWS.get(input.getWorkflow()))
+                            .workflow(input.getWorkflow())
+                            .processes(PROCESS_BY_WORKFLOWS.get(input.getWorkflow()))
                             .dateFrom(input.getDateFrom())
                             .dateTo(input.getDateTo())
                             .build()
@@ -346,13 +348,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                             max
                     );
                 });
-    }
-
-    private List<String> outboundProcessesNames() {
-        return WORKFLOWS.get(OUTBOUND_ORDERS)
-                .stream()
-                .map(ProcessName::getName)
-                .collect(Collectors.toList());
     }
 
     private ProcessName processNameFromBacklog(final Consolidation b) {

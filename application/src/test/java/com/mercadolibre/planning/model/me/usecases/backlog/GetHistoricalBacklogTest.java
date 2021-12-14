@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
@@ -55,7 +54,7 @@ class GetHistoricalBacklogTest {
     private GetHistoricalBacklog getHistoricalBacklog;
 
     @Mock
-    private BacklogApiGateway backlogApiGateway;
+    private BacklogApiAdapter backlogApiAdapter;
 
     @Mock
     private GetProcessThroughput getProcessThroughput;
@@ -72,7 +71,7 @@ class GetHistoricalBacklogTest {
         final var input = new GetHistoricalBacklogInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                of("outbound-orders"),
+                of(FBM_WMS_OUTBOUND),
                 of(WAVING, PICKING, PACKING),
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant()
@@ -132,17 +131,14 @@ class GetHistoricalBacklogTest {
                 )
                 .collect(Collectors.toList());
 
-        final BacklogRequest request = new BacklogRequest(
+        when(backlogApiAdapter.execute(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                of("outbound-orders"),
-                of("waving", "picking", "packing"),
+                of(FBM_WMS_OUTBOUND),
+                of(WAVING, PICKING, PACKING),
                 of("process"),
                 dateFrom.toInstant(),
-                dateTo.toInstant()
-        );
-
-        when(backlogApiGateway.getBacklog(request)).thenReturn(consolidations);
+                dateTo.toInstant())).thenReturn(consolidations);
     }
 
     private List<ZonedDateTime> dates(ZonedDateTime dateFrom, ZonedDateTime dateTo, int weeks) {
@@ -162,5 +158,4 @@ class GetHistoricalBacklogTest {
     private int dateValue(ZonedDateTime date) {
         return date.getDayOfWeek().getValue() + date.getHour() * date.getDayOfYear();
     }
-
 }

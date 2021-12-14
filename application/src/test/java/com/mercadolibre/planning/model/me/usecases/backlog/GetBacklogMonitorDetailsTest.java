@@ -1,13 +1,13 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
@@ -69,7 +69,7 @@ class GetBacklogMonitorDetailsTest {
     private GetBacklogMonitorDetails getBacklogMonitor;
 
     @Mock
-    private BacklogApiGateway backlogApiGateway;
+    private BacklogApiAdapter backlogApiAdapter;
 
     @Mock
     private PlanningModelGateway planningModelGateway;
@@ -104,21 +104,21 @@ class GetBacklogMonitorDetailsTest {
         mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
         mockDateUtils(mockDt);
 
-        mockPastBacklogWithAreas();
-        mockProjectedBacklog();
-        mockThroughput(PICKING);
-        mockHistoricalBacklog(PICKING);
-        mockBacklogLimits(PICKING);
-
-        GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
+        final GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                "outbound-orders",
+                FBM_WMS_OUTBOUND,
                 PICKING,
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant(),
                 999L
         );
+
+        mockPastBacklogWithAreas(input);
+        mockProjectedBacklog();
+        mockThroughput(PICKING);
+        mockHistoricalBacklog(PICKING);
+        mockBacklogLimits(PICKING);
 
         // WHEN
         var response = getBacklogMonitor.execute(input);
@@ -157,23 +157,22 @@ class GetBacklogMonitorDetailsTest {
     @Test
     void testGetBacklogDetailsWithoutTargets() {
         // GIVEN
-        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
-        mockPastBacklogWithAreas();
-        mockProjectedBacklog();
-        mockThroughput(PICKING);
-        mockHistoricalBacklog(PICKING);
-        mockBacklogLimits(PICKING);
-
-        // WHEN
         GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                "outbound-orders",
+                FBM_WMS_OUTBOUND,
                 PICKING,
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant(),
                 999L
         );
+
+        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
+        mockPastBacklogWithAreas(input);
+        mockProjectedBacklog();
+        mockThroughput(PICKING);
+        mockHistoricalBacklog(PICKING);
+        mockBacklogLimits(PICKING);
 
         // WHEN
         var response = getBacklogMonitor.execute(input);
@@ -209,24 +208,23 @@ class GetBacklogMonitorDetailsTest {
     @Test
     void testGetBacklogDetailsWithoutAreas() {
         // GIVEN
-        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
-        mockPastBacklogWithoutAreas();
-        mockProjectedBacklog();
-        mockTargetBacklog();
-        mockThroughput(WAVING);
-        mockHistoricalBacklog(WAVING);
-        mockBacklogLimits(WAVING);
-
-        // WHEN
-        GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
+        final GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                "outbound-orders",
+                FBM_WMS_OUTBOUND,
                 WAVING,
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant(),
                 999L
         );
+
+        mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
+        mockPastBacklogWithoutAreas(input);
+        mockProjectedBacklog();
+        mockTargetBacklog();
+        mockThroughput(WAVING);
+        mockHistoricalBacklog(WAVING);
+        mockBacklogLimits(WAVING);
 
         // WHEN
         var response = getBacklogMonitor.execute(input);
@@ -264,15 +262,21 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(4, graph.getBacklogs().size());
     }
 
-    private void mockPastBacklogWithAreas() {
+    private void mockPastBacklogWithAreas(final GetBacklogMonitorDetailsInput input) {
         Instant firstDate = DATES.get(0).toInstant();
         Instant secondDate = DATES.get(1).toInstant();
 
         var rkH = Map.of("area", "RK-H");
         var rkL = Map.of("area", "RK-L");
 
-        when(backlogApiGateway.getBacklog(any()))
-                .thenReturn(
+        when(backlogApiAdapter.execute(
+                input.getRequestDate(),
+                input.getWarehouseId(),
+                of(input.getWorkflow()),
+                of(input.getProcess()),
+                of("area"),
+                input.getDateFrom(),
+                input.getDateTo())).thenReturn(
                         List.of(
                                 new Consolidation(firstDate, rkH, 15),
                                 new Consolidation(secondDate, rkH, 50),
@@ -280,10 +284,16 @@ class GetBacklogMonitorDetailsTest {
                         ));
     }
 
-    private void mockPastBacklogWithoutAreas() {
+    private void mockPastBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input) {
         var na = Map.of("area", "N/A");
-        when(backlogApiGateway.getBacklog(any()))
-                .thenReturn(
+        when(backlogApiAdapter.execute(
+                input.getRequestDate(),
+                input.getWarehouseId(),
+                of(input.getWorkflow()),
+                of(input.getProcess()),
+                of("area"),
+                input.getDateFrom(),
+                input.getDateTo())).thenReturn(
                         List.of(
                                 new Consolidation(DATES.get(0).toInstant(), na, 28),
                                 new Consolidation(DATES.get(1).toInstant(), na, 50)
@@ -356,7 +366,7 @@ class GetBacklogMonitorDetailsTest {
         final var input = new GetHistoricalBacklogInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                of("outbound-orders"),
+                of(FBM_WMS_OUTBOUND),
                 of(process),
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant()

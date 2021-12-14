@@ -23,7 +23,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest.fromInput;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
 
 @Named
 @AllArgsConstructor
@@ -44,7 +43,7 @@ public class ProjectBacklog implements UseCase<BacklogProjectionInput, Projected
     private List<CurrentBacklog> getBacklogList(final BacklogProjectionInput input) {
         final ZonedDateTime dateFrom = input.getDateFrom();
         final List<Map<String, String>> statuses = List.of(
-                Map.of("status", OUTBOUND_PLANNING.getStatus()),
+                Map.of("status", ProcessInfo.OUTBOUND_PLANNING.getStatus()),
                 Map.of("status", ProcessInfo.PICKING.getStatus()),
                 Map.of("status", ProcessInfo.PACKING.getStatus())
         );
@@ -52,7 +51,7 @@ public class ProjectBacklog implements UseCase<BacklogProjectionInput, Projected
         final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
 
-        List<ProcessBacklog> backlogs =
+        final List<ProcessBacklog> backlogs =
                 backlogGateway.getBacklog(statuses,
                         input.getWarehouseId(),
                         dateFrom,
@@ -73,7 +72,8 @@ public class ProjectBacklog implements UseCase<BacklogProjectionInput, Projected
 
         return List.of(
                 new CurrentBacklog(WAVING, backlogs.stream()
-                        .filter(t -> t.getProcess().equals(OUTBOUND_PLANNING.getStatus()))
+                        .filter(t -> t.getProcess().equals(
+                                ProcessInfo.OUTBOUND_PLANNING.getStatus()))
                         .findFirst()
                         .map(ProcessBacklog::getQuantity)
                         .orElse(0)

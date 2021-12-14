@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.util.List.of;
 
 @Slf4j
@@ -64,7 +63,7 @@ public class GetProcessThroughput implements UseCase<GetThroughputInput, GetThro
 
         return SearchTrajectoriesRequest.builder()
                 .warehouseId(input.getWarehouseId())
-                .workflow(FBM_WMS_OUTBOUND)
+                .workflow(input.getWorkflow())
                 .processName(processes)
                 .entityTypes(of(THROUGHPUT))
                 .dateFrom(input.getDateFrom())

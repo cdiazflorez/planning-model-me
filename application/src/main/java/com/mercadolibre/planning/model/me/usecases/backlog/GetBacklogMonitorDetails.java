@@ -4,14 +4,14 @@ import com.mercadolibre.planning.model.me.entities.monitor.AreaBacklogDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.DetailedBacklogPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
@@ -43,10 +43,13 @@ import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
@@ -60,9 +63,17 @@ import static java.util.List.of;
 public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private static final String NO_AREA = "N/A";
 
-    private static final List<ProcessName> PROCESSES = of(WAVING, PICKING, PACKING);
+    private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOW = Map.of(
+            FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
+            FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
+    );
 
-    private final BacklogApiGateway backlogApiGateway;
+    private static final Map<Workflow, List<String>> GROUPING_BY_WORKFLOW = Map.of(
+            FBM_WMS_OUTBOUND, of("area"),
+            FBM_WMS_INBOUND, emptyList()
+    );
+
+    private final BacklogApiAdapter backlogApiAdapter;
 
     private final ProjectBacklog backlogProjection;
 
@@ -113,8 +124,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
     private List<VariablesPhoto> getData(final GetBacklogMonitorDetailsInput input) {
         final Map<Instant, List<NumberOfUnitsInAnArea>> historicBacklog = getPastBacklog(input);
-        final Map<Instant, List<NumberOfUnitsInAnArea>> projectedBacklog =
-                getProjectedBacklog(input);
+        final Map<Instant, List<NumberOfUnitsInAnArea>> projectedBacklog = getProjectedBacklog(input);
         final Map<Instant, BacklogLimit> limits = getBacklogLimits(input);
         final Map<Instant, Integer> targetBacklog = getTargetBacklog(input);
         final Map<Instant, Integer> throughput = getThroughput(input);
@@ -195,17 +205,14 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private Map<Instant, List<NumberOfUnitsInAnArea>> getPastBacklog(
             final GetBacklogMonitorDetailsInput input) {
 
-        final List<Consolidation> consolidations = backlogApiGateway.getBacklog(
-                new BacklogRequest(
-                        input.getRequestDate(),
-                        input.getWarehouseId(),
-                        of("outbound-orders"),
-                        of(input.getProcess().getName()),
-                        of("area"),
-                        input.getDateFrom(),
-                        input.getDateTo()
-                )
-        );
+        final List<Consolidation> consolidations = backlogApiAdapter.execute(
+                input.getRequestDate(),
+                input.getWarehouseId(),
+                of(input.getWorkflow()),
+                of(input.getProcess()),
+                GROUPING_BY_WORKFLOW.get(input.getWorkflow()),
+                input.getDateFrom(),
+                input.getDateTo());
 
         final List<Consolidation> fixedConsolidation = fixBacklog(
                 input.getRequestDate(),
@@ -247,8 +254,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         final List<BacklogProjectionResponse> projectedBacklog = backlogProjection.execute(
                 BacklogProjectionInput.builder()
                         .warehouseId(input.getWarehouseId())
-                        .workflow(FBM_WMS_OUTBOUND)
-                        .processName(getProcesses(input.getProcess()))
+                        .workflow(input.getWorkflow())
+                        .processName(PROCESS_BY_WORKFLOW.get(input.getWorkflow()))
                         .groupType("order")
                         .dateFrom(dateFrom.atZone(UTC))
                         .dateTo(dateTo.atZone(UTC))
@@ -282,7 +289,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         }
 
         final TrajectoriesRequest request = TrajectoriesRequest.builder()
-                .workflow(FBM_WMS_OUTBOUND)
+                .workflow(input.getWorkflow())
                 .warehouseId(input.getWarehouseId())
                 .processName(of(input.getProcess()))
                 /* Note that the zone is not necessary but the PlanningModelGateway requires it to
@@ -298,20 +305,26 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                         entity -> entity.getDate().toInstant(),
                         MagnitudePhoto::getValue)
                 );
-
     }
 
     private Map<Instant, Integer> getThroughput(final GetBacklogMonitorDetailsInput input) {
-        return getProcessThroughput.execute(GetThroughputInput.builder()
-                        .warehouseId(input.getWarehouseId())
-                        .workflow(FBM_WMS_OUTBOUND)
-                        .processes(of(input.getProcess()))
-                        .dateFrom(input.getDateFrom().atZone(UTC))
-                        .dateTo(input.getDateTo().atZone(UTC))
-                        .build())
+        final GetThroughputInput request = GetThroughputInput.builder()
+                .warehouseId(input.getWarehouseId())
+                .workflow(input.getWorkflow())
+                .processes(of(input.getProcess()))
+                .dateFrom(input.getDateFrom().atZone(UTC))
+                .dateTo(input.getDateTo().atZone(UTC))
+                .build();
+
+        try {
+            return getProcessThroughput.execute(request)
                 .getOrDefault(input.getProcess(), Map.of())
                 .entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey().toInstant(), Map.Entry::getValue));
+        } catch (RuntimeException e) {
+            log.error("could not retrieve throughput for {}", request, e);
+        }
+        return emptyMap();
     }
 
     private HistoricalBacklog getHistoricalBacklog(final GetBacklogMonitorDetailsInput input) {
@@ -334,7 +347,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
             return getBacklogLimits.execute(
                             GetBacklogLimitsInput.builder()
                                     .warehouseId(input.getWarehouseId())
-                                    .workflow(FBM_WMS_OUTBOUND)
+                                    .workflow(input.getWorkflow())
                                     .processes(of(input.getProcess()))
                                     .dateFrom(input.getDateFrom())
                                     .dateTo(input.getDateTo())
@@ -416,10 +429,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 consolidation.getKeys().get("area"),
                 consolidation.getTotal()
         );
-    }
-
-    private List<ProcessName> getProcesses(final ProcessName to) {
-        return PROCESSES.subList(0, PROCESSES.indexOf(to) + 1);
     }
 
     @Value

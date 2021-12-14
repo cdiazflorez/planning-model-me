@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.backlog.dtos;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.Builder;
 import lombok.Value;
 
@@ -11,7 +12,7 @@ import java.util.List;
 public class GetHistoricalBacklogInput {
     private Instant requestDate;
     private String warehouseId;
-    private List<String> workflows;
+    private List<Workflow> workflows;
     private List<ProcessName> processes;
     private Instant dateFrom;
     private Instant dateTo;

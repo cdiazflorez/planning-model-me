@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
@@ -26,7 +25,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.minutesFromWeekStart;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyMap;
@@ -38,7 +36,7 @@ import static java.util.List.of;
 class GetHistoricalBacklog {
     private static final long BACKLOG_WEEKS_DATE_FROM_LOOKBACK = 3L;
 
-    private final BacklogApiGateway backlogApiGateway;
+    private final BacklogApiAdapter backlogApiAdapter;
 
     private final GetProcessThroughput getProcessThroughput;
 
@@ -77,17 +75,14 @@ class GetHistoricalBacklog {
             final Instant dateFrom,
             final Instant dateTo) {
 
-        final List<Consolidation> consolidations = backlogApiGateway.getBacklog(
-                new BacklogRequest(
+        final List<Consolidation> consolidations = backlogApiAdapter.execute(
                         input.getRequestDate(),
                         input.getWarehouseId(),
                         input.getWorkflows(),
-                        processes(input.getProcesses()),
+                        input.getProcesses(),
                         of("process"),
                         dateFrom,
-                        dateTo
-                )
-        );
+                        dateTo);
 
         Predicate<Consolidation> filterBy =
                 getBacklogFilter(input.getDateFrom(), input.getDateTo());
@@ -109,17 +104,22 @@ class GetHistoricalBacklog {
             final Instant dateFrom,
             final Instant dateTo) {
 
-        return getProcessThroughput.execute(
-                GetThroughputInput.builder()
-                        .warehouseId(input.getWarehouseId())
-                        .workflow(FBM_WMS_OUTBOUND)
-                        .processes(input.getProcesses())
-                        /* Note that the zone is not necessary but the GetProcessThroughput use case
-                         requires it to no avail. */
-                        .dateFrom(ZonedDateTime.ofInstant(dateFrom, UTC))
-                        .dateTo(ZonedDateTime.ofInstant(dateTo, UTC))
-                        .build()
-        );
+        final GetThroughputInput request = GetThroughputInput.builder()
+                .warehouseId(input.getWarehouseId())
+                .workflow(input.getWorkflows().get(0))
+                .processes(input.getProcesses())
+                /* Note that the zone is not necessary but the GetProcessThroughput use case
+                 requires it to no avail. */
+                .dateFrom(ZonedDateTime.ofInstant(dateFrom, UTC))
+                .dateTo(ZonedDateTime.ofInstant(dateTo, UTC))
+                .build();
+
+        try {
+            return getProcessThroughput.execute(request);
+        } catch (RuntimeException e) {
+            log.error("could not retrieve throughput for {}", request, e);
+            return GetThroughputResult.emptyThroughput();
+        }
     }
 
     private HistoricalBacklog toHistoricalBacklog(final Map<Instant, Integer> backlog,
@@ -204,12 +204,6 @@ class GetHistoricalBacklog {
         return dateFromInMinutes.compareTo(dateToInMinutes) < 0
                 ? filterByAny
                 : filterByForEndOfWeek;
-    }
-
-    private List<String> processes(final List<ProcessName> processNames) {
-        return processNames.stream()
-                .map(ProcessName::getName)
-                .collect(Collectors.toList());
     }
 
     private ProcessName processNameFromBacklog(final Consolidation b) {
