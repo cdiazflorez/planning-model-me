@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
@@ -44,7 +45,6 @@ class BacklogMonitorControllerTest {
     private static final String WAREHOUSE_ID = "COCU01";
     private static final String PROCESS = "picking";
     private static final String OUTBOUND = "fbm-wms-outbound";
-    private static final String OUTBOUND_ORDERS = "outbound-orders";
 
     @Autowired
     private MockMvc mockMvc;
@@ -74,7 +74,7 @@ class BacklogMonitorControllerTest {
         GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
                 firstDate,
                 WAREHOUSE_ID,
-                OUTBOUND_ORDERS,
+                FBM_WMS_OUTBOUND,
                 firstDate,
                 OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
                 999L);
@@ -104,7 +104,7 @@ class BacklogMonitorControllerTest {
         GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
                 firstDate,
                 WAREHOUSE_ID,
-                OUTBOUND_ORDERS,
+                FBM_WMS_OUTBOUND,
                 ProcessName.PICKING,
                 firstDate,
                 OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
@@ -161,7 +161,7 @@ class BacklogMonitorControllerTest {
     @Test
     void testGetMonitorWarehouseNotEnabled() throws Exception {
         // GIVEN
-        String warehouseId = "ARBA01";
+        final String warehouseId = "ARBA01";
 
         // WHEN
         final ResultActions result = mockMvc.perform(
@@ -179,7 +179,7 @@ class BacklogMonitorControllerTest {
     @Test
     void testGetDetailsWarehouseNotEnabled() throws Exception {
         // GIVEN
-        String warehouseId = "ARBA01";
+        final String warehouseId = "ARBA01";
 
         // WHEN
         final ResultActions result = mockMvc.perform(

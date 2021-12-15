@@ -4,11 +4,12 @@ import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
@@ -22,6 +23,7 @@ import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughput
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.planning.model.me.utils.TestException;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,9 +38,13 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
@@ -61,20 +67,22 @@ class GetBacklogMonitorTest {
             parse("2021-08-12T04:00:00Z", ISO_OFFSET_DATE_TIME)
     );
 
+    private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOW = Map.of(
+            FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
+            FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
+    );
+
     private static final ZonedDateTime DATE_CURRENT = DATES.get(1);
 
     private static final ZonedDateTime DATE_FROM = DATES.get(0);
 
     private static final ZonedDateTime DATE_TO = DATES.get(3);
 
-    private static final String OUTBOUND_ORDERS = "outbound-orders";
-
-
     @InjectMocks
     private GetBacklogMonitor getBacklogMonitor;
 
     @Mock
-    private BacklogApiGateway backlogApiGateway;
+    private BacklogApiAdapter backlogApiAdapter;
 
     @Mock
     private ProjectBacklog backlogProjection;
@@ -104,7 +112,7 @@ class GetBacklogMonitorTest {
     void testExecuteOK() {
         // GIVEN
         mockDateUtils(mockDt);
-        mockBacklogApiResponse();
+        mockBacklogApiResponse(input());
         mockHistoricalBacklog();
         mockProjectedBacklog();
         mockThroughput();
@@ -115,7 +123,7 @@ class GetBacklogMonitorTest {
 
         // THEN
         assertNotNull(orders);
-        assertEquals("outbound-orders", orders.getWorkflow());
+        assertEquals("fbm-wms-outbound", orders.getWorkflow());
 
         // waving
         final ProcessDetail waving = orders.getProcesses().get(0);
@@ -132,10 +140,16 @@ class GetBacklogMonitorTest {
     @Test
     void testGetCurrentBacklogError() {
         // GIVEN
-        when(backlogApiGateway.getBacklog(any(BacklogRequest.class)))
-                .thenThrow(new TestException());
+        final GetBacklogMonitorInputDto input = input();
 
-        final var input = input();
+        when(backlogApiAdapter.execute(input.getRequestDate(),
+                input.getWarehouseId(),
+                of(input.getWorkflow()),
+                PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
+                of("process"),
+                input.getDateFrom(),
+                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS)))
+                .thenThrow(new TestException());
 
         // WHEN
         assertThrows(
@@ -148,7 +162,7 @@ class GetBacklogMonitorTest {
     void testGetProjectedBacklogError() {
         // GIVEN
         mockDateUtils(mockDt);
-        mockBacklogApiResponse();
+        mockBacklogApiResponse(input());
         mockHistoricalBacklog();
         mockThroughput();
         mockBacklogLimits();
@@ -161,7 +175,7 @@ class GetBacklogMonitorTest {
 
         // THEN
         assertNotNull(orders);
-        assertEquals("outbound-orders", orders.getWorkflow());
+        assertEquals("fbm-wms-outbound", orders.getWorkflow());
 
         // waving
         final ProcessDetail waving = orders.getProcesses().get(0);
@@ -172,7 +186,7 @@ class GetBacklogMonitorTest {
     void testGetHistoricalBacklogError() {
         // GIVEN
         mockDateUtils(mockDt);
-        mockBacklogApiResponse();
+        mockBacklogApiResponse(input());
         mockProjectedBacklog();
         mockThroughput();
         mockBacklogLimits();
@@ -180,7 +194,7 @@ class GetBacklogMonitorTest {
         final var request = new GetHistoricalBacklogInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                of("outbound-orders"),
+                of(FBM_WMS_OUTBOUND),
                 of(WAVING, PICKING, PACKING),
                 DATE_FROM.minusWeeks(3L).toInstant(),
                 DATE_FROM.toInstant()
@@ -194,7 +208,7 @@ class GetBacklogMonitorTest {
 
         // THEN
         assertNotNull(orders);
-        assertEquals("outbound-orders", orders.getWorkflow());
+        assertEquals("fbm-wms-outbound", orders.getWorkflow());
 
         // waving
         final ProcessDetail waving = orders.getProcesses().get(0);
@@ -210,7 +224,7 @@ class GetBacklogMonitorTest {
     void testGetThroughputError() {
         // GIVEN
         mockDateUtils(mockDt);
-        mockBacklogApiResponse();
+        mockBacklogApiResponse(input());
         mockHistoricalBacklog();
         mockProjectedBacklog();
         mockBacklogLimits();
@@ -231,7 +245,7 @@ class GetBacklogMonitorTest {
 
         // THEN
         assertNotNull(orders);
-        assertEquals("outbound-orders", orders.getWorkflow());
+        assertEquals("fbm-wms-outbound", orders.getWorkflow());
 
         // waving
         final ProcessDetail waving = orders.getProcesses().get(0);
@@ -270,18 +284,24 @@ class GetBacklogMonitorTest {
         return new GetBacklogMonitorInputDto(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                OUTBOUND_ORDERS,
+                FBM_WMS_OUTBOUND,
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant(),
                 0L
         );
     }
 
-    private void mockBacklogApiResponse() {
+    private void mockBacklogApiResponse(final GetBacklogMonitorInputDto input) {
         Instant firstDate = DATES.get(0).toInstant();
         Instant secondDate = DATES.get(1).toInstant();
 
-        when(backlogApiGateway.getBacklog(any(BacklogRequest.class)))
+        when(backlogApiAdapter.execute(input.getRequestDate(),
+                input.getWarehouseId(),
+                of(input.getWorkflow()),
+                PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
+                of("process"),
+                input.getDateFrom(),
+                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS)))
                 .thenReturn(of(
                         new Consolidation(firstDate, Map.of(
                                 "process", "waving"
@@ -313,7 +333,7 @@ class GetBacklogMonitorTest {
         final var input = new GetHistoricalBacklogInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                of("outbound-orders"),
+                of(FBM_WMS_OUTBOUND),
                 of(WAVING, PICKING, PACKING),
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant()

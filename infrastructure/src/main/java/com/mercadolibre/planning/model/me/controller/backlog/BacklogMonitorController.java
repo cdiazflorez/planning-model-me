@@ -3,8 +3,10 @@ package com.mercadolibre.planning.model.me.controller.backlog;
 import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.EmptyStateException;
+import com.mercadolibre.planning.model.me.controller.backlog.exception.NotImplementWorkflowException;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitor;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
@@ -23,19 +25,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/wms/flow/middleend/logistic_centers/{warehouseId}/backlog")
 public class BacklogMonitorController {
-
-    private static final Map<String, String> WORKFLOW_ADAPTER = Map.of(
-            FBM_WMS_OUTBOUND.getName(), "outbound-orders"
-    );
 
     private static final Duration DEFAULT_HOURS_LOOKBACK = Duration.ofHours(2);
     private static final Duration DEFAULT_HOURS_LOOKAHEAD = Duration.ofHours(8);
@@ -65,30 +62,28 @@ public class BacklogMonitorController {
         final Instant requestDate = requestClock.now();
         final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
-        WorkflowBacklogDetail response = getBacklogMonitor.execute(
+        final WorkflowBacklogDetail response = getBacklogMonitor.execute(
                 new GetBacklogMonitorInputDto(
                         requestDate,
                         warehouseId,
-                        WORKFLOW_ADAPTER.get(workflow),
+                        getWorkflow(workflow),
                         dateFrom(dateFrom, startOfCurrentHour),
                         dateTo(dateTo, startOfCurrentHour),
-                        callerId
-                )
+                        callerId)
         );
 
         return ResponseEntity.ok(
                 new WorkflowBacklogDetail(
-                        workflow,
+                        getWorkflow(workflow).getName(),
                         response.getCurrentDatetime(),
-                        response.getProcesses()
-                )
+                        response.getProcesses())
         );
     }
 
     @GetMapping("/details")
     public ResponseEntity<GetBacklogMonitorDetailsResponse> details(
             @PathVariable final String warehouseId,
-            @RequestParam(required = false) final String workflow,
+            @RequestParam final String workflow,
             @RequestParam final String process,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
             final OffsetDateTime dateFrom,
@@ -100,31 +95,40 @@ public class BacklogMonitorController {
             throw new EmptyStateException();
         }
 
+        if(Workflow.from(workflow).isPresent()
+                && Workflow.from(workflow).get() == FBM_WMS_INBOUND) {
+            throw new NotImplementWorkflowException();
+        }
+
         final Instant requestDate = requestClock.now();
         final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
         return ResponseEntity.ok(
                 getBacklogMonitorDetails.execute(new GetBacklogMonitorDetailsInput(
-                                requestDate,
-                                warehouseId,
-                                WORKFLOW_ADAPTER.get(workflow),
-                                ProcessName.from(process),
-                                dateFrom(dateFrom, startOfCurrentHour),
-                                dateTo(dateTo, startOfCurrentHour),
-                                callerId
+                        requestDate,
+                        warehouseId,
+                        getWorkflow(workflow),
+                        ProcessName.from(process),
+                        dateFrom(dateFrom, startOfCurrentHour),
+                        dateTo(dateTo, startOfCurrentHour),
+                        callerId
                 ))
         );
     }
 
-    private Instant dateFrom(OffsetDateTime date, Instant startOfCurrentHour) {
+    private Instant dateFrom(final OffsetDateTime date, final Instant startOfCurrentHour) {
         return date == null
                 ? startOfCurrentHour.minus(DEFAULT_HOURS_LOOKBACK)
                 : date.toInstant();
     }
 
-    private Instant dateTo(OffsetDateTime date, Instant startOfCurrentHour) {
+    private Instant dateTo(final OffsetDateTime date, final Instant startOfCurrentHour) {
         return date == null
                 ? startOfCurrentHour.plus(DEFAULT_HOURS_LOOKAHEAD)
                 : date.toInstant();
+    }
+
+    private Workflow getWorkflow(final String workflowParam) {
+        return Workflow.from(workflowParam).orElseThrow(NotImplementWorkflowException::new);
     }
 }
