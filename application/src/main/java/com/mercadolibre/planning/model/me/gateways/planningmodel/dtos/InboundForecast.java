@@ -11,4 +11,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class InboundForecast extends Forecast {
     private List<ProcessingDistribution> processingDistributions;
+    private List<HeadcountProductivity> headcountProductivities;
+    private List<PolyvalentProductivity> polyvalentProductivities;
 }

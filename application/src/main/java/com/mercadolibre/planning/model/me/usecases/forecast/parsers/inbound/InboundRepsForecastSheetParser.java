@@ -2,6 +2,8 @@ package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivityData;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistributionData;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -9,6 +11,7 @@ import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.SheetParser;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.MetadataCell;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.Productivity;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.RepsRow;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
@@ -19,6 +22,7 @@ import javax.inject.Named;
 
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +30,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.ACTIVE_CHECK_IN;
@@ -53,6 +60,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
     private static final int DATE_COLUMN = 1;
     private static final int FIRST_ROW = 7;
     private static final int LAST_ROW = 174;
+    private static final int DEFAULT_ABILITY_LEVEL = 1;
 
     private final LogisticCenterGateway logisticCenterGateway;
 
@@ -81,13 +89,12 @@ public class InboundRepsForecastSheetParser implements SheetParser {
 
         checkForErrors(requestWarehouseId, warehouseId, week, rows);
 
-        return new ForecastSheetDto(
-                sheet.getSheetName(),
-                Map.of(
-                        WEEK, week,
-                        PROCESSING_DISTRIBUTION, buildProcessingDistributions(rows)
-                )
-        );
+        return new ForecastSheetDto(sheet.getSheetName(), Map.of(
+                WEEK, week,
+                PROCESSING_DISTRIBUTION, buildProcessingDistributions(rows),
+                HEADCOUNT_PRODUCTIVITY, buildHeadcountProductivities(rows),
+                POLYVALENT_PRODUCTIVITY, Collections.emptyList()
+        ));
     }
 
     private void checkForErrors(final String requestWarehouseId,
@@ -184,28 +191,52 @@ public class InboundRepsForecastSheetParser implements SheetParser {
         return SpreadsheetUtils.getIntCellValueAt(sheet, row, column.getColumnId());
     }
 
+    private List<HeadcountProductivityData> toHeadcountProductivityData(final List<RepsRow> rows,
+                                                                        final Productivity column) {
+
+        return rows.stream()
+                .map(row -> new HeadcountProductivityData(
+                        row.getDate().getValue(),
+                        column.getMapper().apply(row))
+                )
+                .collect(Collectors.toList());
+
+    }
+
+    private List<HeadcountProductivity> buildHeadcountProductivities(final List<RepsRow> rows) {
+        return Arrays.stream(Productivity.values())
+                .map(column -> new HeadcountProductivity(
+                                column.getProcess().getName(),
+                                UNITS_PER_HOUR.getName(),
+                                DEFAULT_ABILITY_LEVEL,
+                                toHeadcountProductivityData(rows, column)
+                        )
+                )
+                .collect(Collectors.toList());
+    }
+
     private List<ProcessingDistributionData> toProcessingDistributionData(
             final List<RepsRow> rows,
             final ProcessingDistributionColumn column) {
 
         return rows.stream()
-                .map(val -> ProcessingDistributionData.builder()
-                        .date(val.getDate().getValue())
-                        .quantity(column.getMapper().apply(val).getValue())
-                        .build())
+                .map(row -> new ProcessingDistributionData(
+                                row.getDate().getValue(),
+                                column.getMapper().apply(row)
+                        )
+                )
                 .collect(Collectors.toList());
     }
 
-    private List<ProcessingDistribution> buildProcessingDistributions(
-            final List<RepsRow> distributions) {
+    private List<ProcessingDistribution> buildProcessingDistributions(final List<RepsRow> rows) {
 
         return Arrays.stream(ProcessingDistributionColumn.values())
-                .map(column -> ProcessingDistribution.builder()
-                        .type(column.getType().name())
-                        .processName(column.getProcess().getName())
-                        .data(toProcessingDistributionData(distributions, column))
-                        .quantityMetricUnit(column.getUnit().getName())
-                        .build()
+                .map(column -> new ProcessingDistribution(
+                                column.getType().name(),
+                                column.getUnit().getName(),
+                                column.getProcess().getName(),
+                                toProcessingDistributionData(rows, column)
+                        )
                 )
                 .collect(Collectors.toList());
     }

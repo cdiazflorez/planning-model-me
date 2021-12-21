@@ -50,6 +50,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntValueAtFromDuration;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getLongValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getStringValueAt;
+import static java.util.Collections.emptyList;
 
 @Named
 @AllArgsConstructor
@@ -113,25 +114,25 @@ public class RepsForecastSheetParser implements SheetParser {
                                                           final MeliSheet sheet) {
         // Columns
         final List<ProcessingDistribution> processingDistributions = new ArrayList<>();
-        ForecastProcessName.stream().forEach(forecastProcessName
-                -> forecastProcessName.getProcessTypes().forEach(forecastProcessType
-                        -> processingDistributions.add(ProcessingDistribution.builder()
-                                .processName(forecastProcessName.toString())
-                                .type(forecastProcessType.toString())
-                                .quantityMetricUnit(forecastProcessType.getMetricUnit().getName())
-                                .data(new ArrayList<>())
-                                .build()
-                ))
-        );
+        ForecastProcessName.stream()
+                .forEach(forecastProcessName -> forecastProcessName.getProcessTypes()
+                        .forEach(forecastProcessType -> processingDistributions.add(
+                                new ProcessingDistribution(
+                                        forecastProcessType.toString(),
+                                        forecastProcessType.getMetricUnit().getName(),
+                                        forecastProcessName.toString(),
+                                        new ArrayList<>()
+                                )
+                        )));
 
         final List<HeadcountProductivity> headcountProductivities = new ArrayList<>();
         ForecastProductivityProcessName.stream().forEach(
-                processName -> headcountProductivities.add(HeadcountProductivity.builder()
-                        .processName(processName.name())
-                        .abilityLevel(DEFAULT_ABILITY_LEVEL)
-                        .productivityMetricUnit(MetricUnit.UNITS_PER_HOUR.getName())
-                        .data(new ArrayList<>())
-                        .build()
+                processName -> headcountProductivities.add(new HeadcountProductivity(
+                                processName.name(),
+                                MetricUnit.UNITS_PER_HOUR.getName(),
+                                DEFAULT_ABILITY_LEVEL,
+                                new ArrayList<>()
+                        )
                 )
         );
 
@@ -145,12 +146,11 @@ public class RepsForecastSheetParser implements SheetParser {
                     .forEach(processingDistribution -> {
                         final int columnIndex = getColumnIndex(processingDistribution);
 
-                        processingDistribution.getData().add(ProcessingDistributionData.builder()
-                                .date(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
-                                .quantity(getQuantity(sheet, rowIndex, processingDistribution,
-                                        columnIndex))
-                                .build()
-                        );
+                        processingDistribution.getData()
+                                .add(new ProcessingDistributionData(
+                                        SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId),
+                                        getQuantity(sheet, rowIndex, processingDistribution, columnIndex)
+                                ));
                     });
 
             headcountProductivities.forEach(headcountProductivity -> {
@@ -158,10 +158,10 @@ public class RepsForecastSheetParser implements SheetParser {
                         headcountProductivity.getProcessName()).getStartingColumn()
                         + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET;
 
-                headcountProductivity.getData().add(HeadcountProductivityData.builder()
-                        .dayTime(SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId))
-                        .productivity(getLongValueAt(sheet, rowIndex, columnIndex))
-                        .build()
+                headcountProductivity.getData().add(new HeadcountProductivityData(
+                                SpreadsheetUtils.getDateTimeAt(sheet, rowIndex, 1, zoneId),
+                                getLongValueAt(sheet, rowIndex, columnIndex)
+                        )
                 );
             });
         }
@@ -170,11 +170,11 @@ public class RepsForecastSheetParser implements SheetParser {
     }
 
     private int getQuantity(final MeliSheet sheet, final int rowIndex,
-            ProcessingDistribution processingDistribution, final int columnIndex) {
+                            ProcessingDistribution processingDistribution, final int columnIndex) {
 
         return isRemainingProcessing(processingDistribution)
                 ? getIntValueAtFromDuration(sheet, rowIndex, columnIndex)
-                        : getIntValueAt(sheet, rowIndex, columnIndex);
+                : getIntValueAt(sheet, rowIndex, columnIndex);
     }
 
     private boolean isRemainingProcessing(ProcessingDistribution processingDistribution) {

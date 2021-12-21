@@ -11,7 +11,8 @@ public enum ProcessingType {
     WORKERS,
     WORKERS_NS,
     THROUGHPUT,
-    MAX_CAPACITY;
+    MAX_CAPACITY,
+    PRODUCTIVITY;
 
     public static ProcessingType from(final String value) {
         return valueOf(value.toUpperCase());

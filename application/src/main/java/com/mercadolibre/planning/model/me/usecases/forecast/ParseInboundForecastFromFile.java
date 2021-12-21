@@ -1,8 +1,10 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.InboundForecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PolyvalentProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
@@ -13,6 +15,8 @@ import javax.inject.Named;
 import java.util.List;
 import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WEEK;
@@ -38,6 +42,10 @@ public class ParseInboundForecastFromFile extends ParseForecastFromFile {
                 .metadata(buildForecastMetadata(warehouseId, parsedValues))
                 .processingDistributions((List<ProcessingDistribution>)
                         parsedValues.get(PROCESSING_DISTRIBUTION))
+                .headcountProductivities((List<HeadcountProductivity>)
+                        parsedValues.get(HEADCOUNT_PRODUCTIVITY))
+                .polyvalentProductivities((List<PolyvalentProductivity>)
+                        parsedValues.get(POLYVALENT_PRODUCTIVITY))
                 .userID(userId)
                 .build();
     }

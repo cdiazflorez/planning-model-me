@@ -1,12 +1,10 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
 import java.util.List;
 
-@Data
-@Builder
+@Value
 public class ProcessingDistribution {
     private String type;
     private String quantityMetricUnit;

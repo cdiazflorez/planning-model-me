@@ -1,12 +1,10 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
 import java.time.ZonedDateTime;
 
-@Data
-@Builder
+@Value
 public class ProcessingDistributionData {
     private ZonedDateTime date;
     private int quantity;
