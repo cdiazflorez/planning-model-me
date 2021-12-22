@@ -3,6 +3,11 @@ package com.mercadolibre.planning.model.me.services.backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
+import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -18,6 +23,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -32,10 +38,12 @@ public class BacklogApiAdapterTest {
     @Mock
     private BacklogApiGateway backlogApiGateway;
 
-    @Test
-    void testExecute() {
-        // GIVEN
+    @Mock
+    private ProjectBacklog backlogProjection;
 
+    @Test
+    void testExecuteCurrentBacklog() {
+        // GIVEN
         final List<Consolidation> consolidations = getConsolidation();
 
         final BacklogRequest gatewayRequest = new BacklogRequest(
@@ -50,12 +58,11 @@ public class BacklogApiAdapterTest {
         // WHEN
         when(backlogApiGateway.getBacklog(gatewayRequest)).thenReturn(consolidations);
 
-        final List<Consolidation> result = backlogApiAdapter.execute(
+        final List<Consolidation> result = backlogApiAdapter.getCurrentBacklog(
                 Instant.from(NOW),
                 "ARBA01",
                 List.of(FBM_WMS_OUTBOUND),
                 List.of(WAVING, PICKING, PACKING),
-                List.of("process"),
                 Instant.from(NOW),
                 Instant.from(NOW));
 
@@ -65,6 +72,40 @@ public class BacklogApiAdapterTest {
         assertEquals(consolidations.get(0).getKeys(), result.get(0).getKeys());
     }
 
+    @Test
+    void testExecuteProjectedBacklog() {
+        // GIVEN
+        final ProjectedBacklog projectedBacklog = getProjection();
+
+        final BacklogProjectionInput backlogRequest = BacklogProjectionInput.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId("ARBA01")
+                .processName(List.of(WAVING, PICKING, PACKING))
+                .dateFrom(NOW)
+                .dateTo(NOW)
+                .groupType("order")
+                .userId(1234L)
+                .currentBacklog(emptyList())
+                .build();
+
+        // WHEN
+        when(backlogProjection.execute(backlogRequest)).thenReturn(projectedBacklog);
+
+        final List<BacklogProjectionResponse> result = backlogApiAdapter.getProjectedBacklog(
+                "ARBA01",
+                FBM_WMS_OUTBOUND,
+                List.of(WAVING, PICKING, PACKING),
+                NOW,
+                NOW,
+                1234L,
+                emptyList());
+
+        // THEN
+        assertEquals(projectedBacklog.getProjections().get(0).getProcessName(), result.get(0).getProcessName());
+        assertEquals(projectedBacklog.getProjections().get(1).getProcessName(), result.get(1).getProcessName());
+        assertEquals(projectedBacklog.getProjections().get(2).getProcessName(), result.get(2).getProcessName());
+    }
+
     private List<Consolidation> getConsolidation() {
 
         final Map<String, String> mapDummy = new HashMap<>();
@@ -72,5 +113,13 @@ public class BacklogApiAdapterTest {
         return List.of(
                 new Consolidation(Instant.from(NOW), mapDummy, 1),
                 new Consolidation(Instant.from(NOW), mapDummy, 2));
+    }
+
+    private ProjectedBacklog getProjection() {
+
+        return new ProjectedBacklog(
+                List.of(new BacklogProjectionResponse(WAVING, List.of(new ProjectionValue(NOW, 1))),
+                        new BacklogProjectionResponse(PICKING, List.of(new ProjectionValue(NOW, 1))),
+                        new BacklogProjectionResponse(PACKING, List.of(new ProjectionValue(NOW, 1)))));
     }
 }

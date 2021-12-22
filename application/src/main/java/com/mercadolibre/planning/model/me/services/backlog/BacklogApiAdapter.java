@@ -5,6 +5,10 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
+import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
+import java.time.ZonedDateTime;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,6 +21,7 @@ import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static java.util.List.of;
 
 @Slf4j
 @Named
@@ -24,6 +29,8 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 public class BacklogApiAdapter {
 
     private final BacklogApiGateway backlogApiGateway;
+
+    private final ProjectBacklog backlogProjection;
 
     private static final String OUTBOUND_ORDERS = "outbound-orders";
     private static final String INBOUND = "inbound";
@@ -33,29 +40,55 @@ public class BacklogApiAdapter {
             FBM_WMS_INBOUND, INBOUND
     );
 
-    public List<Consolidation> execute(final Instant requestDate,
-                                       final String warehouseId,
-                                       final List<Workflow> workflows,
-                                       final List<ProcessName> processes,
-                                       final List<String> groupingFields,
-                                       final Instant dateFrom,
-                                       final Instant dateTo) {
+    private static final Map<Workflow, String> GROUP_TYPE_BY_WORKFLOW = Map.of(
+            FBM_WMS_OUTBOUND, "order",
+            FBM_WMS_INBOUND, ""
+    );
+
+    public List<Consolidation> getCurrentBacklog(final Instant requestDate,
+                                                 final String warehouseId,
+                                                 final List<Workflow> workflows,
+                                                 final List<ProcessName> processes,
+                                                 final Instant dateFrom,
+                                                 final Instant dateTo) {
 
         final BacklogRequest adapterRequest = new BacklogRequest(
                 requestDate,
                 warehouseId,
-                getWorkflowByWorkflow(workflows),
+                getWorkflowAliasByWorkflow(workflows),
                 processes.stream()
                         .map(ProcessName::getName)
                         .collect(Collectors.toList()),
-                groupingFields,
+                of("process"),
                 dateFrom,
                 dateTo);
 
         return backlogApiGateway.getBacklog(adapterRequest);
     }
 
-    private List<String> getWorkflowByWorkflow(final List<Workflow> workflowsBase) {
+    public List<BacklogProjectionResponse> getProjectedBacklog(final String warehouseId,
+                                                               final Workflow workflow,
+                                                               final List<ProcessName> processes,
+                                                               final ZonedDateTime dateFrom,
+                                                               final ZonedDateTime dateTo,
+                                                               final Long userId,
+                                                               final List<Consolidation> currentBacklog) {
+
+        return backlogProjection.execute(
+                BacklogProjectionInput.builder()
+                        .workflow(workflow)
+                        .warehouseId(warehouseId)
+                        .processName(processes)
+                        .dateFrom(dateFrom)
+                        .dateTo(dateTo)
+                        .groupType(GROUP_TYPE_BY_WORKFLOW.get(workflow))
+                        .userId(userId)
+                        .currentBacklog(currentBacklog)
+                        .build())
+                .getProjections();
+    }
+
+    private List<String> getWorkflowAliasByWorkflow(final List<Workflow> workflowsBase) {
 
         return workflowsBase.stream().map(WORKFLOW_BY_ALIAS_WORKFLOW::get)
                 .collect(Collectors.toList());

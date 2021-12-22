@@ -3,18 +3,18 @@ package com.mercadolibre.planning.model.me.usecases.monitor.metric;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound;
 
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
 
 public interface GetMetric<T, P> extends UseCase<T, P> {
 
-    static Metric createEmptyMetric(final MetricType metricType, final ProcessInfo process) {
+    static Metric createEmptyMetric(final MetricType metricType, final ProcessOutbound process) {
         return createMetric(process, "-", metricType);
     }
 
-    static Metric createMetric(final ProcessInfo process,
+    static Metric createMetric(final ProcessOutbound process,
                                 final String value,
                                 final MetricType metricType) {
         return Metric.builder()

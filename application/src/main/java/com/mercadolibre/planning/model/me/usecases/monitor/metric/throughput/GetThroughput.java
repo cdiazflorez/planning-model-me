@@ -19,9 +19,9 @@ public class GetThroughput implements GetMetric<ThroughputInput, Metric> {
     @Override
     public Metric execute(ThroughputInput input) {
         if (input.getProcessedUnitLastHour() == null) {
-            return createEmptyMetric(THROUGHPUT_PER_HOUR, input.getProcessInfo());
+            return createEmptyMetric(THROUGHPUT_PER_HOUR, input.getProcessOutbound());
         }
-        return createMetric(input.getProcessInfo(),
+        return createMetric(input.getProcessOutbound(),
                 input.getProcessedUnitLastHour().getUnitCount() + " uds./h",
                 THROUGHPUT_PER_HOUR);
     }

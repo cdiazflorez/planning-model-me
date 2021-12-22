@@ -269,12 +269,11 @@ class GetBacklogMonitorDetailsTest {
         var rkH = Map.of("area", "RK-H");
         var rkL = Map.of("area", "RK-L");
 
-        when(backlogApiAdapter.execute(
+        when(backlogApiAdapter.getCurrentBacklog(
                 input.getRequestDate(),
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
-                of("area"),
                 input.getDateFrom(),
                 input.getDateTo())).thenReturn(
                         List.of(
@@ -286,12 +285,11 @@ class GetBacklogMonitorDetailsTest {
 
     private void mockPastBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input) {
         var na = Map.of("area", "N/A");
-        when(backlogApiAdapter.execute(
+        when(backlogApiAdapter.getCurrentBacklog(
                 input.getRequestDate(),
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
-                of("area"),
                 input.getDateFrom(),
                 input.getDateTo())).thenReturn(
                         List.of(

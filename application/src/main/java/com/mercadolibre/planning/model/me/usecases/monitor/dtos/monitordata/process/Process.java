@@ -17,8 +17,8 @@ public class Process implements Comparable<Process> {
 
     @Override
     public int compareTo(Process other) {
-        final Integer thisIndex = ProcessInfo.fromTitle(this.title).getIndex();
-        final Integer otherIndex = ProcessInfo.fromTitle(other.getTitle()).getIndex();
+        final Integer thisIndex = ProcessOutbound.fromTitle(this.title).getIndex();
+        final Integer otherIndex = ProcessOutbound.fromTitle(other.getTitle()).getIndex();
         return Integer.compare(thisIndex, otherIndex);
     }
 }

@@ -11,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,7 +24,7 @@ public class GetThroughputTest {
     public void testExecuteOk() {
         // GIVEN
         final ThroughputInput input = ThroughputInput.builder()
-                .processInfo(PACKING)
+                .processOutbound(PACKING)
                 .processedUnitLastHour(UnitsResume.builder()
                         .process(AnalyticsQueryEvent.PACKING_NO_WALL)
                         .eventCount(2020)

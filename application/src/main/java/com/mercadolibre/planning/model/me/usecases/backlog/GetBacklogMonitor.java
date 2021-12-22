@@ -14,8 +14,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimits
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
-import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
@@ -63,8 +61,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
     private final BacklogApiAdapter backlogApiAdapter;
 
-    private final ProjectBacklog backlogProjection;
-
     private final GetProcessThroughput getProcessThroughput;
 
     private final GetHistoricalBacklog getHistoricalBacklog;
@@ -86,9 +82,18 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     }
 
     private List<ProcessData> getData(final GetBacklogMonitorInputDto input) {
-        final Map<ProcessName, List<TotaledBacklogPhoto>> currentBacklog = getCurrentBacklog(input);
-        final Map<ProcessName, List<TotaledBacklogPhoto>> projectedBacklog =
-                input.getWorkflow() == FBM_WMS_OUTBOUND ? projectedBacklog(input) : emptyMap();
+
+        final List<Consolidation> currentBacklogBase =
+                backlogApiAdapter.getCurrentBacklog(
+                        input.getRequestDate(),
+                        input.getWarehouseId(),
+                        of(input.getWorkflow()),
+                        PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
+                        input.getDateFrom(),
+                        input.getRequestDate().truncatedTo(ChronoUnit.SECONDS));
+
+        final Map<ProcessName, List<TotaledBacklogPhoto>> currentBacklog = getCurrentBacklog(input, currentBacklogBase);
+        final Map<ProcessName, List<TotaledBacklogPhoto>> projectedBacklog = getProjectedBacklog(input, currentBacklogBase);
         final Map<ProcessName, HistoricalBacklog> historicalBacklog = getHistoricalBacklog(input);
         final Map<ProcessName, Map<Instant, BacklogLimit>> backlogLimits =
                 input.getWorkflow() == FBM_WMS_OUTBOUND ? getBacklogLimits(input) : emptyMap();
@@ -108,28 +113,16 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                 .collect(Collectors.toList());
     }
 
-    private Map<ProcessName, List<TotaledBacklogPhoto>> getCurrentBacklog(
-            final GetBacklogMonitorInputDto input
-    ) {
+    private Map<ProcessName, List<TotaledBacklogPhoto>> getCurrentBacklog(final GetBacklogMonitorInputDto input,
+                                                                          final List<Consolidation> cellsGroupedByTakenOnDateAndProcessName) {
         /* Get the backlog photos taken between `dateFrom` and `dateTo`, consolidating all the cells
         corresponding to the same photo and process. */
-        final List<Consolidation> cellsGroupedByTakenOnDateAndProcessName =
-                backlogApiAdapter.execute(
-                                input.getRequestDate(),
-                                input.getWarehouseId(),
-                                of(input.getWorkflow()),
-                                PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
-                                of("process"),
-                                input.getDateFrom(),
-                                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS));
-
         final Map<ProcessName, List<Consolidation>> consolidationsTrajectoriesByProcess =
                 groupBacklogSubsetsByProcess(
                     input.getRequestDate(),
                     cellsGroupedByTakenOnDateAndProcessName,
                     PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
-                    input.getDateFrom()
-                );
+                    input.getDateFrom());
 
         return consolidationsTrajectoriesByProcess.entrySet()
                 .stream()
@@ -138,8 +131,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                         entry -> entry.getValue()
                                 .stream()
                                 .map(b -> new TotaledBacklogPhoto(b.getDate(), b.getTotal()))
-                                .collect(Collectors.toList())
-                ));
+                                .collect(Collectors.toList())));
     }
 
     /**
@@ -161,20 +153,18 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     ) {
         final Instant takenOnDateOfLastPhoto = getDateWhenLatestPhotoWasTaken(
                 sumsOfCellsGroupedByTakenOnDateAndProcess,
-                requestDate.truncatedTo(ChronoUnit.SECONDS)
-        );
+                requestDate.truncatedTo(ChronoUnit.SECONDS));
+
         final List<Consolidation>
                 truncatedConsolidation = truncateToHoursTheTakenOnDatesExceptFor(
                         sumsOfCellsGroupedByTakenOnDateAndProcess,
-                        takenOnDateOfLastPhoto
-        );
+                        takenOnDateOfLastPhoto);
 
         final Map<ProcessName, List<Consolidation>> backlogByProcess =
                 truncatedConsolidation.stream()
                     .collect(Collectors.groupingBy(
                             this::processNameFromBacklog,
-                            Collectors.toList()
-                    ));
+                            Collectors.toList()));
 
         return processes.stream()
                 .collect(Collectors.toMap(
@@ -184,13 +174,10 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                                         backlogByProcess.getOrDefault(process, emptyList()),
                                         dateFrom,
                                         takenOnDateOfLastPhoto,
-                                        date -> new Consolidation(date, null, 0)
-                                )
-                ));
+                                        date -> new Consolidation(date, null, 0))));
     }
 
-    private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(
-            final GetBacklogMonitorInputDto input) {
+    private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(final GetBacklogMonitorInputDto input) {
 
         try {
             return getHistoricalBacklog.execute(
@@ -200,59 +187,50 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                             of(input.getWorkflow()),
                             PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
                             input.getDateFrom(),
-                            input.getDateTo()
-                    )
-            );
+                            input.getDateTo()));
+
         } catch (Exception e) {
             log.error(e.getMessage());
         }
         return emptyMap();
     }
 
-    private Map<ProcessName, List<TotaledBacklogPhoto>> projectedBacklog(
-            final GetBacklogMonitorInputDto input) {
+    private Map<ProcessName, List<TotaledBacklogPhoto>> getProjectedBacklog(
+            final GetBacklogMonitorInputDto input,
+            final List<Consolidation> currentBacklog) {
 
         try {
-            return getProjectedBacklog(input);
+            /* The zone is not necessary but the ProjectBacklog use case requires it to no avail. */
+            final ZonedDateTime requestDate = ZonedDateTime.ofInstant(input.getRequestDate(), UTC);
+
+            final List<BacklogProjectionResponse> projectedBacklog = backlogApiAdapter
+                    .getProjectedBacklog(
+                            input.getWarehouseId(),
+                            input.getWorkflow(),
+                            PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
+                            requestDate,
+                            requestDate.plusHours(25),
+                            input.getCallerId(),
+                            currentBacklog);
+
+            return projectedBacklog.stream()
+                    .collect(Collectors.groupingBy(
+                            BacklogProjectionResponse::getProcessName,
+                            Collectors.flatMapping(p -> p.getValues()
+                                            .stream()
+                                            .filter(v -> !v.getDate()
+                                                    .toInstant()
+                                                    .isAfter(input.getDateTo())
+                                            )
+                                            .map(v -> new TotaledBacklogPhoto(
+                                                    v.getDate().toInstant(),
+                                                    v.getQuantity())),
+                                    Collectors.toList())));
+
         } catch (RuntimeException e) {
             log.error("could not retrieve backlog projections", e);
         }
         return emptyMap();
-    }
-
-    private Map<ProcessName, List<TotaledBacklogPhoto>> getProjectedBacklog(
-            final GetBacklogMonitorInputDto input) {
-
-        /* Note that the zone is not necessary but the ProjectBacklog use case requires it to no
-        avail. */
-        final ZonedDateTime requestDate = ZonedDateTime.ofInstant(input.getRequestDate(), UTC);
-
-        final List<BacklogProjectionResponse> projectedBacklog = backlogProjection.execute(
-                BacklogProjectionInput.builder()
-                        .workflow(input.getWorkflow())
-                        .warehouseId(input.getWarehouseId())
-                        .processName(PROCESS_BY_WORKFLOWS.get(input.getWorkflow()))
-                        .dateFrom(requestDate)
-                        .dateTo(requestDate.plusHours(25))
-                        .groupType("order")
-                        .userId(input.getCallerId())
-                        .build()
-        ).getProjections();
-
-        return projectedBacklog.stream()
-                .collect(Collectors.groupingBy(
-                        BacklogProjectionResponse::getProcessName,
-                        Collectors.flatMapping(p -> p.getValues()
-                                        .stream()
-                                        .filter(v -> !v.getDate()
-                                                .toInstant()
-                                                .isAfter(input.getDateTo())
-                                        )
-                                        .map(v -> new TotaledBacklogPhoto(
-                                                v.getDate().toInstant(),
-                                                v.getQuantity())),
-                                Collectors.toList()))
-                );
     }
 
     private GetThroughputResult getThroughput(final GetBacklogMonitorInputDto input) {
@@ -285,8 +263,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                             .processes(PROCESS_BY_WORKFLOWS.get(input.getWorkflow()))
                             .dateFrom(input.getDateFrom())
                             .dateTo(input.getDateTo())
-                            .build()
-            );
+                            .build());
+
         } catch (Exception e) {
             log.error(e.getMessage());
         }
@@ -300,9 +278,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                 .map(detail -> build(
                                 detail.getProcess(),
                                 currentDateTime,
-                                toProcessDescription(detail)
-                        )
-                ).collect(Collectors.toList());
+                                toProcessDescription(detail)))
+                .collect(Collectors.toList());
     }
 
     private List<BacklogStatsByDate> toProcessDescription(final ProcessData data) {
@@ -368,12 +345,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                         .map(TotaledBacklogPhoto::getTakenOn))
                 .max(naturalOrder())
                 .orElse(defaultDate);
-    }
-
-    @Value
-    private static class TotaledBacklogPhoto {
-        Instant takenOn;
-        Integer quantity;
     }
 
     @Value

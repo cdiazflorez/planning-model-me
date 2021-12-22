@@ -14,7 +14,7 @@ import static java.util.Collections.singletonList;
 
 @AllArgsConstructor
 @Getter
-public enum ProcessInfo {
+public enum ProcessOutbound {
 
     OUTBOUND_PLANNING(
             "pending",
@@ -22,7 +22,6 @@ public enum ProcessInfo {
             "Outbound Planning",
             0,
             asList(TOTAL_BACKLOG, IMMEDIATE_BACKLOG, THROUGHPUT_PER_HOUR)),
-
     PICKING(
             "to_pick",
             "Ready to Pick",
@@ -54,8 +53,8 @@ public enum ProcessInfo {
     private final Integer index;
     private final List<MetricType> metricTypes;
 
-    public static ProcessInfo fromTitle(String title) {
-        return stream(ProcessInfo.values())
+    public static ProcessOutbound fromTitle(String title) {
+        return stream(ProcessOutbound.values())
                 .filter(pInfo -> pInfo.getTitle().equalsIgnoreCase(title))
                 .findFirst()
                 .orElse(null);

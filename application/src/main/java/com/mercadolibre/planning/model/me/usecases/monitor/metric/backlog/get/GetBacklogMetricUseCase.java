@@ -22,7 +22,7 @@ public class GetBacklogMetricUseCase implements GetMetric<BacklogMetricInput, Me
     public Metric execute(BacklogMetricInput input) {
         final String quantity = NumberFormat.getNumberInstance(Locale.GERMAN)
                 .format(input.getQuantity());
-        return createMetric(input.getProcessInfo(), quantity + " uds.", TOTAL_BACKLOG);
+        return createMetric(input.getProcessOutbound(), quantity + " uds.", TOTAL_BACKLOG);
     }
 
 }

@@ -68,11 +68,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
             FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
     );
 
-    private static final Map<Workflow, List<String>> GROUPING_BY_WORKFLOW = Map.of(
-            FBM_WMS_OUTBOUND, of("area"),
-            FBM_WMS_INBOUND, emptyList()
-    );
-
     private final BacklogApiAdapter backlogApiAdapter;
 
     private final ProjectBacklog backlogProjection;
@@ -205,12 +200,11 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private Map<Instant, List<NumberOfUnitsInAnArea>> getPastBacklog(
             final GetBacklogMonitorDetailsInput input) {
 
-        final List<Consolidation> consolidations = backlogApiAdapter.execute(
+        final List<Consolidation> consolidations = backlogApiAdapter.getCurrentBacklog(
                 input.getRequestDate(),
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
-                GROUPING_BY_WORKFLOW.get(input.getWorkflow()),
                 input.getDateFrom(),
                 input.getDateTo());
 
@@ -300,8 +294,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 .build();
 
         return planningModelGateway.getPerformedProcessing(request)
-                .stream()
-                .collect(Collectors.toMap(
+                .stream().collect(
+                        Collectors.toMap(
                         entity -> entity.getDate().toInstant(),
                         MagnitudePhoto::getValue)
                 );

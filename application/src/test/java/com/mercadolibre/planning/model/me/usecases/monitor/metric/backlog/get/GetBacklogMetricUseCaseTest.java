@@ -7,7 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
@@ -20,7 +20,7 @@ public class GetBacklogMetricUseCaseTest {
     public void testExecuteOk() {
         // GIVEN
         final BacklogMetricInput input = BacklogMetricInput.builder()
-                .processInfo(PACKING)
+                .processOutbound(PACKING)
                 .quantity(10)
                 .build();
 
