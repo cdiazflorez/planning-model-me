@@ -17,7 +17,7 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.Curr
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.BacklogMetricInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.GetBacklogMetricUseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.immediatebacklog.get.GetImmediateBacklogMetricUseCase;
@@ -43,11 +43,11 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PICKING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.WALL_IN;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.OUTBOUND_PLANNING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PICKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.WALL_IN;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.ORDER_GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -463,15 +463,15 @@ class GetCurrentStatusTest {
     private void mockGetBacklogMetric() {
         when(getBacklogMetric.execute(any(BacklogMetricInput.class))).thenAnswer(invocation -> {
             BacklogMetricInput backlogMetricInput = invocation.getArgument(0);
-            if (backlogMetricInput.getProcessInfo().equals(OUTBOUND_PLANNING)) {
+            if (backlogMetricInput.getProcessOutbound().equals(OUTBOUND_PLANNING)) {
                 return createMetric(TOTAL_BACKLOG, OUTBOUND_PLANNING, "0 uds.");
-            } else if (backlogMetricInput.getProcessInfo().equals(PICKING)) {
+            } else if (backlogMetricInput.getProcessOutbound().equals(PICKING)) {
                 return createMetric(TOTAL_BACKLOG, PICKING, "10 uds.");
-            } else if (backlogMetricInput.getProcessInfo().equals(PACKING_WALL)) {
+            } else if (backlogMetricInput.getProcessOutbound().equals(PACKING_WALL)) {
                 return createMetric(TOTAL_BACKLOG, PACKING_WALL, "33 uds.");
-            } else if (backlogMetricInput.getProcessInfo().equals(PACKING)) {
+            } else if (backlogMetricInput.getProcessOutbound().equals(PACKING)) {
                 return createMetric(TOTAL_BACKLOG, PACKING, "725 uds.");
-            } else if (backlogMetricInput.getProcessInfo().equals(WALL_IN)) {
+            } else if (backlogMetricInput.getProcessOutbound().equals(WALL_IN)) {
                 return createMetric(TOTAL_BACKLOG, WALL_IN, "130 uds.");
             } else {
                 throw new IllegalArgumentException();
@@ -487,7 +487,7 @@ class GetCurrentStatusTest {
     private void mockGetThroughputMetric() {
         when(getThroughputMetric.execute(any(ThroughputInput.class))).thenAnswer(invocation -> {
             ThroughputInput throughputInput = invocation.getArgument(0);
-            switch (throughputInput.getProcessInfo()) {
+            switch (throughputInput.getProcessOutbound()) {
                 case OUTBOUND_PLANNING:
                     return createMetric(THROUGHPUT_PER_HOUR, OUTBOUND_PLANNING, "145 uds./h");
                 case PICKING:
@@ -505,11 +505,11 @@ class GetCurrentStatusTest {
     }
 
     private Metric createMetric(final MetricType metricType,
-                                final ProcessInfo processInfo,
+                                final ProcessOutbound processOutbound,
                                 final String value) {
 
         final String subtitle = metricType.equals(TOTAL_BACKLOG)
-                ? processInfo.getSubtitle()
+                ? processOutbound.getSubtitle()
                 : metricType.getSubtitle();
 
         final String finalValue = isAnalyticsError

@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.minutesFromWeekStart;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyMap;
-import static java.util.List.of;
 
 @Slf4j
 @Named
@@ -64,10 +63,7 @@ class GetHistoricalBacklog {
                                         .entrySet().stream()
                                         .collect(Collectors.toMap(
                                                 e -> e.getKey().toInstant(),
-                                                Map.Entry::getValue
-                                        ))
-                        ))
-                );
+                                                Map.Entry::getValue)))));
     }
 
     private Map<ProcessName, Map<Instant, Integer>> getBacklogByProcess(
@@ -75,17 +71,15 @@ class GetHistoricalBacklog {
             final Instant dateFrom,
             final Instant dateTo) {
 
-        final List<Consolidation> consolidations = backlogApiAdapter.execute(
+        final List<Consolidation> consolidations = backlogApiAdapter.getCurrentBacklog(
                         input.getRequestDate(),
                         input.getWarehouseId(),
                         input.getWorkflows(),
                         input.getProcesses(),
-                        of("process"),
                         dateFrom,
                         dateTo);
 
-        Predicate<Consolidation> filterBy =
-                getBacklogFilter(input.getDateFrom(), input.getDateTo());
+        Predicate<Consolidation> filterBy = getBacklogFilter(input.getDateFrom(), input.getDateTo());
 
         return consolidations.stream()
                 .filter(filterBy)
@@ -94,9 +88,7 @@ class GetHistoricalBacklog {
                         Collectors.toMap(
                                 b -> b.getDate().truncatedTo(ChronoUnit.HOURS),
                                 Consolidation::getTotal,
-                                (v1, v2) -> v1
-                        )
-                ));
+                                (v1, v2) -> v1)));
     }
 
     private GetThroughputResult getThroughput(
@@ -139,9 +131,7 @@ class GetHistoricalBacklog {
                         Map.Entry::getKey,
                         entry -> UnitMeasure.fromUnits(
                                 entry.getValue(),
-                                throughput.get(entry.getKey())
-                        ))
-                );
+                                throughput.get(entry.getKey()))));
     }
 
     private Map<Integer, UnitMeasure> averageBacklogByDate(
@@ -155,10 +145,7 @@ class GetHistoricalBacklog {
                                 Map.Entry::getValue,
                                 Collectors.collectingAndThen(
                                         Collectors.toList(),
-                                        this::average
-                                )
-                        ))
-                );
+                                        this::average))));
     }
 
     private UnitMeasure average(List<UnitMeasure> measures) {
@@ -194,8 +181,7 @@ class GetHistoricalBacklog {
         Predicate<Consolidation> filterByForEndOfWeek = backlog -> {
             Integer backlogDateInMinutes = minutesFromWeekStart(
                     backlog.getDate()
-                            .truncatedTo(ChronoUnit.HOURS)
-            );
+                            .truncatedTo(ChronoUnit.HOURS));
 
             return backlogDateInMinutes.compareTo(dateFromInMinutes) >= 0
                     && backlogDateInMinutes.compareTo(dateToInMinutes) <= 0;

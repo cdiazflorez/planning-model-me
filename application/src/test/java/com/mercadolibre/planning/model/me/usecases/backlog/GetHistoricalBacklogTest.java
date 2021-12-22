@@ -131,12 +131,11 @@ class GetHistoricalBacklogTest {
                 )
                 .collect(Collectors.toList());
 
-        when(backlogApiAdapter.execute(
+        when(backlogApiAdapter.getCurrentBacklog(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
                 of(FBM_WMS_OUTBOUND),
                 of(WAVING, PICKING, PACKING),
-                of("process"),
                 dateFrom.toInstant(),
                 dateTo.toInstant())).thenReturn(consolidations);
     }

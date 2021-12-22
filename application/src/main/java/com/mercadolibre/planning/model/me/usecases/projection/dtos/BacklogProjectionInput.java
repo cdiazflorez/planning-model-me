@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.projection.dtos;
 
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.Builder;
@@ -25,4 +26,6 @@ public class BacklogProjectionInput {
     ZonedDateTime dateTo;
 
     String groupType;
+
+    List<Consolidation> currentBacklog;
 }

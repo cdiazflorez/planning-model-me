@@ -8,7 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.OUTBOUND_PLANNING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,7 +21,7 @@ public class GetImmediateBacklogMetricUseCaseTest {
     public void testExecuteOk() {
         // GIVEN
         final BacklogMetricInput input = BacklogMetricInput.builder()
-                .processInfo(OUTBOUND_PLANNING)
+                .processOutbound(OUTBOUND_PLANNING)
                 .quantity(10)
                 .build();
 

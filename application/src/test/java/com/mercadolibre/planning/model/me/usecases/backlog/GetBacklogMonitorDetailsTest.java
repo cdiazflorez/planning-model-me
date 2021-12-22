@@ -19,6 +19,8 @@ import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughp
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,13 +35,17 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -73,9 +79,6 @@ class GetBacklogMonitorDetailsTest {
 
     @Mock
     private PlanningModelGateway planningModelGateway;
-
-    @Mock
-    private ProjectBacklog backlogProjection;
 
     @Mock
     private GetProcessThroughput getProcessThroughput;
@@ -115,7 +118,7 @@ class GetBacklogMonitorDetailsTest {
         );
 
         mockPastBacklogWithAreas(input);
-        mockProjectedBacklog();
+        mockProjectedBacklog(input);
         mockThroughput(PICKING);
         mockHistoricalBacklog(PICKING);
         mockBacklogLimits(PICKING);
@@ -169,7 +172,7 @@ class GetBacklogMonitorDetailsTest {
 
         mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
         mockPastBacklogWithAreas(input);
-        mockProjectedBacklog();
+        mockProjectedBacklog(input);
         mockThroughput(PICKING);
         mockHistoricalBacklog(PICKING);
         mockBacklogLimits(PICKING);
@@ -220,7 +223,7 @@ class GetBacklogMonitorDetailsTest {
 
         mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
         mockPastBacklogWithoutAreas(input);
-        mockProjectedBacklog();
+        mockProjectedBacklog(input);
         mockTargetBacklog();
         mockThroughput(WAVING);
         mockHistoricalBacklog(WAVING);
@@ -269,12 +272,11 @@ class GetBacklogMonitorDetailsTest {
         var rkH = Map.of("area", "RK-H");
         var rkL = Map.of("area", "RK-L");
 
-        when(backlogApiAdapter.execute(
+        when(backlogApiAdapter.getCurrentBacklog(
                 input.getRequestDate(),
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
-                of("area"),
                 input.getDateFrom(),
                 input.getDateTo())).thenReturn(
                         List.of(
@@ -286,12 +288,11 @@ class GetBacklogMonitorDetailsTest {
 
     private void mockPastBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input) {
         var na = Map.of("area", "N/A");
-        when(backlogApiAdapter.execute(
+        when(backlogApiAdapter.getCurrentBacklog(
                 input.getRequestDate(),
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
-                of("area"),
                 input.getDateFrom(),
                 input.getDateTo())).thenReturn(
                         List.of(
@@ -300,19 +301,40 @@ class GetBacklogMonitorDetailsTest {
                         ));
     }
 
-    private void mockProjectedBacklog() {
-        when(backlogProjection.execute(any()))
-                .thenReturn(
-                        new ProjectedBacklog(List.of(
+    private void mockProjectedBacklog(final GetBacklogMonitorDetailsInput input) {
+
+        Instant firstDate = DATES.get(0).toInstant();
+        Instant secondDate = DATES.get(1).toInstant();
+
+        final Instant dateFrom = input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
+
+        final Instant dateTo = input.getDateTo()
+                .truncatedTo(ChronoUnit.HOURS)
+                .minus(1L, ChronoUnit.HOURS);
+
+        var rkH = Map.of("area", "RK-H");
+        var rkL = Map.of("area", "RK-L");
+        var n_a = Map.of("area", "N/A");
+
+        when(backlogApiAdapter.getProjectedBacklog(input.getWarehouseId(),
+                input.getWorkflow(),
+                of(input.getProcess()),
+                dateFrom.atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
+                dateTo.atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
+                input.getCallerId(), input.getProcess() == PICKING ? List.of(
+                        new Consolidation(firstDate, rkH, 15),
+                        new Consolidation(secondDate, rkH, 50),
+                        new Consolidation(firstDate, rkL, 75)) : List.of(
+                                new Consolidation(firstDate, n_a, 28),
+                                new Consolidation(secondDate, n_a, 50)))).thenReturn(
+                        List.of(
                                 new BacklogProjectionResponse(WAVING, of(
-                                        new ProjectionValue(DATES.get(2), 300),
-                                        new ProjectionValue(DATES.get(3), 500)
-                                )),
+                                new ProjectionValue(DATES.get(2), 300),
+                                new ProjectionValue(DATES.get(3), 500)
+                        )),
                                 new BacklogProjectionResponse(PICKING, of(
-                                        new ProjectionValue(DATES.get(2), 300),
-                                        new ProjectionValue(DATES.get(3), 500)
-                                ))
-                        )));
+                                new ProjectionValue(DATES.get(2), 300),
+                                new ProjectionValue(DATES.get(3), 500)))));
     }
 
     private void mockTargetBacklog() {

@@ -23,7 +23,7 @@ public class GetImmediateBacklogMetricUseCase implements GetMetric<BacklogMetric
     public Metric execute(BacklogMetricInput input) {
         final String quantity = NumberFormat.getNumberInstance(Locale.GERMAN)
                 .format(input.getQuantity());
-        return createMetric(input.getProcessInfo(), quantity + " uds.", IMMEDIATE_BACKLOG);
+        return createMetric(input.getProcessOutbound(), quantity + " uds.", IMMEDIATE_BACKLOG);
     }
 
 }

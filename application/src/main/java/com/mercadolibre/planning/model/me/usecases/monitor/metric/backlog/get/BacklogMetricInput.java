@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get;
 
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -9,6 +9,6 @@ import lombok.experimental.SuperBuilder;
 public class BacklogMetricInput {
 
     private final int quantity;
-    private final ProcessInfo processInfo;
+    private final ProcessOutbound processOutbound;
 
 }

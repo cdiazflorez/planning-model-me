@@ -11,12 +11,11 @@ import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatew
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.BacklogMetricInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.GetBacklogMetricUseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.immediatebacklog.get.GetImmediateBacklogMetricUseCase;
@@ -41,10 +40,10 @@ import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQu
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.OUTBOUND_PLANNING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PACKING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.PICKING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessInfo.WALL_IN;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.OUTBOUND_PLANNING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PICKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.monitor.metric.GetMetric.createEmptyMetric;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.time.ZoneOffset.UTC;
@@ -58,9 +57,6 @@ import static java.util.Objects.nonNull;
 @Named
 @AllArgsConstructor
 public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentStatusData> {
-
-    private static final List<ProcessingType> PROJECTION_PROCESSING_TYPES =
-            List.of(ProcessingType.ACTIVE_WORKERS);
 
     private static final String STATUS_ATTRIBUTE = "status";
     private static final int HOURS_OFFSET = 1;
@@ -137,7 +133,7 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
 
             final ProcessBacklog packingWall = backlogGateway
                     .getUnitBacklog(
-                            new UnitProcessBacklogInput(ProcessInfo.PACKING_WALL.getStatus(),
+                            new UnitProcessBacklogInput(ProcessOutbound.PACKING_WALL.getStatus(),
                             input.getWarehouseId(), cptFrom, cptTo, "PW",
                                     input.getGroupType(), false));
 
@@ -212,7 +208,7 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 processes, inputs, () -> { }, WALL_IN
         );
         final Runnable packingIsNotPresent = getRunnableProcessToAdd(processes,
-                inputs, packingWallIsNotPresent, ProcessInfo.PACKING_WALL
+                inputs, packingWallIsNotPresent, ProcessOutbound.PACKING_WALL
         );
         final Runnable pickingIsNotPresent = getRunnableProcessToAdd(processes,
                 inputs, packingIsNotPresent, PACKING
@@ -229,15 +225,15 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
     private Runnable getRunnableProcessToAdd(final TreeSet<Process> processes,
                                              final CurrentStatusMetricInputs inputs,
                                              final Runnable runnableOrElseMethod,
-                                             final ProcessInfo processInfo) {
+                                             final ProcessOutbound processOutbound) {
         return () -> getProcessBy(inputs,
-                processInfo,getUnitResumeForProcess(processInfo,
+                processOutbound,getUnitResumeForProcess(processOutbound,
                         inputs.getProcessedUnitsLastHour())
         ).ifPresentOrElse(processes::add, runnableOrElseMethod);
     }
 
     private void completeProcess(final TreeSet<Process> processes) {
-        final List<ProcessInfo> processList = List.of(OUTBOUND_PLANNING, PACKING);
+        final List<ProcessOutbound> processList = List.of(OUTBOUND_PLANNING, PACKING);
 
         processList.stream().filter(t -> processes.stream()
                 .noneMatch(current -> current.getTitle().equalsIgnoreCase(t.getTitle()))
@@ -252,16 +248,16 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
     }
 
     private Optional<Process> getProcessBy(final CurrentStatusMetricInputs inputs,
-                                           final ProcessInfo processInfo,
+                                           final ProcessOutbound processOutbound,
                                            final UnitsResume unitResume) {
 
-        if (inputs.getProcessBacklog().getProcess().equalsIgnoreCase(processInfo.getStatus())
+        if (inputs.getProcessBacklog().getProcess().equalsIgnoreCase(processOutbound.getStatus())
                 && Objects.equals(inputs.getProcessBacklog().getArea(),
-                getProcessInfoArea(processInfo))) {
+                getProcessInfoArea(processOutbound))) {
 
             final Process process = Process.builder()
-                    .title(processInfo.getTitle())
-                    .metrics(createMetricsList(inputs, processInfo, unitResume))
+                    .title(processOutbound.getTitle())
+                    .metrics(createMetricsList(inputs, processOutbound, unitResume))
                     .build();
             return Optional.of(process);
         }
@@ -269,18 +265,18 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
     }
 
 
-    private String getProcessInfoArea(ProcessInfo processInfo) {
-        Map<ProcessInfo,String> processAreas = Map.of(ProcessInfo.PACKING_WALL, "PW");
-        return processAreas.get(processInfo);
+    private String getProcessInfoArea(ProcessOutbound processOutbound) {
+        Map<ProcessOutbound,String> processAreas = Map.of(ProcessOutbound.PACKING_WALL, "PW");
+        return processAreas.get(processOutbound);
     }
 
-    private UnitsResume getUnitResumeForProcess(final ProcessInfo processInfo,
+    private UnitsResume getUnitResumeForProcess(final ProcessOutbound processOutbound,
                                                 final List<UnitsResume> processedUnitsLastHour) {
         if (processedUnitsLastHour.isEmpty()) {
             return null;
         }
         return processedUnitsLastHour.stream().filter(unitsLastHour
-                -> Objects.equals(processInfo.getTitle(),
+                -> Objects.equals(processOutbound.getTitle(),
                 unitsLastHour.getProcess().getRelatedProcess()))
                 .findFirst()
                 .orElse(null);
@@ -296,29 +292,29 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
     }
 
     private List<Metric> createMetricsList(final CurrentStatusMetricInputs inputs,
-                                           final ProcessInfo processInfo,
+                                           final ProcessOutbound processOutbound,
                                            final UnitsResume unitResume) {
         List<Metric> metrics = new ArrayList<>();
-        processInfo.getMetricTypes().forEach(metricType -> {
+        processOutbound.getMetricTypes().forEach(metricType -> {
             switch (metricType) {
                 case TOTAL_BACKLOG:
                     metrics.add(getBacklogMetric.execute(BacklogMetricInput.builder()
                             .quantity(inputs.getProcessBacklog().getQuantity())
-                            .processInfo(processInfo)
+                            .processOutbound(processOutbound)
                             .build()
                     ));
                     break;
                 case IMMEDIATE_BACKLOG:
                     metrics.add(getImmediateBacklogMetric.execute(BacklogMetricInput.builder()
                             .quantity(inputs.getProcessBacklog().getImmediateQuantity())
-                            .processInfo(processInfo)
+                            .processOutbound(processOutbound)
                             .build()
                     ));
                     break;
                 case THROUGHPUT_PER_HOUR:
                     metrics.add(
                             getThroughputMetric.execute(ThroughputInput.builder()
-                                    .processInfo(processInfo)
+                                    .processOutbound(processOutbound)
                                     .processedUnitLastHour(unitResume)
                                     .build()
                             )
@@ -331,24 +327,24 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
         return metrics;
     }
 
-    private List<Metric> createEmptyMetricList(ProcessInfo processInfo) {
+    private List<Metric> createEmptyMetricList(ProcessOutbound processOutbound) {
         final Metric metric = Metric.builder()
                 .type(TOTAL_BACKLOG.getType())
                 .title(TOTAL_BACKLOG.getTitle())
-                .subtitle(processInfo.getSubtitle())
+                .subtitle(processOutbound.getSubtitle())
                 .value("0 uds.")
                 .build();
-        Map<ProcessInfo, List<Metric>> emptyMetrics = Map.of(OUTBOUND_PLANNING, List.of(metric,
-                createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo)
+        Map<ProcessOutbound, List<Metric>> emptyMetrics = Map.of(OUTBOUND_PLANNING, List.of(metric,
+                createEmptyMetric(THROUGHPUT_PER_HOUR, processOutbound)
                 ),
                 PACKING, List.of(metric,
-                        createEmptyMetric(THROUGHPUT_PER_HOUR, processInfo),
-                        createEmptyMetric(PRODUCTIVITY, processInfo)));
-        return emptyMetrics.get(processInfo);
+                        createEmptyMetric(THROUGHPUT_PER_HOUR, processOutbound),
+                        createEmptyMetric(PRODUCTIVITY, processOutbound)));
+        return emptyMetrics.get(processOutbound);
     }
 
     private void completeBacklogs(List<ProcessBacklog> processBacklogs) {
-        final List<ProcessInfo> processList = List.of(OUTBOUND_PLANNING, PACKING);
+        final List<ProcessOutbound> processList = List.of(OUTBOUND_PLANNING, PACKING);
 
         processList.stream().filter(t -> processBacklogs.stream()
                 .noneMatch(current -> current.getProcess().equalsIgnoreCase(t.getStatus())
