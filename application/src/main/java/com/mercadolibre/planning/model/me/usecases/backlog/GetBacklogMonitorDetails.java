@@ -235,33 +235,39 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklog(final GetBacklogMonitorDetailsInput input,
                                                                           final List<Consolidation> currentBacklog) {
 
-        final Instant dateFrom = input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
+        try{
 
-        final Instant dateTo = input.getDateTo()
-                .truncatedTo(ChronoUnit.HOURS)
-                .minus(1L, ChronoUnit.HOURS);
+            final Instant dateFrom = input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
 
-        final List<BacklogProjectionResponse> projectedBacklog = backlogApiAdapter
-                .getProjectedBacklog(
-                        input.getWarehouseId(),
-                        input.getWorkflow(),
-                        of(input.getProcess()),
-                        dateFrom.atZone(UTC),
-                        dateTo.atZone(UTC),
-                        input.getCallerId(),
-                        currentBacklog);
+            final Instant dateTo = input.getDateTo()
+                    .truncatedTo(ChronoUnit.HOURS)
+                    .minus(1L, ChronoUnit.HOURS);
 
-        return projectedBacklog.stream()
-                .filter(projection -> projection.getProcessName().equals(input.getProcess()))
-                .findFirst()
-                .map(projection -> projection.getValues()
-                        .stream()
-                        .collect(Collectors.toMap(
-                                projectionValue -> projectionValue.getDate().toInstant(),
-                                projectionValue -> of(
-                                        new NumberOfUnitsInAnArea(
-                                                NO_AREA,
-                                                projectionValue.getQuantity()))))).orElseGet(Collections::emptyMap);
+            final List<BacklogProjectionResponse> projectedBacklog = backlogApiAdapter
+                    .getProjectedBacklog(
+                            input.getWarehouseId(),
+                            input.getWorkflow(),
+                            of(input.getProcess()),
+                            dateFrom.atZone(UTC),
+                            dateTo.atZone(UTC),
+                            input.getCallerId(),
+                            currentBacklog);
+
+            return projectedBacklog.stream()
+                    .filter(projection -> projection.getProcessName().equals(input.getProcess()))
+                    .findFirst()
+                    .map(projection -> projection.getValues()
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    projectionValue -> projectionValue.getDate().toInstant(),
+                                    projectionValue -> of(
+                                            new NumberOfUnitsInAnArea(
+                                                    NO_AREA,
+                                                    projectionValue.getQuantity()))))).orElseGet(Collections::emptyMap);
+        } catch (RuntimeException e) {
+            log.error("could not retrieve backlog projections", e);
+        }
+        return emptyMap();
     }
 
     private Map<Instant, Integer> getTargetBacklog(
