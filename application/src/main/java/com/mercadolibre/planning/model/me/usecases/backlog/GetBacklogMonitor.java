@@ -114,13 +114,13 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     }
 
     private Map<ProcessName, List<TotaledBacklogPhoto>> getCurrentBacklog(final GetBacklogMonitorInputDto input,
-                                                                          final List<Consolidation> cellsGroupedByTakenOnDateAndProcessName) {
+                                                                          final List<Consolidation> cellsGroupedByTakenOnAndProcessName) {
         /* Get the backlog photos taken between `dateFrom` and `dateTo`, consolidating all the cells
         corresponding to the same photo and process. */
         final Map<ProcessName, List<Consolidation>> consolidationsTrajectoriesByProcess =
                 groupBacklogSubsetsByProcess(
                     input.getRequestDate(),
-                    cellsGroupedByTakenOnDateAndProcessName,
+                    cellsGroupedByTakenOnAndProcessName,
                     PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
                     input.getDateFrom());
 

@@ -26,7 +26,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 @RestController
@@ -93,11 +92,6 @@ public class BacklogMonitorController {
 
         if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
             throw new EmptyStateException();
-        }
-
-        if(Workflow.from(workflow).isPresent()
-                && Workflow.from(workflow).get() == FBM_WMS_INBOUND) {
-            throw new NotImplementWorkflowException();
         }
 
         final Instant requestDate = requestClock.now();

@@ -79,8 +79,7 @@ class GetHistoricalBacklog {
                         dateFrom,
                         dateTo);
 
-        Predicate<Consolidation> filterBy =
-                getBacklogFilter(input.getDateFrom(), input.getDateTo());
+        Predicate<Consolidation> filterBy = getBacklogFilter(input.getDateFrom(), input.getDateTo());
 
         return consolidations.stream()
                 .filter(filterBy)
