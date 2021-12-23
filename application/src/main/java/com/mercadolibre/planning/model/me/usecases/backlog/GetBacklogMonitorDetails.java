@@ -129,7 +129,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         final Map<Instant, List<NumberOfUnitsInAnArea>> projectedBacklog = getProjectedBacklog(input, currentBacklog);
         final Map<Instant, BacklogLimit> limits = isOutbound ? getBacklogLimits(input) : emptyMap();
         final Map<Instant, Integer> targetBacklog = isOutbound ? getTargetBacklog(input) : emptyMap();
-        final Map<Instant, Integer> throughput = isOutbound ? getThroughput(input) : emptyMap();
+        final Map<Instant, Integer> throughput = getThroughput(input);
         final HistoricalBacklog historicalBacklog = getHistoricalBacklog(input);
 
         return Stream.concat(
