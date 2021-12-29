@@ -63,10 +63,9 @@ public class DateUtils {
         final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         final ZonedDateTime dateFrom = firstDayOfYear(parseInt(weekOfYear[1]))
-                .plusWeeks(parseLong(weekOfYear[0]));
+                .plusWeeks(parseLong(weekOfYear[0])).minusWeeks(1);
 
         final ZonedDateTime dateTo = dateFrom.plusWeeks(1).minusMinutes(1);
-
 
         return new String[]{dateFrom.format(formatter), dateTo.format(formatter)};
     }

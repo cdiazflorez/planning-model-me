@@ -44,7 +44,7 @@ public class CreateForecastTest {
         // THEN
         verify(planningModelForecastGateway)
                 .postForecast(input.getWorkflow(), input.getForecast());
-        assertEquals("Considera los días desde: 21/02/2021 hasta: 27/02/2021",
+        assertEquals("Considera los días desde: 26/12/2021 hasta: 01/01/2022",
                 response.getMessage());
 
     }
@@ -52,7 +52,7 @@ public class CreateForecastTest {
     private Forecast mockForecast() {
         return Forecast.builder()
                 .metadata(
-                        singletonList(new Metadata(WEEK.getName(), "8-2021"))
+                        singletonList(new Metadata(WEEK.getName(), "1-2022"))
                 )
                 .build();
     }
