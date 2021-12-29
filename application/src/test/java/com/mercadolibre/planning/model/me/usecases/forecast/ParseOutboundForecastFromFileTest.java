@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.FileUploadDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParser;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName;
 import com.mercadolibre.spreadsheet.MeliDocument;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +22,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastSheet.WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.createMeliDocumentAsByteArray;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -52,11 +55,19 @@ public class ParseOutboundForecastFromFileTest {
 
         // THEN
         assertNotNull(forecast);
+        assertEquals("ARTW01", forecast.getMetadata().get(0).getValue());
+        assertEquals("1-2022", forecast.getMetadata().get(1).getValue());
     }
 
     private static List<ForecastSheetDto> getSheetDtos(final List<String> sheetNames) {
         return sheetNames.stream()
-                .map(sheetName -> new ForecastSheetDto(sheetName, Map.of()))
+                .map(sheetName -> {
+                    if (WORKERS.getName().equals(sheetName)) {
+                        return new ForecastSheetDto(sheetName, Map.of(ForecastColumnName.WEEK, "01-2022"));
+                    } else {
+                        return new ForecastSheetDto(sheetName, Collections.emptyMap());
+                    }
+                })
                 .collect(Collectors.toList());
     }
 }

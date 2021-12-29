@@ -144,7 +144,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
     }
 
     private Optional<String> hasInvalidWeek(final String week) {
-        return week.matches("^\\d\\d-\\d{4}$")
+        return week.matches(WEEK_FORMAT_REGEX)
                 ? Optional.empty()
                 : Optional.of("week value is malformed or missing");
     }
