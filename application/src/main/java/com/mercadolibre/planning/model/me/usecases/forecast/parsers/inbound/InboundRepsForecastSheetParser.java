@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivityData;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
@@ -41,6 +43,10 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.ACTIVE_PUT_AWAY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.ACTIVE_PUT_AWAY_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.ACTIVE_RECEIVING_NS;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.BACKLOG_LOWER_LIMIT_CHECK_IN;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.BACKLOG_LOWER_LIMIT_PUT_AWAY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.BACKLOG_UPPER_LIMIT_CHECK_IN;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.BACKLOG_UPPER_LIMIT_PUT_AWAY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.CHECK_IN_TARGET;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.PRESENT_CHECK_IN;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.PRESENT_CHECK_IN_NS;
@@ -76,8 +82,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
 
     @Override
     public ForecastSheetDto parse(final String requestWarehouseId, final MeliSheet sheet) {
-        final ZoneId zoneId = logisticCenterGateway.getConfiguration(requestWarehouseId)
-                .getZoneId();
+        final ZoneId zoneId = logisticCenterGateway.getConfiguration(requestWarehouseId).getZoneId();
 
         final String week = getStringValueAt(
                 sheet, MetadataCell.WEEK.getRow(), MetadataCell.WEEK.getColumn());
@@ -134,7 +139,11 @@ public class InboundRepsForecastSheetParser implements SheetParser {
                         row.getPresentRepsCheckIn(),
                         row.getPresentNsRepsCheckIn(),
                         row.getPresentRepsPutAway(),
-                        row.getPresentNsRepsPutAway()
+                        row.getPresentNsRepsPutAway(),
+                        row.getBacklogLowerLimitCheckin(),
+                        row.getBacklogUpperLimitCheckin(),
+                        row.getBacklogLowerLimitPutAway(),
+                        row.getBacklogUpperLimitPutAway()
                 ))
                 .filter(value -> !value.isValid())
                 .map(CellValue::getError)
@@ -182,6 +191,10 @@ public class InboundRepsForecastSheetParser implements SheetParser {
                 .presentNsRepsCheckIn(getIntCellValueAt(sheet, row, PRESENT_CHECK_IN_NS))
                 .presentRepsPutAway(getIntCellValueAt(sheet, row, PRESENT_PUT_AWAY))
                 .presentNsRepsPutAway(getIntCellValueAt(sheet, row, PRESENT_PUT_AWAY_NS))
+                .backlogLowerLimitCheckin(getDoubleCellValueAt(sheet, row, BACKLOG_LOWER_LIMIT_CHECK_IN))
+                .backlogUpperLimitCheckin(getDoubleCellValueAt(sheet, row, BACKLOG_UPPER_LIMIT_CHECK_IN))
+                .backlogLowerLimitPutAway(getDoubleCellValueAt(sheet, row, BACKLOG_LOWER_LIMIT_PUT_AWAY))
+                .backlogUpperLimitPutAway(getDoubleCellValueAt(sheet, row, BACKLOG_UPPER_LIMIT_PUT_AWAY))
                 .build();
     }
 
@@ -189,6 +202,12 @@ public class InboundRepsForecastSheetParser implements SheetParser {
                                                  final int row,
                                                  final ProcessingDistributionColumn column) {
         return SpreadsheetUtils.getIntCellValueAt(sheet, row, column.getColumnId());
+    }
+
+    private CellValue<Double> getDoubleCellValueAt(final MeliSheet sheet,
+                                                 final int row,
+                                                 final ProcessingDistributionColumn column) {
+        return SpreadsheetUtils.getDoubleCellValueAt(sheet, row, column.getColumnId());
     }
 
     private List<HeadcountProductivityData> toHeadcountProductivityData(final List<RepsRow> rows,

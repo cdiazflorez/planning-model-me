@@ -23,4 +23,8 @@ public class RepsRow {
     private CellValue<Integer> presentNsRepsCheckIn;
     private CellValue<Integer> presentRepsPutAway;
     private CellValue<Integer> presentNsRepsPutAway;
+    private CellValue<Double> backlogLowerLimitCheckin;
+    private CellValue<Double> backlogUpperLimitCheckin;
+    private CellValue<Double> backlogLowerLimitPutAway;
+    private CellValue<Double> backlogUpperLimitPutAway;
 }

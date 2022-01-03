@@ -12,7 +12,9 @@ public enum ProcessingType {
     WORKERS_NS,
     THROUGHPUT,
     MAX_CAPACITY,
-    PRODUCTIVITY;
+    PRODUCTIVITY,
+    BACKLOG_LOWER_LIMIT,
+    BACKLOG_UPPER_LIMIT;
 
     public static ProcessingType from(final String value) {
         return valueOf(value.toUpperCase());
