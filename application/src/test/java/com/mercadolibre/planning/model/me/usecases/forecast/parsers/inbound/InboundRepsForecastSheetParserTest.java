@@ -63,7 +63,7 @@ class InboundRepsForecastSheetParserTest {
                 .get(PROCESSING_DISTRIBUTION);
 
         assertNotNull(processingDistributions);
-        assertEquals(13, processingDistributions.size());
+        assertEquals(17, processingDistributions.size());
 
         final var receivingTarget = processingDistributions.get(0);
         assertEquals("receiving", receivingTarget.getProcessName());

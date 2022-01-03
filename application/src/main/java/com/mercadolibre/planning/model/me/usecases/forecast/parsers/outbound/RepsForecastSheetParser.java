@@ -98,8 +98,7 @@ public class RepsForecastSheetParser implements SheetParser {
                         HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet),
                         POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet),
                         HEADCOUNT_PRODUCTIVITY, repsDistributionDto.getHeadcountProductivities(),
-                        BACKLOG_LIMITS, GenerateBacklogLimitUtil
-                                .generateBacklogLimitBody(config, sheet)
+                        BACKLOG_LIMITS, GenerateBacklogLimitUtil.generateBacklogLimitBody(config, sheet)
                 )
         );
     }

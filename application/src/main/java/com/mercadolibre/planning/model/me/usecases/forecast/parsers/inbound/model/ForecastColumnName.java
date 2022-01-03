@@ -7,7 +7,8 @@ public enum ForecastColumnName implements ForecastColumn {
     WEEK,
     PROCESSING_DISTRIBUTION,
     HEADCOUNT_PRODUCTIVITY,
-    POLYVALENT_PRODUCTIVITY;
+    POLYVALENT_PRODUCTIVITY,
+    BACKLOG_LIMITS;
 
     public String getName() {
         return name().toLowerCase();

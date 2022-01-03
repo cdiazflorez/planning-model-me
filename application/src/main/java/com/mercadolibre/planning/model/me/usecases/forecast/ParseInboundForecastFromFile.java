@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.InboundForecast;
@@ -15,6 +16,8 @@ import javax.inject.Named;
 import java.util.List;
 import java.util.Map;
 
+
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
@@ -46,6 +49,8 @@ public class ParseInboundForecastFromFile extends ParseForecastFromFile {
                         parsedValues.get(HEADCOUNT_PRODUCTIVITY))
                 .polyvalentProductivities((List<PolyvalentProductivity>)
                         parsedValues.get(POLYVALENT_PRODUCTIVITY))
+                .backlogLimits((List<BacklogLimit>)
+                        parsedValues.get(BACKLOG_LIMITS))
                 .userID(userId)
                 .build();
     }

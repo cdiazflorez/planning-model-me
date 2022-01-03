@@ -123,12 +123,10 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 input.getDateFrom(),
                 input.getDateTo());
 
-        final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
-
         final Map<Instant, List<NumberOfUnitsInAnArea>> historicBacklog = getPastBacklog(input, currentBacklog);
         final Map<Instant, List<NumberOfUnitsInAnArea>> projectedBacklog = getProjectedBacklog(input, currentBacklog);
-        final Map<Instant, BacklogLimit> limits = isOutbound ? getBacklogLimits(input) : emptyMap();
-        final Map<Instant, Integer> targetBacklog = isOutbound ? getTargetBacklog(input) : emptyMap();
+        final Map<Instant, BacklogLimit> limits = getBacklogLimits(input);
+        final Map<Instant, Integer> targetBacklog = getTargetBacklog(input);
         final Map<Instant, Integer> throughput = getThroughput(input);
         final HistoricalBacklog historicalBacklog = getHistoricalBacklog(input);
 

@@ -95,8 +95,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         final Map<ProcessName, List<TotaledBacklogPhoto>> currentBacklog = getCurrentBacklog(input, currentBacklogBase);
         final Map<ProcessName, List<TotaledBacklogPhoto>> projectedBacklog = getProjectedBacklog(input, currentBacklogBase);
         final Map<ProcessName, HistoricalBacklog> historicalBacklog = getHistoricalBacklog(input);
-        final Map<ProcessName, Map<Instant, BacklogLimit>> backlogLimits =
-                input.getWorkflow() == FBM_WMS_OUTBOUND ? getBacklogLimits(input) : emptyMap();
+        final Map<ProcessName, Map<Instant, BacklogLimit>> backlogLimits = getBacklogLimits(input);
 
         final GetThroughputResult throughput = getThroughput(input);
 

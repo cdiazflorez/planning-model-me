@@ -130,6 +130,17 @@ public class SpreadsheetUtils {
         }
     }
 
+    public static CellValue<Double> getDoubleCellValueAt(final MeliSheet sheet,
+                                                       final int row,
+                                                       final int column) {
+        try {
+            final MeliCell cell = getCellAt(sheet, row, column);
+            return new ValidCellValue<>(extractValue(sheet, cell).doubleValue());
+        } catch (ForecastParsingException | EmptyExcelCellException e) {
+            return new ErroneousCellValue<>(e.getMessage());
+        }
+    }
+
     public static double getDoubleValueOrFail(final MeliSheet sheet,
                                               final int row,
                                               final int column) {

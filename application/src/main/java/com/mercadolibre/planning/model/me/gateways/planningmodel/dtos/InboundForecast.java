@@ -13,4 +13,5 @@ public class InboundForecast extends Forecast {
     private List<ProcessingDistribution> processingDistributions;
     private List<HeadcountProductivity> headcountProductivities;
     private List<PolyvalentProductivity> polyvalentProductivities;
+    private List<BacklogLimit> backlogLimits;
 }
