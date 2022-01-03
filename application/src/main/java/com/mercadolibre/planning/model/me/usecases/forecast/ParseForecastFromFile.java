@@ -39,6 +39,15 @@ public abstract class ParseForecastFromFile implements UseCase<FileUploadDto, Fo
         return createForecastFrom(warehouseId, parsedValues, input.getUserId());
     }
 
+    protected String adaptWeekFormat(final String week) {
+        String[] arrOfWeek = week.split("-");
+        if (arrOfWeek.length == 2) {
+            String weekNumber = arrOfWeek[0];
+            return String.format("%s-%s", Integer.valueOf(weekNumber), arrOfWeek[1]);
+        }
+        return week;
+    }
+
     public abstract Workflow getWorkflow();
 
     protected abstract Forecast createForecastFrom(final String warehouseId,

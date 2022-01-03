@@ -6,6 +6,8 @@ import com.mercadolibre.spreadsheet.MeliSheet;
 
 public interface SheetParser {
 
+    String WEEK_FORMAT_REGEX = "^\\d{1,2}-\\d{4}$";
+
     String name();
 
     Workflow workflow();

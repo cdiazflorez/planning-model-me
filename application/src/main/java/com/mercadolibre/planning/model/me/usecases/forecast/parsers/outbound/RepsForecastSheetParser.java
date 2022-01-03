@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 
+import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -50,7 +51,6 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntValueAtFromDuration;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getLongValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getStringValueAt;
-import static java.util.Collections.emptyList;
 
 @Named
 @AllArgsConstructor
@@ -77,8 +77,10 @@ public class RepsForecastSheetParser implements SheetParser {
 
     @Override
     public ForecastSheetDto parse(final String warehouseId, final MeliSheet sheet) {
+        final String week = getStringValueAt(sheet, 2, 2);
 
         validateIfWarehouseIdIsCorrect(warehouseId, sheet);
+        validateIfWeekIsCorrect(week);
 
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 TestLogisticCenterMapper.toRealLogisticCenter(warehouseId));
@@ -88,7 +90,7 @@ public class RepsForecastSheetParser implements SheetParser {
         return new ForecastSheetDto(
                 sheet.getSheetName(),
                 Map.of(
-                        WEEK, getStringValueAt(sheet, 2, 2),
+                        WEEK, week,
                         MONO_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 5),
                         MULTI_BATCH_DISTRIBUTION, getDoubleValueAt(sheet, 3, 6),
                         MULTI_ORDER_DISTRIBUTION, getDoubleValueAt(sheet, 3, 7),
@@ -107,6 +109,12 @@ public class RepsForecastSheetParser implements SheetParser {
         boolean warehouseIdsAreDifferent = !warehouseIdFromSheet.equalsIgnoreCase(warehouseId);
         if (isNullOrEmpty(warehouseIdFromSheet) || warehouseIdsAreDifferent) {
             throw new UnmatchedWarehouseException(warehouseId, warehouseIdFromSheet);
+        }
+    }
+
+    private void validateIfWeekIsCorrect(final String week) {
+        if (!week.matches(WEEK_FORMAT_REGEX)) {
+            throw new ForecastParsingException(String.format("Week format should be ww-yyyy instead of: %s ", week));
         }
     }
 

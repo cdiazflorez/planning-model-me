@@ -35,6 +35,7 @@ class RepsForecastSheetParserTest {
 
     private static final String VALID_FILE_PATH = "forecast_example.xlsx";
     private static final String INVALID_FILE_PATH = "forecast_example_invalid_date.xlsx";
+    private static final String INVALID_WEEK_PATH = "forecast_example_invalid_week.xlsx";
     private static final String LIMITOUT_FILE_PATH = "forecast_limit_out.xlsx";
     @InjectMocks
     private RepsForecastSheetParser repsForecastSheetParser;
@@ -119,6 +120,13 @@ class RepsForecastSheetParserTest {
                 .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
         repsSheet = getMeliSheetFrom(WORKERS.getName(), INVALID_FILE_PATH);
 
+    }
+
+    @Test
+    @DisplayName("Excel parsed with invalid week format")
+    void parseFileWithInvalidWeekFormat() {
+        repsSheet = getMeliSheetFrom(WORKERS.getName(), INVALID_WEEK_PATH);
+        assertThrows(ForecastParsingException.class, () -> whenExcelIsParsedBy(WAREHOUSE_ID));
     }
 
 }

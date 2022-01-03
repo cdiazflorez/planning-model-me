@@ -78,7 +78,7 @@ public final class ParseOutboundForecastFromFile extends ParseForecastFromFile {
 
         return List.of(
                 new Metadata(WAREHOUSE_ID, warehouseId),
-                new Metadata(WEEK.getName(), week),
+                new Metadata(WEEK.getName(), adaptWeekFormat(week)),
                 new Metadata(MONO_ORDER_DISTRIBUTION.getName(), monoOrder),
                 new Metadata(MULTI_ORDER_DISTRIBUTION.getName(), multiOrder),
                 new Metadata(MULTI_BATCH_DISTRIBUTION.getName(), multiBatch)

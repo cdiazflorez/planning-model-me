@@ -54,7 +54,7 @@ public class ParseInboundForecastFromFile extends ParseForecastFromFile {
                                                  final Map<ForecastColumn, Object> parsedValues) {
         return List.of(
                 new Metadata(WAREHOUSE_ID.getName(), warehouseId),
-                new Metadata(WEEK.getName(), String.valueOf(parsedValues.get(WEEK)))
+                new Metadata(WEEK.getName(), adaptWeekFormat(String.valueOf(parsedValues.get(WEEK))))
         );
     }
 
