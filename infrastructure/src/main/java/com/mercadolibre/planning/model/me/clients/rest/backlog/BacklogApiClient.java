@@ -50,6 +50,8 @@ public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
         addAsQueryParam(params, "group_by", request.getGroupingFields());
         addAsQueryParam(params, "date_from", request.getDateFrom());
         addAsQueryParam(params, "date_to", request.getDateTo());
+        addAsQueryParam(params, "sla_from", request.getSlaFrom());
+        addAsQueryParam(params, "sla_to", request.getSlaTo());
 
         return params;
     }

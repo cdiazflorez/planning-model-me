@@ -13,8 +13,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimits
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
-import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
-import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
@@ -35,17 +33,13 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
-
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -278,12 +272,14 @@ class GetBacklogMonitorDetailsTest {
                 of(input.getWorkflow()),
                 of(input.getProcess()),
                 input.getDateFrom(),
-                input.getDateTo())).thenReturn(
-                        List.of(
-                                new Consolidation(firstDate, rkH, 15),
-                                new Consolidation(secondDate, rkH, 50),
-                                new Consolidation(firstDate, rkL, 75)
-                        ));
+                input.getDateTo(),
+                input.getRequestDate(),
+                input.getRequestDate().plus(24, ChronoUnit.HOURS))
+        ).thenReturn(List.of(
+                new Consolidation(firstDate, rkH, 15),
+                new Consolidation(secondDate, rkH, 50),
+                new Consolidation(firstDate, rkL, 75)
+        ));
     }
 
     private void mockPastBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input) {
@@ -294,11 +290,13 @@ class GetBacklogMonitorDetailsTest {
                 of(input.getWorkflow()),
                 of(input.getProcess()),
                 input.getDateFrom(),
-                input.getDateTo())).thenReturn(
-                        List.of(
-                                new Consolidation(DATES.get(0).toInstant(), na, 28),
-                                new Consolidation(DATES.get(1).toInstant(), na, 50)
-                        ));
+                input.getDateTo(),
+                input.getRequestDate(),
+                input.getRequestDate().plus(24, ChronoUnit.HOURS))
+        ).thenReturn(List.of(
+                new Consolidation(DATES.get(0).toInstant(), na, 28),
+                new Consolidation(DATES.get(1).toInstant(), na, 50)
+        ));
     }
 
     private void mockProjectedBacklog(final GetBacklogMonitorDetailsInput input) {

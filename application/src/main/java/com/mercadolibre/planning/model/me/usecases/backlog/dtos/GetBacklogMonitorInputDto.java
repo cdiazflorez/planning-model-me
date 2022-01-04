@@ -7,10 +7,16 @@ import java.time.Instant;
 
 @Value
 public class GetBacklogMonitorInputDto {
-    private Instant requestDate;
-    private String warehouseId;
-    private Workflow workflow;
-    private Instant dateFrom;
-    private Instant dateTo;
-    private Long callerId;
+
+    Instant requestDate;
+
+    String warehouseId;
+
+    Workflow workflow;
+
+    Instant dateFrom;
+
+    Instant dateTo;
+
+    Long callerId;
 }

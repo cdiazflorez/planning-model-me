@@ -50,7 +50,9 @@ public class BacklogApiAdapter {
                                                  final List<Workflow> workflows,
                                                  final List<ProcessName> processes,
                                                  final Instant dateFrom,
-                                                 final Instant dateTo) {
+                                                 final Instant dateTo,
+                                                 final Instant slaFrom,
+                                                 final Instant slaTo) {
 
         final BacklogRequest adapterRequest = new BacklogRequest(
                 requestDate,
@@ -61,7 +63,9 @@ public class BacklogApiAdapter {
                         .collect(Collectors.toList()),
                 of("process"),
                 dateFrom,
-                dateTo);
+                dateTo,
+                slaFrom,
+                slaTo);
 
         return backlogApiGateway.getBacklog(adapterRequest);
     }
