@@ -9,7 +9,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
@@ -41,14 +40,7 @@ import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -60,11 +52,6 @@ import static java.util.List.of;
 @AllArgsConstructor
 public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private static final String NO_AREA = "N/A";
-
-    private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
-            FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
-            FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
-    );
 
     private final BacklogApiAdapter backlogApiAdapter;
 
@@ -114,6 +101,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     }
 
     private List<VariablesPhoto> getData(final GetBacklogMonitorDetailsInput input) {
+        final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
 
         final List<Consolidation> currentBacklog = backlogApiAdapter.getCurrentBacklog(
                 input.getRequestDate(),
@@ -121,7 +109,9 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 of(input.getWorkflow()),
                 of(input.getProcess()),
                 input.getDateFrom(),
-                input.getDateTo());
+                input.getDateTo(),
+                input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS),
+                input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS));
 
         final Map<Instant, List<NumberOfUnitsInAnArea>> historicBacklog = getPastBacklog(input, currentBacklog);
         final Map<Instant, List<NumberOfUnitsInAnArea>> projectedBacklog = getProjectedBacklog(input, currentBacklog);

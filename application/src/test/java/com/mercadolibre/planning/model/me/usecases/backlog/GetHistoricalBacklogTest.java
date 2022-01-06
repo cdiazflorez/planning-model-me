@@ -137,7 +137,10 @@ class GetHistoricalBacklogTest {
                 of(FBM_WMS_OUTBOUND),
                 of(WAVING, PICKING, PACKING),
                 dateFrom.toInstant(),
-                dateTo.toInstant())).thenReturn(consolidations);
+                dateTo.toInstant(),
+                null,
+                null)
+        ).thenReturn(consolidations);
     }
 
     private List<ZonedDateTime> dates(ZonedDateTime dateFrom, ZonedDateTime dateTo, int weeks) {

@@ -72,12 +72,14 @@ class GetHistoricalBacklog {
             final Instant dateTo) {
 
         final List<Consolidation> consolidations = backlogApiAdapter.getCurrentBacklog(
-                        input.getRequestDate(),
-                        input.getWarehouseId(),
-                        input.getWorkflows(),
-                        input.getProcesses(),
-                        dateFrom,
-                        dateTo);
+                input.getRequestDate(),
+                input.getWarehouseId(),
+                input.getWorkflows(),
+                input.getProcesses(),
+                dateFrom,
+                dateTo,
+                null,
+                null);
 
         Predicate<Consolidation> filterBy = getBacklogFilter(input.getDateFrom(), input.getDateTo());
 

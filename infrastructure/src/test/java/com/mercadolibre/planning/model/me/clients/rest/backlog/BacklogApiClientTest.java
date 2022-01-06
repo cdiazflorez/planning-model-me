@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -119,7 +120,9 @@ class BacklogApiClientTest extends BaseClientTest {
                 of(),
                 of(),
                 DATE_FROM,
-                DATE_TO
+                DATE_TO,
+                DATE_CURRENT,
+                DATE_CURRENT.plus(24, ChronoUnit.HOURS)
         );
 
         // WHEN

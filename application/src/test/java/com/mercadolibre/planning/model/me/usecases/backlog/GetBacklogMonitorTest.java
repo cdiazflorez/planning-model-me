@@ -50,7 +50,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -140,13 +139,16 @@ class GetBacklogMonitorTest {
         // GIVEN
         final GetBacklogMonitorInputDto input = input(FBM_WMS_OUTBOUND);
 
-        when(backlogApiAdapter.getCurrentBacklog(input.getRequestDate(),
+        when(backlogApiAdapter.getCurrentBacklog(
+                input.getRequestDate(),
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
                 input.getDateFrom(),
-                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS)))
-                .thenThrow(new TestException());
+                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
+                input.getRequestDate(),
+                input.getRequestDate().plus(24, ChronoUnit.HOURS))
+        ).thenThrow(new TestException());
 
         // WHEN
         assertThrows(
@@ -295,19 +297,21 @@ class GetBacklogMonitorTest {
                 of(input.getWorkflow()),
                 PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
                 input.getDateFrom(),
-                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS)))
-                .thenReturn(isOutbound ? of(
-                        new Consolidation(firstDate, Map.of("process", "waving"), 100),
-                        new Consolidation(secondDate, Map.of("process", "waving"), 150),
-                        new Consolidation(firstDate, Map.of("process", "picking"), 300),
-                        new Consolidation(secondDate, Map.of("process", "picking"), 350),
-                        new Consolidation(firstDate, Map.of("process", "packing"), 6000),
-                        new Consolidation(secondDate, Map.of("process", "packing"), 8000))
-                        : of(
-                        new Consolidation(firstDate, Map.of("process", "check_in"), 100),
-                        new Consolidation(secondDate, Map.of("process", "check_in"), 150),
-                        new Consolidation(firstDate, Map.of("process", "put_away"), 300),
-                        new Consolidation(secondDate, Map.of("process", "put_away"), 350)));
+                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
+                isOutbound ? input.getRequestDate() : input.getRequestDate().minus(168, ChronoUnit.HOURS),
+                input.getRequestDate().plus(24, ChronoUnit.HOURS))
+        ).thenReturn(isOutbound ? of(
+                new Consolidation(firstDate, Map.of("process", "waving"), 100),
+                new Consolidation(secondDate, Map.of("process", "waving"), 150),
+                new Consolidation(firstDate, Map.of("process", "picking"), 300),
+                new Consolidation(secondDate, Map.of("process", "picking"), 350),
+                new Consolidation(firstDate, Map.of("process", "packing"), 6000),
+                new Consolidation(secondDate, Map.of("process", "packing"), 8000)
+        ) : of(
+                new Consolidation(firstDate, Map.of("process", "check_in"), 100),
+                new Consolidation(secondDate, Map.of("process", "check_in"), 150),
+                new Consolidation(firstDate, Map.of("process", "put_away"), 300),
+                new Consolidation(secondDate, Map.of("process", "put_away"), 350)));
     }
 
     private void mockProjectedBacklog(final GetBacklogMonitorInputDto input) {
@@ -324,7 +328,7 @@ class GetBacklogMonitorTest {
                 input.getWorkflow(),
                 PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
                 input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
-                input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone().plusHours(25),
+                input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone().plusHours(24),
                 input.getCallerId(), isOutbound ? of(
                                 new Consolidation(currentFirstDate, Map.of("process", "waving"), 100),
                                 new Consolidation(currentSecondDate, Map.of("process", "waving"), 150),

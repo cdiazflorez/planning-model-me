@@ -18,4 +18,6 @@ public class BacklogRequest {
     private List<String> groupingFields;
     private Instant dateFrom;
     private Instant dateTo;
+    private Instant slaFrom;
+    private Instant slaTo;
 }

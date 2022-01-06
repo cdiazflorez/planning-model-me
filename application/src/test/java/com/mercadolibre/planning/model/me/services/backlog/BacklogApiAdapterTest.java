@@ -53,7 +53,10 @@ public class BacklogApiAdapterTest {
                 List.of(WAVING.getName(), PICKING.getName(), PACKING.getName()),
                 List.of("process"),
                 Instant.from(NOW),
-                Instant.from(NOW));
+                Instant.from(NOW),
+                Instant.from(NOW),
+                Instant.from(NOW.plusHours(24))
+        );
 
         // WHEN
         when(backlogApiGateway.getBacklog(gatewayRequest)).thenReturn(consolidations);
@@ -64,7 +67,10 @@ public class BacklogApiAdapterTest {
                 List.of(FBM_WMS_OUTBOUND),
                 List.of(WAVING, PICKING, PACKING),
                 Instant.from(NOW),
-                Instant.from(NOW));
+                Instant.from(NOW),
+                Instant.from(NOW),
+                Instant.from(NOW.plusHours(24))
+        );
 
         // THEN
         assertEquals(consolidations.get(0).getDate(), result.get(0).getDate());
