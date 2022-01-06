@@ -310,9 +310,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .queryParams(defaultParams())
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK));
 
-        if (forceConsistency) {
-            requestBuilder.headers(Map.of("X-Consistency", "strong"));
-        }
+        requestBuilder.headers(Map.of("x-slave", "true"));
 
         try {
             return unitCircuitBreaker.run(
@@ -335,10 +333,6 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
                 .GET()
                 .queryParams(params)
                 .acceptedHttpStatuses(Set.of(HttpStatus.OK));
-
-        if (forceConsistency) {
-            requestBuilder.headers(Map.of("X-Consistency", "strong"));
-        }
 
         try {
             return unitCircuitBreaker.run(
