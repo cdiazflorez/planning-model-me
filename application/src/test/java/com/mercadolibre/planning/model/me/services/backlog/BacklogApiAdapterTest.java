@@ -26,7 +26,10 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static java.util.Collections.emptyList;
+import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -69,6 +72,7 @@ public class BacklogApiAdapterTest {
                 "ARBA01",
                 List.of(FBM_WMS_OUTBOUND),
                 List.of(WAVING, PICKING, PACKING),
+                of(DATE_OUT),
                 Instant.from(NOW),
                 Instant.from(NOW),
                 Instant.from(NOW),

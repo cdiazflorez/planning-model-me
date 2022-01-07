@@ -26,6 +26,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
@@ -136,6 +137,7 @@ class GetHistoricalBacklogTest {
                 WAREHOUSE_ID,
                 of(FBM_WMS_OUTBOUND),
                 of(WAVING, PICKING, PACKING),
+                of(PROCESS),
                 dateFrom.toInstant(),
                 dateTo.toInstant(),
                 null,

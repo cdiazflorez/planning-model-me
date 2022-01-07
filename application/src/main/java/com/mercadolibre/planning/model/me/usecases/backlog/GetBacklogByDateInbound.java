@@ -18,7 +18,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
 import static java.time.ZoneOffset.UTC;
+import static java.util.List.of;
 
 @Named
 @AllArgsConstructor
@@ -36,6 +38,7 @@ public class GetBacklogByDateInbound implements UseCase<GetBacklogByDateDto, Lis
                 input.getWarehouseId(),
                 List.of(input.getWorkflow()),
                 List.of(ProcessName.CHECK_IN, ProcessName.PUT_AWAY),
+                of(DATE_OUT),
                 now.minus(1, ChronoUnit.HOURS),
                 now,
                 now.minus(7, ChronoUnit.DAYS),

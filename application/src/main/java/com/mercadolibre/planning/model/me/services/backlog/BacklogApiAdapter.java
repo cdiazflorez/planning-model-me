@@ -49,6 +49,7 @@ public class BacklogApiAdapter {
                                                  final String warehouseId,
                                                  final List<Workflow> workflows,
                                                  final List<ProcessName> processes,
+                                                 final List<BacklogGrouper> groupings,
                                                  final Instant dateFrom,
                                                  final Instant dateTo,
                                                  final Instant slaFrom,
@@ -61,7 +62,7 @@ public class BacklogApiAdapter {
                 processes.stream()
                         .map(ProcessName::getName)
                         .collect(Collectors.toList()),
-                of("date_out"),
+                groupings.stream().map(BacklogGrouper::getName).collect(Collectors.toList()),
                 dateFrom,
                 dateTo,
                 slaFrom,
