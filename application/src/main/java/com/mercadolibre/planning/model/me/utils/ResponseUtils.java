@@ -60,6 +60,10 @@ public class ResponseUtils {
                 new Tab("backlog", "Backlogs"));
     }
 
+    public static List<Tab> createInboundTabs() {
+        return List.of(new Tab("iss", "Vencimiento de ISs"));
+    }
+
     public static final ComplexTableAction action = new ComplexTableAction(
             "Aplicar",
             "Cancelar",

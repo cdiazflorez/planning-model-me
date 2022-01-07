@@ -20,9 +20,6 @@ import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughput
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.planning.model.me.utils.TestException;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,9 +33,12 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
@@ -330,29 +330,29 @@ class GetBacklogMonitorTest {
                 input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
                 input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone().plusHours(24),
                 input.getCallerId(), isOutbound ? of(
-                                new Consolidation(currentFirstDate, Map.of("process", "waving"), 100),
-                                new Consolidation(currentSecondDate, Map.of("process", "waving"), 150),
-                                new Consolidation(currentFirstDate, Map.of("process", "picking"), 300),
-                                new Consolidation(currentSecondDate, Map.of("process", "picking"), 350),
-                                new Consolidation(currentFirstDate, Map.of("process", "packing"), 6000),
-                                new Consolidation(currentSecondDate, Map.of("process", "packing"), 8000))
+                        new Consolidation(currentFirstDate, Map.of("process", "waving"), 100),
+                        new Consolidation(currentSecondDate, Map.of("process", "waving"), 150),
+                        new Consolidation(currentFirstDate, Map.of("process", "picking"), 300),
+                        new Consolidation(currentSecondDate, Map.of("process", "picking"), 350),
+                        new Consolidation(currentFirstDate, Map.of("process", "packing"), 6000),
+                        new Consolidation(currentSecondDate, Map.of("process", "packing"), 8000))
                         : of(
-                                new Consolidation(currentFirstDate, Map.of("process", "check_in"), 100),
-                                new Consolidation(currentSecondDate, Map.of("process", "check_in"), 150),
-                                new Consolidation(currentFirstDate, Map.of("process", "put_away"), 300),
-                                new Consolidation(currentSecondDate, Map.of("process", "put_away"), 350))))
+                        new Consolidation(currentFirstDate, Map.of("process", "check_in"), 100),
+                        new Consolidation(currentSecondDate, Map.of("process", "check_in"), 150),
+                        new Consolidation(currentFirstDate, Map.of("process", "put_away"), 300),
+                        new Consolidation(currentSecondDate, Map.of("process", "put_away"), 350))))
                 .thenReturn(isOutbound ? of(
-                                new BacklogProjectionResponse(WAVING, of(new ProjectionValue(firstDate, 125),
-                                                                    new ProjectionValue(secondDate, 250))),
-                                new BacklogProjectionResponse(PICKING, of(new ProjectionValue(firstDate, 410),
-                                                                    new ProjectionValue(secondDate, 630))),
-                                new BacklogProjectionResponse(PACKING, of(new ProjectionValue(firstDate, 888),
-                                                                    new ProjectionValue(secondDate, 999))))
+                        new BacklogProjectionResponse(WAVING, of(new ProjectionValue(firstDate, 125),
+                                new ProjectionValue(secondDate, 250))),
+                        new BacklogProjectionResponse(PICKING, of(new ProjectionValue(firstDate, 410),
+                                new ProjectionValue(secondDate, 630))),
+                        new BacklogProjectionResponse(PACKING, of(new ProjectionValue(firstDate, 888),
+                                new ProjectionValue(secondDate, 999))))
                         : of(
-                                new BacklogProjectionResponse(CHECK_IN, of(new ProjectionValue(firstDate, 125),
-                                        new ProjectionValue(secondDate, 250))),
-                                new BacklogProjectionResponse(PUT_AWAY, of(new ProjectionValue(firstDate, 410),
-                                        new ProjectionValue(secondDate, 630)))));
+                        new BacklogProjectionResponse(CHECK_IN, of(new ProjectionValue(firstDate, 125),
+                                new ProjectionValue(secondDate, 250))),
+                        new BacklogProjectionResponse(PUT_AWAY, of(new ProjectionValue(firstDate, 410),
+                                new ProjectionValue(secondDate, 630)))));
     }
 
     private void mockHistoricalBacklog(final GetBacklogMonitorInputDto input) {
@@ -373,8 +373,8 @@ class GetBacklogMonitorTest {
         final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
 
         when(getHistoricalBacklog.execute(request))
-                .thenReturn(isOutbound ?
-                        Map.of(
+                .thenReturn(isOutbound
+                        ? Map.of(
                                 WAVING, new HistoricalBacklog(
                                         Map.of(
                                                 firstDateHash, new UnitMeasure(200, 20),
@@ -394,18 +394,18 @@ class GetBacklogMonitorTest {
                                                 thirdDateHash, new UnitMeasure(220, 22),
                                                 fourthDateHash, new UnitMeasure(420, 42))))
                         : Map.of(
-                                CHECK_IN, new HistoricalBacklog(
-                                        Map.of(
-                                                firstDateHash, new UnitMeasure(200, 20),
-                                                secondDateHash, new UnitMeasure(100, 10),
-                                                thirdDateHash, new UnitMeasure(50, 5),
-                                                fourthDateHash, new UnitMeasure(80, 8))),
-                                PUT_AWAY, new HistoricalBacklog(
-                                        Map.of(
-                                                firstDateHash, new UnitMeasure(22, 2),
-                                                secondDateHash, new UnitMeasure(111, 11),
-                                                thirdDateHash, new UnitMeasure(150, 15),
-                                                fourthDateHash, new UnitMeasure(215, 21)))
+                        CHECK_IN, new HistoricalBacklog(
+                                Map.of(
+                                        firstDateHash, new UnitMeasure(200, 20),
+                                        secondDateHash, new UnitMeasure(100, 10),
+                                        thirdDateHash, new UnitMeasure(50, 5),
+                                        fourthDateHash, new UnitMeasure(80, 8))),
+                        PUT_AWAY, new HistoricalBacklog(
+                                Map.of(
+                                        firstDateHash, new UnitMeasure(22, 2),
+                                        secondDateHash, new UnitMeasure(111, 11),
+                                        thirdDateHash, new UnitMeasure(150, 15),
+                                        fourthDateHash, new UnitMeasure(215, 21)))
                 ));
     }
 
@@ -421,8 +421,8 @@ class GetBacklogMonitorTest {
         final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
 
         when(getProcessThroughput.execute(request))
-                .thenReturn(new GetThroughputResult(isOutbound ?
-                        Map.of(
+                .thenReturn(new GetThroughputResult(isOutbound
+                        ? Map.of(
                                 WAVING, Map.of(
                                         DATES.get(0), 10,
                                         DATES.get(1), 15,
@@ -438,7 +438,7 @@ class GetBacklogMonitorTest {
                                         DATES.get(1), 50,
                                         DATES.get(2), 20,
                                         DATES.get(3), 300))
-                : Map.of(
+                        : Map.of(
                         CHECK_IN, Map.of(
                                 DATES.get(0), 10,
                                 DATES.get(1), 15,
@@ -462,8 +462,8 @@ class GetBacklogMonitorTest {
 
         final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
 
-        when(getBacklogLimits.execute(request)).thenReturn(isOutbound ?
-                Map.of(
+        when(getBacklogLimits.execute(request)).thenReturn(isOutbound
+                ? Map.of(
                         WAVING, Map.of(
                                 DATES.get(0).toInstant(), new BacklogLimit(5, 15),
                                 DATES.get(1).toInstant(), new BacklogLimit(7, 21),
@@ -480,16 +480,16 @@ class GetBacklogMonitorTest {
                                 DATES.get(2).toInstant(), new BacklogLimit(0, 10),
                                 DATES.get(3).toInstant(), new BacklogLimit(0, 10)))
                 : Map.of(
-                        CHECK_IN, Map.of(
-                                DATES.get(0).toInstant(), new BacklogLimit(5, 15),
-                                DATES.get(1).toInstant(), new BacklogLimit(7, 21),
-                                DATES.get(2).toInstant(), new BacklogLimit(3, 21),
-                                DATES.get(3).toInstant(), new BacklogLimit(0, -1)),
-                        PUT_AWAY, Map.of(
-                                DATES.get(0).toInstant(), new BacklogLimit(-1, -1),
-                                DATES.get(1).toInstant(), new BacklogLimit(-1, -1),
-                                DATES.get(2).toInstant(), new BacklogLimit(-1, -1),
-                                DATES.get(3).toInstant(), new BacklogLimit(-1, -1))
+                CHECK_IN, Map.of(
+                        DATES.get(0).toInstant(), new BacklogLimit(5, 15),
+                        DATES.get(1).toInstant(), new BacklogLimit(7, 21),
+                        DATES.get(2).toInstant(), new BacklogLimit(3, 21),
+                        DATES.get(3).toInstant(), new BacklogLimit(0, -1)),
+                PUT_AWAY, Map.of(
+                        DATES.get(0).toInstant(), new BacklogLimit(-1, -1),
+                        DATES.get(1).toInstant(), new BacklogLimit(-1, -1),
+                        DATES.get(2).toInstant(), new BacklogLimit(-1, -1),
+                        DATES.get(3).toInstant(), new BacklogLimit(-1, -1))
         ));
     }
 

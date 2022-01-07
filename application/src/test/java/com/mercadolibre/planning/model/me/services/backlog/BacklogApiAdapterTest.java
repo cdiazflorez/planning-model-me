@@ -8,16 +8,19 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -30,7 +33,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class BacklogApiAdapterTest {
 
-    private final ZonedDateTime NOW = ZonedDateTime.now();
+    private static final ZonedDateTime NOW = ZonedDateTime.now();
 
     @InjectMocks
     private BacklogApiAdapter backlogApiAdapter;
@@ -51,7 +54,7 @@ public class BacklogApiAdapterTest {
                 "ARBA01",
                 List.of("outbound-orders"),
                 List.of(WAVING.getName(), PICKING.getName(), PACKING.getName()),
-                List.of("process"),
+                List.of("date_out"),
                 Instant.from(NOW),
                 Instant.from(NOW),
                 Instant.from(NOW),

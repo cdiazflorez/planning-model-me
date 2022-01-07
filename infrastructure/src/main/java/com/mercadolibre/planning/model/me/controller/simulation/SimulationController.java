@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimul
 import com.mercadolibre.planning.model.me.controller.simulation.request.SaveSimulationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.SimulationRequest;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
@@ -29,6 +30,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
@@ -43,6 +45,9 @@ public class SimulationController {
     private final SaveSimulation saveSimulation;
     private final AuthorizeUser authorizeUser;
     private final DatadogMetricService datadogMetricService;
+    private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
+            Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_SIMULATION),
+            Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_SIMULATION));
 
     @Trace
     @PostMapping("/run")
@@ -51,7 +56,7 @@ public class SimulationController {
             @RequestParam("caller.id") final @NotNull Long callerId,
             @RequestBody @Valid final RunSimulationRequest request) {
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_SIMULATION)));
+        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
         datadogMetricService.trackRunSimulation(request);
 
@@ -71,7 +76,7 @@ public class SimulationController {
             @RequestParam("caller.id") final @NotNull Long callerId,
             @RequestBody final SaveSimulationRequest request) {
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_SIMULATION)));
+        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
         datadogMetricService.trackSaveSimulation(request);
 

@@ -223,7 +223,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklog(final GetBacklogMonitorDetailsInput input,
                                                                           final List<Consolidation> currentBacklog) {
 
-        try{
+        try {
 
             final Instant dateFrom = input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
 
@@ -279,8 +279,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         return planningModelGateway.getPerformedProcessing(request)
                 .stream().collect(
                         Collectors.toMap(
-                        entity -> entity.getDate().toInstant(),
-                        MagnitudePhoto::getValue));
+                                entity -> entity.getDate().toInstant(),
+                                MagnitudePhoto::getValue));
     }
 
     private Map<Instant, Integer> getThroughput(final GetBacklogMonitorDetailsInput input) {
@@ -294,9 +294,9 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
         try {
             return getProcessThroughput.execute(request)
-                .getOrDefault(input.getProcess(), Map.of())
-                .entrySet().stream()
-                .collect(Collectors.toMap(e -> e.getKey().toInstant(), Map.Entry::getValue));
+                    .getOrDefault(input.getProcess(), Map.of())
+                    .entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getKey().toInstant(), Map.Entry::getValue));
         } catch (RuntimeException e) {
             log.error("could not retrieve throughput for {}", request, e);
         }
@@ -319,13 +319,13 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
         try {
             return getBacklogLimits.execute(
-                            GetBacklogLimitsInput.builder()
-                                    .warehouseId(input.getWarehouseId())
-                                    .workflow(input.getWorkflow())
-                                    .processes(of(input.getProcess()))
-                                    .dateFrom(input.getDateFrom())
-                                    .dateTo(input.getDateTo())
-                                    .build()).get(input.getProcess());
+                    GetBacklogLimitsInput.builder()
+                            .warehouseId(input.getWarehouseId())
+                            .workflow(input.getWorkflow())
+                            .processes(of(input.getProcess()))
+                            .dateFrom(input.getDateFrom())
+                            .dateTo(input.getDateTo())
+                            .build()).get(input.getProcess());
 
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -382,14 +382,14 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
         return areas.stream()
                 .map(area -> {
-                            Integer units = variablesPhoto.getUnitsByArea().getOrDefault(area, 0);
-                            Integer throughput = variablesPhoto.getThroughput();
+                    Integer units = variablesPhoto.getUnitsByArea().getOrDefault(area, 0);
+                    Integer throughput = variablesPhoto.getThroughput();
 
-                            return new AreaBacklogDetail(
-                                    area,
-                                    variablesPhoto.isProjection()
-                                            ? emptyMeasure()
-                                            : UnitMeasure.fromUnits(units, throughput));
+                    return new AreaBacklogDetail(
+                            area,
+                            variablesPhoto.isProjection()
+                                    ? emptyMeasure()
+                                    : UnitMeasure.fromUnits(units, throughput));
                 }).collect(Collectors.toList());
     }
 

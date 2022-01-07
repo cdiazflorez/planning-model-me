@@ -10,6 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
@@ -83,7 +84,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                 input.getProjections(),
                 config,
                 planningDistribution,
-                input.isShowDeviation()
+                input.isShowDeviation(),
+                input.getWorkflow()
         );
     }
 
@@ -104,14 +106,15 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final List<ProjectionResult> projectionResults,
             final LogisticCenterConfiguration configuration,
             final List<PlanningDistributionResponse> planningDistribution,
-            final boolean showDeviation) {
+            final boolean showDeviation,
+            final Workflow workflow) {
 
         final ZoneId zoneId = configuration.getTimeZone().toZoneId();
         final boolean hasSimulatedResults = hasSimulatedResults(projectionResults);
 
         return new SimpleTable(
                 "Resumen de Proyección",
-                getProjectionDetailsTableColumns(hasSimulatedResults, showDeviation),
+                getProjectionDetailsTableColumns(hasSimulatedResults, showDeviation, workflow),
                 getTableData(
                         backlogs,
                         sales,
@@ -119,24 +122,30 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                         planningDistribution,
                         zoneId,
                         hasSimulatedResults,
-                        showDeviation
+                        showDeviation,
+                        workflow
                 )
         );
     }
 
     private List<ColumnHeader> getProjectionDetailsTableColumns(
             final boolean hasSimulatedResults,
-            final boolean showDeviation) {
+            final boolean showDeviation,
+            final Workflow workflow) {
 
         int columnIndex = 1;
         final List<ColumnHeader> columnHeaders = new ArrayList<>();
-        columnHeaders.add(new ColumnHeader("column_" + columnIndex++, "CPT's"));
+        columnHeaders.add(new ColumnHeader("column_" + columnIndex++,
+                workflow == Workflow.FBM_WMS_INBOUND ? "SLA" : "CPT's"));
         columnHeaders.add(new ColumnHeader("column_" + columnIndex++, "Backlog actual"));
 
-        if (showDeviation) {
+        if (showDeviation && workflow == Workflow.FBM_WMS_OUTBOUND) {
             columnHeaders.add(new ColumnHeader("column_" + columnIndex++, "Desv. vs forecast"));
         }
         if (hasSimulatedResults) {
+            if (workflow.equals(Workflow.FBM_WMS_INBOUND)) {
+                columnIndex++;
+            }
             columnHeaders.add(new ColumnHeader("column_" + columnIndex++, "Cierre actual"));
             columnHeaders.add(new ColumnHeader("column_" + columnIndex, "Cierre simulado"));
         } else {
@@ -147,13 +156,16 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
 
     private String getStyle(final ZonedDateTime cpt,
                             final ZonedDateTime projectedEndDate,
-                            final long processingTime) {
+                            final long processingTime,
+                            final Workflow workflow) {
         if (projectedEndDate == null || projectedEndDate.isAfter(cpt)) {
             return "danger";
         } else if (projectedEndDate.isBefore(cpt.minusMinutes(processingTime))) {
             return "none";
-        } else {
+        } else if (workflow.equals(Workflow.FBM_WMS_OUTBOUND)) {
             return "warning";
+        } else {
+            return "none";
         }
     }
 
@@ -194,7 +206,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final List<PlanningDistributionResponse> planning,
             final ZoneId zoneId,
             final boolean hasSimulatedResults,
-            final boolean showDeviation) {
+            final boolean showDeviation,
+            final Workflow workflow) {
 
         final List<Map<String, Object>> tableData = projectionResults.stream()
                 .sorted(Comparator.comparing(ProjectionResult::getDate).reversed())
@@ -205,10 +218,11 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                         zoneId,
                         projection,
                         hasSimulatedResults,
-                        showDeviation)
+                        showDeviation,
+                        workflow)
                 )
                 .collect(toList());
-        tableData.add(addTotalsRow(backlogs, sales, planning, showDeviation));
+        tableData.add(addTotalsRow(backlogs, sales, planning, showDeviation, workflow));
         return tableData;
     }
 
@@ -219,7 +233,8 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             final ZoneId zoneId,
             final ProjectionResult projection,
             final boolean hasSimulatedResults,
-            final boolean showDeviation) {
+            final boolean showDeviation,
+            final Workflow workflow) {
 
         final ZonedDateTime cpt = projection.getDate();
         final ZonedDateTime projectedEndDate = projection.getProjectedEndDate();
@@ -233,14 +248,21 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
         columns.put("style", getStyle(
                 cpt,
                 projectedEndDate,
-                projection.getProcessingTime().getValue()));
+                projection.getProcessingTime().getValue(),
+                workflow));
 
         columns.put("column_" + index++, convertToTimeZone(zoneId, cpt)
                 .format(HOUR_MINUTES_FORMATTER));
         columns.put("column_" + index++, String.valueOf(backlog));
 
-        if (showDeviation) {
+
+        if (showDeviation && workflow.equals(Workflow.FBM_WMS_OUTBOUND)) {
             columns.put("column_" + index++, getDeviation(cpt, soldItems, planningDistribution));
+        }
+
+        if (hasSimulatedResults && workflow.equals(Workflow.FBM_WMS_INBOUND)) {
+            //index is adding here, so that send correct column number in simulation inbound
+            index++;
         }
 
         columns.put("column_" + index++,
@@ -280,20 +302,30 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
     private Map<String, Object> addTotalsRow(final List<Backlog> backlogs,
                                              final List<Backlog> realSales,
                                              final List<PlanningDistributionResponse> planning,
-                                             final boolean showDeviation) {
+                                             final boolean showDeviation,
+                                             final Workflow workflow) {
         int index = 1;
         final Map<String, Object> columns = new LinkedHashMap<>();
         columns.put("style", "none");
         columns.put("column_" + index++, "Total");
         columns.put("column_" + index++, String.valueOf(calculateTotalFromBacklog(backlogs)));
 
+
         if (showDeviation) {
-            columns.put("column_" + index++, calculateDeviationTotal(
-                    calculateTotalForecast(planning),
-                    calculateTotalFromBacklog(realSales)));
+            if (workflow.equals(Workflow.FBM_WMS_OUTBOUND)) {
+                columns.put("column_" + index++, calculateDeviationTotal(
+                        calculateTotalForecast(planning),
+                        calculateTotalFromBacklog(realSales)));
+
+                columns.put("column_" + index++, "");
+                columns.put("column_" + index, "");
+            }
+
         }
-        columns.put("column_" + index++, "");
-        columns.put("column_" + index, "");
+
+        if (workflow.equals(Workflow.FBM_WMS_INBOUND)) {
+            columns.put("column_" + index++, "");
+        }
 
         return columns;
     }

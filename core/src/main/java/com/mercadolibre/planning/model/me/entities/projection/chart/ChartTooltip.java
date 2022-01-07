@@ -50,7 +50,7 @@ public class ChartTooltip {
                                                   final long processingTime,
                                                   final boolean isDeferred) {
         final String subtitle2 = remainingQuantity == 0 ? "-" : String.valueOf(remainingQuantity);
-        final String subtitle3 =  projectedEndDate == null
+        final String subtitle3 = projectedEndDate == null
                 ? "Excede las 24hs" : projectedEndDate.format(HOUR_FORMAT);
 
         ChartTooltipBuilder chartTooltipBuilder = ChartTooltip.builder()
@@ -66,6 +66,25 @@ public class ChartTooltip {
         if (isDeferred) {
             chartTooltipBuilder.title5("Diferido");
         }
+
+        return chartTooltipBuilder.build();
+    }
+
+    public static ChartTooltip createChartTooltipInbound(final ZonedDateTime sla,
+                                                         final ZonedDateTime projectedEndDate,
+                                                         final int remainingQuantity) {
+
+        final String subtitle2 = remainingQuantity == 0 ? "-" : String.valueOf(remainingQuantity);
+        final String subtitle3 = projectedEndDate == null
+                ? "Excede las 24hs" : projectedEndDate.format(HOUR_FORMAT);
+
+        ChartTooltipBuilder chartTooltipBuilder = ChartTooltip.builder()
+                .title1("SLA:")
+                .subtitle1(sla.format(HOUR_FORMAT))
+                .title2("Desviación:")
+                .subtitle2(subtitle2)
+                .title3("Cierre proyectado:")
+                .subtitle3(subtitle3);
 
         return chartTooltipBuilder.build();
     }

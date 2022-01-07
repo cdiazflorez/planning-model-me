@@ -17,8 +17,6 @@ import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughp
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +27,9 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -312,7 +312,7 @@ class GetBacklogMonitorDetailsTest {
 
         var rkH = Map.of("area", "RK-H");
         var rkL = Map.of("area", "RK-L");
-        var n_a = Map.of("area", "N/A");
+        var na = Map.of("area", "N/A");
 
         when(backlogApiAdapter.getProjectedBacklog(input.getWarehouseId(),
                 input.getWorkflow(),
@@ -323,14 +323,14 @@ class GetBacklogMonitorDetailsTest {
                         new Consolidation(firstDate, rkH, 15),
                         new Consolidation(secondDate, rkH, 50),
                         new Consolidation(firstDate, rkL, 75)) : List.of(
-                                new Consolidation(firstDate, n_a, 28),
-                                new Consolidation(secondDate, n_a, 50)))).thenReturn(
-                        List.of(
-                                new BacklogProjectionResponse(WAVING, of(
+                        new Consolidation(firstDate, na, 28),
+                        new Consolidation(secondDate, na, 50)))).thenReturn(
+                List.of(
+                        new BacklogProjectionResponse(WAVING, of(
                                 new ProjectionValue(DATES.get(2), 300),
                                 new ProjectionValue(DATES.get(3), 500)
                         )),
-                                new BacklogProjectionResponse(PICKING, of(
+                        new BacklogProjectionResponse(PICKING, of(
                                 new ProjectionValue(DATES.get(2), 300),
                                 new ProjectionValue(DATES.get(3), 500)))));
     }
@@ -414,7 +414,7 @@ class GetBacklogMonitorDetailsTest {
                                 Map.of(
                                         firstDateHash, new UnitMeasure(0, 0),
                                         secondDateHash, new UnitMeasure(120, 12),
-                                        thirdDateHash, new UnitMeasure(220,22),
+                                        thirdDateHash, new UnitMeasure(220, 22),
                                         fourthDateHash, new UnitMeasure(420, 42)
                                 )
                         )

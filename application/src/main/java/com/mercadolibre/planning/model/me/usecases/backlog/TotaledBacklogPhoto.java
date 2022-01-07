@@ -1,7 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
-import java.time.Instant;
 import lombok.Value;
+
+import java.time.Instant;
 
 @Value
 public class TotaledBacklogPhoto {

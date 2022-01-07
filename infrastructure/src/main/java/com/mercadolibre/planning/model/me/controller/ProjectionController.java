@@ -5,13 +5,14 @@ import com.mercadolibre.planning.model.me.controller.editor.ProcessNameEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.GetCptProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
@@ -32,8 +33,10 @@ import javax.validation.constraints.NotNull;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
 import static java.util.Optional.of;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
@@ -43,11 +46,14 @@ import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
 public class ProjectionController {
 
     private final AuthorizeUser authorizeUser;
-    private final GetCptProjection getCptProjection;
+    private final GetSlaProjection getSlaProjection;
     private final GetBacklogProjection getBacklogProjection;
     private final GetDeferralProjection getDeferralProjection;
     private final DatadogMetricService datadogMetricService;
     private final FeatureToggle featureToggle;
+    private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
+            Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_PROJECTION),
+            Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_PROJECTION));
 
     @Trace
     @GetMapping("/projections/cpt")
@@ -58,11 +64,11 @@ public class ProjectionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
             final ZonedDateTime date) {
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
         datadogMetricService.trackProjection(warehouseId, workflow, "CPT");
 
-        return ResponseEntity.of(of(getCptProjection.execute(GetProjectionInputDto.builder()
+        return ResponseEntity.of(of(getSlaProjection.execute(GetProjectionInputDto.builder()
                 .workflow(workflow)
                 .warehouseId(warehouseId)
                 .date(date)
@@ -80,7 +86,7 @@ public class ProjectionController {
             final ZonedDateTime date,
             @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack) {
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
         datadogMetricService.trackProjection(warehouseId, workflow, "deferral");
 
@@ -101,7 +107,7 @@ public class ProjectionController {
             @RequestParam("caller.id") @NotNull final Long callerId,
             final GetBacklogProjectionRequest request) {
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
         datadogMetricService.trackProjection(request.getWarehouseId(),
                 workflow,

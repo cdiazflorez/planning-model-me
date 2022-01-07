@@ -159,7 +159,8 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                     convertToTimeZone(zoneId, dateTo),
                     p.getRemainingQuantity(),
                     p.getProcessingTime(),
-                    p.isDeferred()
+                    p.isDeferred(),
+                    p.isExpired()
             ));
         }
 

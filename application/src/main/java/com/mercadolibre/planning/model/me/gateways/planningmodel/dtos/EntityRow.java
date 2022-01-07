@@ -41,6 +41,9 @@ public class EntityRow {
             case PICKING:
                 rowName = RowName.PICKING;
                 break;
+            case PUT_AWAY:
+                rowName = RowName.PUT_AWAY;
+                break;
             case GLOBAL:
                 rowName = RowName.GLOBAL;
                 break;

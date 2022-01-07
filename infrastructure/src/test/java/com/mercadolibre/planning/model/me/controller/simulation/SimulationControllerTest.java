@@ -307,12 +307,12 @@ public class SimulationControllerTest {
         );
         final List<Map<String, Object>> data = List.of(
                 Map.of("column_1",
-                        Map.of("title","Unidades por onda","subtitle",
+                        Map.of("title", "Unidades por onda", "subtitle",
                                 MONO_ORDER_DISTRIBUTION.getName()),
                         "column_2", "130 uds."
                 ),
                 Map.of("column_1",
-                        Map.of("title","Unidades por onda","subtitle",
+                        Map.of("title", "Unidades por onda", "subtitle",
                                 MULTI_BATCH_DISTRIBUTION.getName()),
                         "column_2", "0 uds."
                 )

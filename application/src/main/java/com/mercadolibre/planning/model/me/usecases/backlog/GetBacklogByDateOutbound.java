@@ -15,12 +15,13 @@ import static java.time.ZoneOffset.UTC;
 
 @Named
 @AllArgsConstructor
-public class GetBacklogByDate implements UseCase<GetBacklogByDateDto, List<Backlog>> {
+public class GetBacklogByDateOutbound implements UseCase<GetBacklogByDateDto, List<Backlog>> {
 
     final BacklogGatewayProvider backlogGatewayProvider;
 
     @Override
     public List<Backlog> execute(GetBacklogByDateDto input) {
+
         return backlogGatewayProvider
                 .getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()))
