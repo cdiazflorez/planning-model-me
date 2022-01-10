@@ -12,6 +12,7 @@ import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggest
 import javax.inject.Named;
 
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
@@ -47,11 +48,16 @@ public class GetSlaProjectionInbound extends GetProjectionInbound {
                 .timeZone(timeZone)
                 .build());
 
-        projectionResults.forEach(projectionResult ->
-                projectionResult.setExpired(
-                        projectionResult.getDate()
-                                .isBefore(ZonedDateTime.now()
-                                        .withZoneSameInstant(projectionResult.getDate().getZone()))));
+        projectionResults.forEach(projectionResult -> {
+            ZonedDateTime now = ZonedDateTime.now()
+                    .withZoneSameInstant(projectionResult.getDate().getZone());
+
+            if (projectionResult.getDate()
+                    .isBefore(now)) {
+                projectionResult.setExpired(true);
+                projectionResult.setDate(now.truncatedTo(ChronoUnit.HOURS));
+            }
+        });
 
         return projectionResults;
 
