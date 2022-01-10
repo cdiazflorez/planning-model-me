@@ -76,25 +76,6 @@ public abstract class GetProjectionInbound extends GetProjection {
                                              final GetProjectionInputDto input,
                                              final List<ProjectionResult> projectionsToShow,
                                              final List<Backlog> backlogsToShow) {
-        Projection projection = new Projection(
-                "Proyecciones", getDateSelector(dateFromToShow, SELECTOR_DAYS_TO_SHOW),
-                null,
-                //Outbound GetWaveSuggestion
-                new Data(null,
-                        getEntities.execute(input),
-                        getProjectionSummary.execute(GetProjectionSummaryInput.builder()
-                                .workflow(input.getWorkflow())
-                                .warehouseId(input.getWarehouseId())
-                                .dateFrom(dateFromToShow)
-                                .dateTo(dateToToShow)
-                                .projections(projectionsToShow)
-                                .backlogs(backlogsToShow)
-                                .showDeviation(true)
-                                .build()),
-                        new Chart(toChartData(projectionsToShow, config.getZoneId(),
-                                dateToToShow))),
-                createInboundTabs(),
-                simulationMode);
 
         List<ChartData> chartData = toChartData(projectionsToShow, config.getZoneId(),
                 dateToToShow)

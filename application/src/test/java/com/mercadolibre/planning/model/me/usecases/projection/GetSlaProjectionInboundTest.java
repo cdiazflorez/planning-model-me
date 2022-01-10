@@ -180,6 +180,7 @@ public class GetSlaProjectionInboundTest {
                         .build(),
                 ProjectionResult.builder()
                         .date(SLA_5)
+                        .isExpired(true)
                         .projectedEndDate(null)
                         .remainingQuantity(100)
                         .processingTime(new ProcessingTime(0, MINUTES.getName()))
