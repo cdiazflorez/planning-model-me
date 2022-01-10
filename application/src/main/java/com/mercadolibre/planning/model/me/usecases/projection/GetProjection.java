@@ -35,7 +35,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     protected static final int PROJECTION_DAYS = 4;
     protected static final int PROJECTION_DAYS_TO_SHOW = 1;
     protected static final int SELECTOR_DAYS_TO_SHOW = 3;
-    private static final long DAYS_TO_SHOW_LOOKBACK = 0L;
 
     protected final PlanningModelGateway planningModelGateway;
     protected final LogisticCenterGateway logisticCenterGateway;
