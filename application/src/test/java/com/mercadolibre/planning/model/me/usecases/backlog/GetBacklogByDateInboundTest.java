@@ -28,6 +28,7 @@ public class GetBacklogByDateInboundTest {
 
     private static final String DATE_BACKLOG = "2022-01-04T12:00:00Z";
     private static final int QUANTITY_BACKLOG = 123;
+  
     @InjectMocks
     private GetBacklogByDateInbound getBacklogByDateInbound;
     @Mock
