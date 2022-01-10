@@ -8,13 +8,13 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
-import java.time.ZonedDateTime;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
 
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,6 +49,7 @@ public class BacklogApiAdapter {
                                                  final String warehouseId,
                                                  final List<Workflow> workflows,
                                                  final List<ProcessName> processes,
+                                                 final List<BacklogGrouper> groupings,
                                                  final Instant dateFrom,
                                                  final Instant dateTo,
                                                  final Instant slaFrom,
@@ -61,7 +62,7 @@ public class BacklogApiAdapter {
                 processes.stream()
                         .map(ProcessName::getName)
                         .collect(Collectors.toList()),
-                of("process"),
+                groupings.stream().map(BacklogGrouper::getName).collect(Collectors.toList()),
                 dateFrom,
                 dateTo,
                 slaFrom,
@@ -79,16 +80,16 @@ public class BacklogApiAdapter {
                                                                final List<Consolidation> currentBacklog) {
 
         return backlogProjection.execute(
-                BacklogProjectionInput.builder()
-                        .workflow(workflow)
-                        .warehouseId(warehouseId)
-                        .processName(processes)
-                        .dateFrom(dateFrom)
-                        .dateTo(dateTo)
-                        .groupType(GROUP_TYPE_BY_WORKFLOW.get(workflow))
-                        .userId(userId)
-                        .currentBacklog(currentBacklog)
-                        .build())
+                        BacklogProjectionInput.builder()
+                                .workflow(workflow)
+                                .warehouseId(warehouseId)
+                                .processName(processes)
+                                .dateFrom(dateFrom)
+                                .dateTo(dateTo)
+                                .groupType(GROUP_TYPE_BY_WORKFLOW.get(workflow))
+                                .userId(userId)
+                                .currentBacklog(currentBacklog)
+                                .build())
                 .getProjections();
     }
 

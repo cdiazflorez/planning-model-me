@@ -10,10 +10,12 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import lombok.AllArgsConstructor;
@@ -32,9 +34,11 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
@@ -56,6 +60,11 @@ import static org.apache.commons.lang.StringUtils.capitalize;
 @Named
 @AllArgsConstructor
 public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable> {
+
+    private static final Map<Workflow, List<ProcessName>> processesByWorkflow = Map.of(
+            Workflow.FBM_WMS_OUTBOUND, List.of(PICKING, PACKING, PACKING_WALL),
+            Workflow.FBM_WMS_INBOUND, List.of(PUT_AWAY)
+    );
 
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
     private static final int HOURS_TO_SHOW = 25;
@@ -84,7 +93,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                                 .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
                                 .dateFrom(utcDateFrom)
                                 .dateTo(utcDateTo)
-                                .processName(List.of(PICKING, PACKING, PACKING_WALL))
+                                .processName(processesByWorkflow.get(input.getWorkflow()))
                                 .simulations(input.getSimulations())
                                 .entityFilters(Map.of(
                                         HEADCOUNT, Map.of(

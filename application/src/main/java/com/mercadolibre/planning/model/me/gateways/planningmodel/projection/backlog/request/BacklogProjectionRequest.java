@@ -3,12 +3,12 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel.projection.bac
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;

@@ -25,9 +25,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.minutesFromWeekStart;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyMap;
+import static java.util.List.of;
 
 @Slf4j
 @Named
@@ -76,6 +78,7 @@ class GetHistoricalBacklog {
                 input.getWarehouseId(),
                 input.getWorkflows(),
                 input.getProcesses(),
+                of(PROCESS),
                 dateFrom,
                 dateTo,
                 null,

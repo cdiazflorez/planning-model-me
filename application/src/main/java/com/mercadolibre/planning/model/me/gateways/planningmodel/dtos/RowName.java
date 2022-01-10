@@ -8,6 +8,7 @@ import lombok.Getter;
 public enum RowName {
     PICKING(1, "Picking"),
     PACKING(2, "Packing"),
+    PUT_AWAY(1, "Put Away"),
     PACKING_WALL(3, "Wall"),
     DEVIATION(4, "Desviación"),
     GLOBAL(5, "Capacidad Máxima");

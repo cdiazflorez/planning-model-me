@@ -16,7 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDate;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateOutbound;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
@@ -57,7 +57,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class GetCptProjectionTest {
+public class GetSlaProjectionOutboundTest {
 
     private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
@@ -68,10 +68,9 @@ public class GetCptProjectionTest {
     private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
     private static final ZonedDateTime CPT_4 = getCurrentUtcDate().plusHours(6);
     private static final ZonedDateTime CPT_5 = getCurrentUtcDate().plusHours(7);
-    private static final ZonedDateTime CPT_6 = getCurrentUtcDate().plusHours(8);
 
     @InjectMocks
-    private GetCptProjection getProjection;
+    private GetSlaProjectionOutbound getSlaProjectionOutbound;
 
     @Mock
     private PlanningModelGateway planningModelGateway;
@@ -89,13 +88,13 @@ public class GetCptProjectionTest {
     private GetProjectionSummary getProjectionSummary;
 
     @Mock
-    private GetBacklogByDate getBacklog;
+    private GetBacklogByDateOutbound getBacklogOutbound;
 
     @Mock
     private GetSimpleDeferralProjection getSimpleDeferralProjection;
 
     @Test
-    void testExecute() {
+    void testOutboundExecute() {
         // Given
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
         final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
@@ -111,12 +110,12 @@ public class GetCptProjectionTest {
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
         final List<Backlog> mockedBacklog = mockBacklog();
-        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
+        when(getBacklogOutbound.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
                 utcDateTimeFrom.toInstant(), utcDateTimeTo.toInstant())))
                 .thenReturn(mockedBacklog);
 
         when(planningModelGateway.runProjection(
-                createProjectionRequest(mockedBacklog, utcDateTimeFrom, utcDateTimeTo)))
+                createProjectionRequestOutbound(mockedBacklog, utcDateTimeFrom, utcDateTimeTo)))
                 .thenReturn(mockProjections(utcDateTimeFrom));
 
         when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
@@ -143,7 +142,7 @@ public class GetCptProjectionTest {
                 new LogisticCenterConfiguration(TIME_ZONE)));
 
         // When
-        final Projection projection = getProjection.execute(input);
+        final Projection projection = getSlaProjectionOutbound.execute(input);
 
         // Then
         assertEquals("Proyecciones", projection.getTitle());
@@ -171,16 +170,16 @@ public class GetCptProjectionTest {
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
         final List<Backlog> mockedBacklog = mockBacklog();
-        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
+        when(getBacklogOutbound.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
                 utcDateTimeFrom.toInstant(), utcDateTimeTo.toInstant())))
                 .thenReturn(mockedBacklog);
 
         when(planningModelGateway.runProjection(
-                createProjectionRequest(mockedBacklog, utcDateTimeFrom, utcDateTimeTo)))
+                createProjectionRequestOutbound(mockedBacklog, utcDateTimeFrom, utcDateTimeTo)))
                 .thenThrow(RuntimeException.class);
 
         // When
-        final Projection projection = getProjection.execute(input);
+        final Projection projection = getSlaProjectionOutbound.execute(input);
 
         // Then
         assertEquals("Proyecciones", projection.getTitle());
@@ -319,7 +318,7 @@ public class GetCptProjectionTest {
         assertEquals(title5, tooltip.getTitle5());
     }
 
-    private ProjectionRequest createProjectionRequest(final List<Backlog> backlogs,
+    private ProjectionRequest createProjectionRequestOutbound(final List<Backlog> backlogs,
                                                       final ZonedDateTime dateFrom,
                                                       final ZonedDateTime dateTo) {
         return ProjectionRequest.builder()

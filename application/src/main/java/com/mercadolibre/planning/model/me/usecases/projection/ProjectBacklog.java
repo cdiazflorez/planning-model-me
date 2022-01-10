@@ -33,7 +33,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.projecti
 @AllArgsConstructor
 public class ProjectBacklog implements UseCase<BacklogProjectionInput, ProjectedBacklog> {
 
-    private final Map<Workflow, List<Map<String, String>>> STATUS_BY_WORKFLOWS = Map.of(
+    private final Map<Workflow, List<Map<String, String>>> statusByWorkflow = Map.of(
             FBM_WMS_OUTBOUND, List.of(
                     Map.of("status", ProcessOutbound.OUTBOUND_PLANNING.getStatus()),
                     Map.of("status", ProcessOutbound.PICKING.getStatus()),
@@ -48,7 +48,7 @@ public class ProjectBacklog implements UseCase<BacklogProjectionInput, Projected
 
         final List<CurrentBacklog> backlogs = input.getWorkflow() == FBM_WMS_OUTBOUND
                 ? getOutBoundProjectedBacklog(
-                        STATUS_BY_WORKFLOWS.get(input.getWorkflow()),
+                        statusByWorkflow.get(input.getWorkflow()),
                         input.getDateFrom(),
                         input.getDateTo(),
                         input.getWarehouseId(),

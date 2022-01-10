@@ -19,7 +19,8 @@ import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.GetCptProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjectionOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
@@ -73,7 +74,7 @@ public class ProjectionControllerTest {
     private AuthorizeUser authorizeUser;
 
     @MockBean
-    private GetCptProjection getProjection;
+    private GetSlaProjection getProjection;
 
     @MockBean
     private GetBacklogProjection getBacklogProjection;

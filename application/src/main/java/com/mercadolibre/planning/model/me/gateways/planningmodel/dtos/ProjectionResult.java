@@ -29,4 +29,6 @@ public class ProjectionResult {
     private ProcessingTime processingTime;
 
     private boolean isDeferred;
+
+    private boolean isExpired;
 }

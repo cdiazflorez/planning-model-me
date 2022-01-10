@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip.createChartTooltip;
+import static com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip.createChartTooltipInbound;
 import static java.time.format.DateTimeFormatter.ofPattern;
 
 @Value
@@ -21,6 +22,7 @@ public class ChartData {
     private String projectedEndTime;
     private ProcessingTime processingTime;
     private Boolean isDeferred;
+    private Boolean isExpired;
     private ChartTooltip tooltip;
 
     public static ChartData fromProjection(final ZonedDateTime cpt,
@@ -28,22 +30,45 @@ public class ChartData {
                                            final ZonedDateTime dateTo,
                                            final int remainingQuantity,
                                            final ProcessingTime processingTime,
-                                           final boolean isDeferred) {
-
-        String projectEnd = projectedEndDate == null
-                ? dateTo.format(DATE_FORMATTER)
-                : projectedEndDate.format(DATE_FORMATTER);
+                                           final boolean isDeferred,
+                                           final boolean isExpired) {
 
         return ChartData.builder()
                 .title(cpt.format(DATE_SHORT_FORMATTER))
                 .cpt(cpt.format(DATE_FORMATTER))
-                .projectedEndTime(projectEnd)
+                .projectedEndTime(projectEndDate(projectedEndDate, dateTo))
                 .processingTime(processingTime)
                 .tooltip(createChartTooltip(
                         cpt, projectedEndDate, dateTo, remainingQuantity,
                         processingTime.getValue(), isDeferred)
                 )
                 .isDeferred(isDeferred)
+                .isExpired(isExpired)
                 .build();
+    }
+
+    public static ChartData fromProjectionInbound(final ZonedDateTime cpt,
+                                 final ZonedDateTime projectedEndDate,
+                                 final ZonedDateTime dateTo,
+                                 final int remainingQuantity,
+                                 final ProcessingTime processingTime,
+                                 final boolean isDeferred,
+                                 final boolean isExpired) {
+
+        return ChartData.builder()
+                .title(cpt.format(DATE_SHORT_FORMATTER))
+                .cpt(cpt.format(DATE_FORMATTER))
+                .projectedEndTime(projectEndDate(projectedEndDate, dateTo))
+                .processingTime(processingTime)
+                .tooltip(createChartTooltipInbound(cpt, projectedEndDate, remainingQuantity))
+                .isDeferred(isDeferred)
+                .isExpired(isExpired)
+                .build();
+    }
+
+    private static String projectEndDate(final ZonedDateTime projectedEndDate, final ZonedDateTime dateTo) {
+        return projectedEndDate == null
+                ? dateTo.format(DATE_FORMATTER)
+                : projectedEndDate.format(DATE_FORMATTER);
     }
 }

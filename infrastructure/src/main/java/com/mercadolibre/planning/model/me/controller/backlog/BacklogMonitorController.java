@@ -48,10 +48,8 @@ public class BacklogMonitorController {
     public ResponseEntity<WorkflowBacklogDetail> monitor(
             @PathVariable final String warehouseId,
             @RequestParam final String workflow,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final OffsetDateTime dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final OffsetDateTime dateTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
         if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
@@ -84,14 +82,17 @@ public class BacklogMonitorController {
             @PathVariable final String warehouseId,
             @RequestParam final String workflow,
             @RequestParam final String process,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final OffsetDateTime dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final OffsetDateTime dateTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
         if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
             throw new EmptyStateException();
+        }
+
+        if (Workflow.from(workflow).isPresent()
+                && Workflow.from(workflow).get() == Workflow.FBM_WMS_INBOUND) {
+            throw new NotImplementWorkflowException();
         }
 
         final Instant requestDate = requestClock.now();
