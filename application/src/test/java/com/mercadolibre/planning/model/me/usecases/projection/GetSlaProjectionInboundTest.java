@@ -91,7 +91,6 @@ public class GetSlaProjectionInboundTest {
         final GetProjectionInputDto input = GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_INBOUND)
                 .warehouseId(WAREHOUSE_ID)
-                .date(currentUtcDateTime)
                 .build();
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
@@ -284,7 +283,7 @@ public class GetSlaProjectionInboundTest {
         final ZonedDateTime cpt6 = convertToTimeZone(zoneId, SLA_6);
         final ZonedDateTime projectedEndDate6 = convertToTimeZone(zoneId, currentDate.plusMinutes(15));
         assertEquals(cpt6.format(DATE_SHORT_FORMATTER), chartData6.getTitle());
-        assertEquals(currentDate.format(DATE_FORMATTER), chartData6.getCpt());
+        assertEquals(convertToTimeZone(zoneId, currentDate).format(DATE_FORMATTER), chartData6.getCpt());
         assertEquals(projectedEndDate6.format(DATE_FORMATTER), chartData6.getProjectedEndTime());
         assertEquals(0, chartData6.getProcessingTime().getValue());
         assertChartTooltip(
