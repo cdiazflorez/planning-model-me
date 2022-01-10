@@ -19,7 +19,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 @Named
 public class GetSlaProjectionInbound extends GetProjectionInbound {
 
-
     protected GetSlaProjectionInbound(final PlanningModelGateway planningModelGateway,
                                       final LogisticCenterGateway logisticCenterGateway,
                                       final GetWaveSuggestion getWaveSuggestion,
@@ -54,6 +53,5 @@ public class GetSlaProjectionInbound extends GetProjectionInbound {
                                         .withZoneSameInstant(projectionResult.getDate().getZone()))));
 
         return projectionResults;
-
     }
 }

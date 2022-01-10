@@ -31,7 +31,6 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZo
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createInboundTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
-import static java.time.ZoneOffset.UTC;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.stream.Collectors.toList;
 
@@ -76,25 +75,26 @@ public abstract class GetProjectionInbound extends GetProjection {
                                              final List<ProjectionResult> projectionsToShow,
                                              final List<Backlog> backlogsToShow) {
 
-        List<ChartData> chartData = toChartData(projectionsToShow, config.getZoneId(),
-                dateToToShow)
-                .stream().map(dataChart -> {
-                    if (dataChart.getIsExpired()) {
+        List<ChartData> originalChartData = toChartData(projectionsToShow, config.getZoneId(),
+                dateToToShow);
+
+        List<ChartData> updatedChartData = originalChartData.stream()
+                .map(originalChart -> {
+                    if (originalChart.getIsExpired()) {
                         return ChartData.builder()
-                                .title(dataChart.getTitle())
-                                .cpt(convertToTimeZone(config.getZoneId(),
-                                        ZonedDateTime.now().withZoneSameInstant(UTC)
-                                                .truncatedTo(ChronoUnit.HOURS)).withFixedOffsetZone()
-                                        .format(DATE_FORMATTER))
-                                .projectedEndTime(dataChart.getProjectedEndTime())
-                                .processingTime(dataChart.getProcessingTime())
-                                .tooltip(dataChart.getTooltip())
-                                .isDeferred(dataChart.getIsDeferred())
-                                .isExpired(dataChart.getIsExpired())
+                                .title(originalChart.getTitle())
+                                .cpt(convertToTimeZone(
+                                        config.getZoneId(),
+                                        ZonedDateTime.now().truncatedTo(ChronoUnit.HOURS)).format(DATE_FORMATTER))
+                                .projectedEndTime(originalChart.getProjectedEndTime())
+                                .processingTime(originalChart.getProcessingTime())
+                                .tooltip(originalChart.getTooltip())
+                                .isDeferred(originalChart.getIsDeferred())
+                                .isExpired(originalChart.getIsExpired())
                                 .build();
                     }
 
-                    return dataChart;
+                    return originalChart;
                 }).collect(Collectors.toList());
 
         return new Projection(
@@ -112,7 +112,7 @@ public abstract class GetProjectionInbound extends GetProjection {
                                 .backlogs(backlogsToShow)
                                 .showDeviation(true)
                                 .build()),
-                        new Chart(chartData)),
+                        new Chart(updatedChartData)),
                 createInboundTabs(),
                 simulationMode);
     }

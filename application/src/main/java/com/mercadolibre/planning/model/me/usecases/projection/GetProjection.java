@@ -31,22 +31,15 @@ import static java.util.stream.Collectors.toList;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
 
+    protected static final int PROJECTION_DAYS = 4;
+    protected static final int PROJECTION_DAYS_TO_SHOW = 1;
+    protected static final int SELECTOR_DAYS_TO_SHOW = 3;
     private static final long DAYS_TO_SHOW_LOOKBACK = 0L;
 
-    protected static final int PROJECTION_DAYS = 4;
-
-    protected static final int PROJECTION_DAYS_TO_SHOW = 1;
-
-    protected static final int SELECTOR_DAYS_TO_SHOW = 3;
-
     protected final PlanningModelGateway planningModelGateway;
-
     protected final LogisticCenterGateway logisticCenterGateway;
-
     protected final GetWaveSuggestion getWaveSuggestion;
-
     protected final GetEntities getEntities;
-
     protected final GetProjectionSummary getProjectionSummary;
 
     @Override
@@ -58,6 +51,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final ZonedDateTime dateFromToShow = input.getDate() == null
                 ? dateFromToProject.atZone(UTC).minusDays(getDatesToShowLookback())
                 : input.getDate();
+
         final ZonedDateTime dateToToShow = input.getDate() == null
                 ? dateFromToProject.atZone(UTC).plusDays(PROJECTION_DAYS_TO_SHOW)
                 : dateFromToShow.plusDays(PROJECTION_DAYS_TO_SHOW);
@@ -86,8 +80,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                     config.getTimeZone().getID()
             );
 
-            List<ProjectionResult> projectionsSla =
-                    decorateProjection(input, backlogsToProject, projectionsSlaAux);
+            List<ProjectionResult> projectionsSla = decorateProjection(input, backlogsToProject, projectionsSlaAux);
 
             final List<ProjectionResult> projectionsToShow =
                     filterProjectionsInRange(dateFromToShow, dateToToShow, projectionsSla);
@@ -105,13 +98,12 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         }
     }
 
-    private List<ProjectionResult> filterProjectionsInRange(
-            final ZonedDateTime dateFrom,
-            final ZonedDateTime dateTo,
-            final List<ProjectionResult> projections) {
-
-        return projections.stream().filter(p -> p.getDate().isAfter(dateFrom) && p.getDate()
-                .isBefore(dateTo)).collect(toList());
+    private List<ProjectionResult> filterProjectionsInRange(final ZonedDateTime dateFrom,
+                                                            final ZonedDateTime dateTo,
+                                                            final List<ProjectionResult> projections) {
+        return projections.stream()
+                .filter(p -> p.getDate().isAfter(dateFrom) && p.getDate().isBefore(dateTo))
+                .collect(toList());
     }
 
     private List<Backlog> filterBacklogsInRange(
