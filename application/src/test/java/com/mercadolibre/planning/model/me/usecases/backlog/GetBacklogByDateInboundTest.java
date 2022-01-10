@@ -19,19 +19,20 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
+import static java.util.List.of;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class GetBacklogByDateInboundTest {
 
-    @InjectMocks
-    private GetBacklogByDateInbound getBacklogByDateInbound;
-
-    @Mock
-    private BacklogApiAdapter backlogApiAdapter;
-
     private static final String DATE_BACKLOG = "2022-01-04T12:00:00Z";
     private static final int QUANTITY_BACKLOG = 123;
+  
+    @InjectMocks
+    private GetBacklogByDateInbound getBacklogByDateInbound;
+    @Mock
+    private BacklogApiAdapter backlogApiAdapter;
 
     @Test
     public void testGetBacklogByDateInbound() {
@@ -45,8 +46,16 @@ public class GetBacklogByDateInboundTest {
         final Instant slaFrom = now.minus(7, ChronoUnit.DAYS);
         final Instant slaTo = now.plus(1, ChronoUnit.DAYS);
 
-        when(backlogApiAdapter.getCurrentBacklog(now, warehouseId,
-                workflows, processNames, dateFrom, dateTo, slaFrom, slaTo))
+        when(backlogApiAdapter.getCurrentBacklog(
+                now,
+                warehouseId,
+                workflows,
+                processNames,
+                of(DATE_OUT),
+                dateFrom,
+                dateTo,
+                slaFrom,
+                slaTo))
                 .thenReturn(responseGetCurrentBacklog());
 
         List<Backlog> response = getBacklogByDateInbound.execute(new GetBacklogByDateDto(

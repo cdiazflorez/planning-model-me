@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -108,6 +109,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
+                of(PROCESS),
                 input.getDateFrom(),
                 input.getDateTo(),
                 input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS),

@@ -10,6 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
@@ -47,6 +48,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
@@ -144,6 +146,7 @@ class GetBacklogMonitorTest {
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
+                of(PROCESS),
                 input.getDateFrom(),
                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
                 input.getRequestDate(),
@@ -296,6 +299,7 @@ class GetBacklogMonitorTest {
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
+                of(PROCESS),
                 input.getDateFrom(),
                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
                 isOutbound ? input.getRequestDate() : input.getRequestDate().minus(168, ChronoUnit.HOURS),
