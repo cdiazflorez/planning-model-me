@@ -18,7 +18,5 @@ public class GetProjectionInput {
 
     private List<Backlog> backlogToProject;
 
-    private boolean is21Cap5Logic;
-
     private boolean wantToSimulate21;
 }

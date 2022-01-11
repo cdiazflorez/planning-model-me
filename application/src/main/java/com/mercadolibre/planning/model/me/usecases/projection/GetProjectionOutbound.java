@@ -76,7 +76,6 @@ public abstract class GetProjectionOutbound extends GetProjection {
                                 input.getWorkflow(),
                                 input.getDate(),
                                 backlogsToProject,
-                                false,
                                 false));
 
         return transferDeferralFlag(projectionsSla, deferralProjectionOutput.getProjections());

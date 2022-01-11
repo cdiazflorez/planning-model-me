@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.controller;
 
-import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.controller.editor.ProcessNameEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
@@ -36,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
 import static java.util.Optional.of;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
@@ -50,7 +48,6 @@ public class ProjectionController {
     private final GetBacklogProjection getBacklogProjection;
     private final GetDeferralProjection getDeferralProjection;
     private final DatadogMetricService datadogMetricService;
-    private final FeatureToggle featureToggle;
     private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
             Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_PROJECTION),
             Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_PROJECTION));
@@ -95,7 +92,6 @@ public class ProjectionController {
                 workflow,
                 date,
                 null,
-                featureToggle.hasNewCap5Logic(warehouseId),
                 cap5ToPack)))
         );
     }

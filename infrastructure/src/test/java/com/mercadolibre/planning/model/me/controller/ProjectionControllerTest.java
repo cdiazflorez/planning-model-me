@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
@@ -83,9 +82,6 @@ public class ProjectionControllerTest {
     private GetDeferralProjection getDeferralProjection;
 
     @MockBean
-    private FeatureToggle featureToggle;
-
-    @MockBean
     private DatadogMetricService datadogMetricService;
 
     @Test
@@ -148,7 +144,7 @@ public class ProjectionControllerTest {
     void getDeferralProjection() throws Exception {
         // GIVEN
         when(getDeferralProjection.execute(
-                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any(), false,false)))
+                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any(), false)))
                 .thenReturn(new Projection(
                         "Test",
                         null,
@@ -160,8 +156,6 @@ public class ProjectionControllerTest {
                                 mockProjectionChart()),
                         createTabs(),
                         simulationMode));
-
-        when(featureToggle.hasNewCap5Logic(WAREHOUSE_ID)).thenReturn(false);
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
@@ -181,7 +175,7 @@ public class ProjectionControllerTest {
     void getDeferralProjection21Cap5Logic() throws Exception {
         // GIVEN
         when(getDeferralProjection.execute(
-                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, null, false,true)))
+                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, null, true)))
                 .thenReturn(new Projection(
                         "Test",
                         null,
@@ -202,8 +196,6 @@ public class ProjectionControllerTest {
                 .param("caller.id", String.valueOf(USER_ID))
                 .contentType(APPLICATION_JSON)
         );
-
-        when(featureToggle.hasNewCap5Logic(WAREHOUSE_ID)).thenReturn(false);
 
         // THEN
         result.andExpect(status().isOk());

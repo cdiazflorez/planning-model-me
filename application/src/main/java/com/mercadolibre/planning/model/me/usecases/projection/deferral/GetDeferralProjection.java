@@ -82,14 +82,11 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
             final ZonedDateTime dateToToShow = dateFromToShow.plusDays(DEFERRAL_DAYS_TO_SHOW);
 
-            final List<String> backlogStatuses = input.is21Cap5Logic() || input.isWantToSimulate21()
-                    ? CAP5_TO_PACK_STATUSES : CAP5_RTW_STATUSES;
-
             final List<Backlog> backlogsToProject = backlogGateway.getBacklog(
                     input.getLogisticCenterId(),
                     dateFromToProject,
                     dateToToProject,
-                    backlogStatuses,
+                    CAP5_TO_PACK_STATUSES,
                     List.of("etd"));
 
             final GetSimpleDeferralProjectionOutput deferralBaseOutput =
@@ -99,7 +96,6 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                     input.getWorkflow(),
                                     input.getDate(),
                                     backlogsToProject,
-                                    input.is21Cap5Logic(),
                                     input.isWantToSimulate21()));
 
             final List<Backlog> backlogsToShow = filterBacklogsInRange(
