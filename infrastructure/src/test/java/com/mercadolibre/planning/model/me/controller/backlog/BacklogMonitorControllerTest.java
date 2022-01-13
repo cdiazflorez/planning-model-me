@@ -14,6 +14,7 @@ import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDeta
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
@@ -45,6 +47,7 @@ class BacklogMonitorControllerTest {
     private static final String WAREHOUSE_ID = "COCU01";
     private static final String PROCESS = "picking";
     private static final String OUTBOUND = "fbm-wms-outbound";
+    private static final String INBOUND = "fbm-wms-inbound";
 
     @Autowired
     private MockMvc mockMvc;
@@ -56,15 +59,8 @@ class BacklogMonitorControllerTest {
     private GetBacklogMonitorDetails getBacklogMonitorDetails;
 
     @MockBean
-    private FeatureToggle featureToggle;
-
-    @MockBean
     private RequestClock requestClock;
 
-    @BeforeEach
-    void setUp() {
-        mockFeatureToggle();
-    }
 
     @Test
     void testGetMonitor() throws Exception {
@@ -145,6 +141,37 @@ class BacklogMonitorControllerTest {
     }
 
     @Test
+    void testWhenWorkflowIsInbound() throws Exception {
+        // GIVEN
+        var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
+        GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
+                firstDate,
+                WAREHOUSE_ID,
+                FBM_WMS_INBOUND,
+                ProcessName.PICKING,
+                firstDate,
+                OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
+                999L
+        );
+
+        when(requestClock.now()).thenReturn(firstDate);
+        when(getBacklogMonitorDetails.execute(input)).thenReturn(getDetailsMockedResponse());
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(
+                MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/details")
+                        .param("workflow", INBOUND)
+                        .param("process", PROCESS)
+                        .param("date_from", A_DATE)
+                        .param("date_to", ANOTHER_DATE)
+                        .param("caller.id", "999")
+        );
+
+        // THEN
+        result.andExpect(status().is5xxServerError());
+    }
+
+    @Test
     void testMissingCallerIdParameter() throws Exception {
         // WHEN
         final ResultActions result = mockMvc.perform(
@@ -156,43 +183,6 @@ class BacklogMonitorControllerTest {
 
         // THEN
         result.andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testGetMonitorWarehouseNotEnabled() throws Exception {
-        // GIVEN
-        final String warehouseId = "ARBA01";
-
-        // WHEN
-        final ResultActions result = mockMvc.perform(
-                MockMvcRequestBuilders.get(format(BASE_URL, warehouseId) + "/monitor")
-                        .param("workflow", OUTBOUND)
-                        .param("date_from", A_DATE)
-                        .param("date_to", ANOTHER_DATE)
-                        .param("caller.id", "999")
-        );
-
-        // THEN
-        result.andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testGetDetailsWarehouseNotEnabled() throws Exception {
-        // GIVEN
-        final String warehouseId = "ARBA01";
-
-        // WHEN
-        final ResultActions result = mockMvc.perform(
-                MockMvcRequestBuilders.get(format(BASE_URL, warehouseId) + "/details")
-                        .param("workflow", OUTBOUND)
-                        .param("process", PROCESS)
-                        .param("date_from", A_DATE)
-                        .param("date_to", ANOTHER_DATE)
-                        .param("caller.id", "999")
-        );
-
-        // THEN
-        result.andExpect(status().isNotFound());
     }
 
     private GetBacklogMonitorDetailsResponse getDetailsMockedResponse() {
@@ -239,11 +229,6 @@ class BacklogMonitorControllerTest {
                                         .build()
                         )
                 ));
-    }
-
-    private void mockFeatureToggle() {
-        when(featureToggle.hasBacklogMonitorFeatureEnabled("COCU01")).thenReturn(true);
-        when(featureToggle.hasBacklogMonitorFeatureEnabled("ARBA01")).thenReturn(false);
     }
 
     private WorkflowBacklogDetail getMockedResponse() {

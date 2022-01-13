@@ -87,7 +87,6 @@ public class GetSlaProjectionInboundTest {
         // Given
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
         final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
-
         final GetProjectionInputDto input = GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_INBOUND)
                 .warehouseId(WAREHOUSE_ID)
@@ -107,6 +106,7 @@ public class GetSlaProjectionInboundTest {
 
         when(getEntities.execute(input)).thenReturn(mockComplexTable());
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class))).thenReturn(mockSimpleTable());
+
 
         // When
         final Projection projection = getSlaProjectionInbound.execute(input);
@@ -217,6 +217,7 @@ public class GetSlaProjectionInboundTest {
         final ChartData chartData1 = chartData.get(0);
         final ZonedDateTime cpt1 = convertToTimeZone(zoneId, SLA_1);
         final ZonedDateTime projectedEndDate1 = convertToTimeZone(zoneId, currentDate).plusHours(3).plusMinutes(30);
+
         assertEquals(cpt1.format(DATE_SHORT_FORMATTER), chartData1.getTitle());
         assertEquals(cpt1.format(DATE_FORMATTER), chartData1.getCpt());
         assertEquals(projectedEndDate1.format(DATE_FORMATTER), chartData1.getProjectedEndTime());
@@ -230,6 +231,7 @@ public class GetSlaProjectionInboundTest {
         final ChartData chartData2 = chartData.get(1);
         final ZonedDateTime cpt2 = convertToTimeZone(zoneId, SLA_2);
         final ZonedDateTime projectedEndDate2 = convertToTimeZone(zoneId, currentDate).plusHours(3);
+
         assertEquals(cpt2.format(DATE_SHORT_FORMATTER), chartData2.getTitle());
         assertEquals(cpt2.format(DATE_FORMATTER), chartData2.getCpt());
         assertEquals(projectedEndDate2.format(DATE_FORMATTER), chartData2.getProjectedEndTime());
@@ -243,6 +245,7 @@ public class GetSlaProjectionInboundTest {
         final ChartData chartData3 = chartData.get(2);
         final ZonedDateTime cpt3 = convertToTimeZone(zoneId, SLA_3);
         final ZonedDateTime projectedEndDate3 = convertToTimeZone(zoneId, currentDate).plusHours(3).plusMinutes(25);
+
         assertEquals(cpt3.format(DATE_SHORT_FORMATTER), chartData3.getTitle());
         assertEquals(cpt3.format(DATE_FORMATTER), chartData3.getCpt());
         assertEquals(projectedEndDate3.format(DATE_FORMATTER), chartData3.getProjectedEndTime());
@@ -256,6 +259,7 @@ public class GetSlaProjectionInboundTest {
         final ChartData chartData4 = chartData.get(3);
         final ZonedDateTime cpt4 = convertToTimeZone(zoneId, SLA_4);
         final ZonedDateTime projectedEndDate4 = convertToTimeZone(zoneId, currentDate).plusHours(8).plusMinutes(10);
+
         assertEquals(cpt4.format(DATE_SHORT_FORMATTER), chartData4.getTitle());
         assertEquals(cpt4.format(DATE_FORMATTER), chartData4.getCpt());
         assertEquals(projectedEndDate4.format(DATE_FORMATTER), chartData4.getProjectedEndTime());
@@ -269,6 +273,7 @@ public class GetSlaProjectionInboundTest {
         final ChartData chartData5 = chartData.get(4);
         final ZonedDateTime cpt5 = convertToTimeZone(zoneId, SLA_5);
         final ZonedDateTime projectedEndDate5 = convertToTimeZone(zoneId, currentDate.plusDays(1));
+
         assertEquals(cpt5.format(DATE_SHORT_FORMATTER), chartData5.getTitle());
         assertEquals(cpt5.format(DATE_FORMATTER), chartData5.getCpt());
         assertEquals(projectedEndDate5.format(DATE_FORMATTER), chartData5.getProjectedEndTime());

@@ -1,8 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
-import com.mercadolibre.planning.model.me.config.FeatureToggle;
 import com.mercadolibre.planning.model.me.controller.RequestClock;
-import com.mercadolibre.planning.model.me.controller.backlog.exception.EmptyStateException;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.NotImplementWorkflowException;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
@@ -40,8 +38,6 @@ public class BacklogMonitorController {
 
     private final GetBacklogMonitorDetails getBacklogMonitorDetails;
 
-    private final FeatureToggle featureToggle;
-
     private final RequestClock requestClock;
 
     @GetMapping("/monitor")
@@ -51,10 +47,6 @@ public class BacklogMonitorController {
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
-
-        if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
-            throw new EmptyStateException();
-        }
 
         final Instant requestDate = requestClock.now();
         final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
@@ -85,10 +77,6 @@ public class BacklogMonitorController {
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
-
-        if (!featureToggle.hasBacklogMonitorFeatureEnabled(warehouseId)) {
-            throw new EmptyStateException();
-        }
 
         if (Workflow.from(workflow).isPresent()
                 && Workflow.from(workflow).get() == Workflow.FBM_WMS_INBOUND) {

@@ -73,66 +73,16 @@ public class GetDeferralProjectionTest {
                 WAREHOUSE_ID,
                 currentUtcDateTime,
                 currentUtcDateTime.plusDays(3),
-                List.of("pending"),
-                List.of("etd")))
-                .thenReturn(mockBacklog());
 
-        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                currentUtcDateTime,
-                mockBacklog(),
-                false,
-                false)))
-                .thenReturn(new GetSimpleDeferralProjectionOutput(
-                        mockProjections(),
-                        new LogisticCenterConfiguration(getDefault())));
-
-        // WHEN
-        final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                currentUtcDateTime,
-                mockBacklog(),
-                false,
-                false));
-
-        //THEN
-        assertEquals("Proyección", projection.getTitle());
-        assertEquals(2, projection.getTabs().size());
-        assertEquals(false, projection.getData().getChart().getData().get(0).getIsDeferred());
-        assertEquals(false, projection.getData().getChart().getData().get(1).getIsDeferred());
-        assertEquals(false, projection.getData().getChart().getData().get(2).getIsDeferred());
-        assertEquals(false, projection.getData().getChart().getData().get(3).getIsDeferred());
-        assertEquals("throughput", projection.getData().getComplexTable1().getData()
-                .get(0).getId());
-        assertEquals("Throughput", projection.getData().getComplexTable1().getData()
-                .get(0).getTitle());
-    }
-
-    @Test
-    public void testExecute21Cap5Logic() {
-        // GIVEN
-        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-
-        when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(
-                mockHeadcountEntities());
-
-        when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
-                .thenReturn(mockSimpleTable());
-
-        when(backlogGateway.getBacklog(
-                MX_LOGISTIC_CENTER,
-                currentUtcDateTime,
-                currentUtcDateTime.plusDays(3),
                 List.of("pending", "planning", "to_pick", "picking", "sorting",
                         "to_group", "grouping", "grouped", "to_pack"),
                 List.of("etd")))
                 .thenReturn(mockBacklog());
 
         when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-                MX_LOGISTIC_CENTER, FBM_WMS_OUTBOUND,
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
-                true,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(),
@@ -140,11 +90,9 @@ public class GetDeferralProjectionTest {
 
         // WHEN
         final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
-                MX_LOGISTIC_CENTER,
-                FBM_WMS_OUTBOUND,
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
-                null,
-                true,
+                mockBacklog(),
                 false));
 
         //THEN
@@ -184,8 +132,7 @@ public class GetDeferralProjectionTest {
                 MX_LOGISTIC_CENTER, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
-                false,
-                true)))
+                false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(),
                         new LogisticCenterConfiguration(getDefault())));
@@ -196,8 +143,7 @@ public class GetDeferralProjectionTest {
                 FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 null,
-                false,
-                true));
+                false));
 
         //THEN
         assertEquals("Proyección", projection.getTitle());
@@ -221,7 +167,6 @@ public class GetDeferralProjectionTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
-                false,
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(),
@@ -232,7 +177,6 @@ public class GetDeferralProjectionTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
-                false,
                 false));
 
         //THEN

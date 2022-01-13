@@ -37,6 +37,7 @@ import static java.util.stream.Collectors.toList;
 public abstract class GetProjectionInbound extends GetProjection {
 
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+
     private static final long DAYS_TO_SHOW_LOOKBACK = 7L;
 
     final GetBacklogByDateInbound getBacklogByDateInbound;
@@ -96,6 +97,7 @@ public abstract class GetProjectionInbound extends GetProjection {
 
                     return originalChart;
                 }).collect(Collectors.toList());
+
 
         return new Projection(
                 "Proyecciones", getDateSelector(dateFromToShow, SELECTOR_DAYS_TO_SHOW),
