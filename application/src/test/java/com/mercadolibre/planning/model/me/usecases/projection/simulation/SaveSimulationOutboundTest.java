@@ -9,6 +9,8 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -17,8 +19,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityBy
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateOutbound;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
@@ -38,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -90,10 +91,10 @@ public class SaveSimulationOutboundTest {
     private GetProjectionSummary getProjectionSummary;
 
     @Mock
-    private GetBacklogByDateOutbound getBacklog;
+    private GetSimpleDeferralProjection getSimpleDeferralProjection;
 
     @Mock
-    private GetSimpleDeferralProjection getSimpleDeferralProjection;
+    private BacklogApiGateway backlogGateway;
 
     @Test
     @DisplayName("Execute the case when all the data is correctly generated")
@@ -105,9 +106,6 @@ public class SaveSimulationOutboundTest {
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
         final List<Backlog> mockedBacklog = mockBacklog();
-        when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
-                utcCurrentTime.toInstant(), utcCurrentTime.plusDays(4).toInstant())))
-                .thenReturn(mockedBacklog);
 
         when(planningModelGateway.saveSimulation(
                 createSimulationRequest(mockedBacklog, utcCurrentTime)))
@@ -138,6 +136,19 @@ public class SaveSimulationOutboundTest {
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(utcCurrentTime),
                         new LogisticCenterConfiguration(TIME_ZONE)));
+
+        when(backlogGateway.getCurrentBacklog(
+                WAREHOUSE_ID,
+                List.of("outbound-orders"),
+                List.of("pending"),
+                now().truncatedTo(ChronoUnit.HOURS).toInstant(),
+                now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
+                List.of("date_out"))
+        ).thenReturn(List.of(
+                new Consolidation(null, Map.of("date_out", getCurrentTime().minusHours(1).toString()), 150),
+                new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(2).toString()), 235),
+                new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(3).toString()), 300)
+        ));
 
         // When
         final Projection projection = saveSimulationOutbound.execute(GetProjectionInputDto.builder()
