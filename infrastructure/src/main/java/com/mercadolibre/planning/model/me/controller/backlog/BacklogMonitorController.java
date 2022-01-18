@@ -78,11 +78,6 @@ public class BacklogMonitorController {
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
             @RequestParam("caller.id") final long callerId) {
 
-        if (Workflow.from(workflow).isPresent()
-                && Workflow.from(workflow).get() == Workflow.FBM_WMS_INBOUND) {
-            throw new NotImplementWorkflowException();
-        }
-
         final Instant requestDate = requestClock.now();
         final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
