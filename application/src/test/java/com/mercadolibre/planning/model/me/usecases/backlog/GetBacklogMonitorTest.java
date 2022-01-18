@@ -303,7 +303,8 @@ class GetBacklogMonitorTest {
                 input.getDateFrom(),
                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
                 isOutbound ? input.getRequestDate() : input.getRequestDate().minus(168, ChronoUnit.HOURS),
-                input.getRequestDate().plus(24, ChronoUnit.HOURS))
+                isOutbound ? input.getRequestDate().plus(24, ChronoUnit.HOURS) : input.getRequestDate().plus(168, ChronoUnit.HOURS)
+                )
         ).thenReturn(isOutbound ? of(
                 new Consolidation(firstDate, Map.of("process", "waving"), 100),
                 new Consolidation(secondDate, Map.of("process", "waving"), 150),
