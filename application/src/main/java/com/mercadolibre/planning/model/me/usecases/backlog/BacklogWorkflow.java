@@ -18,7 +18,7 @@ import static java.util.List.of;
 @AllArgsConstructor
 enum BacklogWorkflow {
     FBM_WMS_OUTBOUND(of(WAVING, PICKING, PACKING), 0, 24),
-    FBM_WMS_INBOUND(of(CHECK_IN, PUT_AWAY), 168, 24);
+    FBM_WMS_INBOUND(of(CHECK_IN, PUT_AWAY), 168, 168);
 
     private List<ProcessName> processNames;
 
