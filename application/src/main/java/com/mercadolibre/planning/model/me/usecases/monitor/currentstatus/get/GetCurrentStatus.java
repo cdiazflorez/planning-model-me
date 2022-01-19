@@ -1,10 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get;
 
-import com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
-import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
@@ -35,8 +33,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
 
-import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_NO_WALL;
-import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
@@ -48,9 +44,7 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.metric.GetMetr
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.DAYS;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 import static java.util.Objects.nonNull;
 
 @Slf4j
@@ -58,15 +52,12 @@ import static java.util.Objects.nonNull;
 @AllArgsConstructor
 public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentStatusData> {
 
-    private static final String STATUS_ATTRIBUTE = "status";
-    private static final int HOURS_OFFSET = 1;
-    private final AnalyticsGateway analyticsClient;
-    private final BacklogGatewayProvider backlogGatewayProvider;
     private final GetBacklogMetricUseCase getBacklogMetric;
     private final GetImmediateBacklogMetricUseCase getImmediateBacklogMetric;
     private final GetThroughput getThroughputMetric;
     private final OutboundWaveGateway outboundWaveGateway;
     private final LogisticCenterGateway logisticCenterGateway;
+    private final BacklogGatewayProvider backlogGatewayProvider;
 
     @Override
     public CurrentStatusData execute(GetCurrentStatusInput input) {
@@ -85,14 +76,11 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
 
         completeBacklogs(processBacklogs);
 
-        final List<UnitsResume> processedUnitsLastHour = getUnitsResumes(input,
-                config.isPutToWall());
-
         processBacklogs.forEach(processBacklog ->
                 addProcessIfExist(processes, CurrentStatusMetricInputs.builder()
                         .input(input)
                         .processBacklog(processBacklog)
-                        .processedUnitsLastHour(processedUnitsLastHour)
+                        .processedUnitsLastHour(emptyList())
                         .build())
         );
 
@@ -111,31 +99,35 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 .plusMonths(2)
                 .withZoneSameInstant(UTC);
 
-        final List<Map<String, String>> statuses = List.of(
-                Map.of(STATUS_ATTRIBUTE, OUTBOUND_PLANNING.getStatus()),
-                Map.of(STATUS_ATTRIBUTE, PACKING.getStatus())
-        );
-
         final BacklogGateway backlogGateway = backlogGatewayProvider.getBy(input.getWorkflow())
                 .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()));
 
-        final List<ProcessBacklog> processBacklogs = backlogGateway.getBacklog(statuses,
-                input.getWarehouseId(), cptFrom, cptTo, false);
+        final List<ProcessBacklog> processBacklogs = new ArrayList<>();
+
+        final ProcessBacklog wavingBacklog = backlogGateway.getUnitBacklog(
+                new UnitProcessBacklogInput(OUTBOUND_PLANNING.getStatus(), input.getWarehouseId(),
+                        cptFrom, cptTo, null, input.getGroupType()));
+        final ProcessBacklog packingBacklog = backlogGateway.getUnitBacklog(
+                new UnitProcessBacklogInput(PACKING.getStatus(), input.getWarehouseId(),
+                        cptFrom, cptTo, null, input.getGroupType()));
+
+        processBacklogs.add(wavingBacklog);
+        processBacklogs.add(packingBacklog);
 
         final ProcessBacklog pickingBacklog = backlogGateway.getUnitBacklog(
                 new UnitProcessBacklogInput(PICKING.getStatus(), input.getWarehouseId(),
-                        cptFrom, cptTo, null, input.getGroupType(), false));
+                        cptFrom, cptTo, null, input.getGroupType()));
 
         if (warehouseHasWall) {
             final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, cptTo, null, input.getGroupType(), false));
+                            cptFrom, cptTo, null, input.getGroupType()));
 
             final ProcessBacklog packingWall = backlogGateway
                     .getUnitBacklog(
                             new UnitProcessBacklogInput(ProcessOutbound.PACKING_WALL.getStatus(),
                             input.getWarehouseId(), cptFrom, cptTo, "PW",
-                                    input.getGroupType(), false));
+                                    input.getGroupType()));
 
             recalculatePackingNoWallUnits(processBacklogs, packingWall);
             processBacklogs.addAll(Arrays.asList(pickingBacklog, wallInBacklog, packingWall));
@@ -165,7 +157,7 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
 
         return backlogGateway.getUnitBacklog(
                 new UnitProcessBacklogInput(OUTBOUND_PLANNING.getStatus(), input.getWarehouseId(),
-                        yesterday, tomorrow, null, input.getGroupType(), false));
+                        yesterday, tomorrow, null, input.getGroupType()));
 
     }
 
@@ -182,23 +174,6 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                         backlog.setQuantity(backlog.getQuantity());
                     }
                 });
-    }
-
-    private List<UnitsResume> getUnitsResumes(final GetCurrentStatusInput input,
-                                              final boolean havePutToWall) {
-        try {
-            final List<AnalyticsQueryEvent> queryEvents = havePutToWall
-                    ? asList(PACKING_WALL, AnalyticsQueryEvent.PICKING, PACKING_NO_WALL) :
-                    singletonList(AnalyticsQueryEvent.PICKING)
-                    ;
-            return analyticsClient.getUnitsInInterval(input.getWarehouseId(), HOURS_OFFSET,
-                    queryEvents);
-        } catch (Exception e) {
-            log.error(String
-                    .format("An error occurred while trying to invoke analytics service: %s",
-                            e.getMessage()));
-        }
-        return emptyList();
     }
 
     private void addProcessIfExist(final TreeSet<Process> processes,

@@ -24,6 +24,8 @@ import static org.springframework.http.HttpStatus.OK;
 public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
     private static final String BACKLOG_URL = "/backlogs/logistic_centers/%s/backlogs";
 
+    private static final String CURRENT_BACKLOG_URL = "/backlogs/logistic_centers/%s/backlogs/current";
+
     public BacklogApiClient(final MeliRestClient client) {
         super(client, RestPool.BACKLOG.name());
     }
@@ -42,11 +44,40 @@ public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
         );
     }
 
+    public List<Consolidation> getCurrentBacklog(final String logisticCenterId,
+                                                 final List<String> workflows,
+                                                 final List<String> steps,
+                                                 final Instant slaFrom,
+                                                 final Instant slaTo,
+                                                 final List<String> groupingFields) {
+
+        BacklogRequest request = BacklogRequest.builder()
+                .workflows(workflows)
+                .steps(steps)
+                .slaFrom(slaFrom)
+                .slaTo(slaTo)
+                .groupingFields(groupingFields)
+                .build();
+
+        final HttpRequest httpRequest = HttpRequest.builder()
+                .url(format(CURRENT_BACKLOG_URL, logisticCenterId))
+                .GET()
+                .queryParams(getQueryParams(request))
+                .acceptedHttpStatuses(Set.of(OK))
+                .build();
+
+        return send(httpRequest, response ->
+                response.getData(new TypeReference<>() {
+                })
+        );
+    }
+
     private Map<String, String> getQueryParams(BacklogRequest request) {
         Map<String, String> params = new HashMap<>();
         addAsQueryParam(params, "requestDate", request.getRequestDate());
         addAsQueryParam(params, "workflows", request.getWorkflows());
         addAsQueryParam(params, "processes", request.getProcesses());
+        addAsQueryParam(params, "steps", request.getSteps());
         addAsQueryParam(params, "group_by", request.getGroupingFields());
         addAsQueryParam(params, "date_from", request.getDateFrom());
         addAsQueryParam(params, "date_to", request.getDateTo());

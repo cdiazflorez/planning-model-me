@@ -56,8 +56,7 @@ public class ResponseUtils {
 
     public static List<Tab> createTabs() {
         return List.of(
-                new Tab("cpt", "Cumplimiento de CPTs"),
-                new Tab("backlog", "Backlogs"));
+                new Tab("cpt", "Cumplimiento de CPTs"));
     }
 
     public static List<Tab> createInboundTabs() {

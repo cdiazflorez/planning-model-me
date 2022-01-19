@@ -1,16 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
-import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
-import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
 
@@ -23,10 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
@@ -47,52 +40,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class ProjectBacklogTest {
 
-    @Mock
-    protected PlanningModelGateway planningModel;
-
     @InjectMocks
     private ProjectBacklog projectBacklog;
 
     @Mock
-    private BacklogGatewayProvider backlogGatewayProvider;
-
-    @Mock
-    private BacklogGateway backlogGateway;
+    protected PlanningModelGateway planningModel;
 
     @Test
     public void testExecuteOutbound() {
         // GIVEN
-        when(backlogGatewayProvider.getBy(FBM_WMS_OUTBOUND)).thenReturn(Optional.of(backlogGateway));
-
-        when(backlogGateway.getBacklog(
-                List.of(
-                        Map.of("status", "pending"),
-                        Map.of("status", "to_pick"),
-                        Map.of("status", "to_pack")
-                ),
-                WAREHOUSE_ID,
-                A_DATE,
-                A_DATE.plusHours(25),
-                true)
-        ).thenReturn(
-                new ArrayList<>(
-                        List.of(
-                                ProcessBacklog.builder()
-                                        .process("to_pack")
-                                        .quantity(1442)
-                                        .build()
-                        ))
-        );
-
-        when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput("to_pick",
-                WAREHOUSE_ID, A_DATE, A_DATE.plusHours(25), null, ORDER_GROUP_TYPE, false))
-        ).thenReturn(
-                ProcessBacklog.builder()
-                        .process(ProcessOutbound.PICKING.getStatus())
-                        .quantity(2232)
-                        .build()
-        );
-
         final ZonedDateTime firstDate = getNextHour(A_DATE);
 
         when(planningModel.getBacklogProjection(
@@ -131,6 +87,11 @@ public class ProjectBacklogTest {
                 .dateFrom(A_DATE)
                 .dateTo(A_DATE.plusHours(25))
                 .groupType(ORDER_GROUP_TYPE)
+                .currentBacklog(List.of(
+                        new Consolidation(null, Map.of("process", "waving"), 0),
+                        new Consolidation(null, Map.of("process", "picking"), 2232),
+                        new Consolidation(null, Map.of("process", "packing"), 1442)
+                ))
                 .build();
 
         // WHEN
