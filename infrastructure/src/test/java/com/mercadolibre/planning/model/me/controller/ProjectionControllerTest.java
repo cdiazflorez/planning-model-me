@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
@@ -15,6 +17,7 @@ import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjectionOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
@@ -45,6 +48,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
@@ -70,6 +74,9 @@ public class ProjectionControllerTest {
 
     @MockBean
     private GetSlaProjection getProjection;
+
+    @MockBean
+    private GetBacklogProjection getBacklogProjection;
 
     @MockBean
     private GetDeferralProjection getDeferralProjection;
@@ -194,6 +201,57 @@ public class ProjectionControllerTest {
         result.andExpect(status().isOk());
 
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void getBacklogProjectionOk() throws Exception {
+        // GIVEN
+        final String responseMock = getResourceAsString("get_backlog_projection_response.json");
+        final ObjectMapper mapper = new ObjectMapper();
+
+        when(getBacklogProjection.execute(any(BacklogProjectionInput.class))).thenReturn(
+                mapper.readValue(responseMock, BacklogProjection.class)
+        );
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/backlog")
+                .contentType(APPLICATION_JSON)
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .param("process_name", "waving", "picking", "packing")
+                .param("date_from", A_DATE.toString())
+                .param("date_to", A_DATE.plusHours(25).toString())
+        );
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(getResourceAsString(
+                "get_backlog_projection_response.json")));
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void getBacklogProjectionUserUnauthorized() throws Exception {
+        // GIVEN
+        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                .thenThrow(UserNotAuthorizedException.class);
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/backlog")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .param("process_name", "waving", "picking", "packing")
+                .param("date_from", A_DATE.toString())
+                .param("date_to", A_DATE.plusHours(25).toString())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isForbidden());
+        verifyNoInteractions(getBacklogProjection);
     }
 
     private ComplexTable mockComplexTable() {

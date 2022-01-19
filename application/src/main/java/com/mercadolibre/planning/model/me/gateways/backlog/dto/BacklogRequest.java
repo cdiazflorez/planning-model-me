@@ -13,9 +13,8 @@ import java.util.List;
 public class BacklogRequest {
     private Instant requestDate;
     private String warehouseId;
-    private List<String> workflows; 
+    private List<String> workflows;
     private List<String> processes;
-    private List<String> steps;
     private List<String> groupingFields;
     private Instant dateFrom;
     private Instant dateTo;

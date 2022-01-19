@@ -15,13 +15,13 @@ import javax.inject.Named;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static java.util.List.of;
 
 @Slf4j
 @Named
@@ -62,7 +62,6 @@ public class BacklogApiAdapter {
                 processes.stream()
                         .map(ProcessName::getName)
                         .collect(Collectors.toList()),
-                Collections.emptyList(),
                 groupings.stream().map(BacklogGrouper::getName).collect(Collectors.toList()),
                 dateFrom,
                 dateTo,
