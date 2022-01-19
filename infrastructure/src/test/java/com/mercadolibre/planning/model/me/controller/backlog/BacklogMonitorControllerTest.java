@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
@@ -59,7 +58,6 @@ class BacklogMonitorControllerTest {
 
     @MockBean
     private RequestClock requestClock;
-
 
     @Test
     void testGetMonitor() throws Exception {

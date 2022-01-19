@@ -85,7 +85,9 @@ public abstract class GetProjectionOutbound extends GetProjection {
     protected List<Backlog> getBacklog(final Workflow workflow,
                                        final String warehouseId,
                                        final Instant dateFromToProject,
-                                       final Instant dateToToProject) {
+                                       final Instant dateToToProject,
+                                       final ZoneId zoneId,
+                                       final Instant requestDate) {
 
         return getBacklogByDateOutbound.execute(
                 new GetBacklogByDateDto(

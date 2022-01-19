@@ -31,8 +31,12 @@ public class GetSlaProjectionInbound extends GetProjectionInbound {
     }
 
     @Override
-    protected List<ProjectionResult> getProjection(GetProjectionInputDto input, ZonedDateTime dateFrom,
-                                                   ZonedDateTime dateTo, List<Backlog> backlogs, String timeZone) {
+    protected List<ProjectionResult> getProjection(final GetProjectionInputDto input,
+                                                   final ZonedDateTime dateFrom,
+                                                   final ZonedDateTime dateTo,
+                                                   final List<Backlog> backlogs,
+                                                   final String timeZone) {
+
         List<ProjectionResult> projectionResults = planningModelGateway.runProjection(ProjectionRequest.builder()
                 .warehouseId(input.getWarehouseId())
                 .workflow(input.getWorkflow())

@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -22,4 +23,6 @@ public class GetProjectionInputDto {
     private long userId;
 
     private ZonedDateTime date;
+
+    private Instant requestDate;
 }

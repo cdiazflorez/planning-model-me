@@ -46,6 +46,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.TOOLTIP_DATE_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
@@ -53,6 +54,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
@@ -61,8 +63,7 @@ public class GetSlaProjectionOutboundTest {
 
     private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static final TimeZone TIME_ZONE =
-            TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
+    private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
     private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
     private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
     private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
@@ -183,7 +184,7 @@ public class GetSlaProjectionOutboundTest {
         // Then
         assertEquals("Proyecciones", projection.getTitle());
         assertEquals(2, projection.getTabs().size());
-        assertEquals(null, projection.getData());
+        assertNull(projection.getData());
     }
 
     private void assertSimpleTable(final SimpleTable simpleTable,
@@ -235,7 +236,7 @@ public class GetSlaProjectionOutboundTest {
                 chartData1.getTooltip(),
                 cpt1.format(HOUR_MINUTES_FORMATTER),
                 "-",
-                projectedEndDate1.format(HOUR_MINUTES_FORMATTER),
+                projectedEndDate1.format(TOOLTIP_DATE_FORMATTER),
                 "45 minutos",
                 null);
 
@@ -250,7 +251,7 @@ public class GetSlaProjectionOutboundTest {
                 chartData2.getTooltip(),
                 cpt2.format(HOUR_MINUTES_FORMATTER),
                 "-",
-                projectedEndDate2.format(HOUR_MINUTES_FORMATTER),
+                projectedEndDate2.format(TOOLTIP_DATE_FORMATTER),
                 "4 horas",
                 null);
 
@@ -265,7 +266,7 @@ public class GetSlaProjectionOutboundTest {
                 chartData3.getTooltip(),
                 cpt3.format(HOUR_MINUTES_FORMATTER),
                 "100",
-                projectedEndDate3.format(HOUR_MINUTES_FORMATTER),
+                projectedEndDate3.format(TOOLTIP_DATE_FORMATTER),
                 "4 horas",
                 null);
 
@@ -280,7 +281,7 @@ public class GetSlaProjectionOutboundTest {
                 chartData4.getTooltip(),
                 cpt4.format(HOUR_MINUTES_FORMATTER),
                 "180",
-                projectedEndDate4.format(HOUR_MINUTES_FORMATTER),
+                projectedEndDate4.format(TOOLTIP_DATE_FORMATTER),
                 "4 horas y 10 minutos",
                 null);
 

@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.entities.projection.chart;
 import lombok.Builder;
 import lombok.Value;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -16,6 +17,7 @@ public class ChartData {
 
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
+    private static final DateTimeFormatter DATE_ONLY_FORMATTER = ofPattern("dd/MM");
 
     private String title;
     private String cpt;
@@ -33,8 +35,12 @@ public class ChartData {
                                            final boolean isDeferred,
                                            final boolean isExpired) {
 
+        final String title = cpt.toInstant().isAfter(Instant.now())
+                ? cpt.format(DATE_SHORT_FORMATTER)
+                : cpt.format(DATE_ONLY_FORMATTER);
+
         return ChartData.builder()
-                .title(cpt.format(DATE_SHORT_FORMATTER))
+                .title(title)
                 .cpt(cpt.format(DATE_FORMATTER))
                 .projectedEndTime(projectEndDate(projectedEndDate, dateTo))
                 .processingTime(processingTime)
@@ -55,8 +61,12 @@ public class ChartData {
                                  final boolean isDeferred,
                                  final boolean isExpired) {
 
+        final String title = isExpired
+                ? cpt.format(DATE_ONLY_FORMATTER)
+                : cpt.format(DATE_SHORT_FORMATTER);
+
         return ChartData.builder()
-                .title(cpt.format(DATE_SHORT_FORMATTER))
+                .title(title)
                 .cpt(cpt.format(DATE_FORMATTER))
                 .projectedEndTime(projectEndDate(projectedEndDate, dateTo))
                 .processingTime(processingTime)

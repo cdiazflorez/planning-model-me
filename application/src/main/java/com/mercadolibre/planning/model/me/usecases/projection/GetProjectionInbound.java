@@ -21,8 +21,8 @@ import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggest
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,18 +31,15 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZo
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createInboundTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
-import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.stream.Collectors.toList;
 
 public abstract class GetProjectionInbound extends GetProjection {
 
-    private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+    protected static final List<ProcessName> PROCESS_NAMES_INBOUND = List.of(PUT_AWAY);
 
     private static final long DAYS_TO_SHOW_LOOKBACK = 7L;
 
     final GetBacklogByDateInbound getBacklogByDateInbound;
-
-    protected static final List<ProcessName> PROCESS_NAMES_INBOUND = List.of(PUT_AWAY);
 
     protected GetProjectionInbound(final PlanningModelGateway planningModelGateway,
                                    final LogisticCenterGateway logisticCenterGateway,
@@ -55,17 +52,49 @@ public abstract class GetProjectionInbound extends GetProjection {
         this.getBacklogByDateInbound = getBacklogByDateInbound;
     }
 
+    private static List<Backlog> summarizeOverdueBacklogOf(final List<Backlog> backlogs,
+                                                           final ZoneId zoneId,
+                                                           final Instant now) {
+        return backlogs.stream()
+                .filter(backlog -> backlog.getDate().toInstant().isAfter(now) || backlog.getQuantity() > 0)
+                .collect(Collectors.toMap(
+                        backlog -> {
+                            final ZonedDateTime date = backlog.getDate();
+                            if (date.toInstant().isAfter(now)) {
+                                return date;
+                            } else {
+                                final ZonedDateTime truncatedDate = convertToTimeZone(zoneId, date)
+                                        .truncatedTo(ChronoUnit.DAYS);
+
+                                return convertToTimeZone(ZoneId.of("Z"), truncatedDate);
+                            }
+                        },
+                        Backlog::getQuantity,
+                        Integer::sum
+                ))
+                .entrySet()
+                .stream()
+                .map(entry -> new Backlog(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparing(Backlog::getDate))
+                .collect(toList());
+    }
 
     @Override
-    protected List<Backlog> getBacklog(Workflow workflow, String warehouseId, Instant dateFromToProject,
-                                       Instant dateToToProject) {
+    protected List<Backlog> getBacklog(final Workflow workflow,
+                                       final String warehouseId,
+                                       final Instant dateFromToProject,
+                                       final Instant dateToToProject,
+                                       final ZoneId zoneId,
+                                       final Instant requestDate) {
 
-        return getBacklogByDateInbound.execute(
+        final List<Backlog> backlogs = getBacklogByDateInbound.execute(
                 new GetBacklogByDateDto(
                         workflow,
                         warehouseId,
                         dateFromToProject,
                         dateToToProject));
+
+        return summarizeOverdueBacklogOf(backlogs, zoneId, requestDate);
     }
 
     @Override
@@ -75,29 +104,6 @@ public abstract class GetProjectionInbound extends GetProjection {
                                              final GetProjectionInputDto input,
                                              final List<ProjectionResult> projectionsToShow,
                                              final List<Backlog> backlogsToShow) {
-
-        List<ChartData> originalChartData = toChartData(projectionsToShow, config.getZoneId(),
-                dateToToShow);
-
-        List<ChartData> updatedChartData = originalChartData.stream()
-                .map(originalChart -> {
-                    if (originalChart.getIsExpired()) {
-                        return ChartData.builder()
-                                .title(originalChart.getTitle())
-                                .cpt(convertToTimeZone(
-                                        config.getZoneId(),
-                                        ZonedDateTime.now().truncatedTo(ChronoUnit.HOURS)).format(DATE_FORMATTER))
-                                .projectedEndTime(originalChart.getProjectedEndTime())
-                                .processingTime(originalChart.getProcessingTime())
-                                .tooltip(originalChart.getTooltip())
-                                .isDeferred(originalChart.getIsDeferred())
-                                .isExpired(originalChart.getIsExpired())
-                                .build();
-                    }
-
-                    return originalChart;
-                }).collect(Collectors.toList());
-
 
         return new Projection(
                 "Proyecciones", getDateSelector(dateFromToShow, SELECTOR_DAYS_TO_SHOW),
@@ -114,7 +120,8 @@ public abstract class GetProjectionInbound extends GetProjection {
                                 .backlogs(backlogsToShow)
                                 .showDeviation(true)
                                 .build()),
-                        new Chart(updatedChartData)),
+                        new Chart(toChartData(projectionsToShow, config.getZoneId(), dateToToShow))
+                ),
                 createInboundTabs(),
                 simulationMode);
     }
@@ -144,6 +151,7 @@ public abstract class GetProjectionInbound extends GetProjection {
                 .collect(toList());
     }
 
+    @Override
     protected long getDatesToShowLookback() {
         return DAYS_TO_SHOW_LOOKBACK;
     }

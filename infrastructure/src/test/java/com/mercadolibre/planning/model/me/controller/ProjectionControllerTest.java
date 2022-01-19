@@ -19,7 +19,6 @@ import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeU
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjectionOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
@@ -32,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -84,9 +84,16 @@ public class ProjectionControllerTest {
     @MockBean
     private DatadogMetricService datadogMetricService;
 
+    @MockBean
+    private RequestClock requestClock;
+
     @Test
     void getCptProjectionOk() throws Exception {
         // GIVEN
+        final Instant now = Instant.now();
+
+        when(requestClock.now()).thenReturn(now);
+
         when(getProjection.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection(
                         "Test",
@@ -115,6 +122,7 @@ public class ProjectionControllerTest {
         verify(getProjection).execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
+                .requestDate(now)
                 .build()
         );
 

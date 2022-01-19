@@ -48,6 +48,8 @@ public class ProjectionController {
     private final GetBacklogProjection getBacklogProjection;
     private final GetDeferralProjection getDeferralProjection;
     private final DatadogMetricService datadogMetricService;
+    private final RequestClock requestClock;
+
     private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
             Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_PROJECTION),
             Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_PROJECTION));
@@ -69,6 +71,7 @@ public class ProjectionController {
                 .workflow(workflow)
                 .warehouseId(warehouseId)
                 .date(date)
+                .requestDate(requestClock.now())
                 .build()))
         );
     }

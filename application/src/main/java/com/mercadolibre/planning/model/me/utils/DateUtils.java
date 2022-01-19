@@ -22,17 +22,17 @@ import static java.time.temporal.WeekFields.SUNDAY_START;
 
 public class DateUtils {
 
-    public static final DateTimeFormatter FORMATTER_ID = ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM");
+
+    public static final DateTimeFormatter HOUR_MINUTES_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+
+    public static final DateTimeFormatter DATE_HOUR_MINUTES_FORMATTER = DateTimeFormatter.ofPattern("HH:mm - dd/MM");
 
     public static final DateTimeFormatter FORMATTER_NAME = ofPattern("dd/MM/yyyy");
 
+    public static final DateTimeFormatter FORMATTER_ID = ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
     private DateUtils() { }
-
-    public static final DateTimeFormatter HOUR_MINUTES_FORMATTER =
-            DateTimeFormatter.ofPattern("HH:mm");
-
-    public static final DateTimeFormatter DATE_HOUR_MINUTES_FORMATTER =
-            DateTimeFormatter.ofPattern("HH:mm - dd/MM");
 
     public static ZonedDateTime getCurrentUtcDate() {
         return ZonedDateTime.now(UTC).withMinute(0).withSecond(0).withNano(0);
