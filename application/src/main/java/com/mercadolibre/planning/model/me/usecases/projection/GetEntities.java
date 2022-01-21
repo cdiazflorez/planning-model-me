@@ -63,7 +63,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
 
     private static final Map<Workflow, List<ProcessName>> processesByWorkflow = Map.of(
             Workflow.FBM_WMS_OUTBOUND, List.of(PICKING, PACKING, PACKING_WALL),
-            Workflow.FBM_WMS_INBOUND, List.of(PUT_AWAY)
+            Workflow.FBM_WMS_INBOUND, List.of(PUT_AWAY, CHECK_IN)
     );
 
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");

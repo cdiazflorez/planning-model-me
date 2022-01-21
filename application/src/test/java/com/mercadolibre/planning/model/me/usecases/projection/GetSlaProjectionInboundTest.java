@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.DATE_FORMATTER;
@@ -151,7 +152,7 @@ public class GetSlaProjectionInboundTest {
                                                              final ZonedDateTime dateFrom,
                                                              final ZonedDateTime dateTo) {
         return ProjectionRequest.builder()
-                .processName(List.of(PUT_AWAY))
+                .processName(List.of(CHECK_IN, PUT_AWAY))
                 .workflow(FBM_WMS_INBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .dateFrom(dateFrom)

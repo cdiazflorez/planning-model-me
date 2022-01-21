@@ -19,18 +19,20 @@ import com.mercadolibre.planning.model.me.utils.ResponseUtils;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static java.util.stream.Collectors.toList;
 
 public abstract class GetProjectionInbound extends GetProjection {
 
-    protected static final List<ProcessName> PROCESS_NAMES_INBOUND = List.of(PUT_AWAY);
+    protected static final List<ProcessName> PROCESS_NAMES_INBOUND = List.of(CHECK_IN, PUT_AWAY);
 
     private static final long DAYS_TO_SHOW_LOOKBACK = 7L;
 
