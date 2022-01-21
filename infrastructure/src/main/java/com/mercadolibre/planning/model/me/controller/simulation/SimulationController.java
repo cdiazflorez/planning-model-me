@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.simulation;
 
+import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimulationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.SaveSimulationRequest;
@@ -45,6 +46,8 @@ public class SimulationController {
     private final SaveSimulation saveSimulation;
     private final AuthorizeUser authorizeUser;
     private final DatadogMetricService datadogMetricService;
+    private final RequestClock requestClock;
+
     private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
             Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_SIMULATION),
             Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_SIMULATION));
@@ -65,6 +68,7 @@ public class SimulationController {
                 .userId(callerId)
                 .warehouseId(request.getWarehouseId())
                 .simulations(fromRequest(request.getSimulations()))
+                .requestDate(requestClock.now())
                 .build()))
         );
     }
@@ -85,6 +89,7 @@ public class SimulationController {
                 .warehouseId(request.getWarehouseId())
                 .userId(callerId)
                 .simulations(fromRequest(request.getSimulations()))
+                .requestDate(requestClock.now())
                 .build())));
     }
 

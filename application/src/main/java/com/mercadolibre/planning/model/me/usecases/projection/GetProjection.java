@@ -31,10 +31,10 @@ import static java.util.stream.Collectors.toList;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
 
-    private static final long DAYS_TO_SHOW_LOOKBACK = 0L;
     protected static final int PROJECTION_DAYS = 4;
     protected static final int PROJECTION_DAYS_TO_SHOW = 1;
     protected static final int SELECTOR_DAYS_TO_SHOW = 3;
+    private static final long DAYS_TO_SHOW_LOOKBACK = 0L;
 
     protected final PlanningModelGateway planningModelGateway;
     protected final LogisticCenterGateway logisticCenterGateway;
@@ -56,18 +56,19 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 ? dateFromToProject.atZone(UTC).plusDays(PROJECTION_DAYS_TO_SHOW)
                 : dateFromToShow.plusDays(PROJECTION_DAYS_TO_SHOW);
 
-        // Obtains the pending backlog
-        final List<Backlog> backlogsToProject =
-                getBacklog(input.getWorkflow(),
-                        input.getWarehouseId(),
-                        dateFromToProject,
-                        dateToToProject);
-
-        final List<Backlog> backlogsToShow =
-                filterBacklogsInRange(dateFromToShow, dateToToShow, backlogsToProject);
-
         final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                 input.getWarehouseId());
+
+        // Obtains the pending backlog
+        final List<Backlog> backlogsToProject = getBacklog(
+                input.getWorkflow(),
+                input.getWarehouseId(),
+                dateFromToProject,
+                dateToToProject,
+                config.getZoneId(),
+                input.getRequestDate());
+
+        final List<Backlog> backlogsToShow = filterBacklogsInRange(dateFromToShow, dateToToShow, backlogsToProject);
 
         try {
             List<ProjectionResult> projectionsSlaAux = getProjection(
@@ -135,7 +136,9 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     protected abstract List<Backlog> getBacklog(final Workflow workflow,
                                                 final String warehouseId,
                                                 final Instant dateFromToProject,
-                                                final Instant dateToToProject);
+                                                final Instant dateToToProject,
+                                                final ZoneId zoneId,
+                                                final Instant requestDate);
 
     protected abstract Projection getProjectionReturn(final ZonedDateTime dateFromToShow,
                                                       final ZonedDateTime dateToToShow,

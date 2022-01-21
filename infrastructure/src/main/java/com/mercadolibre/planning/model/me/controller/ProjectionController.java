@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.controller;
 
 import com.mercadolibre.planning.model.me.controller.editor.ProcessNameEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
+import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
@@ -9,9 +10,11 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.newrelic.api.agent.Trace;
 import lombok.AllArgsConstructor;
@@ -42,8 +45,11 @@ public class ProjectionController {
 
     private final AuthorizeUser authorizeUser;
     private final GetSlaProjection getSlaProjection;
+    private final GetBacklogProjection getBacklogProjection;
     private final GetDeferralProjection getDeferralProjection;
     private final DatadogMetricService datadogMetricService;
+    private final RequestClock requestClock;
+
     private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
             Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_PROJECTION),
             Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_PROJECTION));
@@ -65,6 +71,7 @@ public class ProjectionController {
                 .workflow(workflow)
                 .warehouseId(warehouseId)
                 .date(date)
+                .requestDate(requestClock.now())
                 .build()))
         );
     }
@@ -90,6 +97,23 @@ public class ProjectionController {
                 null,
                 cap5ToPack)))
         );
+    }
+
+    @Trace
+    @GetMapping("/projections/backlog")
+    public ResponseEntity<BacklogProjection> getBacklogProjection(
+            @PathVariable final Workflow workflow,
+            @RequestParam("caller.id") @NotNull final Long callerId,
+            final GetBacklogProjectionRequest request) {
+
+        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
+
+        datadogMetricService.trackProjection(request.getWarehouseId(),
+                workflow,
+                "Backlog");
+
+        final BacklogProjectionInput input = request.getBacklogProjectionInput(workflow, callerId);
+        return ResponseEntity.of(of(getBacklogProjection.execute(input)));
     }
 
     @InitBinder

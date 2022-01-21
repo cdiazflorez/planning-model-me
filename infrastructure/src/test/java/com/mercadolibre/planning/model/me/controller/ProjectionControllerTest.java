@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mercadolibre.planning.model.me.entities.projection.BacklogProjection;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
@@ -15,8 +17,8 @@ import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import com.mercadolibre.planning.model.me.usecases.projection.GetBacklogProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjectionOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
@@ -29,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +48,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
@@ -72,14 +76,24 @@ public class ProjectionControllerTest {
     private GetSlaProjection getProjection;
 
     @MockBean
+    private GetBacklogProjection getBacklogProjection;
+
+    @MockBean
     private GetDeferralProjection getDeferralProjection;
 
     @MockBean
     private DatadogMetricService datadogMetricService;
 
+    @MockBean
+    private RequestClock requestClock;
+
     @Test
     void getCptProjectionOk() throws Exception {
         // GIVEN
+        final Instant now = Instant.now();
+
+        when(requestClock.now()).thenReturn(now);
+
         when(getProjection.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection(
                         "Test",
@@ -108,6 +122,7 @@ public class ProjectionControllerTest {
         verify(getProjection).execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
+                .requestDate(now)
                 .build()
         );
 
@@ -194,6 +209,57 @@ public class ProjectionControllerTest {
         result.andExpect(status().isOk());
 
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void getBacklogProjectionOk() throws Exception {
+        // GIVEN
+        final String responseMock = getResourceAsString("get_backlog_projection_response.json");
+        final ObjectMapper mapper = new ObjectMapper();
+
+        when(getBacklogProjection.execute(any(BacklogProjectionInput.class))).thenReturn(
+                mapper.readValue(responseMock, BacklogProjection.class)
+        );
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/backlog")
+                .contentType(APPLICATION_JSON)
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .param("process_name", "waving", "picking", "packing")
+                .param("date_from", A_DATE.toString())
+                .param("date_to", A_DATE.plusHours(25).toString())
+        );
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(getResourceAsString(
+                "get_backlog_projection_response.json")));
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void getBacklogProjectionUserUnauthorized() throws Exception {
+        // GIVEN
+        when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                .thenThrow(UserNotAuthorizedException.class);
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/backlog")
+                .param("warehouse_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+                .param("process_name", "waving", "picking", "packing")
+                .param("date_from", A_DATE.toString())
+                .param("date_to", A_DATE.plusHours(25).toString())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        result.andExpect(status().isForbidden());
+        verifyNoInteractions(getBacklogProjection);
     }
 
     private ComplexTable mockComplexTable() {

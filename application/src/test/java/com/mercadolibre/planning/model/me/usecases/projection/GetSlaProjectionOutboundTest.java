@@ -10,14 +10,14 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateOutbound;
+import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
@@ -34,7 +34,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -47,11 +46,11 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.TOOLTIP_DATE_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static java.time.ZonedDateTime.now;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -64,8 +63,7 @@ public class GetSlaProjectionOutboundTest {
 
     private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static final TimeZone TIME_ZONE =
-            TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
+    private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
     private static final ZonedDateTime CPT_1 = getCurrentUtcDate().plusHours(4);
     private static final ZonedDateTime CPT_2 = getCurrentUtcDate().plusHours(5);
     private static final ZonedDateTime CPT_3 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
@@ -91,40 +89,44 @@ public class GetSlaProjectionOutboundTest {
     private GetProjectionSummary getProjectionSummary;
 
     @Mock
-    private GetSimpleDeferralProjection getSimpleDeferralProjection;
+    private GetBacklogByDateOutbound getBacklogOutbound;
 
     @Mock
-    private BacklogApiGateway backlogGateway;
+    private GetSimpleDeferralProjection getSimpleDeferralProjection;
 
     @Test
     void testOutboundExecute() {
         // Given
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
+        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
+        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(4);
 
         final GetProjectionInputDto input = GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
-                .date(currentUtcDateTime)
+                .date(utcDateTimeFrom)
                 .build();
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
         final List<Backlog> mockedBacklog = mockBacklog();
+        when(getBacklogOutbound.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
+                utcDateTimeFrom.toInstant(), utcDateTimeTo.toInstant())))
+                .thenReturn(mockedBacklog);
 
         when(planningModelGateway.runProjection(
-                createProjectionRequestOutbound(mockedBacklog, currentUtcDateTime, utcDateTimeTo)))
-                .thenReturn(mockProjections(currentUtcDateTime));
+                createProjectionRequestOutbound(mockedBacklog, utcDateTimeFrom, utcDateTimeTo)))
+                .thenReturn(mockProjections(utcDateTimeFrom));
 
         when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
                         .warehouseId(WAREHOUSE_ID)
                         .workflow(FBM_WMS_OUTBOUND)
                         .zoneId(TIME_ZONE.toZoneId())
-                        .date(currentUtcDateTime)
+                        .date(utcDateTimeFrom)
                         .build()
                 )
-        )).thenReturn(mockSuggestedWaves(currentUtcDateTime, utcDateTimeTo));
+        )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
 
         when(getEntities.execute(input)).thenReturn(mockComplexTable());
         when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
@@ -136,22 +138,8 @@ public class GetSlaProjectionOutboundTest {
                 mockBacklog(),
                 false)))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
-                        mockProjectionsDeferral(currentUtcDateTime),
-                        new LogisticCenterConfiguration(TIME_ZONE)));
-
-        when(backlogGateway.getCurrentBacklog(
-                WAREHOUSE_ID,
-                List.of("outbound-orders"),
-                List.of("pending"),
-                now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-                now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
-                List.of("date_out"))
-        ).thenReturn(List.of(
-                new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150),
-                new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235),
-                new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300),
-                new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120)
-        ));
+                        mockProjectionsDeferral(utcDateTimeFrom),
+                new LogisticCenterConfiguration(TIME_ZONE)));
 
         // When
         final Projection projection = getSlaProjectionOutbound.execute(input);
@@ -159,7 +147,7 @@ public class GetSlaProjectionOutboundTest {
         // Then
         assertEquals("Proyecciones", projection.getTitle());
 
-        assertSimpleTable(projection.getData().getSimpleTable1(), currentUtcDateTime, utcDateTimeTo);
+        assertSimpleTable(projection.getData().getSimpleTable1(), utcDateTimeFrom, utcDateTimeTo);
         assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
         assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
         assertChart(projection.getData().getChart());
@@ -182,31 +170,20 @@ public class GetSlaProjectionOutboundTest {
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
         final List<Backlog> mockedBacklog = mockBacklog();
+        when(getBacklogOutbound.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
+                utcDateTimeFrom.toInstant(), utcDateTimeTo.toInstant())))
+                .thenReturn(mockedBacklog);
 
         when(planningModelGateway.runProjection(
                 createProjectionRequestOutbound(mockedBacklog, utcDateTimeFrom, utcDateTimeTo)))
                 .thenThrow(RuntimeException.class);
-
-        when(backlogGateway.getCurrentBacklog(
-                WAREHOUSE_ID,
-                List.of("outbound-orders"),
-                List.of("pending"),
-                now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-                now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
-                List.of("date_out"))
-        ).thenReturn(List.of(
-                new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150),
-                new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235),
-                new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300),
-                new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120)
-        ));
 
         // When
         final Projection projection = getSlaProjectionOutbound.execute(input);
 
         // Then
         assertEquals("Proyecciones", projection.getTitle());
-        assertEquals(1, projection.getTabs().size());
+        assertEquals(2, projection.getTabs().size());
         assertNull(projection.getData());
     }
 
@@ -224,7 +201,8 @@ public class GetSlaProjectionOutboundTest {
         assertEquals(MULTI_BATCH_DISTRIBUTION.getTitle(), column1Multi.get("subtitle"));
 
         assertEquals("100 uds.", data.get(1).get("column_2"));
-        final Map<String, Object> column1MultiBatch = (Map<String, Object>) data.get(2).get("column_1");
+        final Map<String, Object> column1MultiBatch = (Map<String, Object>) data.get(2).get(
+                "column_1");
         assertEquals(MULTI_ORDER_DISTRIBUTION.getTitle(), column1MultiBatch.get("subtitle"));
 
         final String title = simpleTable.getColumns().get(0).getTitle();
@@ -258,7 +236,7 @@ public class GetSlaProjectionOutboundTest {
                 chartData1.getTooltip(),
                 cpt1.format(HOUR_MINUTES_FORMATTER),
                 "-",
-                projectedEndDate1.format(HOUR_MINUTES_FORMATTER),
+                projectedEndDate1.format(TOOLTIP_DATE_FORMATTER),
                 "45 minutos",
                 null);
 
@@ -273,7 +251,7 @@ public class GetSlaProjectionOutboundTest {
                 chartData2.getTooltip(),
                 cpt2.format(HOUR_MINUTES_FORMATTER),
                 "-",
-                projectedEndDate2.format(HOUR_MINUTES_FORMATTER),
+                projectedEndDate2.format(TOOLTIP_DATE_FORMATTER),
                 "4 horas",
                 null);
 
@@ -288,7 +266,7 @@ public class GetSlaProjectionOutboundTest {
                 chartData3.getTooltip(),
                 cpt3.format(HOUR_MINUTES_FORMATTER),
                 "100",
-                projectedEndDate3.format(HOUR_MINUTES_FORMATTER),
+                projectedEndDate3.format(TOOLTIP_DATE_FORMATTER),
                 "4 horas",
                 null);
 
@@ -303,7 +281,7 @@ public class GetSlaProjectionOutboundTest {
                 chartData4.getTooltip(),
                 cpt4.format(HOUR_MINUTES_FORMATTER),
                 "180",
-                projectedEndDate4.format(HOUR_MINUTES_FORMATTER),
+                projectedEndDate4.format(TOOLTIP_DATE_FORMATTER),
                 "4 horas y 10 minutos",
                 null);
 
@@ -341,8 +319,8 @@ public class GetSlaProjectionOutboundTest {
     }
 
     private ProjectionRequest createProjectionRequestOutbound(final List<Backlog> backlogs,
-                                                              final ZonedDateTime dateFrom,
-                                                              final ZonedDateTime dateTo) {
+                                                      final ZonedDateTime dateFrom,
+                                                      final ZonedDateTime dateTo) {
         return ProjectionRequest.builder()
                 .processName(List.of(PICKING, PACKING, PACKING_WALL))
                 .workflow(FBM_WMS_OUTBOUND)

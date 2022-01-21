@@ -8,14 +8,17 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.*;
-import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
+import com.mercadolibre.planning.model.me.utils.TestLogisticCenterMapper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -27,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
@@ -57,27 +59,35 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
     private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "planning",
             "to_pick", "picking", "sorting", "to_group", "grouping", "grouped", "to_pack");
 
+    private static final List<String> CAP5_RTW_STATUSES = List.of("pending");
+
     private final PlanningModelGateway planningModelGateway;
 
     private final GetProjectionSummary getProjectionSummary;
 
     private final GetSimpleDeferralProjection getSimpleDeferralProjection;
 
-    private final BacklogApiGateway backlogGateway;
+    private final BacklogGateway backlogGateway;
 
     @Override
     public Projection execute(final GetProjectionInput input) {
 
         try {
             final ZonedDateTime dateFromToProject = getCurrentUtcDate();
-            final ZonedDateTime dateToToProject = dateFromToProject.plusDays(DEFERRAL_DAYS_TO_PROJECT);
-            final ZonedDateTime dateFromToShow = input.getDate() == null ? dateFromToProject : input.getDate();
+            final ZonedDateTime dateToToProject = dateFromToProject
+                    .plusDays(DEFERRAL_DAYS_TO_PROJECT);
+
+            final ZonedDateTime dateFromToShow = input.getDate() == null
+                    ? dateFromToProject : input.getDate();
+
             final ZonedDateTime dateToToShow = dateFromToShow.plusDays(DEFERRAL_DAYS_TO_SHOW);
 
-            final List<Backlog> backlogsToProject = getBacklog(
+            final List<Backlog> backlogsToProject = backlogGateway.getBacklog(
                     input.getLogisticCenterId(),
                     dateFromToProject,
-                    dateToToProject);
+                    dateToToProject,
+                    CAP5_TO_PACK_STATUSES,
+                    List.of("etd"));
 
             final GetSimpleDeferralProjectionOutput deferralBaseOutput =
                     getSimpleDeferralProjection.execute(
@@ -189,7 +199,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
         final  List<MagnitudePhoto> throughput = planningModelGateway.getTrajectories(
                 TrajectoriesRequest.builder()
-                        .warehouseId(input.getLogisticCenterId())
+                        .warehouseId(getCap5LogisticCenterId(input))
                         .workflow(input.getWorkflow())
                         .entityType(HEADCOUNT)
                         .dateFrom(dateFrom)
@@ -233,25 +243,12 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                 .collect(toList());
     }
 
-    private List<Backlog> getBacklog(final String logisticCenterId,
-                                     final ZonedDateTime dateFrom,
-                                     final ZonedDateTime dateTo) {
+    // This method is only for test in MLM and should be deleted in the future
+    public static String getCap5LogisticCenterId(final GetProjectionInput input) {
+        final String logisticCenterId = input.getLogisticCenterId();
 
-        final String groupingKey = BacklogGrouper.DATE_OUT.getName();
-
-        var backlogBySla = backlogGateway.getCurrentBacklog(
-                logisticCenterId,
-                List.of("outbound-orders"),
-                CAP5_TO_PACK_STATUSES,
-                dateFrom.toInstant(),
-                dateTo.toInstant(),
-                List.of(groupingKey));
-
-        return backlogBySla.stream()
-                .map(backlog -> new Backlog(
-                        ZonedDateTime.parse(backlog.getKeys().get(groupingKey)),
-                        backlog.getTotal()))
-                .collect(Collectors.toList());
+        return input.isWantToSimulate21()
+                ? TestLogisticCenterMapper.toFakeLogisticCenter(logisticCenterId)
+                : logisticCenterId;
     }
-
 }

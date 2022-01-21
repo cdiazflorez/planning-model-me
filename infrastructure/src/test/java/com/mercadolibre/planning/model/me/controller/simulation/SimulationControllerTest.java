@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.simulation;
 
+import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
@@ -28,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -74,9 +76,15 @@ public class SimulationControllerTest {
     @MockBean
     private DatadogMetricService datadogMetricService;
 
+    @MockBean
+    private RequestClock requestClock;
+
     @Test
     void testRunSimulation() throws Exception {
         // GIVEN
+
+        when(requestClock.now()).thenReturn(Instant.now());
+
         when(runSimulation.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection("Test",
                         null,
@@ -130,6 +138,8 @@ public class SimulationControllerTest {
     @Test
     void testSaveSimulation() throws Exception {
         // GIVEN
+        when(requestClock.now()).thenReturn(Instant.now());
+
         when(saveSimulation.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection("Test",
                         null,

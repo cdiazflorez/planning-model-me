@@ -57,7 +57,7 @@ public class GetSimpleDeferralProjection implements
 
         final List<ProjectionResult> projection = planningModelGateway.runDeferralProjection(
                 ProjectionRequest.builder()
-                        .warehouseId(input.getLogisticCenterId())
+                        .warehouseId(GetDeferralProjection.getCap5LogisticCenterId(input))
                         .workflow(input.getWorkflow())
                         .processName(PROCESS_NAMES)
                         .dateFrom(dateFrom)

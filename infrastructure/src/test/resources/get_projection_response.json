@@ -29,6 +29,10 @@
         {
             "type": "cpt",
             "title": "Cumplimiento de CPTs"
+        },
+        {
+            "type": "backlog",
+            "title": "Backlogs"
         }
     ],
     "data": {

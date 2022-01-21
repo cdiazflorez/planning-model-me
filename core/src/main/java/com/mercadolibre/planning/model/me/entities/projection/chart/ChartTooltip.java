@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -15,6 +16,14 @@ import static java.time.format.DateTimeFormatter.ofPattern;
 public class ChartTooltip {
 
     private static final DateTimeFormatter HOUR_FORMAT = ofPattern("HH:mm");
+
+    private static final DateTimeFormatter DATE_FORMAT = ofPattern("dd/MM");
+
+    private static final DateTimeFormatter DATE_HOUR_FORMAT = ofPattern("dd/MM - HH:mm");
+
+    private static final String OVERDUE_TAG = " - Vencidos";
+
+    private static final String UNITS_TAG = " uds.";
 
     @JsonProperty("title_1")
     private String title1;
@@ -51,7 +60,7 @@ public class ChartTooltip {
                                                   final boolean isDeferred) {
         final String subtitle2 = remainingQuantity == 0 ? "-" : String.valueOf(remainingQuantity);
         final String subtitle3 = projectedEndDate == null
-                ? "Excede las 24hs" : projectedEndDate.format(HOUR_FORMAT);
+                ? "Excede las 24hs" : projectedEndDate.format(DATE_HOUR_FORMAT);
 
         ChartTooltipBuilder chartTooltipBuilder = ChartTooltip.builder()
                 .title1("CPT:")
@@ -74,13 +83,21 @@ public class ChartTooltip {
                                                          final ZonedDateTime projectedEndDate,
                                                          final int remainingQuantity) {
 
-        final String subtitle2 = remainingQuantity == 0 ? "-" : String.valueOf(remainingQuantity);
+        final String subtitle2 = remainingQuantity == 0
+                ? "-"
+                : String.valueOf(remainingQuantity) + UNITS_TAG;
+
+
         final String subtitle3 = projectedEndDate == null
-                ? "Excede las 24hs" : projectedEndDate.format(HOUR_FORMAT);
+                ? "Excede las 24hs" : projectedEndDate.format(DATE_HOUR_FORMAT);
+
+        final String title = sla.toInstant().isAfter(Instant.now())
+                ? sla.format(HOUR_FORMAT)
+                : sla.format(DATE_FORMAT) + OVERDUE_TAG;
 
         ChartTooltipBuilder chartTooltipBuilder = ChartTooltip.builder()
                 .title1("SLA:")
-                .subtitle1(sla.format(HOUR_FORMAT))
+                .subtitle1(title)
                 .title2("Desviación:")
                 .subtitle2(subtitle2)
                 .title3("Cierre proyectado:")

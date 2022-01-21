@@ -110,35 +110,6 @@ class BacklogApiClientTest extends BaseClientTest {
     }
 
     @Test
-    void testGetCurrentBacklogOK() throws JSONException {
-        // GIVEN
-        mockSuccessfulResponse("/current");
-
-        // WHEN
-        final List<Consolidation> result = client.getCurrentBacklog(
-                WAREHOUSE_ID,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-
-        // THEN
-        assertEquals(3, result.size());
-
-        final Consolidation firstConsolidation = result.get(0);
-        assertEquals(1255, firstConsolidation.getTotal());
-        assertEquals(DATE_FROM, firstConsolidation.getDate());
-
-        final Map<String, String> keys = firstConsolidation.getKeys();
-        assertEquals("wms-outbound", keys.get("workflow"));
-        assertEquals("picking", keys.get("process"));
-        assertEquals("MZ-0", keys.get("area"));
-        assertEquals("2021-01-02T00:00", keys.get("date_out"));
-    }
-
-    @Test
     void testGetBacklogErr() {
         // GIVEN
         mockErroneousResponse();
@@ -146,7 +117,6 @@ class BacklogApiClientTest extends BaseClientTest {
                 DATE_CURRENT,
                 WAREHOUSE_ID,
                 of(WORKFLOW),
-                of(),
                 of(),
                 of(),
                 DATE_FROM,

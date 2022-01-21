@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.DATE_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.DATE_HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
@@ -252,9 +253,9 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
                 workflow));
 
         columns.put("column_" + index++, convertToTimeZone(zoneId, cpt)
-                .format(HOUR_MINUTES_FORMATTER));
-        columns.put("column_" + index++, String.valueOf(backlog));
+                .format(projection.isExpired() ? DATE_FORMATTER : HOUR_MINUTES_FORMATTER));
 
+        columns.put("column_" + index++, String.valueOf(backlog));
 
         if (showDeviation && workflow.equals(Workflow.FBM_WMS_OUTBOUND)) {
             columns.put("column_" + index++, getDeviation(cpt, soldItems, planningDistribution));
@@ -265,9 +266,7 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
             index++;
         }
 
-        columns.put("column_" + index++,
-                getProjectedEndDateLabel(projectedEndDate, backlog, zoneId));
-
+        columns.put("column_" + index++, getProjectedEndDateLabel(projectedEndDate, backlog, zoneId));
 
         if (hasSimulatedResults) {
             columns.put("column_" + index, simulatedEndDate == null

@@ -17,4 +17,5 @@ public class UnitProcessBacklogInput {
     ZonedDateTime dateTo;
     String area;
     String groupType;
+    boolean forceConsistency;
 }
