@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
+import java.util.stream.IntStream;
 
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -32,7 +33,8 @@ public class DateUtils {
 
     public static final DateTimeFormatter FORMATTER_ID = ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
-    private DateUtils() { }
+    private DateUtils() {
+    }
 
     public static ZonedDateTime getCurrentUtcDate() {
         return ZonedDateTime.now(UTC).withMinute(0).withSecond(0).withNano(0);
@@ -79,30 +81,31 @@ public class DateUtils {
                 .with(previous(fistDayRule.getFirstDayOfWeek()));
     }
 
-    public static DateSelector getDateSelector(final ZonedDateTime dateFrom, final int daysToShow) {
+    public static DateSelector getDateSelector(final ZonedDateTime currentDate,
+                                               final ZonedDateTime dateFromToShow,
+                                               final int daysToShow) {
 
-        DateSelector dateSelector = new DateSelector("Fecha:", new Date[daysToShow + 1]);
+        final ZonedDateTime utcDateNow = currentDate.truncatedTo(DAYS);
+        final Instant firstDayToShow = dateFromToShow.truncatedTo(DAYS)
+                .toInstant();
 
-        final ZonedDateTime utcDateNow = getCurrentUtcDate();
-        final ZonedDateTime utcDateTo = utcDateNow.plusDays(daysToShow);
-        int i = 0;
+        final Instant selected = utcDateNow.toInstant().isAfter(firstDayToShow)
+                ? utcDateNow.toInstant()
+                : firstDayToShow;
 
-        while (!utcDateNow.plusDays(i).isAfter(utcDateTo)) {
-
-            boolean isDateSelected = utcDateNow.plusDays(i).format(FORMATTER_NAME)
-                    .equals(dateFrom.format(FORMATTER_NAME));
-
-            dateSelector.dates[i] = new Date(
-                    utcDateNow.plusDays(i).truncatedTo(HOURS).format(FORMATTER_ID),
-                    utcDateNow.plusDays(i).format(FORMATTER_NAME),
-                    isDateSelected);
-            i++;
-        }
-
-        return dateSelector;
+        return new DateSelector(
+                "Fecha:",
+                IntStream.rangeClosed(0, daysToShow)
+                        .mapToObj(utcDateNow::plusDays)
+                        .map(day -> new Date(
+                                day.format(FORMATTER_ID),
+                                day.format(FORMATTER_NAME),
+                                day.toInstant().equals(selected))
+                        ).toArray(Date[]::new)
+        );
     }
 
-    public static Integer minutesFromWeekStart(Instant instant) {
+    public static Integer minutesFromWeekStart(final Instant instant) {
         var date = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
         return date.getDayOfWeek().getValue() * 1440
                 + date.getHour() * 60

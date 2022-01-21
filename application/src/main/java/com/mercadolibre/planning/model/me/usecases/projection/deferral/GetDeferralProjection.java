@@ -41,7 +41,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createData;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
 import static java.util.stream.Collectors.toList;
 
 @Named
@@ -109,8 +109,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
             return new Projection(
                     "Proyección",
-                    getDateSelector(dateFromToShow, SELECTOR_DAYS_TO_SHOW),
-                    null,
+                    getDateSelector(dateFromToProject, dateFromToShow, SELECTOR_DAYS_TO_SHOW),
                     new Data(null,
                             getThroughput(deferralBaseOutput.getConfiguration(),
                                     input,
@@ -124,17 +123,19 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                             new Chart(toChartData(projectionsToShow,
                                     deferralBaseOutput.getConfiguration(),
                                     dateToToShow))),
-                    createTabs(),
+                    createOutboundTabs(),
                     null);
 
         } catch (RuntimeException ex) {
             return new Projection("Proyección",
-                    getDateSelector(input.getDate() != null
-                            ? input.getDate()
-                            : getCurrentUtcDate(), SELECTOR_DAYS_TO_SHOW),
+                    getDateSelector(
+                            getCurrentUtcDate(),
+                            input.getDate() != null
+                                    ? input.getDate()
+                                    : getCurrentUtcDate(),
+                            SELECTOR_DAYS_TO_SHOW),
                     ex.getMessage(),
-                    null,
-                    createTabs(),
+                    createOutboundTabs(),
                     null);
         }
     }

@@ -75,7 +75,7 @@ public class GetBacklogProjection implements UseCase<BacklogProjectionInput, Bac
 
         return com.mercadolibre.planning.model.me.entities.projection.BacklogProjection.builder()
                 .title("Proyecciones")
-                .tabs(ResponseUtils.createTabs())
+                .tabs(ResponseUtils.createOutboundTabs())
                 .selections(createSelections(input.getProcessName()))
                 .simpleTable1(createWavingTable(
                         zoneId, headers, projections.get(0), remainingProcessing))

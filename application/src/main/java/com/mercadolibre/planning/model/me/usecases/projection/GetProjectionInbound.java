@@ -1,13 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
-import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.entities.projection.Tab;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
@@ -16,7 +14,7 @@ import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateInbou
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
+import com.mercadolibre.planning.model.me.utils.ResponseUtils;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -28,9 +26,6 @@ import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createInboundTabs;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static java.util.stream.Collectors.toList;
 
 public abstract class GetProjectionInbound extends GetProjection {
@@ -39,16 +34,15 @@ public abstract class GetProjectionInbound extends GetProjection {
 
     private static final long DAYS_TO_SHOW_LOOKBACK = 7L;
 
-    final GetBacklogByDateInbound getBacklogByDateInbound;
+    private final GetBacklogByDateInbound getBacklogByDateInbound;
 
     protected GetProjectionInbound(final PlanningModelGateway planningModelGateway,
                                    final LogisticCenterGateway logisticCenterGateway,
-                                   final GetWaveSuggestion getWaveSuggestion,
                                    final GetEntities getEntities,
                                    final GetProjectionSummary getProjectionSummary,
                                    final GetBacklogByDateInbound getBacklogByDateInbound) {
 
-        super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities, getProjectionSummary);
+        super(planningModelGateway, logisticCenterGateway, getEntities, getProjectionSummary);
         this.getBacklogByDateInbound = getBacklogByDateInbound;
     }
 
@@ -80,12 +74,12 @@ public abstract class GetProjectionInbound extends GetProjection {
     }
 
     @Override
-    protected List<Backlog> getBacklog(final Workflow workflow,
-                                       final String warehouseId,
-                                       final Instant dateFromToProject,
-                                       final Instant dateToToProject,
-                                       final ZoneId zoneId,
-                                       final Instant requestDate) {
+    protected final List<Backlog> getBacklog(final Workflow workflow,
+                                             final String warehouseId,
+                                             final Instant dateFromToProject,
+                                             final Instant dateToToProject,
+                                             final ZoneId zoneId,
+                                             final Instant requestDate) {
 
         final List<Backlog> backlogs = getBacklogByDateInbound.execute(
                 new GetBacklogByDateDto(
@@ -98,38 +92,34 @@ public abstract class GetProjectionInbound extends GetProjection {
     }
 
     @Override
-    protected Projection getProjectionReturn(final ZonedDateTime dateFromToShow,
-                                             final ZonedDateTime dateToToShow,
-                                             final LogisticCenterConfiguration config,
-                                             final GetProjectionInputDto input,
-                                             final List<ProjectionResult> projectionsToShow,
-                                             final List<Backlog> backlogsToShow) {
-
-        return new Projection(
-                "Proyecciones", getDateSelector(dateFromToShow, SELECTOR_DAYS_TO_SHOW),
-                null,
-                //Outbound GetWaveSuggestion
-                new Data(null,
-                        getEntities.execute(input),
-                        getProjectionSummary.execute(GetProjectionSummaryInput.builder()
-                                .workflow(input.getWorkflow())
-                                .warehouseId(input.getWarehouseId())
-                                .dateFrom(dateFromToShow)
-                                .dateTo(dateToToShow)
-                                .projections(projectionsToShow)
-                                .backlogs(backlogsToShow)
-                                .showDeviation(true)
-                                .build()),
-                        new Chart(toChartData(projectionsToShow, config.getZoneId(), dateToToShow))
-                ),
-                createInboundTabs(),
-                simulationMode);
+    protected final SimpleTable getProjectionSummaryTable(final ZonedDateTime dateFromToShow,
+                                                          final ZonedDateTime dateToToShow,
+                                                          final GetProjectionInputDto input,
+                                                          final List<ProjectionResult> projectionsToShow,
+                                                          final List<Backlog> backlogsToShow) {
+        return getProjectionSummary.execute(GetProjectionSummaryInput.builder()
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
+                .dateFrom(dateFromToShow)
+                .dateTo(dateToToShow)
+                .projections(projectionsToShow)
+                .backlogs(backlogsToShow)
+                .showDeviation(false)
+                .build());
     }
 
     @Override
-    public List<ChartData> toChartData(final List<ProjectionResult> projectionResult,
-                                       final ZoneId zoneId,
-                                       final ZonedDateTime dateTo) {
+    protected final SimpleTable getWaveSuggestionTable(final String warehouseID,
+                                                       final Workflow workflow,
+                                                       final ZoneId zoneId,
+                                                       final ZonedDateTime date) {
+        return null;
+    }
+
+    @Override
+    protected final List<ChartData> toChartData(final List<ProjectionResult> projectionResult,
+                                                final ZoneId zoneId,
+                                                final ZonedDateTime dateTo) {
         final boolean hasSimulatedResults = hasSimulatedResults(projectionResult);
 
         return projectionResult.stream()
@@ -156,4 +146,8 @@ public abstract class GetProjectionInbound extends GetProjection {
         return DAYS_TO_SHOW_LOOKBACK;
     }
 
+    @Override
+    protected List<Tab> createTabs() {
+        return ResponseUtils.createInboundTabs();
+    }
 }

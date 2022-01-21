@@ -23,10 +23,36 @@ public class Projection {
 
     /** Tabs shown to the user. Los main ones are deferral and projection.
      * Note: This field is probably ignored by the front-end */
-    List<Tab> tabs;
+    private List<Tab> tabs;
 
     /**
      * Used only when the entering though the simulation button.
      */
-    SimulationMode simulationMode;
+    private SimulationMode simulationMode;
+
+    public Projection(final String title,
+                      final DateSelector dateSelector,
+                      final Data data,
+                      final List<Tab> tabs,
+                      final SimulationMode simulationMode) {
+        this.title = title;
+        this.dateSelector = dateSelector;
+        this.data = data;
+        this.tabs = tabs;
+        this.simulationMode = simulationMode;
+        this.emptyStateMessage = null;
+    }
+
+    public Projection(final String title,
+                      final DateSelector dateSelector,
+                      final String emptyStateMessage,
+                      final List<Tab> tabs,
+                      final SimulationMode simulationMode) {
+        this.title = title;
+        this.dateSelector = dateSelector;
+        this.data = null;
+        this.tabs = tabs;
+        this.simulationMode = simulationMode;
+        this.emptyStateMessage = emptyStateMessage;
+    }
 }

@@ -59,7 +59,7 @@ public class GetBacklogByDateInboundTest {
                 .thenReturn(responseGetCurrentBacklog());
 
         List<Backlog> response = getBacklogByDateInbound.execute(new GetBacklogByDateDto(
-                Workflow.FBM_WMS_INBOUND, warehouseId, dateFrom, dateTo
+                Workflow.FBM_WMS_INBOUND, warehouseId, slaFrom, slaTo
         ));
 
         Assertions.assertEquals(expectedBacklog(), response);

@@ -74,6 +74,7 @@ public class GetSlaProjectionInboundTest {
 
     @Mock
     private GetProjectionSummary getProjectionSummary;
+
     @Mock
     private GetBacklogByDateInbound getBacklogByDateInbound;
 

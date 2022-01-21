@@ -11,7 +11,6 @@ import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionInbound;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 
 import javax.inject.Named;
 
@@ -25,13 +24,11 @@ public class RunSimulationInbound extends GetProjectionInbound {
 
     protected RunSimulationInbound(final PlanningModelGateway planningModelGateway,
                                    final LogisticCenterGateway logisticCenterGateway,
-                                   final GetWaveSuggestion getWaveSuggestion,
                                    final GetEntities getEntities,
                                    final GetProjectionSummary getProjectionSummary,
                                    final GetBacklogByDateInbound getBacklogByDateInbound) {
 
-        super(planningModelGateway, logisticCenterGateway, getWaveSuggestion,
-                getEntities, getProjectionSummary, getBacklogByDateInbound);
+        super(planningModelGateway, logisticCenterGateway, getEntities, getProjectionSummary, getBacklogByDateInbound);
     }
 
     @Override

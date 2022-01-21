@@ -1,12 +1,10 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
-import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.entities.projection.Tab;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
@@ -20,6 +18,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjection
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
+import com.mercadolibre.planning.model.me.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -35,19 +34,16 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static java.util.stream.Collectors.toList;
 
 @Slf4j
 public abstract class GetProjectionOutbound extends GetProjection {
 
-    final GetSimpleDeferralProjection getSimpleDeferralProjection;
-    final GetBacklogByDateOutbound getBacklogByDateOutbound;
-
     protected static final List<ProcessName> PROCESS_NAMES_OUTBOUND =
             List.of(PICKING, PACKING, PACKING_WALL);
+    private final GetBacklogByDateOutbound getBacklogByDateOutbound;
+    private final GetSimpleDeferralProjection getSimpleDeferralProjection;
+    private final GetWaveSuggestion getWaveSuggestion;
 
     protected GetProjectionOutbound(final PlanningModelGateway planningModelGateway,
                                     final LogisticCenterGateway logisticCenterGateway,
@@ -57,17 +53,17 @@ public abstract class GetProjectionOutbound extends GetProjection {
                                     final GetSimpleDeferralProjection getSimpleDeferralProjection,
                                     final GetBacklogByDateOutbound getBacklogByDateOutbound) {
 
-        super(planningModelGateway, logisticCenterGateway, getWaveSuggestion,
-                getEntities, getProjectionSummary);
+        super(planningModelGateway, logisticCenterGateway, getEntities, getProjectionSummary);
 
         this.getSimpleDeferralProjection = getSimpleDeferralProjection;
         this.getBacklogByDateOutbound = getBacklogByDateOutbound;
+        this.getWaveSuggestion = getWaveSuggestion;
     }
 
     @Override
-    protected List<ProjectionResult> decorateProjection(final GetProjectionInputDto input,
-                                                        final List<Backlog> backlogsToProject,
-                                                        final List<ProjectionResult> projectionsSla) {
+    protected final List<ProjectionResult> decorateProjection(final GetProjectionInputDto input,
+                                                              final List<Backlog> backlogsToProject,
+                                                              final List<ProjectionResult> projectionsSla) {
 
         final GetSimpleDeferralProjectionOutput deferralProjectionOutput =
                 getSimpleDeferralProjection.execute(
@@ -82,12 +78,12 @@ public abstract class GetProjectionOutbound extends GetProjection {
     }
 
     @Override
-    protected List<Backlog> getBacklog(final Workflow workflow,
-                                       final String warehouseId,
-                                       final Instant dateFromToProject,
-                                       final Instant dateToToProject,
-                                       final ZoneId zoneId,
-                                       final Instant requestDate) {
+    protected final List<Backlog> getBacklog(final Workflow workflow,
+                                             final String warehouseId,
+                                             final Instant dateFromToProject,
+                                             final Instant dateToToProject,
+                                             final ZoneId zoneId,
+                                             final Instant requestDate) {
 
         return getBacklogByDateOutbound.execute(
                 new GetBacklogByDateDto(
@@ -98,41 +94,9 @@ public abstract class GetProjectionOutbound extends GetProjection {
     }
 
     @Override
-    protected Projection getProjectionReturn(final ZonedDateTime dateFromToShow,
-                                             final ZonedDateTime dateToToShow,
-                                             final LogisticCenterConfiguration config,
-                                             final GetProjectionInputDto input,
-                                             final List<ProjectionResult> projectionsToShow,
-                                             final List<Backlog> backlogsToShow) {
-        return new Projection(
-                "Proyecciones", getDateSelector(dateFromToShow, SELECTOR_DAYS_TO_SHOW),
-                null,
-                new Data(getWaveSuggestion.execute(GetWaveSuggestionInputDto.builder()
-                        .zoneId(config.getZoneId())
-                        .warehouseId(input.getWarehouseId())
-                        .workflow(input.getWorkflow())
-                        .date(dateFromToShow)
-                        .build()),
-                        getEntities.execute(input),
-                        getProjectionSummary.execute(GetProjectionSummaryInput.builder()
-                                .workflow(input.getWorkflow())
-                                .warehouseId(input.getWarehouseId())
-                                .dateFrom(dateFromToShow)
-                                .dateTo(dateToToShow)
-                                .projections(projectionsToShow)
-                                .backlogs(backlogsToShow)
-                                .showDeviation(true)
-                                .build()),
-                        new Chart(toChartData(projectionsToShow, config.getZoneId(),
-                                dateToToShow))),
-                createTabs(),
-                simulationMode);
-    }
-
-    @Override
-    public List<ChartData> toChartData(final List<ProjectionResult> projectionResult,
-                                       final ZoneId zoneId,
-                                       final ZonedDateTime dateTo) {
+    public final List<ChartData> toChartData(final List<ProjectionResult> projectionResult,
+                                             final ZoneId zoneId,
+                                             final ZonedDateTime dateTo) {
         final boolean hasSimulatedResults = hasSimulatedResults(projectionResult);
 
         return projectionResult.stream()
@@ -154,6 +118,40 @@ public abstract class GetProjectionOutbound extends GetProjection {
                 .collect(toList());
     }
 
+    @Override
+    protected final SimpleTable getWaveSuggestionTable(final String warehouseID,
+                                                       final Workflow workflow,
+                                                       final ZoneId zoneId,
+                                                       final ZonedDateTime date) {
+        return getWaveSuggestion.execute(GetWaveSuggestionInputDto.builder()
+                .zoneId(zoneId)
+                .warehouseId(warehouseID)
+                .workflow(workflow)
+                .date(date)
+                .build());
+    }
+
+    @Override
+    protected final SimpleTable getProjectionSummaryTable(final ZonedDateTime dateFromToShow,
+                                                          final ZonedDateTime dateToToShow,
+                                                          final GetProjectionInputDto input,
+                                                          final List<ProjectionResult> projectionsToShow,
+                                                          final List<Backlog> backlogsToShow) {
+        return getProjectionSummary.execute(GetProjectionSummaryInput.builder()
+                .workflow(input.getWorkflow())
+                .warehouseId(input.getWarehouseId())
+                .dateFrom(dateFromToShow)
+                .dateTo(dateToToShow)
+                .projections(projectionsToShow)
+                .backlogs(backlogsToShow)
+                .showDeviation(true)
+                .build());
+    }
+
+    @Override
+    protected final List<Tab> createTabs() {
+        return ResponseUtils.createOutboundTabs();
+    }
 
     private List<ProjectionResult> transferDeferralFlag(final List<ProjectionResult> slaProjections,
                                                         final List<ProjectionResult> deferralProjections) {

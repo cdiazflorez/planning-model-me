@@ -5,9 +5,9 @@ import lombok.Value;
 @Value
 public class Date {
 
-    public String id;
+    private String id;
 
-    public String name;
+    private String name;
 
-    public boolean selected;
+    private boolean selected;
 }

@@ -100,11 +100,15 @@ public class SaveSimulationOutboundTest {
     public void testExecute() {
         // Given
         final ZonedDateTime utcCurrentTime = getCurrentTime();
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
+        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
+
+        final List<Backlog> mockedBacklog = mockBacklog();
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
 
-        final List<Backlog> mockedBacklog = mockBacklog();
         when(getBacklog.execute(new GetBacklogByDateDto(FBM_WMS_OUTBOUND, WAREHOUSE_ID,
                 utcCurrentTime.toInstant(), utcCurrentTime.plusDays(4).toInstant())))
                 .thenReturn(mockedBacklog);
@@ -112,10 +116,6 @@ public class SaveSimulationOutboundTest {
         when(planningModelGateway.saveSimulation(
                 createSimulationRequest(mockedBacklog, utcCurrentTime)))
                 .thenReturn(mockProjections(utcCurrentTime));
-
-        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
-        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
 
         when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
                         .warehouseId(WAREHOUSE_ID)
@@ -148,6 +148,7 @@ public class SaveSimulationOutboundTest {
                         List.of(new SimulationEntity(
                                 HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
                         )))))
+                .requestDate(utcCurrentTime.toInstant())
                 .build()
         );
 

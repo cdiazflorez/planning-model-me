@@ -93,7 +93,6 @@ public class GetSlaProjectionTest {
 
         return new Projection("title",
                 new DateSelector("title Date", dates),
-                null,
                 new Data(simpleTable, complexTable, simpleTable, chart),
                 List.of(new Tab("", "")),
                 new SimulationMode("", new Snackbar("", "", ""),

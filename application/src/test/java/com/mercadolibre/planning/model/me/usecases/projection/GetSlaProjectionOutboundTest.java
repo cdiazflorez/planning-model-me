@@ -104,7 +104,8 @@ public class GetSlaProjectionOutboundTest {
         final GetProjectionInputDto input = GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
-                .date(utcDateTimeFrom)
+                .date(currentUtcDateTime)
+                .requestDate(currentUtcDateTime.toInstant())
                 .build();
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
@@ -164,6 +165,7 @@ public class GetSlaProjectionOutboundTest {
                 .workflow(FBM_WMS_OUTBOUND)
                 .warehouseId(WAREHOUSE_ID)
                 .date(utcDateTimeFrom)
+                .requestDate(currentUtcDateTime.toInstant())
                 .build();
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))

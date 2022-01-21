@@ -29,7 +29,7 @@ public class GetBacklogByDateInbound implements UseCase<GetBacklogByDateDto, Lis
     final BacklogApiAdapter backlogApiAdapter;
 
     @Override
-    public List<Backlog> execute(GetBacklogByDateDto input) {
+    public List<Backlog> execute(final GetBacklogByDateDto input) {
 
         final Instant now = Instant.now().truncatedTo(ChronoUnit.MINUTES);
 
@@ -42,7 +42,7 @@ public class GetBacklogByDateInbound implements UseCase<GetBacklogByDateDto, Lis
                 now.minus(1, ChronoUnit.HOURS),
                 now,
                 now.minus(7, ChronoUnit.DAYS),
-                now.plus(1, ChronoUnit.DAYS)
+                input.getDateTo()
         );
 
         var optional = consolidations.stream()

@@ -5,7 +5,7 @@ import lombok.Value;
 @Value
 public class DateSelector {
 
-    public String title;
+    private String title;
 
-    public Date[] dates;
+    private Date[] dates;
 }
