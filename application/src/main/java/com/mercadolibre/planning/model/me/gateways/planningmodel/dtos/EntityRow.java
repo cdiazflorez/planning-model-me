@@ -44,6 +44,9 @@ public class EntityRow {
             case PUT_AWAY:
                 rowName = RowName.PUT_AWAY;
                 break;
+            case CHECK_IN:
+                rowName = RowName.CHECK_IN;
+                break;
             case GLOBAL:
                 rowName = RowName.GLOBAL;
                 break;

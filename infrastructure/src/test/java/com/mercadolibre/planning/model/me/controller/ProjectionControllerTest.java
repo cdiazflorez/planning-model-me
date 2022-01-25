@@ -46,7 +46,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
@@ -98,13 +98,12 @@ public class ProjectionControllerTest {
                 .thenReturn(new Projection(
                         "Test",
                         mockDateSelector(),
-                        null,
                         new com.mercadolibre.planning.model.me.entities.projection.Data(
                                 mockSuggestedWaves(),
                                 mockComplexTable(),
                                 mockProjectionDetailTable(),
                                 mockProjectionChart()),
-                        createTabs(),
+                        createOutboundTabs(),
                         simulationMode));
 
         // WHEN
@@ -156,13 +155,12 @@ public class ProjectionControllerTest {
                 .thenReturn(new Projection(
                         "Test",
                         null,
-                        null,
                         new com.mercadolibre.planning.model.me.entities.projection.Data(
                                 mockSuggestedWaves(),
                                 mockComplexTable(),
                                 mockProjectionDetailTable(),
                                 mockProjectionChart()),
-                        createTabs(),
+                        createOutboundTabs(),
                         simulationMode));
 
         // WHEN
@@ -187,13 +185,12 @@ public class ProjectionControllerTest {
                 .thenReturn(new Projection(
                         "Test",
                         null,
-                        null,
                         new com.mercadolibre.planning.model.me.entities.projection.Data(
                                 mockSuggestedWaves(),
                                 mockComplexTable(),
                                 mockProjectionDetailTable(),
                                 mockProjectionChart()),
-                        createTabs(),
+                        createOutboundTabs(),
                         simulationMode));
 
         // WHEN
@@ -430,14 +427,13 @@ public class ProjectionControllerTest {
     }
 
     private DateSelector mockDateSelector() {
+        final Date[] dates = {
+                new Date("2021-09-06T02:00:00Z", "Lunes 06/09/2021", true),
+                new Date("2021-09-07T02:00:00Z", "Martes 07/09/2021", false),
+                new Date("2021-09-08T02:00:00Z", "Miercoles 08/09/2021", false),
+                new Date("2021-09-09T02:00:00Z", "Jueves 09/09/2021", false)
+        };
 
-        DateSelector dateSelector = new DateSelector("Fecha:", new Date[4]);
-
-        dateSelector.dates[0] = new Date("2021-09-06T02:00:00Z", "Lunes 06/09/2021", true);
-        dateSelector.dates[1] = new Date("2021-09-07T02:00:00Z", "Martes 07/09/2021", false);
-        dateSelector.dates[2] = new Date("2021-09-08T02:00:00Z", "Miercoles 08/09/2021", false);
-        dateSelector.dates[3] = new Date("2021-09-09T02:00:00Z", "Jueves 09/09/2021", false);
-
-        return dateSelector;
+        return new DateSelector("Fecha:", dates);
     }
 }

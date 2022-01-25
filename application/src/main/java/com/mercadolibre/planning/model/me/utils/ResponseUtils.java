@@ -34,7 +34,11 @@ import static org.apache.commons.lang.StringUtils.capitalize;
 
 public class ResponseUtils {
 
+    public static final String PROJECTION_TITLE = "Proyección";
+
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
+
+    private ResponseUtils() {}
 
     public static List<ColumnHeader> createColumnHeaders(final ZonedDateTime dateFrom,
                                                          final int hoursToShow) {
@@ -54,7 +58,7 @@ public class ResponseUtils {
         return columns;
     }
 
-    public static List<Tab> createTabs() {
+    public static List<Tab> createOutboundTabs() {
         return List.of(
                 new Tab("cpt", "Cumplimiento de CPTs"),
                 new Tab("backlog", "Backlogs"));

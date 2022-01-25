@@ -142,6 +142,7 @@ public class RunSimulationOutboundTest {
                 .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
                         HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
                 )))))
+                .requestDate(utcCurrentTime.toInstant())
                 .build()
         );
 

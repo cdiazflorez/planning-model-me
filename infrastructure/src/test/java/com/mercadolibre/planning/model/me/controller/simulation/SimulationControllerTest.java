@@ -42,7 +42,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -88,13 +88,12 @@ public class SimulationControllerTest {
         when(runSimulation.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection("Test",
                         null,
-                        null,
                         new com.mercadolibre.planning.model.me.entities.projection.Data(
                                 mockSuggestedWaves(),
                                 mockComplexTable(),
                                 null,
                                 mockProjectionChart()),
-                        createTabs(),
+                        createOutboundTabs(),
                         simulationMode));
 
         // WHEN
@@ -143,13 +142,12 @@ public class SimulationControllerTest {
         when(saveSimulation.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(new Projection("Test",
                         null,
-                        null,
                         new com.mercadolibre.planning.model.me.entities.projection.Data(
                                 mockSuggestedWaves(),
                                 mockComplexTable(),
                                 null,
                                 mockProjectionChart()),
-                        createTabs(),
+                        createOutboundTabs(),
                         simulationMode));
 
         // WHEN
