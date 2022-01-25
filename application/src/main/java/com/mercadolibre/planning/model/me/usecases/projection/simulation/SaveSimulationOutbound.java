@@ -1,12 +1,12 @@
 package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
@@ -15,7 +15,6 @@ import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjection
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 
 import javax.inject.Named;
-
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -31,10 +30,10 @@ public class SaveSimulationOutbound extends GetProjectionOutbound {
                                      final GetEntities getEntities,
                                      final GetProjectionSummary getProjectionSummary,
                                      final GetSimpleDeferralProjection getSimpleDeferralProjection,
-                                     final GetBacklogByDateOutbound getBacklogByDateOutbound) {
+                                     final BacklogApiGateway backlogGateway) {
 
         super(planningModelGateway, logisticCenterGateway, getWaveSuggestion,
-                getEntities, getProjectionSummary, getSimpleDeferralProjection, getBacklogByDateOutbound);
+                getEntities, getProjectionSummary, getSimpleDeferralProjection, backlogGateway);
     }
 
     @Override

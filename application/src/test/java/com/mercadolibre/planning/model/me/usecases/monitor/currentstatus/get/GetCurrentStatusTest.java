@@ -1,18 +1,13 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.currentstatus.get;
 
-import com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.UnitsResume;
-import com.mercadolibre.planning.model.me.gateways.analytics.AnalyticsGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType;
@@ -32,11 +27,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
 
-import static com.mercadolibre.planning.model.me.entities.projection.AnalyticsQueryEvent.PACKING_NO_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.CURRENT_STATUS;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.IMMEDIATE_BACKLOG;
@@ -53,8 +46,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.ORDER_GROUP_TYP
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.DAYS;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.TimeZone.getTimeZone;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -66,9 +57,6 @@ class GetCurrentStatusTest {
 
     @InjectMocks
     private GetCurrentStatus getCurrentStatus;
-
-    @Mock
-    private AnalyticsGateway analyticsGateway;
 
     @Mock
     private BacklogGateway backlogGateway;
@@ -116,34 +104,7 @@ class GetCurrentStatusTest {
 
         isAnalyticsError = false;
 
-        final List<Map<String, String>> statuses = List.of(
-                Map.of("status", OUTBOUND_PLANNING.getStatus()),
-                Map.of("status", PACKING.getStatus())
-        );
-
-        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, cptTo, false))
-                .thenReturn(
-                        new ArrayList<>(
-                                List.of(
-                                        ProcessBacklog.builder()
-                                                .process(OUTBOUND_PLANNING.getStatus())
-                                                .quantity(1442)
-                                                .build(),
-                                        ProcessBacklog.builder()
-                                                .process(PACKING.getStatus())
-                                                .quantity(1442)
-                                                .build())));
-
         commonMocks(input, cptFrom, cptTo, currentDate, true);
-
-        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
-                asList(AnalyticsQueryEvent.PACKING_WALL,
-                        AnalyticsQueryEvent.PICKING,
-                        PACKING_NO_WALL)))
-                .thenReturn(List.of(
-                        new UnitsResume(150, 120, AnalyticsQueryEvent.PACKING_WALL),
-                        new UnitsResume(3020, 2020, AnalyticsQueryEvent.PICKING),
-                        new UnitsResume(2030, 102, PACKING_NO_WALL)));
 
         // WHEN
         final CurrentStatusData currentStatusData = getCurrentStatus.execute(input);
@@ -223,30 +184,7 @@ class GetCurrentStatusTest {
 
         isAnalyticsError = false;
 
-        final List<Map<String, String>> statuses = List.of(
-                Map.of("status", OUTBOUND_PLANNING.getStatus()),
-                Map.of("status", PACKING.getStatus())
-        );
-
-        when(backlogGateway.getBacklog(statuses, input.getWarehouseId(), cptFrom, cptTo, false))
-                .thenReturn(
-                        new ArrayList<>(
-                                List.of(
-                                        ProcessBacklog.builder()
-                                                .process(OUTBOUND_PLANNING.getStatus())
-                                                .quantity(1442)
-                                                .build(),
-                                        ProcessBacklog.builder()
-                                                .process(PACKING.getStatus())
-                                                .quantity(1442)
-                                                .build())));
-
         commonMocks(input, cptFrom, cptTo, currentDate,false);
-
-        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
-                singletonList(AnalyticsQueryEvent.PICKING)))
-                .thenReturn(
-                        singletonList(new UnitsResume(3020, 2020, AnalyticsQueryEvent.PICKING)));
 
         // WHEN
         final CurrentStatusData currentStatusData = getCurrentStatus.execute(input);
@@ -312,11 +250,6 @@ class GetCurrentStatusTest {
 
         commonMocks(input, cptFrom, cptTo, currentDate, true);
 
-        when(analyticsGateway.getUnitsInInterval(WAREHOUSE_ID, 1,
-                asList(AnalyticsQueryEvent.PACKING_WALL,
-                        AnalyticsQueryEvent.PICKING, PACKING_NO_WALL)))
-                .thenThrow(RuntimeException.class);
-
         final CurrentStatusData currentStatusData = getCurrentStatus.execute(input);
 
         final Optional<Process> optionalPicking = currentStatusData.getProcesses().stream()
@@ -339,6 +272,34 @@ class GetCurrentStatusTest {
         when(backlogGatewayProvider.getBy(input.getWorkflow()))
                 .thenReturn(Optional.of(backlogGateway));
 
+        final ProcessBacklog wavingProcessBacklog = ProcessBacklog.builder()
+                .process(OUTBOUND_PLANNING.getStatus())
+                .quantity(1442)
+                .build();
+
+        when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(
+                OUTBOUND_PLANNING.getStatus(),
+                input.getWarehouseId(),
+                cptFrom,
+                cptTo,
+                null,
+                ORDER_GROUP_TYPE)))
+                .thenReturn(wavingProcessBacklog);
+
+        final ProcessBacklog packingProcessBacklog = ProcessBacklog.builder()
+                .process(PACKING.getStatus())
+                .quantity(1442)
+                .build();
+
+        when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(
+                PACKING.getStatus(),
+                input.getWarehouseId(),
+                cptFrom,
+                cptTo,
+                null,
+                ORDER_GROUP_TYPE)))
+                .thenReturn(packingProcessBacklog);
+
         final ProcessBacklog pickingProcessBacklog = ProcessBacklog.builder()
                 .process(PICKING.getStatus())
                 .quantity(725)
@@ -350,8 +311,7 @@ class GetCurrentStatusTest {
                 cptFrom,
                 cptTo,
                 null,
-                ORDER_GROUP_TYPE,
-                false)))
+                ORDER_GROUP_TYPE)))
                 .thenReturn(pickingProcessBacklog);
 
         when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(
@@ -360,8 +320,7 @@ class GetCurrentStatusTest {
                 currentDate.minusDays(1),
                 currentDate.plusDays(1),
                 null,
-                ORDER_GROUP_TYPE,
-                false)))
+                ORDER_GROUP_TYPE)))
                 .thenReturn(ProcessBacklog.builder()
                         .process(OUTBOUND_PLANNING.getStatus())
                         .immediateQuantity(200)
@@ -370,7 +329,7 @@ class GetCurrentStatusTest {
         if (hasPutToWall) {
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, cptTo, null, ORDER_GROUP_TYPE, false)))
+                            cptFrom, cptTo, null, ORDER_GROUP_TYPE)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
@@ -378,7 +337,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(PACKING.getStatus(), input.getWarehouseId(),
-                            cptFrom, cptTo, "PW", ORDER_GROUP_TYPE, false)))
+                            cptFrom, cptTo, "PW", ORDER_GROUP_TYPE)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
@@ -387,7 +346,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, cptTo, null, ORDER_GROUP_TYPE, false)))
+                            cptFrom, cptTo, null, ORDER_GROUP_TYPE)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(WALL_IN.getStatus())
                             .quantity(725)
@@ -395,7 +354,7 @@ class GetCurrentStatusTest {
 
             when(backlogGateway.getUnitBacklog(
                     new UnitProcessBacklogInput(PACKING_WALL.getStatus(), input.getWarehouseId(),
-                            cptFrom, cptTo, "PW", ORDER_GROUP_TYPE, false)))
+                            cptFrom, cptTo, "PW", ORDER_GROUP_TYPE)))
                     .thenReturn(ProcessBacklog.builder()
                             .process(PACKING.getStatus())
                             .quantity(725)
@@ -429,35 +388,6 @@ class GetCurrentStatusTest {
         assertEquals(expectedTitle, metric.getTitle());
         assertEquals(expectedType, metric.getType());
         assertEquals(expectedValue, metric.getValue());
-    }
-
-    private List<MagnitudePhoto> mockHeadcountEntities(final ZonedDateTime utcCurrentTime) {
-        return List.of(
-                MagnitudePhoto.builder()
-                        .date(utcCurrentTime)
-                        .processName(ProcessName.PICKING)
-                        .source(Source.FORECAST)
-                        .value(10)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(utcCurrentTime)
-                        .processName(ProcessName.PICKING)
-                        .source(Source.SIMULATION)
-                        .value(20)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(utcCurrentTime.plusHours(2))
-                        .processName(ProcessName.PACKING)
-                        .source(Source.FORECAST)
-                        .value(15)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(ProcessName.PICKING)
-                        .source(Source.FORECAST)
-                        .value(30)
-                        .build()
-        );
     }
 
     private void mockGetBacklogMetric() {

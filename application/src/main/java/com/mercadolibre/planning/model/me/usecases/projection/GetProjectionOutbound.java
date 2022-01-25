@@ -4,13 +4,13 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.Tab;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateOutbound;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
@@ -41,8 +41,9 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
     protected static final List<ProcessName> PROCESS_NAMES_OUTBOUND =
             List.of(PICKING, PACKING, PACKING_WALL);
-    private final GetBacklogByDateOutbound getBacklogByDateOutbound;
-    private final GetSimpleDeferralProjection getSimpleDeferralProjection;
+
+    final GetSimpleDeferralProjection getSimpleDeferralProjection;
+    final BacklogApiGateway backlogGateway;
     private final GetWaveSuggestion getWaveSuggestion;
 
     protected GetProjectionOutbound(final PlanningModelGateway planningModelGateway,
@@ -51,13 +52,13 @@ public abstract class GetProjectionOutbound extends GetProjection {
                                     final GetEntities getEntities,
                                     final GetProjectionSummary getProjectionSummary,
                                     final GetSimpleDeferralProjection getSimpleDeferralProjection,
-                                    final GetBacklogByDateOutbound getBacklogByDateOutbound) {
+                                    final BacklogApiGateway backlogGateway) {
 
         super(planningModelGateway, logisticCenterGateway, getEntities, getProjectionSummary);
 
         this.getSimpleDeferralProjection = getSimpleDeferralProjection;
-        this.getBacklogByDateOutbound = getBacklogByDateOutbound;
         this.getWaveSuggestion = getWaveSuggestion;
+        this.backlogGateway = backlogGateway;
     }
 
     @Override
@@ -85,12 +86,22 @@ public abstract class GetProjectionOutbound extends GetProjection {
                                              final ZoneId zoneId,
                                              final Instant requestDate) {
 
-        return getBacklogByDateOutbound.execute(
-                new GetBacklogByDateDto(
-                        workflow,
-                        warehouseId,
-                        dateFromToProject,
-                        dateToToProject));
+        final String groupingKey = BacklogGrouper.DATE_OUT.getName();
+
+        var backlogBySla = backlogGateway.getCurrentBacklog(
+                warehouseId,
+                List.of("outbound-orders"),
+                List.of("pending"),
+                dateFromToProject,
+                dateToToProject,
+                List.of(groupingKey));
+
+
+        return backlogBySla.stream()
+                .map(backlog -> new Backlog(
+                        ZonedDateTime.parse(backlog.getKeys().get(groupingKey)),
+                        backlog.getTotal()))
+                .collect(Collectors.toList());
     }
 
     @Override
