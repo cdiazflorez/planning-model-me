@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -11,7 +10,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.ZonedDateTime;
 import java.util.stream.Stream;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.*;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;

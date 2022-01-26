@@ -51,15 +51,16 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
         final Instant dateFromToProject = requestDate.truncatedTo(ChronoUnit.HOURS);
         final Instant dateToToProject = dateFromToProject.plus(PROJECTION_DAYS, ChronoUnit.DAYS);
 
-        final ZonedDateTime dateFromToShow = input.getDate() == null
+        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(input.getWarehouseId());
+
+        final boolean isFirstDate = isFirstDate(input.getDate(), requestDate);
+        final ZonedDateTime dateFromToShow = isFirstDate
                 ? dateFromToProject.atZone(UTC).minusDays(getDatesToShowLookback())
                 : input.getDate();
 
-        final ZonedDateTime dateToToShow = input.getDate() == null
+        final ZonedDateTime dateToToShow = isFirstDate
                 ? dateFromToProject.atZone(UTC).plusDays(PROJECTION_DAYS_TO_SHOW)
                 : dateFromToShow.plusDays(PROJECTION_DAYS_TO_SHOW);
-
-        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(input.getWarehouseId());
 
         // Obtains the pending backlog
         final List<Backlog> backlogsToProject = getBacklog(
@@ -117,13 +118,23 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
             return new Projection(
                     "Proyecciones",
                     getDateSelector(
-                            ZonedDateTime.ofInstant(requestDate, UTC),
+                            ZonedDateTime.ofInstant(requestDate, config.getZoneId()),
                             dateFromToShow,
                             SELECTOR_DAYS_TO_SHOW),
                     ex.getMessage(),
                     createTabs(),
                     simulationMode
             );
+        }
+    }
+
+    private boolean isFirstDate(final ZonedDateTime inputDate, final Instant requestDate) {
+        if (inputDate == null) {
+            return true;
+        } else {
+            final Instant selectedDate = inputDate.truncatedTo(ChronoUnit.HOURS).toInstant();
+            final Instant currentDate = requestDate.truncatedTo(ChronoUnit.HOURS);
+            return selectedDate.equals(currentDate);
         }
     }
 
@@ -141,7 +152,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                                             final ZonedDateTime dateTo,
                                                             final List<ProjectionResult> projections) {
         return projections.stream()
-                .filter(p -> p.getDate().isAfter(dateFrom) && p.getDate().isBefore(dateTo))
+                .filter(p -> (p.getDate().isAfter(dateFrom) || p.getDate().isEqual(dateFrom))
+                        && p.getDate().isBefore(dateTo))
                 .collect(toList());
     }
 

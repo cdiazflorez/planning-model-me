@@ -9,6 +9,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.stream.IntStream;
 
@@ -82,23 +83,23 @@ public class DateUtils {
     }
 
     public static DateSelector getDateSelector(final ZonedDateTime currentDate,
-                                               final ZonedDateTime dateFromToShow,
+                                               final ZonedDateTime selectedDayToShow,
                                                final int daysToShow) {
 
-        final ZonedDateTime utcDateNow = currentDate.truncatedTo(DAYS);
-        final Instant firstDayToShow = dateFromToShow.truncatedTo(DAYS)
+        final ZonedDateTime logisticCenterDateNow = currentDate.truncatedTo(HOURS);
+        final Instant firstDayToShow = selectedDayToShow.truncatedTo(HOURS)
                 .toInstant();
 
-        final Instant selected = utcDateNow.toInstant().isAfter(firstDayToShow)
-                ? utcDateNow.toInstant()
+        final Instant selected = logisticCenterDateNow.toInstant().isAfter(firstDayToShow)
+                ? logisticCenterDateNow.toInstant()
                 : firstDayToShow;
 
         return new DateSelector(
                 "Fecha:",
                 IntStream.rangeClosed(0, daysToShow)
-                        .mapToObj(utcDateNow::plusDays)
+                        .mapToObj(logisticCenterDateNow::plusDays)
                         .map(day -> new Date(
-                                day.format(FORMATTER_ID),
+                                day.withZoneSameInstant(UTC).format(FORMATTER_ID),
                                 day.format(FORMATTER_NAME),
                                 day.toInstant().equals(selected))
                         ).toArray(Date[]::new)

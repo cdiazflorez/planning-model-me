@@ -1,9 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.wavesuggestion;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
+import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -68,16 +68,11 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                                                   final ZonedDateTime now,
                                                   final ZonedDateTime dateTo) {
         final ZonedDateTime cptFrom = now.truncatedTo(HOURS).plusHours(1);
-        final Integer readyToWaveBacklog =
-                backlogGatewayProvider.getBy(input.getWorkflow())
-                        .orElseThrow(() -> new BacklogGatewayNotSupportedException(input
-                                .getWorkflow()))
-                        .getBacklog(List.of(Map.of("status", OUTBOUND_PLANNING.getStatus())),
-                                input.getWarehouseId(),
-                                cptFrom,
-                                cptFrom.plusHours(25),
-                                true)
-                        .stream().findFirst().map(ProcessBacklog::getQuantity).orElse(0);
+        final Integer readyToWaveBacklog = backlogGatewayProvider
+                .getBy(input.getWorkflow())
+                .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()))
+                .getUnitBacklog(new UnitProcessBacklogInput(OUTBOUND_PLANNING.getStatus(), input.getWarehouseId(),
+                        cptFrom, cptFrom.plusHours(25), null, "order")).getQuantity();
 
         return planningModelGateway
                 .getSuggestedWaves(SuggestedWavesRequest.builder()

@@ -1,11 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
@@ -27,10 +27,10 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
                                        final GetEntities getEntities,
                                        final GetProjectionSummary getProjectionSummary,
                                        final GetSimpleDeferralProjection getSimpleDeferralProjection,
-                                       final GetBacklogByDateOutbound getBacklogByDateOutbound) {
+                                       final BacklogApiGateway backlogGateway) {
 
         super(planningModelGateway, logisticCenterGateway, getWaveSuggestion,
-                getEntities, getProjectionSummary, getSimpleDeferralProjection, getBacklogByDateOutbound);
+                getEntities, getProjectionSummary, getSimpleDeferralProjection, backlogGateway);
     }
 
 
