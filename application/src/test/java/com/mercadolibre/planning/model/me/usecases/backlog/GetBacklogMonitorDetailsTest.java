@@ -132,7 +132,7 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(2, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
-        assertEquals(90, firstAreas.get(0).getValue().getMinutes());
+        assertEquals(41, firstAreas.get(0).getValue().getMinutes());
 
         assertEquals(2, results.get(1).getAreas().size());
 
@@ -143,7 +143,7 @@ class GetBacklogMonitorDetailsTest {
         var graph = response.getProcess();
         assertEquals("picking", graph.getProcess());
         assertEquals(50, graph.getTotal().getUnits());
-        assertEquals(120, graph.getTotal().getMinutes());
+        assertEquals(180, graph.getTotal().getMinutes());
         assertEquals(4, graph.getBacklogs().size());
 
         var graphFirstResult = graph.getBacklogs().get(0);
@@ -185,20 +185,20 @@ class GetBacklogMonitorDetailsTest {
 
         var firstTotals = firstResult.getTotal();
         assertEquals(90, firstTotals.getUnits());
-        assertEquals(540, firstTotals.getMinutes());
+        assertEquals(240, firstTotals.getMinutes());
 
         var firstAreas = firstResult.getAreas();
         assertEquals(2, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
-        assertEquals(90, firstAreas.get(0).getValue().getMinutes());
+        assertEquals(41, firstAreas.get(0).getValue().getMinutes());
 
         var lastResults = results.get(3);
         assertEquals(DATE_TO.toInstant(), lastResults.getDate());
         assertNotNull(lastResults.getAreas());
         assertNull(lastResults.getTarget());
         assertEquals(500, lastResults.getTotal().getUnits());
-        assertEquals(6000, lastResults.getTotal().getMinutes());
+        assertEquals(60, lastResults.getTotal().getMinutes());
 
         verify(planningModelGateway, never()).getPerformedProcessing(any());
     }
@@ -237,26 +237,26 @@ class GetBacklogMonitorDetailsTest {
 
         var firstTotals = firstResult.getTotal();
         assertEquals(28, firstTotals.getUnits());
-        assertEquals(168, firstTotals.getMinutes());
+        assertEquals(103, firstTotals.getMinutes());
 
         var firstTargets = firstResult.getTarget();
         assertEquals(10, firstTargets.getUnits());
-        assertEquals(60, firstTargets.getMinutes());
+        assertEquals(38, firstTargets.getMinutes());
 
         var lastResults = results.get(3);
         assertEquals(DATE_TO.toInstant(), lastResults.getDate());
         assertNull(lastResults.getAreas());
 
         assertEquals(60, lastResults.getTarget().getUnits());
-        assertEquals(720, lastResults.getTarget().getMinutes());
+        assertEquals(8, lastResults.getTarget().getMinutes());
 
         assertEquals(500, lastResults.getTotal().getUnits());
-        assertEquals(6000, lastResults.getTotal().getMinutes());
+        assertEquals(60, lastResults.getTotal().getMinutes());
 
         var graph = response.getProcess();
         assertEquals("waving", graph.getProcess());
         assertEquals(50, graph.getTotal().getUnits());
-        assertEquals(120, graph.getTotal().getMinutes());
+        assertEquals(180, graph.getTotal().getMinutes());
         assertEquals(4, graph.getBacklogs().size());
     }
 
@@ -366,7 +366,7 @@ class GetBacklogMonitorDetailsTest {
                 .workflow(FBM_WMS_OUTBOUND)
                 .processes(List.of(process))
                 .dateFrom(DATE_FROM)
-                .dateTo(DATE_TO)
+                .dateTo(DATE_TO.plusHours(20))
                 .build();
 
         when(getProcessThroughput.execute(request))
