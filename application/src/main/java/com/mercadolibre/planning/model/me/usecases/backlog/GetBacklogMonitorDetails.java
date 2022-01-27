@@ -9,6 +9,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
@@ -41,7 +42,14 @@ import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
@@ -54,6 +62,13 @@ import static java.util.List.of;
 @AllArgsConstructor
 public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     private static final String NO_AREA = "N/A";
+
+    private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
+            FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
+            FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
+    );
+
+    private static final int HOUR_TPH_FUTURE = 24;
 
     private final BacklogApiAdapter backlogApiAdapter;
 
@@ -138,6 +153,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                         entry.getValue(),
                                         targetBacklog,
                                         historicalBacklog,
+                                        throughput,
                                         limits,
                                         currentBacklogMeasuredInHours)),
                 projectedBacklog.entrySet()
@@ -149,6 +165,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                         entry.getValue(),
                                         targetBacklog,
                                         historicalBacklog,
+                                        throughput,
                                         limits,
                                         projectedBacklogMeasuredInHours))
         ).collect(Collectors.toList());
@@ -159,19 +176,16 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                           final List<NumberOfUnitsInAnArea> areas,
                                           final Map<Instant, Integer> targetBacklog,
                                           final HistoricalBacklog historicalBacklog,
+                                          final Map<Instant, Integer> throughput,
                                           final Map<Instant, BacklogLimit> limits,
                                           final Map<Instant, UnitMeasure> backlogMeasuredInHours) {
 
         final Instant truncatedDate = date.truncatedTo(ChronoUnit.HOURS);
-
-        final Map<String, Integer> unitsByArea = areas.stream()
-                .collect(Collectors.toMap(
-                        NumberOfUnitsInAnArea::getArea,
-                        backlog -> backlog.getUnits() >= 0 ? backlog.getUnits() : 0));
-
         final UnitMeasure total = backlogMeasuredInHours.getOrDefault(truncatedDate, emptyMeasure());
+        final int tphDefault = throughput.getOrDefault(truncatedDate, 0);
 
-        final Integer throughputValue = getTphAverage(total);
+        final int tphAverage = getTphAverage(total);
+        final int throughputValue = tphAverage == 0 ? tphDefault : tphAverage;
 
         final UnitMeasure target = Optional.ofNullable(targetBacklog.get(truncatedDate))
                 .map(t -> UnitMeasure.fromUnits(t, throughputValue))
@@ -180,8 +194,12 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         final BacklogLimit limit = limits.get(truncatedDate);
 
         final UnitMeasure min = limit == null || limit.getMin() < 0 ? emptyMeasure() : fromMinutes(limit.getMin(), throughputValue);
-
         final UnitMeasure max = limit == null || limit.getMax() < 0 ? emptyMeasure() : fromMinutes(limit.getMax(), throughputValue);
+
+        final Map<String, Integer> unitsByArea = areas.stream()
+                .collect(Collectors.toMap(
+                        NumberOfUnitsInAnArea::getArea,
+                        backlog -> backlog.getUnits() >= 0 ? backlog.getUnits() : 0));
 
         return new VariablesPhoto(
                 isProjection,
@@ -239,7 +257,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                     .getProjectedBacklog(
                             input.getWarehouseId(),
                             input.getWorkflow(),
-                            of(input.getProcess()),
+                            PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
                             dateFrom.atZone(UTC),
                             dateTo.atZone(UTC),
                             input.getCallerId(),
@@ -293,7 +311,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 .workflow(input.getWorkflow())
                 .processes(of(input.getProcess()))
                 .dateFrom(input.getDateFrom().atZone(UTC))
-                .dateTo(input.getDateTo().atZone(UTC).plusHours(20))
+                .dateTo(input.getDateTo().atZone(UTC).plusHours(HOUR_TPH_FUTURE))
                 .build();
 
         try {

@@ -421,7 +421,7 @@ class GetBacklogMonitorTest {
                 .workflow(input.getWorkflow())
                 .processes(PROCESS_BY_WORKFLOW.get(input.getWorkflow()))
                 .dateFrom(DATE_FROM)
-                .dateTo(DATE_TO.plusHours(20))
+                .dateTo(DATE_TO.plusHours(24))
                 .build();
 
         final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
