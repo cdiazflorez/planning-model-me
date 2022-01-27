@@ -7,22 +7,27 @@ import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 
 import static java.util.Comparator.naturalOrder;
 
-abstract class GetConsolidatedBacklog {
+public abstract class GetConsolidatedBacklog {
 
     private static final long MAX_ALLOWED_MINUTES_SHIFT = 5L;
+
+    private static final long SECOND_IN_HOUR = 3600;
 
     /**
      * Gets, from the received consolidated backlog trajectory, the date when the latest backlog
@@ -132,6 +137,14 @@ abstract class GetConsolidatedBacklog {
         return new ProcessDetail(process.getName(), totals, backlog);
     }
 
+    protected Map<Instant, UnitMeasure> convertBacklogTrajectoryFromUnitToTime(final List<TotaledBacklogPhoto> totaledBacklogPhotos,
+                                                                               final Map<Instant, Integer> throughputByHour) {
+
+        final ThroughputTrajectory throughputTrajectory = new ThroughputTrajectory(new TreeMap<>(throughputByHour));
+
+        return convertTrajectoryFromUnitsToDuration(totaledBacklogPhotos.stream(), throughputTrajectory);
+    }
+
     private VariablesPhoto toBacklogByDate(
             final BacklogStatsByDate description,
             final Instant currentDatetime
@@ -147,5 +160,57 @@ abstract class GetConsolidatedBacklog {
                 .minLimit(description.getMinLimit())
                 .maxLimit(description.getMaxLimit())
                 .build();
+    }
+
+    /** Converts a backlog trajectory from units to the time needed to process them. */
+    static Map<Instant, UnitMeasure> convertTrajectoryFromUnitsToDuration(
+            final Stream<TotaledBacklogPhoto> backlogTrajectoryInUnits,
+            final ThroughputTrajectory throughputTrajectory
+    ) {
+        return backlogTrajectoryInUnits.collect(Collectors.toMap(TotaledBacklogPhoto::getTakenOn, item ->
+                        new UnitMeasure(item.getQuantity(),
+                                (int)ChronoUnit.MINUTES.between(
+                                        item.getTakenOn(),
+                                        throughputTrajectory.reversedIntegral(item.getTakenOn(), item.getQuantity())
+                                ))));
+    }
+
+    static class ThroughputTrajectory {
+        final TreeMap<Instant, Integer> throughputByHour;
+
+        public ThroughputTrajectory(TreeMap<Instant, Integer> throughputByHour) {
+            this.throughputByHour = throughputByHour;
+
+            // The purpose is to avoid infinity recursion
+            throughputByHour.put(
+                    throughputByHour.isEmpty()
+                            ? Instant.ofEpochSecond(0)
+                            : throughputByHour.lastKey().plus(1, ChronoUnit.HOURS),
+                    Integer.MAX_VALUE);
+        }
+
+        /**
+         * Finds out the {@link Instant} `end` such that the integral of this {@link ThroughputTrajectory} from `start` to
+         * `end` equals `targetBacklog`.
+         *
+         * @param start         the lower limit of the integral.
+         * @param targetBacklog the result of the integral of this trajectory from start to end, measured in `unit x hour`.
+         */
+        public Instant reversedIntegral(final Instant start, final long targetBacklog) {
+            if (targetBacklog == 0) {
+                return start;
+            } else {
+                final int throughputAtStart = throughputByHour.floorEntry(start).getValue();
+                final Instant nextInflectionPoint = start.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
+                final long integralUntilNextInflectionPoint =
+                        (throughputAtStart * ChronoUnit.SECONDS.between(start, nextInflectionPoint)) / SECOND_IN_HOUR;
+
+                if (integralUntilNextInflectionPoint >= targetBacklog) {
+                    return start.plusSeconds((targetBacklog * SECOND_IN_HOUR) / throughputAtStart);
+                } else {
+                    return reversedIntegral(nextInflectionPoint, targetBacklog - integralUntilNextInflectionPoint);
+                }
+            }
+        }
     }
 }

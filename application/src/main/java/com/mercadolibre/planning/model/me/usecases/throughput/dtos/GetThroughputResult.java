@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.throughput.dtos;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetConsolidatedBacklog;
 import lombok.Value;
 
 import java.time.Instant;
