@@ -46,6 +46,8 @@ import static java.util.List.of;
 @AllArgsConstructor
 public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
+    private static final int HOUR_TPH_FUTURE = 24;
+
     private final BacklogApiAdapter backlogApiAdapter;
 
     private final GetProcessThroughput getProcessThroughput;
@@ -236,7 +238,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                 /* Note that the zone is not necessary but the GetProcessThroughput use case
                 requires it to no avail. */
                 .dateFrom(ZonedDateTime.ofInstant(input.getDateFrom(), UTC))
-                .dateTo(ZonedDateTime.ofInstant(input.getDateTo(), UTC).plusHours(20))
+                .dateTo(ZonedDateTime.ofInstant(input.getDateTo(), UTC).plusHours(HOUR_TPH_FUTURE))
                 .build();
 
         try {
@@ -287,13 +289,14 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                 convertBacklogTrajectoryFromUnitToTime(data.getProjectedBacklog(), throughput);
 
         return Stream.concat(
-                toBacklogStatsByDate(data.getCurrentBacklog(), historical, limits, currentBacklogMeasuredInHours),
-                toBacklogStatsByDate(data.getProjectedBacklog(), historical, limits, projectedBacklogMeasuredInHours)
+                toBacklogStatsByDate(data.getCurrentBacklog(), throughput, historical, limits, currentBacklogMeasuredInHours),
+                toBacklogStatsByDate(data.getProjectedBacklog(), throughput, historical, limits, projectedBacklogMeasuredInHours)
         ).collect(Collectors.toList());
     }
 
     private Stream<BacklogStatsByDate> toBacklogStatsByDate(
             final List<TotaledBacklogPhoto> totaledBacklogPhotos,
+            final Map<Instant, Integer> throughputByHour,
             final HistoricalBacklog historical,
             final Map<Instant, BacklogLimit> limits,
             final Map<Instant, UnitMeasure> backlogMeasuredInHours
@@ -301,13 +304,14 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         return totaledBacklogPhotos.stream()
                 .map(photo -> {
                     final Instant truncatedDateOfPhoto = photo.getTakenOn().truncatedTo(ChronoUnit.HOURS);
+                    final int tphDefault = throughputByHour.getOrDefault(truncatedDateOfPhoto, 0);
                     final UnitMeasure total = backlogMeasuredInHours.getOrDefault(truncatedDateOfPhoto, emptyMeasure());
                     final BacklogLimit limit = limits.get(truncatedDateOfPhoto);
 
-                    final Integer tph = getTphAverage(total);
+                    final int tphAverage = getTphAverage(total);
+                    final int tph = tphAverage == 0 ? tphDefault : tphAverage;
 
                     final UnitMeasure min = limit == null || limit.getMin() < 0 ? emptyMeasure() : fromMinutes(limit.getMin(), tph);
-
                     final UnitMeasure max = limit == null || limit.getMax() < 0 ? emptyMeasure() : fromMinutes(limit.getMax(), tph);
 
                     final UnitMeasure average = historical.getOr(truncatedDateOfPhoto, UnitMeasure::emptyMeasure);

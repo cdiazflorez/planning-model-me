@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
@@ -33,9 +34,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
+
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -58,6 +63,11 @@ class GetBacklogMonitorDetailsTest {
             parse("2021-08-12T02:00:00Z", ISO_OFFSET_DATE_TIME),
             parse("2021-08-12T03:00:00Z", ISO_OFFSET_DATE_TIME),
             parse("2021-08-12T04:00:00Z", ISO_OFFSET_DATE_TIME)
+    );
+
+    private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
+            FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
+            FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
     );
 
     private static final ZonedDateTime DATE_CURRENT = DATES.get(1);
@@ -319,7 +329,7 @@ class GetBacklogMonitorDetailsTest {
 
         when(backlogApiAdapter.getProjectedBacklog(input.getWarehouseId(),
                 input.getWorkflow(),
-                of(input.getProcess()),
+                PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
                 dateFrom.atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
                 dateTo.atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
                 input.getCallerId(), input.getProcess() == PICKING ? List.of(
@@ -366,7 +376,7 @@ class GetBacklogMonitorDetailsTest {
                 .workflow(FBM_WMS_OUTBOUND)
                 .processes(List.of(process))
                 .dateFrom(DATE_FROM)
-                .dateTo(DATE_TO.plusHours(20))
+                .dateTo(DATE_TO.plusHours(24))
                 .build();
 
         when(getProcessThroughput.execute(request))
