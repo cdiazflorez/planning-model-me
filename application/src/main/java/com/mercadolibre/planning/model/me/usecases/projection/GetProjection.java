@@ -55,7 +55,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
         final boolean isFirstDate = isFirstDate(input.getDate(), requestDate);
         final ZonedDateTime dateFromToShow = isFirstDate
-                ? dateFromToProject.atZone(UTC).minusDays(getDatesToShowLookback())
+                ? ZonedDateTime.ofInstant(requestDate, UTC).minusDays(getDatesToShowShift())
                 : input.getDate();
 
         final ZonedDateTime dateToToShow = isFirstDate
@@ -177,7 +177,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                 .anyMatch(p -> p.getSimulatedEndDate() != null);
     }
 
-    protected long getDatesToShowLookback() {
+    protected long getDatesToShowShift() {
         return DAYS_TO_SHOW_LOOKBACK;
     }
 
