@@ -36,7 +36,9 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -88,6 +90,31 @@ public class GetProjectionSummaryTest {
 
         //THEN
         assertProjectionDetailsTable(response);
+    }
+
+    @Test
+    public void testExecuteWithoutDeviation() {
+        //GIVEN
+        final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+                .thenReturn(new LogisticCenterConfiguration(getDefault()));
+
+        //WHEN
+        final SimpleTable response = getProjectionSummary.execute(GetProjectionSummaryInput
+                .builder()
+                .warehouseId("ARTW01")
+                .workflow(Workflow.FBM_WMS_OUTBOUND)
+                .dateFrom(utcCurrentTime)
+                .dateTo(utcCurrentTime.plusDays(1))
+                .backlogs(mockBacklog())
+                .projections(mockProjections(utcCurrentTime))
+                .showDeviation(false)
+                .build());
+
+        //THEN
+        assertNotNull(response);
+        verifyNoInteractions(getSales);
+        verifyNoInteractions(planningModelGateway);
     }
 
     private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
