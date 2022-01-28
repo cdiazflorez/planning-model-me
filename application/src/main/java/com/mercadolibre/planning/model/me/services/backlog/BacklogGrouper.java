@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum BacklogGrouper {
     DATE_OUT,
-    PROCESS;
+    PROCESS,
+    AREA;
 
     @JsonValue
     public String getName() {

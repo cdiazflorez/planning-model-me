@@ -42,6 +42,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
@@ -282,7 +283,7 @@ class GetBacklogMonitorDetailsTest {
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
-                of(PROCESS),
+                of(input.getProcess().hasAreas() ? AREA : PROCESS),
                 input.getDateFrom(),
                 input.getDateTo(),
                 input.getRequestDate(),
@@ -301,7 +302,7 @@ class GetBacklogMonitorDetailsTest {
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
-                of(PROCESS),
+                of(input.getProcess().hasAreas() ? AREA : PROCESS),
                 input.getDateFrom(),
                 input.getDateTo(),
                 input.getRequestDate(),
