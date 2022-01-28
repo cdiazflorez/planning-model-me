@@ -50,6 +50,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
@@ -125,7 +126,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 input.getWarehouseId(),
                 of(input.getWorkflow()),
                 of(input.getProcess()),
-                of(PROCESS),
+                of(input.getProcess().hasAreas() ? AREA : PROCESS),
                 input.getDateFrom(),
                 input.getDateTo(),
                 input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS),
