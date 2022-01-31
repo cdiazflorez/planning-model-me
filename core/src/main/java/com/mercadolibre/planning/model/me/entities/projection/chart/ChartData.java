@@ -34,13 +34,8 @@ public class ChartData {
                                            final ProcessingTime processingTime,
                                            final boolean isDeferred,
                                            final boolean isExpired) {
-
-        final String title = cpt.toInstant().isAfter(Instant.now())
-                ? cpt.format(DATE_SHORT_FORMATTER)
-                : cpt.format(DATE_ONLY_FORMATTER);
-
         return ChartData.builder()
-                .title(title)
+                .title(cpt.format(DATE_SHORT_FORMATTER))
                 .cpt(cpt.format(DATE_FORMATTER))
                 .projectedEndTime(projectEndDate(projectedEndDate, dateTo))
                 .processingTime(processingTime)

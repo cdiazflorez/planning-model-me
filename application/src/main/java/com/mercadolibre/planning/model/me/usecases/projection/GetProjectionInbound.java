@@ -144,7 +144,7 @@ public abstract class GetProjectionInbound extends GetProjection {
     }
 
     @Override
-    protected long getDatesToShowLookback() {
+    protected long getDatesToShowShift() {
         return DAYS_TO_SHOW_LOOKBACK;
     }
 
