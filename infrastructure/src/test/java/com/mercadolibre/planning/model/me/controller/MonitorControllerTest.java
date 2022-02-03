@@ -30,6 +30,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.DEVIATION;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
@@ -62,7 +63,7 @@ class MonitorControllerTest {
     private AuthorizeUser authorizeUser;
 
     @Test
-    void testGetMonitors() throws Exception {
+    void testGetOutboundMonitors() throws Exception {
         // GIVEN
         when(getMonitor.execute(any()))
                 .thenReturn(mockCurrentStatus());
@@ -79,6 +80,23 @@ class MonitorControllerTest {
         // THEN
         result.andExpect(status().isOk());
         result.andExpect(content().json(getResourceAsString("get_current_status_response.json")));
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void testGetInboundMonitors() throws Exception {
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors")
+                .param("logistic_center_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+        );
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(getResourceAsString("get_current_status_response_inbound.json")));
 
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
     }
