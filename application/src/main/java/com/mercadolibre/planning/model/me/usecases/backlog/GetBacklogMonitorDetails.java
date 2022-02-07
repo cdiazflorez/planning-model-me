@@ -331,7 +331,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 new GetHistoricalBacklogInput(
                         input.getRequestDate(),
                         input.getWarehouseId(),
-                        of(input.getWorkflow()),
+                        input.getWorkflow(),
                         of(input.getProcess()),
                         input.getDateFrom(),
                         input.getDateTo())).get(input.getProcess());

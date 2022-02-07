@@ -1,0 +1,19 @@
+{
+    "expected": {
+        "shipments": 500,
+        "units": 15500
+    },
+    "received": {
+        "shipments": 350,
+        "units": 10850
+    },
+    "pending": {
+        "shipments": 2100,
+        "units": 65100
+    },
+    "deviation": {
+        "shipments": 150,
+        "units": 4650,
+        "percentage": 0.3
+    }
+}

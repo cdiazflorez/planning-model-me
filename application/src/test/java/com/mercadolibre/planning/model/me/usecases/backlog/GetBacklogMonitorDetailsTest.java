@@ -400,7 +400,7 @@ class GetBacklogMonitorDetailsTest {
         final var input = new GetHistoricalBacklogInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                of(FBM_WMS_OUTBOUND),
+                FBM_WMS_OUTBOUND,
                 of(process),
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant()
