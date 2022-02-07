@@ -191,7 +191,7 @@ class GetBacklogMonitorTest {
         final var request = new GetHistoricalBacklogInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                of(FBM_WMS_OUTBOUND),
+                FBM_WMS_OUTBOUND,
                 of(WAVING, PICKING, PACKING),
                 DATE_FROM.minusWeeks(2L).toInstant(),
                 DATE_FROM.toInstant()
@@ -370,7 +370,7 @@ class GetBacklogMonitorTest {
         final var request = new GetHistoricalBacklogInput(
                 input.getRequestDate(),
                 input.getWarehouseId(),
-                of(input.getWorkflow()),
+                input.getWorkflow(),
                 PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
                 input.getDateFrom(),
                 input.getDateTo()

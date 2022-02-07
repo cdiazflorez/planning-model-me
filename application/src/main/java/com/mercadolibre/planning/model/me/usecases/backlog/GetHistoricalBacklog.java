@@ -14,20 +14,23 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.minutesFromWeekStart;
 import static java.time.ZoneOffset.UTC;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Collections.emptyMap;
 import static java.util.List.of;
 
@@ -35,7 +38,8 @@ import static java.util.List.of;
 @Named
 @AllArgsConstructor
 class GetHistoricalBacklog {
-    private static final long BACKLOG_WEEKS_DATE_FROM_LOOKBACK = 3L;
+    private static final String PROCESS_KEY = "process";
+    private static final int BACKLOG_WEEKS_DATE_FROM_LOOKBACK = 3;
 
     private final BacklogApiAdapter backlogApiAdapter;
 
@@ -50,8 +54,7 @@ class GetHistoricalBacklog {
                 .plusHours(1L)
                 .toInstant(UTC);
 
-        final Map<ProcessName, Map<Instant, Integer>> backlogByProcess =
-                getBacklogByProcess(input, dateFrom, dateTo);
+        final Map<ProcessName, Map<Instant, Integer>> backlogByProcess = getBacklogByProcess(input);
 
         final GetThroughputResult throughput = getThroughput(input, dateFrom, dateTo);
 
@@ -68,32 +71,42 @@ class GetHistoricalBacklog {
                                                 Map.Entry::getValue)))));
     }
 
-    private Map<ProcessName, Map<Instant, Integer>> getBacklogByProcess(
-            final GetHistoricalBacklogInput input,
-            final Instant dateFrom,
-            final Instant dateTo) {
+    private Map<ProcessName, Map<Instant, Integer>> getBacklogByProcess(final GetHistoricalBacklogInput input) {
+        final Stream<Consolidation> consolidations = IntStream.rangeClosed(1, BACKLOG_WEEKS_DATE_FROM_LOOKBACK)
+                .mapToObj(shift -> getConsolidatedTrajectory(input, Duration.ofDays(7L * shift)).stream())
+                .flatMap(Function.identity());
 
-        final List<Consolidation> consolidations = backlogApiAdapter.getCurrentBacklog(
-                input.getRequestDate(),
-                input.getWarehouseId(),
-                input.getWorkflows(),
-                input.getProcesses(),
-                of(PROCESS),
-                dateFrom,
-                dateTo,
-                null,
-                null);
-
-        Predicate<Consolidation> filterBy = getBacklogFilter(input.getDateFrom(), input.getDateTo());
-
-        return consolidations.stream()
-                .filter(filterBy)
+        return consolidations
                 .collect(Collectors.groupingBy(
                         this::processNameFromBacklog,
                         Collectors.toMap(
-                                b -> b.getDate().truncatedTo(ChronoUnit.HOURS),
+                                b -> b.getDate().truncatedTo(HOURS),
                                 Consolidation::getTotal,
-                                (v1, v2) -> v1)));
+                                Integer::sum)));
+    }
+
+    private List<Consolidation> getConsolidatedTrajectory(final GetHistoricalBacklogInput input,
+                                                          final Duration shift) {
+
+        final Instant adjustedRequestDate = input.getRequestDate().minus(shift);
+        final Instant adjustedDateFrom = input.getDateFrom().minus(shift);
+        final Instant adjustedDateTo = input.getDateTo().minus(shift)
+                .plus(5, MINUTES); // adds five minutes to take into account the consolidations job's delays
+
+        final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
+        final int offsetFrom = workflow.getSlaFromOffsetInHours();
+        final int offsetTo = workflow.getSlaToOffsetInHours();
+
+        return backlogApiAdapter.getCurrentBacklog(
+                input.getRequestDate(),
+                input.getWarehouseId(),
+                of(input.getWorkflow()),
+                input.getProcesses(),
+                of(PROCESS),
+                adjustedDateFrom,
+                adjustedDateTo,
+                adjustedRequestDate.minus(offsetFrom, HOURS),
+                adjustedRequestDate.plus(offsetTo, HOURS));
     }
 
     private GetThroughputResult getThroughput(
@@ -103,7 +116,7 @@ class GetHistoricalBacklog {
 
         final GetThroughputInput request = GetThroughputInput.builder()
                 .warehouseId(input.getWarehouseId())
-                .workflow(input.getWorkflows().get(0))
+                .workflow(input.getWorkflow())
                 .processes(input.getProcesses())
                 /* Note that the zone is not necessary but the GetProcessThroughput use case
                  requires it to no avail. */
@@ -153,7 +166,7 @@ class GetHistoricalBacklog {
                                         this::average))));
     }
 
-    private UnitMeasure average(List<UnitMeasure> measures) {
+    private UnitMeasure average(final List<UnitMeasure> measures) {
         final double units = measures.stream()
                 .mapToInt(UnitMeasure::getUnits)
                 .average()
@@ -169,36 +182,8 @@ class GetHistoricalBacklog {
         return new UnitMeasure((int) units, (int) minutes);
     }
 
-    private Predicate<Consolidation> getBacklogFilter(Instant dateFrom, Instant dateTo) {
-        Integer dateFromInMinutes = minutesFromWeekStart(dateFrom);
-        Integer dateToInMinutes = minutesFromWeekStart(dateTo);
-
-        Predicate<Consolidation> filterByAny = backlog -> {
-            Integer backlogDateInMinutes = minutesFromWeekStart(
-                    backlog.getDate()
-                            .truncatedTo(ChronoUnit.HOURS)
-            );
-
-            return backlogDateInMinutes.compareTo(dateFromInMinutes) >= 0
-                    && backlogDateInMinutes.compareTo(dateToInMinutes) <= 0;
-        };
-
-        Predicate<Consolidation> filterByForEndOfWeek = backlog -> {
-            Integer backlogDateInMinutes = minutesFromWeekStart(
-                    backlog.getDate()
-                            .truncatedTo(ChronoUnit.HOURS));
-
-            return backlogDateInMinutes.compareTo(dateFromInMinutes) >= 0
-                    && backlogDateInMinutes.compareTo(dateToInMinutes) <= 0;
-        };
-
-        return dateFromInMinutes.compareTo(dateToInMinutes) < 0
-                ? filterByAny
-                : filterByForEndOfWeek;
-    }
-
     private ProcessName processNameFromBacklog(final Consolidation b) {
         final Map<String, String> keys = b.getKeys();
-        return ProcessName.from(keys.get("process"));
+        return ProcessName.from(keys.get(PROCESS_KEY));
     }
 }
