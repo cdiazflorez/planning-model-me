@@ -305,7 +305,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                 .map(photo -> {
                     final Instant truncatedDateOfPhoto = photo.getTakenOn().truncatedTo(ChronoUnit.HOURS);
                     final int tphDefault = throughputByHour.getOrDefault(truncatedDateOfPhoto, 0);
-                    final UnitMeasure total = backlogMeasuredInHours.getOrDefault(truncatedDateOfPhoto, emptyMeasure());
+                    final UnitMeasure total = backlogMeasuredInHours.getOrDefault(photo.getTakenOn(), emptyMeasure());
                     final BacklogLimit limit = limits.get(truncatedDateOfPhoto);
 
                     final int tphAverage = getTphAverage(total);
