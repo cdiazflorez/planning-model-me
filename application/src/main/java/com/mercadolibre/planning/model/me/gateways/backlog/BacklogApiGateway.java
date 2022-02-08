@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.gateways.backlog;
 
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 
@@ -16,4 +17,7 @@ public interface BacklogApiGateway {
                                           final Instant slaFrom,
                                           final Instant slaTo,
                                           final List<String> groupingFields);
+
+    List<Consolidation> getCurrentBacklog(BacklogCurrentRequest request);
+
 }
