@@ -55,21 +55,21 @@ public class BacklogApiAdapter {
                                                  final Instant slaFrom,
                                                  final Instant slaTo) {
 
-        final BacklogRequest adapterRequest = new BacklogRequest(
-                requestDate,
-                warehouseId,
-                getWorkflowAliasByWorkflow(workflows),
-                processes.stream()
+        return backlogApiGateway.getBacklog(BacklogRequest.builder()
+                .requestDate(requestDate)
+                .warehouseId(warehouseId)
+                .workflows(getWorkflowAliasByWorkflow(workflows))
+                .processes(processes.stream()
                         .map(ProcessName::getName)
-                        .collect(Collectors.toList()),
-                Collections.emptyList(),
-                groupings.stream().map(BacklogGrouper::getName).collect(Collectors.toList()),
-                dateFrom,
-                dateTo,
-                slaFrom,
-                slaTo);
-
-        return backlogApiGateway.getBacklog(adapterRequest);
+                        .collect(Collectors.toList()))
+                .steps(Collections.emptyList())
+                .groupingFields(groupings.stream().map(BacklogGrouper::getName).collect(Collectors.toList()))
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .slaFrom(slaFrom)
+                .slaTo(slaTo)
+                .build()
+        );
     }
 
     public List<BacklogProjectionResponse> getProjectedBacklog(final String warehouseId,

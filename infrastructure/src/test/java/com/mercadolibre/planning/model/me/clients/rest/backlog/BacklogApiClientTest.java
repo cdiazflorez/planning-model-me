@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.clients.rest.backlog;
 
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.restclient.MockResponse;
@@ -122,6 +123,30 @@ class BacklogApiClientTest extends BaseClientTest {
                 null,
                 null,
                 null
+        );
+
+        // THEN
+        assertEquals(3, result.size());
+
+        final Consolidation firstConsolidation = result.get(0);
+        assertEquals(1255, firstConsolidation.getTotal());
+        assertEquals(DATE_FROM, firstConsolidation.getDate());
+
+        final Map<String, String> keys = firstConsolidation.getKeys();
+        assertEquals("wms-outbound", keys.get("workflow"));
+        assertEquals("picking", keys.get("process"));
+        assertEquals("MZ-0", keys.get("area"));
+        assertEquals("2021-01-02T00:00", keys.get("date_out"));
+    }
+
+    @Test
+    void testGetCurrentBacklogWithDateInOK() throws JSONException {
+        // GIVEN
+        mockSuccessfulResponse("/current");
+
+        // WHEN
+        final List<Consolidation> result = client.getCurrentBacklog(
+                new BacklogCurrentRequest(WAREHOUSE_ID)
         );
 
         // THEN

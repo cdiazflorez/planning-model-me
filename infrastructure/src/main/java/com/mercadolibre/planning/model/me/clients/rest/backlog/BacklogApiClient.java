@@ -5,6 +5,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.restclient.MeliRestClient;
@@ -72,6 +73,22 @@ public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
         );
     }
 
+    public List<Consolidation> getCurrentBacklog(BacklogCurrentRequest request) {
+
+
+        final HttpRequest httpRequest = HttpRequest.builder()
+                .url(format(CURRENT_BACKLOG_URL, request.getWarehouseId()))
+                .GET()
+                .queryParams(getQueryParams(request))
+                .acceptedHttpStatuses(Set.of(OK))
+                .build();
+
+        return send(httpRequest, response ->
+                response.getData(new TypeReference<>() {
+                })
+        );
+    }
+
     private Map<String, String> getQueryParams(BacklogRequest request) {
         Map<String, String> params = new HashMap<>();
         addAsQueryParam(params, "requestDate", request.getRequestDate());
@@ -81,6 +98,23 @@ public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
         addAsQueryParam(params, "group_by", request.getGroupingFields());
         addAsQueryParam(params, "date_from", request.getDateFrom());
         addAsQueryParam(params, "date_to", request.getDateTo());
+        addAsQueryParam(params, "date_in_from", request.getDateInFrom());
+        addAsQueryParam(params, "date_in_to", request.getDateInTo());
+        addAsQueryParam(params, "sla_from", request.getSlaFrom());
+        addAsQueryParam(params, "sla_to", request.getSlaTo());
+
+        return params;
+    }
+
+    private Map<String, String> getQueryParams(BacklogCurrentRequest request) {
+        Map<String, String> params = new HashMap<>();
+        addAsQueryParam(params, "requestDate", request.getRequestDate());
+        addAsQueryParam(params, "workflows", request.getWorkflows());
+        addAsQueryParam(params, "processes", request.getProcesses());
+        addAsQueryParam(params, "steps", request.getSteps());
+        addAsQueryParam(params, "group_by", request.getGroupingFields());
+        addAsQueryParam(params, "date_in_from", request.getDateInFrom());
+        addAsQueryParam(params, "date_in_to", request.getDateInTo());
         addAsQueryParam(params, "sla_from", request.getSlaFrom());
         addAsQueryParam(params, "sla_to", request.getSlaTo());
 
