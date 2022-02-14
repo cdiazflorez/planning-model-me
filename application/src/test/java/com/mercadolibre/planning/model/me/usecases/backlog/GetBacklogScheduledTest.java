@@ -1,9 +1,23 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.time.ZoneOffset.UTC;
+import static org.mockito.Mockito.when;
+
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.*;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,21 +26,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static java.time.ZoneOffset.UTC;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 public class GetBacklogScheduledTest {
 
-    private static final int AMOUNT_TO_SUBSTRACT_MINUTES = 5;
     private static final int AMOUNT_TO_ADD_MINUTES = 5;
     private static final int AMOUNT_TO_ADD_DAYS = 1;
     private static final int QUANTITY_BACKLOG = 500;
@@ -56,7 +58,6 @@ public class GetBacklogScheduledTest {
     public void getBacklogScheduledTest() {
         //GIVEN
 
-        final Instant photoDateFrom = today.minus(AMOUNT_TO_SUBSTRACT_MINUTES, ChronoUnit.MINUTES);
         final Instant photoDateTo = today.plus(AMOUNT_TO_ADD_MINUTES, ChronoUnit.MINUTES);
 
         //WHEN
@@ -67,7 +68,7 @@ public class GetBacklogScheduledTest {
 
         //first photo of day
         when(backlogGateway.getBacklog(
-                new BacklogRequest(WAREHOUSE_ID, photoDateFrom, photoDateTo)
+                new BacklogRequest(WAREHOUSE_ID, today, photoDateTo)
                         .withWorkflows(List.of("inbound"))
                         .withGroupingFields(List.of("date_in"))
                         .withDateInRange(today, today.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS))
@@ -89,7 +90,7 @@ public class GetBacklogScheduledTest {
                 Indicator.builder().units(500).build(),
                 Indicator.builder().units(275).build(),
                 Indicator.builder().units(0).build(),
-                Indicator.builder().units(225).percentage(0.45).build()
+                Indicator.builder().units(225).percentage(-0.45).build()
         );
 
         //verify

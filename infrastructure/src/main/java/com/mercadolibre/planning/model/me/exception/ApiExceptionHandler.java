@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.exception;
 
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
+import com.mercadolibre.planning.model.me.controller.backlog.exception.BacklogNotRespondingException;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.EmptyStateException;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
@@ -141,6 +142,17 @@ public class ApiExceptionHandler {
         request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
 
         log.error(exception.getMessage(), exception);
+        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+    }
+
+    @ExceptionHandler(BacklogNotRespondingException.class)
+    public ResponseEntity<ErrorResponse> handleBacklogNotRespondingException ( final BacklogNotRespondingException exception, HttpServletRequest request) {
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+            .status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .message(exception.getMessage())
+            .error("unprocessable_entity")
+            .build();
+
         return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }
 
