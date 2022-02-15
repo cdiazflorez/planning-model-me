@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.UploadForecast;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.Target;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -63,7 +64,13 @@ public class ForecastControllerTest {
 
         // THEN
         result.andExpect(status().isOk());
-        verify(uploadForecast).upload(WAREHOUSE_ID, FBM_WMS_OUTBOUND, fileContent, 1234L);
+        verify(uploadForecast).upload(
+                WAREHOUSE_ID,
+                FBM_WMS_OUTBOUND,
+                Target.FBM_WMS_OUTBOUND.forecastParser,
+                fileContent,
+                1234L
+        );
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_FORECAST)));
         verify(datadogMetricService).trackForecastUpload(WAREHOUSE_ID);
     }

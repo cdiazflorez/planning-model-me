@@ -2,7 +2,6 @@ package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.AreaDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountDistribution;
@@ -12,7 +11,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PolyvalentProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistributionData;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.RepsDistributionDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.SheetParser;
@@ -22,11 +20,7 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.mod
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProductivityProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.GenerateBacklogLimitUtil;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils;
-import com.mercadolibre.planning.model.me.utils.TestLogisticCenterMapper;
 import com.mercadolibre.spreadsheet.MeliSheet;
-import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -36,7 +30,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
@@ -52,8 +45,6 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getLongValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getStringValueAt;
 
-@Named
-@AllArgsConstructor
 public class RepsForecastSheetParser implements SheetParser {
 
     private static final int DEFAULT_ABILITY_LEVEL = 1;
@@ -63,27 +54,21 @@ public class RepsForecastSheetParser implements SheetParser {
     private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 188;
     private static final int HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET = 3;
 
-    private final LogisticCenterGateway logisticCenterGateway;
-
     @Override
     public String name() {
         return "Reps";
     }
 
     @Override
-    public Workflow workflow() {
-        return FBM_WMS_OUTBOUND;
-    }
-
-    @Override
-    public ForecastSheetDto parse(final String warehouseId, final MeliSheet sheet) {
+    public ForecastSheetDto parse(
+            final String warehouseId,
+            final MeliSheet sheet,
+            final LogisticCenterConfiguration config
+    ) {
         final String week = getStringValueAt(sheet, 2, 2);
 
         validateIfWarehouseIdIsCorrect(warehouseId, sheet);
         validateIfWeekIsCorrect(week);
-
-        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
-                TestLogisticCenterMapper.toRealLogisticCenter(warehouseId));
 
         final RepsDistributionDto repsDistributionDto = getProcessingDistribution(config, sheet);
 

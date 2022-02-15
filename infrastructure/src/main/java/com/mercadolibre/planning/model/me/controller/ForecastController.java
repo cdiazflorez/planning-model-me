@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.UploadForecast;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.Target;
 import com.newrelic.api.agent.Trace;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +59,7 @@ public class ForecastController {
         final byte[] bytes = getFileBytes(file);
 
         final ForecastCreationResponse createdForecast = uploadForecast.upload(
-                warehouseId, workflow, bytes, callerId
+                warehouseId, workflow, Target.from(workflow).forecastParser, bytes, callerId
         );
 
         datadogMetricService.trackForecastUpload(warehouseId);

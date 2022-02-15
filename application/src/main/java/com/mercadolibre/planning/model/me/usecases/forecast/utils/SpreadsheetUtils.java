@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 import static java.lang.String.format;
 
-public class SpreadsheetUtils {
+public final class SpreadsheetUtils {
 
     public static final DateTimeFormatter formatter =
             DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");

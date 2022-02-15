@@ -4,9 +4,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelFo
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastCreationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PostForecastResponse;
-import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastDto;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import javax.inject.Named;
 
@@ -18,12 +17,11 @@ import static java.lang.String.format;
 import static java.util.Objects.nonNull;
 
 @Named
-@AllArgsConstructor
-public class CreateForecast implements UseCase<ForecastDto, ForecastCreationResponse> {
+@RequiredArgsConstructor
+public class CreateForecast {
 
     private final PlanningModelForecastGateway planningModelForecastGateway;
 
-    @Override
     public ForecastCreationResponse execute(final ForecastDto input) {
         final PostForecastResponse postForecast =
                 planningModelForecastGateway.postForecast(input.getWorkflow(), input.getForecast());
@@ -34,14 +32,17 @@ public class CreateForecast implements UseCase<ForecastDto, ForecastCreationResp
                                                    final boolean isValid) {
 
         String response = "";
-
         if (isValid) {
-            final String[] weekOfYear = metadataList.stream()
+            response = metadataList.stream()
                     .filter(metadata -> metadata.getKey().equals(WEEK.getName()))
-                    .findFirst().get().getValue().split("-");
-            final String[] datesBetween = getDatesBetween(weekOfYear);
-            response = format("Considera los días desde: %1$s hasta: %2$s",
-                    datesBetween[0], datesBetween[1]);
+                    .findFirst()
+                    .map(metadata -> {
+                        final var weekOfYear = metadata.getValue().split("-");
+                        final String[] datesBetween = getDatesBetween(weekOfYear);
+                        return format("Considera los días desde: %1$s hasta: %2$s",
+                                          datesBetween[0], datesBetween[1]);
+                    })
+                    .orElse("");
         }
         return new ForecastCreationResponse(response);
     }
