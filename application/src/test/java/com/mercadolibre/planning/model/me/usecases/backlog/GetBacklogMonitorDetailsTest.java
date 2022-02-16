@@ -143,7 +143,7 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(2, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
-        assertEquals(41, firstAreas.get(0).getValue().getMinutes());
+        assertEquals(113, firstAreas.get(0).getValue().getMinutes());
 
         assertEquals(2, results.get(1).getAreas().size());
 
@@ -154,7 +154,7 @@ class GetBacklogMonitorDetailsTest {
         var graph = response.getProcess();
         assertEquals("picking", graph.getProcess());
         assertEquals(50, graph.getTotal().getUnits());
-        assertEquals(180, graph.getTotal().getMinutes());
+        assertEquals(240, graph.getTotal().getMinutes());
         assertEquals(4, graph.getBacklogs().size());
 
         var graphFirstResult = graph.getBacklogs().get(0);
@@ -196,20 +196,20 @@ class GetBacklogMonitorDetailsTest {
 
         var firstTotals = firstResult.getTotal();
         assertEquals(90, firstTotals.getUnits());
-        assertEquals(240, firstTotals.getMinutes());
+        assertEquals(660, firstTotals.getMinutes());
 
         var firstAreas = firstResult.getAreas();
         assertEquals(2, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
-        assertEquals(41, firstAreas.get(0).getValue().getMinutes());
+        assertEquals(113, firstAreas.get(0).getValue().getMinutes());
 
         var lastResults = results.get(3);
         assertEquals(DATE_TO.toInstant(), lastResults.getDate());
         assertNotNull(lastResults.getAreas());
         assertNull(lastResults.getTarget());
         assertEquals(500, lastResults.getTotal().getUnits());
-        assertEquals(60, lastResults.getTotal().getMinutes());
+        assertEquals(1440, lastResults.getTotal().getMinutes());
 
         verify(planningModelGateway, never()).getPerformedProcessing(any());
     }
@@ -259,15 +259,15 @@ class GetBacklogMonitorDetailsTest {
         assertNull(lastResults.getAreas());
 
         assertEquals(60, lastResults.getTarget().getUnits());
-        assertEquals(8, lastResults.getTarget().getMinutes());
+        assertEquals(180, lastResults.getTarget().getMinutes());
 
         assertEquals(500, lastResults.getTotal().getUnits());
-        assertEquals(60, lastResults.getTotal().getMinutes());
+        assertEquals(1440, lastResults.getTotal().getMinutes());
 
         var graph = response.getProcess();
         assertEquals("waving", graph.getProcess());
         assertEquals(50, graph.getTotal().getUnits());
-        assertEquals(180, graph.getTotal().getMinutes());
+        assertEquals(240, graph.getTotal().getMinutes());
         assertEquals(4, graph.getBacklogs().size());
     }
 
@@ -289,9 +289,9 @@ class GetBacklogMonitorDetailsTest {
                 input.getRequestDate(),
                 input.getRequestDate().plus(24, ChronoUnit.HOURS))
         ).thenReturn(List.of(
-                new Consolidation(firstDate, rkH, 15),
-                new Consolidation(secondDate, rkH, 50),
-                new Consolidation(firstDate, rkL, 75)
+                new Consolidation(firstDate, rkH, 15, true),
+                new Consolidation(secondDate, rkH, 50, true),
+                new Consolidation(firstDate, rkL, 75, true)
         ));
     }
 
@@ -308,8 +308,8 @@ class GetBacklogMonitorDetailsTest {
                 input.getRequestDate(),
                 input.getRequestDate().plus(24, ChronoUnit.HOURS))
         ).thenReturn(List.of(
-                new Consolidation(DATES.get(0).toInstant(), na, 28),
-                new Consolidation(DATES.get(1).toInstant(), na, 50)
+                new Consolidation(DATES.get(0).toInstant(), na, 28, true),
+                new Consolidation(DATES.get(1).toInstant(), na, 50, true)
         ));
     }
 
@@ -334,11 +334,11 @@ class GetBacklogMonitorDetailsTest {
                 dateFrom.atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
                 dateTo.atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
                 input.getCallerId(), input.getProcess() == PICKING ? List.of(
-                        new Consolidation(firstDate, rkH, 15),
-                        new Consolidation(secondDate, rkH, 50),
-                        new Consolidation(firstDate, rkL, 75)) : List.of(
-                        new Consolidation(firstDate, na, 28),
-                        new Consolidation(secondDate, na, 50)))).thenReturn(
+                        new Consolidation(firstDate, rkH, 15, true),
+                        new Consolidation(secondDate, rkH, 50, true),
+                        new Consolidation(firstDate, rkL, 75, true)) : List.of(
+                        new Consolidation(firstDate, na, 28, true),
+                        new Consolidation(secondDate, na, 50, true)))).thenReturn(
                 List.of(
                         new BacklogProjectionResponse(WAVING, of(
                                 new ProjectionValue(DATES.get(2), 300),

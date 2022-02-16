@@ -100,11 +100,11 @@ public class GetBacklogScheduledTest {
     }
 
     private List<Consolidation> responseGetBacklog() {
-        return List.of(new Consolidation(Instant.now(), Map.of("date_in", today.toString()), QUANTITY_BACKLOG));
+        return List.of(new Consolidation(Instant.now(), Map.of("date_in", today.toString()), QUANTITY_BACKLOG, true));
     }
 
     private List<Consolidation> responseGetCurrentBacklog() {
-        return List.of(new Consolidation(Instant.now(), Map.of("date_in", today.toString()), QUANTITY_BACKLOG_CURRENT));
+        return List.of(new Consolidation(Instant.now(), Map.of("date_in", today.toString()), QUANTITY_BACKLOG_CURRENT, true));
     }
 
 }

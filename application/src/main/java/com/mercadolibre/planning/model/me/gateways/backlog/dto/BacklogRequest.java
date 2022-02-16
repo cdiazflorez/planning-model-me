@@ -50,7 +50,7 @@ public class BacklogRequest {
 
     public BacklogRequest withSlaRange(Instant from, Instant to) {
         this.slaFrom = from;
-        this.slaTo = slaTo;
+        this.slaTo = to;
         return this;
     }
 

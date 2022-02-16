@@ -26,5 +26,11 @@ public class Consolidation {
     /**
      * The sum of the quantity of all the cells of the group.
      */
-    private Integer total;
+    private int total;
+
+    /**
+     * The value of this field is `true` when the photo from which this consolidation was created is the first that was
+     * taken in the period of the time partition (currently the partition is by hour).
+     */
+    boolean isFirstPhotoOfPeriod;
 }

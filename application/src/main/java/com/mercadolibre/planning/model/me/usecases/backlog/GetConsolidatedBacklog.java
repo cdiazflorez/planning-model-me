@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -19,7 +20,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 
 import static java.util.Comparator.naturalOrder;
 
@@ -50,23 +50,17 @@ public abstract class GetConsolidatedBacklog {
     }
 
     /** Truncates to hours the dates at which the backlog photos were taken on.*/
-    protected List<Consolidation> truncateToHoursTheTakenOnDatesExceptFor(
-            final List<Consolidation> consolidations,
-            final Instant theDateThatIsKeptAsIs
-    ) {
+    protected List<Consolidation> truncateToHoursTheTakenOnDate(final List<Consolidation> consolidations) {
         return consolidations.stream()
-                .map(cellsGroupSum -> {
-                    final Instant date = theDateThatIsKeptAsIs
-                            .equals(cellsGroupSum.getDate())
-                            ? theDateThatIsKeptAsIs
-                            : cellsGroupSum.getDate().truncatedTo(ChronoUnit.HOURS);
-
-                    return new Consolidation(
-                            date,
-                            cellsGroupSum.getKeys(),
-                            cellsGroupSum.getTotal()
-                    );
-                })
+                .map(cellsGroupSum -> cellsGroupSum.isFirstPhotoOfPeriod()
+                        ? new Consolidation(
+                             cellsGroupSum.getDate().truncatedTo(ChronoUnit.HOURS),
+                             cellsGroupSum.getKeys(),
+                             cellsGroupSum.getTotal(),
+                             cellsGroupSum.isFirstPhotoOfPeriod()
+                        )
+                        : cellsGroupSum
+                )
                 .collect(Collectors.toList());
     }
 
@@ -167,12 +161,20 @@ public abstract class GetConsolidatedBacklog {
             final Stream<TotaledBacklogPhoto> backlogTrajectoryInUnits,
             final ThroughputTrajectory throughputTrajectory
     ) {
-        return backlogTrajectoryInUnits.collect(Collectors.toMap(TotaledBacklogPhoto::getTakenOn, item ->
-                        new UnitMeasure(item.getQuantity(),
-                                (int)ChronoUnit.MINUTES.between(
-                                        item.getTakenOn(),
-                                        throughputTrajectory.reversedIntegral(item.getTakenOn(), item.getQuantity())
-                                ))));
+        return backlogTrajectoryInUnits.collect(Collectors.toMap(
+                TotaledBacklogPhoto::getTakenOn,
+                item -> new UnitMeasure(
+                        item.getQuantity(),
+                        (int)ChronoUnit.MINUTES.between(
+                                item.getTakenOn(),
+                                throughputTrajectory.reversedIntegral(item.getTakenOn(), item.getQuantity())
+                        )
+                ),
+                (a, b) -> {
+                    assert a.equals(b);
+                    return a;
+                }
+        ));
     }
 
     static class ThroughputTrajectory {
@@ -181,12 +183,20 @@ public abstract class GetConsolidatedBacklog {
         public ThroughputTrajectory(TreeMap<Instant, Integer> throughputByHour) {
             this.throughputByHour = throughputByHour;
 
-            // The purpose is to avoid infinity recursion
-            throughputByHour.put(
-                    throughputByHour.isEmpty()
-                            ? Instant.ofEpochSecond(0)
-                            : throughputByHour.lastKey().plus(1, ChronoUnit.HOURS),
-                    Integer.MAX_VALUE);
+            if (throughputByHour.isEmpty()) {
+                // An undefined throughput trajectory is interpreted as a constant infinity throughput.
+                throughputByHour.put(Instant.ofEpochSecond(0), Integer.MAX_VALUE);
+            } else {
+                // Extrapolate the left side with the first value
+                throughputByHour.put(Instant.ofEpochSecond(0), throughputByHour.firstEntry().getValue());
+                // The right side is naturally extrapolated with the last value.
+                // To avoid infinite recursion when the last value is zero, a high value point is appended a day after
+                // the last.
+                throughputByHour.put(
+                        throughputByHour.lastKey().plus(1, ChronoUnit.DAYS),
+                        Integer.MAX_VALUE
+                );
+            }
         }
 
         /**
@@ -200,7 +210,7 @@ public abstract class GetConsolidatedBacklog {
             if (targetBacklog == 0) {
                 return start;
             } else {
-                final int throughputAtStart = throughputByHour.floorEntry(start).getValue();
+                final var throughputAtStart = throughputByHour.floorEntry(start).getValue();
                 final Instant nextInflectionPoint = start.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
                 final long integralUntilNextInflectionPoint =
                         (throughputAtStart * ChronoUnit.SECONDS.between(start, nextInflectionPoint)) / SECOND_IN_HOUR;

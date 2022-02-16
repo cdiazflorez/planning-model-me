@@ -221,7 +221,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 input.getRequestDate(),
                 currentBacklog,
                 input.getDateFrom(),
-                date -> new Consolidation(date, Map.of("area", NO_AREA), 0)
+                date -> new Consolidation(date, Map.of("area", NO_AREA), 0, true)
         );
 
         return fixedConsolidation.stream()
@@ -238,8 +238,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                            final Function<Instant, Consolidation> backlogSupplier) {
 
         final Instant latestPhotoDate = getDateWhenLatestPhotoWasTaken(consolidation, requestDate);
-        final List<Consolidation> truncatedConsolidations =
-                truncateToHoursTheTakenOnDatesExceptFor(consolidation, latestPhotoDate);
+        final List<Consolidation> truncatedConsolidations = truncateToHoursTheTakenOnDate(consolidation);
         return fillMissing(truncatedConsolidations, dateFrom, latestPhotoDate, backlogSupplier);
     }
 
