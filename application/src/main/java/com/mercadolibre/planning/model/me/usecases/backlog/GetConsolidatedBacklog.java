@@ -210,7 +210,7 @@ public abstract class GetConsolidatedBacklog {
             if (targetBacklog == 0) {
                 return start;
             } else {
-                final var throughputAtStart = throughputByHour.floorEntry(start).getValue();
+                final int throughputAtStart = throughputByHour.floorEntry(start).getValue();
                 final Instant nextInflectionPoint = start.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
                 final long integralUntilNextInflectionPoint =
                         (throughputAtStart * ChronoUnit.SECONDS.between(start, nextInflectionPoint)) / SECOND_IN_HOUR;
