@@ -54,5 +54,5 @@ public class SaveDeviationTest {
         assertEquals(200, deviationResponse.getStatus());
         assertEquals("Forecast deviation saved", deviationResponse.getMessage());
     }
-    
+
 }

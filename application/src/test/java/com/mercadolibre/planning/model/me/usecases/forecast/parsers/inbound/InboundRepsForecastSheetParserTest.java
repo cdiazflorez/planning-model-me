@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
@@ -10,8 +9,6 @@ import com.mercadolibre.spreadsheet.MeliSheet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
@@ -25,33 +22,26 @@ import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class InboundRepsForecastSheetParserTest {
 
     private static final String VALID_FILE_PATH = "inbound_planning_ok.xlsx";
     private static final String ERRONEOUS_FILE_PATH = "inbound_planning_with_errors.xlsx";
-
+    private static final LogisticCenterConfiguration CONF =
+            new LogisticCenterConfiguration(TimeZone.getTimeZone("UTC"));
     private static final ZonedDateTime FIRST_DATE = ZonedDateTime.parse("2021-11-07T00:00Z", ISO_OFFSET_DATE_TIME);
 
-    @InjectMocks
-    private InboundRepsForecastSheetParser parser;
-
-    @Mock
-    private LogisticCenterGateway logisticCenterGateway;
+    private final InboundRepsForecastSheetParser parser = new InboundRepsForecastSheetParser();
 
     @Test
     @DisplayName("Excel Parsed Ok")
     void parseOk() {
         // GIVEN
-        when(logisticCenterGateway.getConfiguration("ARBA01"))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getTimeZone("UTC")));
-
         final MeliSheet repsSheet = getMeliSheetFrom(parser.name(), VALID_FILE_PATH);
 
         // WHEN
-        final ForecastSheetDto result = parser.parse("ARBA01", repsSheet);
+        final ForecastSheetDto result = parser.parse("ARBA01", repsSheet, CONF);
 
         // THEN
         assertNotNull(result);
@@ -101,14 +91,11 @@ class InboundRepsForecastSheetParserTest {
     @DisplayName("Excel With Errors")
     void errors() {
         // GIVEN
-        when(logisticCenterGateway.getConfiguration("ARBA01"))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
-
         final MeliSheet repsSheet = getMeliSheetFrom(parser.name(), ERRONEOUS_FILE_PATH);
 
         // WHEN
         final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
-                () -> parser.parse("ARBA01", repsSheet));
+                () -> parser.parse("ARBA01", repsSheet, CONF));
 
         // THEN
         assertNotNull(exception.getMessage());

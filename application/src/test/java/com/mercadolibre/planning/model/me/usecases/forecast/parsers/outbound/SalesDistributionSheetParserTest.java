@@ -8,7 +8,6 @@ import com.mercadolibre.spreadsheet.MeliSheet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -19,7 +18,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFrom;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class SalesDistributionSheetParserTest {
@@ -28,9 +26,11 @@ public class SalesDistributionSheetParserTest {
     private static final String INVALID_DATE_FILE_PATH = "forecast_example_invalid_date.xlsx";
     private static final String INVALID_COLUMN_FILE_PATH =
             "forecast_example_invalid_content_in_unused_columns.xlsx";
+    private static final LogisticCenterConfiguration CONF =
+            new LogisticCenterConfiguration(TimeZone.getDefault());
 
-    @InjectMocks
-    private SalesDistributionSheetParser salesDistributionSheetParser;
+    private final SalesDistributionSheetParser salesDistributionSheetParser =
+            new SalesDistributionSheetParser();
 
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
@@ -41,12 +41,11 @@ public class SalesDistributionSheetParserTest {
     void parseOk() {
         // GIVEN
         final MeliSheet repsSheet = getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), VALID_FILE_PATH);
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+        assertNotNull(repsSheet);
 
         // WHEN
         final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse(WAREHOUSE_ID,
-                repsSheet);
+                                                                                     repsSheet, CONF);
 
         // THEN
         assertNotNull(forecastSheetDto);
@@ -57,14 +56,11 @@ public class SalesDistributionSheetParserTest {
     void parseFileWithInvalidDateFormat() {
         givenAnExcelFileWithInvalidDate();
         assertThrows(ForecastParsingException.class,
-                () -> salesDistributionSheetParser.parse(WAREHOUSE_ID, ordersSheet));
+                () -> salesDistributionSheetParser.parse(WAREHOUSE_ID, ordersSheet, CONF));
     }
 
     private void givenAnExcelFileWithInvalidDate() {
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
         ordersSheet = getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), INVALID_DATE_FILE_PATH);
-
     }
 
     @Test
@@ -73,13 +69,11 @@ public class SalesDistributionSheetParserTest {
         // GIVEN
         final MeliSheet repsSheet =
                 getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), INVALID_COLUMN_FILE_PATH);
-
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+        assertNotNull(repsSheet);
 
         // WHEN
         final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse(WAREHOUSE_ID,
-                repsSheet);
+                repsSheet, CONF);
 
         // THEN
         assertNotNull(forecastSheetDto);

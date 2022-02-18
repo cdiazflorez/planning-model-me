@@ -8,7 +8,7 @@ import lombok.Getter;
 @Builder
 @Getter
 public class DeviationUnitDetail {
-    
+
     private final Metric forecastUnits;
     private final Metric currentUnits;
 }

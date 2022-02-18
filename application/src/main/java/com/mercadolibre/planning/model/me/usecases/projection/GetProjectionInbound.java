@@ -19,7 +19,6 @@ import com.mercadolibre.planning.model.me.utils.ResponseUtils;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;

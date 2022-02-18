@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountDistribution;
@@ -9,16 +10,17 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.OutboundFo
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PolyvalentProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
-
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
-import com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParser;
-
-import javax.inject.Named;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.RepsForecastSheetParser;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.SalesDistributionSheetParser;
+import com.mercadolibre.spreadsheet.MeliDocument;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParserHelper.adaptWeekFormat;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParserHelper.parseSheets;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
@@ -30,46 +32,44 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 
-@Named
-public final class ParseOutboundForecastFromFile extends ParseForecastFromFile {
-
+public final class ParseOutboundForecastFromFile {
     static final String WAREHOUSE_ID = "warehouse_id";
 
-    public ParseOutboundForecastFromFile(ForecastParser forecastParser) {
-        super(forecastParser);
-    }
-
-    @Override
-    public Workflow getWorkflow() {
-        return Workflow.FBM_WMS_OUTBOUND;
-    }
-
-    @Override
-    protected Forecast createForecastFrom(final String warehouseId,
-                                          final Map<ForecastColumn, Object> parsedValues,
-                                          final long userId) {
+    public static Forecast parse(
+            final String warehouseId,
+            final MeliDocument document,
+            final long userId,
+            final LogisticCenterConfiguration config
+    ) {
+        final var parsedValues = parseSheets(
+                document,
+                Stream.of(new RepsForecastSheetParser(), new SalesDistributionSheetParser()),
+                warehouseId,
+                config
+        );
 
         return OutboundForecast.builder()
                 .metadata(buildForecastMetadata(warehouseId, parsedValues))
                 .processingDistributions((List<ProcessingDistribution>)
-                        parsedValues.get(PROCESSING_DISTRIBUTION))
+                                                 parsedValues.get(PROCESSING_DISTRIBUTION))
                 .planningDistributions((List<PlanningDistribution>)
-                        parsedValues.get(PLANNING_DISTRIBUTION))
+                                               parsedValues.get(PLANNING_DISTRIBUTION))
                 .headcountDistributions((List<HeadcountDistribution>)
-                        parsedValues.get(HEADCOUNT_DISTRIBUTION))
+                                                parsedValues.get(HEADCOUNT_DISTRIBUTION))
                 .headcountProductivities((List<HeadcountProductivity>)
-                        parsedValues.get(HEADCOUNT_PRODUCTIVITY))
+                                                 parsedValues.get(HEADCOUNT_PRODUCTIVITY))
                 .polyvalentProductivities((List<PolyvalentProductivity>)
-                        parsedValues.get(POLYVALENT_PRODUCTIVITY))
+                                                  parsedValues.get(POLYVALENT_PRODUCTIVITY))
                 .backlogLimits((List<BacklogLimit>)
-                        parsedValues.get(BACKLOG_LIMITS))
+                                       parsedValues.get(BACKLOG_LIMITS))
                 .userID(userId)
                 .build();
     }
 
-    private List<Metadata> buildForecastMetadata(
+    private static List<Metadata> buildForecastMetadata(
             final String warehouseId,
-            final Map<ForecastColumn, Object> parsedValues) {
+            final Map<ForecastColumn, Object> parsedValues
+    ) {
 
         final String week = String.valueOf(parsedValues.get(WEEK));
         final String monoOrder = String.valueOf(parsedValues.get(MONO_ORDER_DISTRIBUTION));
