@@ -28,7 +28,7 @@ public class GetBacklogByDateInboundTest {
 
     private static final String DATE_BACKLOG = "2022-01-04T12:00:00Z";
     private static final int QUANTITY_BACKLOG = 123;
-  
+
     @InjectMocks
     private GetBacklogByDateInbound getBacklogByDateInbound;
     @Mock
@@ -42,7 +42,6 @@ public class GetBacklogByDateInboundTest {
         final List<Workflow> workflows = List.of(Workflow.FBM_WMS_INBOUND);
         final List<ProcessName> processNames = List.of(ProcessName.CHECK_IN, ProcessName.PUT_AWAY);
         final Instant dateFrom = now.minus(1, ChronoUnit.HOURS);
-        final Instant dateTo = now;
         final Instant slaFrom = now.minus(7, ChronoUnit.DAYS);
         final Instant slaTo = now.plus(1, ChronoUnit.DAYS);
 
@@ -53,7 +52,7 @@ public class GetBacklogByDateInboundTest {
                 processNames,
                 of(DATE_OUT),
                 dateFrom,
-                dateTo,
+                now,
                 slaFrom,
                 slaTo))
                 .thenReturn(responseGetCurrentBacklog());
@@ -70,7 +69,7 @@ public class GetBacklogByDateInboundTest {
     }
 
     private List<Consolidation> responseGetCurrentBacklog() {
-        return List.of(new Consolidation(Instant.now(), Map.of("date_out", DATE_BACKLOG), QUANTITY_BACKLOG));
+        return List.of(new Consolidation(Instant.now(), Map.of("date_out", DATE_BACKLOG), QUANTITY_BACKLOG, true));
     }
 
 }

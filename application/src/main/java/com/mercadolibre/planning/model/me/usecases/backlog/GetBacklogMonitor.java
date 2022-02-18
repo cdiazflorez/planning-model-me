@@ -137,7 +137,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
      *     and `requestInstant`, with all the cells corresponding to the same photo and process
      *     consolidated.
      * @param processes the names of the processes to include in the result
-     * @param dateFrom the lower bound of the
+     * @param dateFrom the lower bound of the takeOn dates
      * */
     private Map<ProcessName, List<Consolidation>> groupBacklogSubsetsByProcess(
             final Instant requestDate,
@@ -149,10 +149,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                 sumsOfCellsGroupedByTakenOnDateAndProcess,
                 requestDate.truncatedTo(ChronoUnit.SECONDS));
 
-        final List<Consolidation>
-                truncatedConsolidation = truncateToHoursTheTakenOnDatesExceptFor(
-                        sumsOfCellsGroupedByTakenOnDateAndProcess,
-                        takenOnDateOfLastPhoto);
+        final List<Consolidation> truncatedConsolidation =
+                truncateToHoursTheTakenOnDate(sumsOfCellsGroupedByTakenOnDateAndProcess);
 
         final Map<ProcessName, List<Consolidation>> backlogByProcess =
                 truncatedConsolidation.stream()
@@ -168,7 +166,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                                         backlogByProcess.getOrDefault(process, emptyList()),
                                         dateFrom,
                                         takenOnDateOfLastPhoto,
-                                        date -> new Consolidation(date, null, 0))));
+                                        date -> new Consolidation(date, null, 0, true))));
     }
 
     private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(final BacklogWorkflow workflow,
@@ -245,8 +243,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             return getProcessThroughput.execute(request);
         } catch (RuntimeException e) {
             log.error("could not retrieve throughput for {}", request, e);
+            return GetThroughputResult.emptyThroughput();
         }
-        return GetThroughputResult.emptyThroughput();
     }
 
     private Map<ProcessName, Map<Instant, BacklogLimit>> getBacklogLimits(final BacklogWorkflow workflow,
@@ -346,7 +344,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                 .orElse(defaultDate);
     }
 
-    private int getTphAverage(final UnitMeasure backlogMeasuredInHour) {
+    private static int getTphAverage(final UnitMeasure backlogMeasuredInHour) {
 
         double avgByHour = (double)backlogMeasuredInHour.getMinutes() / 60;
 

@@ -140,9 +140,9 @@ public class RunSimulationOutboundTest {
                 List.of("date_out"))
 
         ).thenReturn(List.of(
-                new Consolidation(null, Map.of("date_out", getCurrentTime().minusHours(1).toString()), 150),
-                new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(2).toString()), 235),
-                new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(3).toString()), 300)
+                new Consolidation(null, Map.of("date_out", getCurrentTime().minusHours(1).toString()), 150, true),
+                new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(2).toString()), 235, true),
+                new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(3).toString()), 300, true)
         ));
 
         // When

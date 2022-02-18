@@ -124,8 +124,8 @@ public class BacklogApiAdapterTest {
         final Map<String, String> mapDummy = new HashMap<>();
 
         return List.of(
-                new Consolidation(Instant.from(NOW), mapDummy, 1),
-                new Consolidation(Instant.from(NOW), mapDummy, 2));
+                new Consolidation(Instant.from(NOW), mapDummy, 1, true),
+                new Consolidation(Instant.from(NOW), mapDummy, 2, false));
     }
 
     private ProjectedBacklog getProjection() {

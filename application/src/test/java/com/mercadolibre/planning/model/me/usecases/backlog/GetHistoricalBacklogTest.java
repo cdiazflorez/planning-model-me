@@ -138,7 +138,9 @@ class GetHistoricalBacklogTest {
                         .map(date -> new Consolidation(
                                 date,
                                 Map.of("process", process),
-                                dateValue(date) * (processes.indexOf(process) + 1)
+                                dateValue(date) * (processes.indexOf(process) + 1),
+                                true
+
                         ))
                 )
                 .collect(Collectors.toList());

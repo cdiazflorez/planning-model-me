@@ -148,10 +148,10 @@ public class GetSlaProjectionOutboundTest {
                 now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
                 List.of("date_out"))
         ).thenReturn(List.of(
-                new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150),
-                new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235),
-                new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300),
-                new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120)
+                new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
+                new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
+                new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true),
+                new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120, true)
         ));
 
         // When
@@ -197,10 +197,10 @@ public class GetSlaProjectionOutboundTest {
                 now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
                 List.of("date_out"))
         ).thenReturn(List.of(
-                new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150),
-                new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235),
-                new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300),
-                new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120)
+                new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
+                new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
+                new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true),
+                new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120, true)
         ));
 
         // When
