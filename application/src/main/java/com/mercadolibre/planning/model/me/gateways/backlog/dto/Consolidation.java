@@ -32,5 +32,5 @@ public class Consolidation {
      * The value of this field is `true` when the photo from which this consolidation was created is the first that was
      * taken in the period of the time partition (currently the partition is by hour).
      */
-    boolean isFirstPhotoOfPeriod;
+    private boolean firstPhotoOfPeriod;
 }
