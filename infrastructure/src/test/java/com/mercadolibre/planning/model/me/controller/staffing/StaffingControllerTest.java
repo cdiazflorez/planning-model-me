@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.controller.staffing;
 
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
+import com.mercadolibre.planning.model.me.entities.staffing.Area;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcount;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByHour;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByProcess;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
@@ -121,82 +123,46 @@ public class StaffingControllerTest {
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
     }
 
+    private StaffingWorkflow mockStaffingWorkflow(final String workflow, final List<Process> processes) {
+        return StaffingWorkflow.builder()
+                .workflow(workflow)
+                .totalWorkers(100)
+                .globalNetProductivity(60)
+                .totalNonSystemicWorkers(10)
+                .processes(processes)
+                .build();
+    }
+
+    private Process mockProcess(final String process) {
+        return Process.builder()
+                .process(process)
+                .netProductivity(40)
+                .workers(new Worker(10, 30))
+                .targetProductivity(50)
+                .throughput(1200)
+                .areas(process.equals("picking")
+                        ? List.of(new Area("BL", 40, new Worker(10, 30)))
+                        : Collections.emptyList())
+                .build();
+    }
+
     private Staffing mockStaffing() {
+        final StaffingWorkflow mockedOutboundWorkflow = mockStaffingWorkflow("fbm-wms-outbound",
+                List.of(mockProcess("picking"), mockProcess("packing")));
+        final StaffingWorkflow mockedInboundWorkflow = mockStaffingWorkflow("fbm-wms-inbound",
+                List.of(mockProcess("receiving"), mockProcess("check_in")));
+        final StaffingWorkflow mockedWithdrawalsWorkflow = mockStaffingWorkflow("fbm-wms-withdrawals",
+                List.of(mockProcess("picking"), mockProcess("packing")));
+
         return Staffing.builder()
                 .globalNetProductivity(34)
                 .totalWorkers(310)
                 .plannedWorkers(320)
                 .workflows(List.of(
-                        StaffingWorkflow.builder()
-                                .workflow("fbm-wms-outbound-order")
-                                .totalWorkers(100)
-                                .globalNetProductivity(60)
-                                .totalNonSystemicWorkers(10)
-                                .processes(List.of(
-                                        Process.builder()
-                                                .process("picking")
-                                                .netProductivity(40)
-                                                .workers(new Worker(10, 30))
-                                                .targetProductivity(50)
-                                                .throughput(1200)
-                                                .build(),
-                                        Process.builder()
-                                                .process("packing")
-                                                .netProductivity(40)
-                                                .workers(new Worker(10, 30))
-                                                .targetProductivity(50)
-                                                .throughput(1200)
-                                                .build()
-                                        )
-                                )
-                                .build(),
-                        StaffingWorkflow.builder()
-                                .workflow("fbm-wms-outbound-withdrawal")
-                                .totalWorkers(100)
-                                .globalNetProductivity(60)
-                                .totalNonSystemicWorkers(10)
-                                .processes(List.of(
-                                        Process.builder()
-                                                .process("picking")
-                                                .netProductivity(40)
-                                                .workers(new Worker(10, 30))
-                                                .targetProductivity(50)
-                                                .throughput(1200)
-                                                .build(),
-                                        Process.builder()
-                                                .process("expedition")
-                                                .netProductivity(40)
-                                                .workers(new Worker(10, 30))
-                                                .throughput(1200)
-                                                .targetProductivity(50)
-                                                .build()
-                                        )
-                                )
-                                .build(),
-                        StaffingWorkflow.builder()
-                                .workflow("fbm-wms-inbound")
-                                .totalWorkers(100)
-                                .globalNetProductivity(60)
-                                .totalNonSystemicWorkers(10)
-                                .processes(List.of(
-                                        Process.builder()
-                                                .process("receiving")
-                                                .netProductivity(40)
-                                                .workers(new Worker(10, 30))
-                                                .targetProductivity(50)
-                                                .throughput(1200)
-                                                .build(),
-                                        Process.builder()
-                                                .process("stage_in")
-                                                .netProductivity(40)
-                                                .workers(new Worker(10, 30))
-                                                .targetProductivity(50)
-                                                .throughput(1200)
-                                                .build()
-                                        )
-                                )
-                                .build()
-                ))
+                        mockedOutboundWorkflow,
+                        mockedInboundWorkflow,
+                        mockedWithdrawalsWorkflow
+                        ))
                 .build();
     }
 

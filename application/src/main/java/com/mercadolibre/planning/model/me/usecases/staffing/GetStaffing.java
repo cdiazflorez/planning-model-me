@@ -49,8 +49,11 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
             "fbm-wms-outbound", List.of(
                     "picking", "batch_sorter", "wall_in", "packing", "packing_wall"
             ),
-            "fbm-wms-inbound", List.of("receiving", "check_in", "put_away")
+            "fbm-wms-inbound", List.of("receiving", "check_in", "put_away"),
+            "fbm-wms-withdrawals", List.of("picking", "packing")
     );
+    private static final List<String> EFFECTIVE_PROCESSES =
+            List.of("packing", "packing_wall");
     private final PlanningModelGateway planningModelGateway;
     private final StaffingGateway staffingGateway;
 
@@ -131,7 +134,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     }
 
     private Double getProductivity(String process, ProcessTotals totals) {
-        if ("packing".equals(process) || "packing_wall".equals(process)) {
+        if (EFFECTIVE_PROCESSES.contains(process)) {
             return totals.getEffProductivity();
         }
 
