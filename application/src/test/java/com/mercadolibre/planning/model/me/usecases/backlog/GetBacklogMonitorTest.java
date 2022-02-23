@@ -49,6 +49,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.List.of;
@@ -65,7 +66,10 @@ class GetBacklogMonitorTest {
             parse("2021-08-12T01:00:00Z", ISO_OFFSET_DATE_TIME),
             parse("2021-08-12T02:00:00Z", ISO_OFFSET_DATE_TIME),
             parse("2021-08-12T03:00:00Z", ISO_OFFSET_DATE_TIME),
-            parse("2021-08-12T04:00:00Z", ISO_OFFSET_DATE_TIME)
+            parse("2021-08-12T04:00:00Z", ISO_OFFSET_DATE_TIME),
+            parse("2021-08-12T04:15:30.123Z", ISO_OFFSET_DATE_TIME),
+            parse("2021-08-12T05:00:00Z", ISO_OFFSET_DATE_TIME),
+            parse("2021-08-12T06:00:00Z", ISO_OFFSET_DATE_TIME)
     );
 
     private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOW = Map.of(
@@ -107,17 +111,18 @@ class GetBacklogMonitorTest {
     }
 
     @Test
-    void testExecuteOK() {
+    void testExecuteOK1() {
         // GIVEN
+        var input = input(FBM_WMS_OUTBOUND,1);
         mockDateUtils(mockDt);
-        mockBacklogApiResponse(input(FBM_WMS_OUTBOUND));
-        mockProjectedBacklog(input(FBM_WMS_OUTBOUND));
-        mockHistoricalBacklog(input(FBM_WMS_OUTBOUND));
-        mockThroughput(input(FBM_WMS_OUTBOUND));
-        mockBacklogLimits(input(FBM_WMS_OUTBOUND));
+        mockBacklogApiResponse(input, buildBacklogApiResponse1(true));
+        mockProjectedBacklog(input, 2, buildBacklogApiResponse1(true));
+        mockHistoricalBacklog(input);
+        mockThroughput(input);
+        mockBacklogLimits(input);
 
         // WHEN
-        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input(FBM_WMS_OUTBOUND));
+        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input(FBM_WMS_OUTBOUND,1 ));
 
         // THEN
         assertNotNull(orders);
@@ -126,7 +131,7 @@ class GetBacklogMonitorTest {
         // waving
         final ProcessDetail waving = orders.getProcesses().get(0);
 
-        assertWavingBacklogResults(waving);
+        assertWavingBacklogResults1(waving);
         assertEquals(200, waving.getBacklogs().get(0).getHistorical().getUnits());
         assertEquals(20, waving.getBacklogs().get(0).getHistorical().getMinutes());
 
@@ -136,9 +141,44 @@ class GetBacklogMonitorTest {
     }
 
     @Test
+    void testExecuteOK2() {
+        // GIVEN
+        mockDateUtils(mockDt);
+        var input = input(FBM_WMS_OUTBOUND, 4);
+        mockBacklogApiResponse(input, buildBacklogApiResponse2(true));
+        mockProjectedBacklog(input, 5, buildBacklogApiResponse2(true));
+        mockHistoricalBacklog(input);
+        mockThroughput(input);
+        mockBacklogLimits(input);
+
+        // WHEN
+        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input);
+
+        // THEN
+        assertNotNull(orders);
+        assertEquals("fbm-wms-outbound", orders.getWorkflow());
+
+        // waving
+        final ProcessDetail waving = orders.getProcesses().get(0);
+
+        assertWavingBacklogResults2(waving);
+        assertEquals(200, waving.getBacklogs().get(0).getHistorical().getUnits());
+        assertEquals(20, waving.getBacklogs().get(0).getHistorical().getMinutes());
+
+        assertEquals(100, waving.getBacklogs().get(1).getHistorical().getUnits());
+        assertEquals(10, waving.getBacklogs().get(1).getHistorical().getMinutes());
+
+        assertEquals(50, waving.getBacklogs().get(2).getHistorical().getUnits());
+        assertEquals(5, waving.getBacklogs().get(2).getHistorical().getMinutes());
+
+        assertEquals(80, waving.getBacklogs().get(3).getHistorical().getUnits());
+        assertEquals(8, waving.getBacklogs().get(3).getHistorical().getMinutes());
+    }
+
+    @Test
     void testGetCurrentBacklogError() {
         // GIVEN
-        final GetBacklogMonitorInputDto input = input(FBM_WMS_OUTBOUND);
+        final GetBacklogMonitorInputDto input = input(FBM_WMS_OUTBOUND, 1);
 
         when(backlogApiAdapter.getCurrentBacklog(
                 input.getRequestDate(),
@@ -163,13 +203,14 @@ class GetBacklogMonitorTest {
     @MethodSource("mockParameterizedConfiguration")
     void testGetProjectedBacklogError(final Workflow workflow) {
         // GIVEN
+        var input = input(workflow, 1);
         mockDateUtils(mockDt);
-        mockBacklogApiResponse(input(workflow));
-        mockHistoricalBacklog(input(workflow));
-        mockThroughput(input(workflow));
+        mockBacklogApiResponse(input, buildBacklogApiResponse1(workflow == FBM_WMS_OUTBOUND ));
+        mockHistoricalBacklog(input);
+        mockThroughput(input);
 
         // WHEN
-        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input(workflow));
+        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input);
 
         // THEN
         assertNotNull(orders);
@@ -182,16 +223,17 @@ class GetBacklogMonitorTest {
     @Test
     void testGetHistoricalBacklogError() {
         // GIVEN
+        var input = input(FBM_WMS_OUTBOUND, 1);
         mockDateUtils(mockDt);
-        mockBacklogApiResponse(input(FBM_WMS_OUTBOUND));
-        mockProjectedBacklog(input(FBM_WMS_OUTBOUND));
-        mockThroughput(input(FBM_WMS_OUTBOUND));
-        mockBacklogLimits(input(FBM_WMS_OUTBOUND));
+        mockBacklogApiResponse(input, buildBacklogApiResponse1(true));
+        mockProjectedBacklog(input, 2, buildBacklogApiResponse1(true));
+        mockThroughput(input);
+        mockBacklogLimits(input);
 
         final var request = new GetHistoricalBacklogInput(
                 DATE_CURRENT.toInstant(),
                 WAREHOUSE_ID,
-                of(FBM_WMS_OUTBOUND),
+                FBM_WMS_OUTBOUND,
                 of(WAVING, PICKING, PACKING),
                 DATE_FROM.minusWeeks(2L).toInstant(),
                 DATE_FROM.toInstant()
@@ -201,7 +243,7 @@ class GetBacklogMonitorTest {
                 .thenThrow(TestException.class);
 
         // WHEN
-        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input(FBM_WMS_OUTBOUND));
+        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input);
 
         // THEN
         assertNotNull(orders);
@@ -210,7 +252,7 @@ class GetBacklogMonitorTest {
         // waving
         final ProcessDetail waving = orders.getProcesses().get(0);
 
-        assertWavingBacklogResults(waving);
+        assertWavingBacklogResults1(waving);
         assertNull(waving.getBacklogs().get(0).getHistorical().getUnits());
         assertNull(waving.getBacklogs().get(3).getHistorical().getUnits());
         assertNull(waving.getBacklogs().get(0).getHistorical().getMinutes());
@@ -220,11 +262,12 @@ class GetBacklogMonitorTest {
     @Test
     void testGetThroughputError() {
         // GIVEN
+        var input = input(FBM_WMS_OUTBOUND, 1);
         mockDateUtils(mockDt);
-        mockBacklogApiResponse(input(FBM_WMS_OUTBOUND));
-        mockProjectedBacklog(input(FBM_WMS_OUTBOUND));
-        mockHistoricalBacklog(input(FBM_WMS_OUTBOUND));
-        mockBacklogLimits(input(FBM_WMS_OUTBOUND));
+        mockBacklogApiResponse(input, buildBacklogApiResponse1(true));
+        mockProjectedBacklog(input, 2, buildBacklogApiResponse1(true));
+        mockHistoricalBacklog(input);
+        mockBacklogLimits(input);
 
         final GetThroughputInput request = GetThroughputInput.builder()
                 .warehouseId(WAREHOUSE_ID)
@@ -238,7 +281,7 @@ class GetBacklogMonitorTest {
                 .thenThrow(TestException.class);
 
         // WHEN
-        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input(FBM_WMS_OUTBOUND));
+        final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input);
 
         // THEN
         assertNotNull(orders);
@@ -253,7 +296,7 @@ class GetBacklogMonitorTest {
         assertEquals(0, waving.getTotal().getMinutes());
     }
 
-    private void assertWavingBacklogResults(final ProcessDetail waving) {
+    private void assertWavingBacklogResults1(final ProcessDetail waving) {
         // waving
         assertEquals("waving", waving.getProcess());
         assertEquals(150, waving.getTotal().getUnits());
@@ -274,21 +317,54 @@ class GetBacklogMonitorTest {
         final VariablesPhoto wavingProjectedBacklog = waving.getBacklogs().get(3);
         assertEquals(DATES.get(3).toInstant(), wavingProjectedBacklog.getDate());
         assertEquals(250, wavingProjectedBacklog.getCurrent().getUnits());
-        assertEquals(60, wavingProjectedBacklog.getCurrent().getMinutes());
+        assertEquals(750, wavingProjectedBacklog.getCurrent().getMinutes());
     }
 
-    private GetBacklogMonitorInputDto input(final Workflow workflow) {
+    private void assertWavingBacklogResults2(final ProcessDetail waving) {
+        // waving
+        assertEquals("waving", waving.getProcess());
+        assertEquals(15, waving.getTotal().getUnits());
+        assertEquals(47, waving.getTotal().getMinutes());
+        assertEquals(7, waving.getBacklogs().size());
+
+        // past backlog
+        final VariablesPhoto wavingPastBacklog0 = waving.getBacklogs().get(0);
+        assertEquals(DATE_FROM.toInstant(), wavingPastBacklog0.getDate());
+        assertEquals(11, wavingPastBacklog0.getCurrent().getUnits());
+        assertEquals(64, wavingPastBacklog0.getCurrent().getMinutes());
+
+        final VariablesPhoto wavingPastBacklog3 = waving.getBacklogs().get(3);
+        assertEquals(DATES.get(3).toInstant(), wavingPastBacklog3.getDate());
+        assertEquals(14, wavingPastBacklog3.getCurrent().getUnits());
+        assertEquals(42, wavingPastBacklog3.getCurrent().getMinutes());
+        assertEquals(19, wavingPastBacklog3.getMaxLimit().getMinutes());
+
+        final VariablesPhoto wavingPastBacklog4 = waving.getBacklogs().get(4);
+        assertEquals(DATES.get(4).toInstant(), wavingPastBacklog4.getDate());
+        assertEquals(15, wavingPastBacklog4.getCurrent().getUnits());
+        assertEquals(47, wavingPastBacklog4.getCurrent().getMinutes());
+        assertEquals(19, wavingPastBacklog4.getMaxLimit().getMinutes());
+
+        // projected backlog
+        final VariablesPhoto wavingProjectedBacklog = waving.getBacklogs().get(5);
+        assertEquals(DATES.get(5).toInstant(), wavingProjectedBacklog.getDate());
+        assertEquals(125, wavingProjectedBacklog.getCurrent().getUnits());
+        assertEquals(375, wavingProjectedBacklog.getCurrent().getMinutes());
+
+    }
+
+    private GetBacklogMonitorInputDto input(final Workflow workflow, final int currentDateIndex) {
         return new GetBacklogMonitorInputDto(
-                DATE_CURRENT.toInstant(),
+                DATES.get(currentDateIndex).toInstant(),
                 WAREHOUSE_ID,
                 workflow,
                 DATE_FROM.toInstant(),
-                DATE_TO.toInstant(),
+                DATES.get(currentDateIndex + 2).toInstant(),
                 0L
         );
     }
 
-    private void mockBacklogApiResponse(final GetBacklogMonitorInputDto input) {
+    private void mockBacklogApiResponse(final GetBacklogMonitorInputDto input, final List<Consolidation> response) {
         Instant firstDate = DATES.get(0).toInstant();
         Instant secondDate = DATES.get(1).toInstant();
 
@@ -306,26 +382,66 @@ class GetBacklogMonitorTest {
                         ? input.getRequestDate().plus(24, ChronoUnit.HOURS)
                         : input.getRequestDate().plus(168, ChronoUnit.HOURS)
                 )
-        ).thenReturn(isOutbound ? of(
-                new Consolidation(firstDate, Map.of("process", "waving"), 100),
-                new Consolidation(secondDate, Map.of("process", "waving"), 150),
-                new Consolidation(firstDate, Map.of("process", "picking"), 300),
-                new Consolidation(secondDate, Map.of("process", "picking"), 350),
-                new Consolidation(firstDate, Map.of("process", "packing"), 6000),
-                new Consolidation(secondDate, Map.of("process", "packing"), 8000)
-        ) : of(
-                new Consolidation(firstDate, Map.of("process", "check_in"), 100),
-                new Consolidation(secondDate, Map.of("process", "check_in"), 150),
-                new Consolidation(firstDate, Map.of("process", "put_away"), 300),
-                new Consolidation(secondDate, Map.of("process", "put_away"), 350)));
+        ).thenReturn(response);
     }
 
-    private void mockProjectedBacklog(final GetBacklogMonitorInputDto input) {
+    private List<Consolidation> buildBacklogApiResponse1(final boolean isOutbound) {
+        Instant firstDate = DATES.get(0).toInstant();
+        Instant secondDate = DATES.get(1).toInstant();
 
-        final Instant currentFirstDate = DATES.get(0).toInstant();
-        final Instant currentSecondDate = DATES.get(1).toInstant();
-        final ZonedDateTime firstDate = DATES.get(2);
-        final ZonedDateTime secondDate = DATES.get(3);
+        return isOutbound ? of(
+                new Consolidation(firstDate, Map.of("process", "waving"), 100, true),
+                new Consolidation(secondDate, Map.of("process", "waving"), 150, true),
+                new Consolidation(firstDate, Map.of("process", "picking"), 300, true),
+                new Consolidation(secondDate, Map.of("process", "picking"), 350, true),
+                new Consolidation(firstDate, Map.of("process", "packing"), 6000, true),
+                new Consolidation(secondDate, Map.of("process", "packing"), 8000, true)
+        ) : of(
+                new Consolidation(firstDate, Map.of("process", "check_in"), 100, true),
+                new Consolidation(secondDate, Map.of("process", "check_in"), 150, true),
+                new Consolidation(firstDate, Map.of("process", "put_away"), 300, true),
+                new Consolidation(secondDate, Map.of("process", "put_away"), 350, true)
+        );
+    }
+
+
+    private List<Consolidation> buildBacklogApiResponse2(final boolean isOutbound) {
+        Instant firstDate = DATES.get(0).toInstant();
+        Instant secondDate = DATES.get(1).toInstant();
+        Instant thirdDate = DATES.get(2).toInstant();
+        Instant fourthDate = DATES.get(3).toInstant();
+        Instant actualDate = DATES.get(4).toInstant();
+
+        return isOutbound ? of(
+                new Consolidation(firstDate, Map.of("process", "waving"), 11, true),
+                new Consolidation(firstDate, Map.of("process", "picking"), 21, true),
+                new Consolidation(firstDate, Map.of("process", "packing"), 31, true),
+
+                new Consolidation(secondDate, Map.of("process", "waving"), 12, true),
+                new Consolidation(secondDate, Map.of("process", "picking"), 22, true),
+                new Consolidation(secondDate, Map.of("process", "packing"), 32, true),
+
+                new Consolidation(thirdDate, Map.of("process", "waving"), 13, true),
+                new Consolidation(thirdDate, Map.of("process", "picking"), 23, true),
+                new Consolidation(thirdDate, Map.of("process", "packing"), 33, true),
+
+                new Consolidation(fourthDate, Map.of("process", "waving"), 14, true),
+                new Consolidation(fourthDate, Map.of("process", "picking"), 24, true),
+                new Consolidation(fourthDate, Map.of("process", "packing"), 34, true),
+
+                new Consolidation(actualDate, Map.of("process", "waving"), 15, false),
+                new Consolidation(actualDate, Map.of("process", "picking"), 25, false),
+                new Consolidation(actualDate, Map.of("process", "packing"), 35, false)
+        ) : buildBacklogApiResponse1(false);
+    }
+
+    private void mockProjectedBacklog(
+            final GetBacklogMonitorInputDto input,
+            final int dateIndex,
+            final List<Consolidation> backlogApiResponse
+    ) {
+        final ZonedDateTime firstDate = DATES.get(dateIndex);
+        final ZonedDateTime secondDate = DATES.get(1 + dateIndex);
 
         final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
 
@@ -333,21 +449,11 @@ class GetBacklogMonitorTest {
                 input.getWarehouseId(),
                 input.getWorkflow(),
                 PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
-                input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
-                input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone().plusHours(24),
-                input.getCallerId(), isOutbound ? of(
-                        new Consolidation(currentFirstDate, Map.of("process", "waving"), 100),
-                        new Consolidation(currentSecondDate, Map.of("process", "waving"), 150),
-                        new Consolidation(currentFirstDate, Map.of("process", "picking"), 300),
-                        new Consolidation(currentSecondDate, Map.of("process", "picking"), 350),
-                        new Consolidation(currentFirstDate, Map.of("process", "packing"), 6000),
-                        new Consolidation(currentSecondDate, Map.of("process", "packing"), 8000))
-                        : of(
-                        new Consolidation(currentFirstDate, Map.of("process", "check_in"), 100),
-                        new Consolidation(currentSecondDate, Map.of("process", "check_in"), 150),
-                        new Consolidation(currentFirstDate, Map.of("process", "put_away"), 300),
-                        new Consolidation(currentSecondDate, Map.of("process", "put_away"), 350))))
-                .thenReturn(isOutbound ? of(
+                input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone().truncatedTo(ChronoUnit.HOURS),
+                input.getRequestDate().atZone(ZoneId.of("UTC")).withFixedOffsetZone().truncatedTo(ChronoUnit.HOURS).plusHours(24),
+                input.getCallerId(),
+                backlogApiResponse
+        )).thenReturn(isOutbound ? of(
                         new BacklogProjectionResponse(WAVING, of(new ProjectionValue(firstDate, 125),
                                 new ProjectionValue(secondDate, 250))),
                         new BacklogProjectionResponse(PICKING, of(new ProjectionValue(firstDate, 410),
@@ -370,7 +476,7 @@ class GetBacklogMonitorTest {
         final var request = new GetHistoricalBacklogInput(
                 input.getRequestDate(),
                 input.getWarehouseId(),
-                of(input.getWorkflow()),
+                input.getWorkflow(),
                 PROCESS_BY_WORKFLOW.get(input.getWorkflow()),
                 input.getDateFrom(),
                 input.getDateTo()
@@ -421,7 +527,7 @@ class GetBacklogMonitorTest {
                 .workflow(input.getWorkflow())
                 .processes(PROCESS_BY_WORKFLOW.get(input.getWorkflow()))
                 .dateFrom(DATE_FROM)
-                .dateTo(DATE_TO.plusHours(24))
+                .dateTo(input.getDateTo().atZone(UTC).plusDays(1))
                 .build();
 
         final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
@@ -474,17 +580,23 @@ class GetBacklogMonitorTest {
                                 DATES.get(0).toInstant(), new BacklogLimit(5, 15),
                                 DATES.get(1).toInstant(), new BacklogLimit(7, 21),
                                 DATES.get(2).toInstant(), new BacklogLimit(3, 21),
-                                DATES.get(3).toInstant(), new BacklogLimit(0, -1)),
+                                DATES.get(3).toInstant(), new BacklogLimit(6, 19),
+                                DATES.get(5).toInstant(), new BacklogLimit(3, 30),
+                                DATES.get(6).toInstant(), new BacklogLimit(4, 40)),
                         PICKING, Map.of(
                                 DATES.get(0).toInstant(), new BacklogLimit(-1, -1),
                                 DATES.get(1).toInstant(), new BacklogLimit(-1, -1),
                                 DATES.get(2).toInstant(), new BacklogLimit(-1, -1),
-                                DATES.get(3).toInstant(), new BacklogLimit(-1, -1)),
+                                DATES.get(3).toInstant(), new BacklogLimit(-1, -1),
+                                DATES.get(5).toInstant(), new BacklogLimit(3, 30),
+                                DATES.get(6).toInstant(), new BacklogLimit(4, 40)),
                         PACKING, Map.of(
                                 DATES.get(0).toInstant(), new BacklogLimit(0, 20),
                                 DATES.get(1).toInstant(), new BacklogLimit(0, 15),
                                 DATES.get(2).toInstant(), new BacklogLimit(0, 10),
-                                DATES.get(3).toInstant(), new BacklogLimit(0, 10)))
+                                DATES.get(3).toInstant(), new BacklogLimit(0, 10),
+                                DATES.get(5).toInstant(), new BacklogLimit(3, 30),
+                                DATES.get(6).toInstant(), new BacklogLimit(4, 40)))
                 : Map.of(
                 CHECK_IN, Map.of(
                         DATES.get(0).toInstant(), new BacklogLimit(5, 15),

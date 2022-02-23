@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id 'com.github.spotbugs' version '2.0.1'
 }
 
 group 'com.mercadolibre'
@@ -8,9 +7,6 @@ version '1.0-SNAPSHOT'
 
 allprojects {
     apply plugin: 'jacoco'
-    apply plugin: 'checkstyle'
-    apply plugin: 'pmd'
-    apply plugin: 'com.github.spotbugs'
 
     repositories {
 		maven { url "http://maven.artifacts.furycloud.io/repository/all" }
@@ -41,45 +37,6 @@ subprojects {
             csv.enabled = false
         }
     }
-
-    checkstyle {
-        toolVersion "8.24"
-    }
-
-    tasks.withType(Checkstyle) {
-        reports {
-            xml.enabled true
-            html.enabled true
-            html.stylesheet resources.text.fromFile('../config/xsl/checkstyle-style.xsl')
-        }
-    }
-
-    pmd {
-        toolVersion = '6.2.0'
-        ruleSetFiles = files("../config/pmd/pmd_rules.xml")
-        ruleSets = []
-        incrementalAnalysis = true
-    }
-
-    tasks.withType(Pmd) {
-        reports {
-            xml.enabled true
-            html.enabled true
-        }
-    }
-
-    spotbugs {
-        toolVersion = '3.1.12'
-        excludeFilter = file("../config/spotbugs/excludeFilter.xml")
-    }
-
-    tasks.withType(com.github.spotbugs.SpotBugsTask) {
-        reports {
-            xml.enabled = false
-            html.enabled = true
-        }
-    }
-
 }
 
 task testReport(type: TestReport) {

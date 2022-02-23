@@ -17,5 +17,4 @@ public class Monitor {
     @JsonProperty("subtitle_2")
     private final String subtitle2;
     private final List<MonitorData> monitorData;
-
 }

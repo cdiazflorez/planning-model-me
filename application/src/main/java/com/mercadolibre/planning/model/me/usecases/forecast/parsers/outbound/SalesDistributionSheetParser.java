@@ -1,41 +1,38 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistribution;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.SheetParser;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils;
-import com.mercadolibre.planning.model.me.utils.TestLogisticCenterMapper;
 import com.mercadolibre.spreadsheet.MeliCell;
 import com.mercadolibre.spreadsheet.MeliRow;
 import com.mercadolibre.spreadsheet.MeliSheet;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Range;
-
-import javax.inject.Named;
 
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PLANNING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getStringValueAt;
 import static java.util.stream.Collectors.toList;
 
-@Named
-@AllArgsConstructor
 public class SalesDistributionSheetParser implements SheetParser {
 
     private static final Range<Integer> COLUMN_RANGE = Range.between(1, 6);
-    private LogisticCenterGateway logisticCenterGateway;
+    private static final int CARRIER_ID_COLUMN = 3;
+    private static final int SERVICE_ID_COLUMN = 4;
+    private static final int CANALIZATION_COLUMN = 5;
+    private static final int PLANNING_DISTRIBUTION_STARTING_ROW = 3;
+    private static final int PD_DATE_OUT_ROW = 1;
+    private static final int PD_DATE_IN_ROW = 2;
+    private static final int PD_QUANTITY_ROW = 6;
 
     @Override
     public String name() {
@@ -43,24 +40,24 @@ public class SalesDistributionSheetParser implements SheetParser {
     }
 
     @Override
-    public Workflow workflow() {
-        return FBM_WMS_OUTBOUND;
-    }
-
-    @Override
-    public ForecastSheetDto parse(final String warehouseId, final MeliSheet sheet) {
+    public ForecastSheetDto parse(
+            final String warehouseId,
+            final MeliSheet sheet,
+            final LogisticCenterConfiguration config
+    ) {
         return new ForecastSheetDto(
                 sheet.getSheetName(),
-                Map.of(PLANNING_DISTRIBUTION, parsePlanningDistributionRows(sheet, 3, warehouseId))
+                Map.of(PLANNING_DISTRIBUTION, parsePlanningDistributionRows(sheet, config))
         );
     }
 
-    private List<PlanningDistribution> parsePlanningDistributionRows(final MeliSheet sheet,
-                                                                     final int startingRow,
-                                                                     final String warehouseId) {
-        return sheet.getRowsStartingFrom(startingRow).stream()
+    private List<PlanningDistribution> parsePlanningDistributionRows(
+            final MeliSheet sheet,
+            final LogisticCenterConfiguration config
+    ) {
+        return sheet.getRowsStartingFrom(PLANNING_DISTRIBUTION_STARTING_ROW).stream()
                 .filter(this::rowIsNotEmpty)
-                .map(row -> createPlanningDistributionFrom(warehouseId, row, sheet))
+                .map(row -> createPlanningDistributionFrom(row, sheet, config))
                 .collect(toList());
     }
 
@@ -72,28 +69,26 @@ public class SalesDistributionSheetParser implements SheetParser {
                 .anyMatch(value -> !value.isEmpty());
     }
 
-    private PlanningDistribution createPlanningDistributionFrom(final String warehouseId,
-                                                                final MeliRow row,
-                                                                final MeliSheet sheet) {
+    private PlanningDistribution createPlanningDistributionFrom(
+            final MeliRow row,
+            final MeliSheet sheet,
+            final LogisticCenterConfiguration config
+    ) {
+        final ZoneId zoneId = config.getZoneId();
 
-        final LogisticCenterConfiguration configuration = logisticCenterGateway.getConfiguration(
-                TestLogisticCenterMapper.toRealLogisticCenter(warehouseId));
-
-        final ZoneId zoneId = configuration.getZoneId();
-
-        final String carrierId = getStringValueAt(sheet,row, 3);
-        final String serviceId = String.valueOf(getIntValueAt(sheet, row, 4));
-        final String canalization = getStringValueAt(sheet,row, 5);
+        final String carrierId = getStringValueAt(sheet, row, CARRIER_ID_COLUMN);
+        final String serviceId = String.valueOf(getIntValueAt(sheet, row, SERVICE_ID_COLUMN));
+        final String canalization = getStringValueAt(sheet, row, CANALIZATION_COLUMN);
 
         return PlanningDistribution.builder()
-                .dateOut(SpreadsheetUtils.getDateTimeAt(sheet, row, 1, zoneId))
-                .dateIn(SpreadsheetUtils.getDateTimeAt(sheet, row, 2, zoneId))
+                .dateOut(SpreadsheetUtils.getDateTimeAt(sheet, row, PD_DATE_OUT_ROW, zoneId))
+                .dateIn(SpreadsheetUtils.getDateTimeAt(sheet, row, PD_DATE_IN_ROW, zoneId))
                 .metadata(List.of(
                         new Metadata(ForecastColumnName.CARRIER_ID.name(), carrierId),
                         new Metadata(ForecastColumnName.SERVICE_ID.name(), serviceId),
                         new Metadata(ForecastColumnName.CANALIZATION.name(), canalization)
                 ))
-                .quantity(getIntValueAt(sheet, row,6))
+                .quantity(getIntValueAt(sheet, row, PD_QUANTITY_ROW))
                 .quantityMetricUnit(MetricUnit.UNITS.getName())
                 .build();
     }

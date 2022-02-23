@@ -20,15 +20,12 @@ import java.util.TimeZone;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_ORDER_DISTRIBUTION;
-
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastSheet.WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFrom;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RepsForecastSheetParserTest {
@@ -37,6 +34,9 @@ class RepsForecastSheetParserTest {
     private static final String INVALID_FILE_PATH = "forecast_example_invalid_date.xlsx";
     private static final String INVALID_WEEK_PATH = "forecast_example_invalid_week.xlsx";
     private static final String LIMITOUT_FILE_PATH = "forecast_limit_out.xlsx";
+    private static final LogisticCenterConfiguration CONF =
+            new LogisticCenterConfiguration(TimeZone.getDefault());
+
     @InjectMocks
     private RepsForecastSheetParser repsForecastSheetParser;
 
@@ -54,8 +54,6 @@ class RepsForecastSheetParserTest {
         givenAnCorrectConfigurationAndMeliSheetBy();
 
         // WHEN
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
         whenExcelIsParsedBy(WAREHOUSE_ID);
         // THEN
         thenForecastSheetDtoIsNotNull();
@@ -66,9 +64,6 @@ class RepsForecastSheetParserTest {
     void parseLimitOutRange() {
         // GIVEN
         givenAnLimitOutConfigurationAndMeliSheetBy();
-
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-            .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
 
         //WHEN
         assertThrows(
@@ -96,7 +91,7 @@ class RepsForecastSheetParserTest {
     }
 
     private void whenExcelIsParsedBy(String warehouseId) {
-        forecastSheetDto = repsForecastSheetParser.parse(warehouseId, repsSheet);
+        forecastSheetDto = repsForecastSheetParser.parse(warehouseId, repsSheet, CONF);
     }
 
     private void thenForecastSheetDtoIsNotNull() {
@@ -116,10 +111,7 @@ class RepsForecastSheetParserTest {
     }
 
     private void givenAnExcelFileWithInvalidDate() {
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
         repsSheet = getMeliSheetFrom(WORKERS.getName(), INVALID_FILE_PATH);
-
     }
 
     @Test

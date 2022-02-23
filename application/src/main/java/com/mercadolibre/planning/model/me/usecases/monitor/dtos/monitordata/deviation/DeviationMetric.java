@@ -10,10 +10,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DeviationMetric {
-    
+
     private final Metric deviationPercentage;
-    
+
     private final DeviationUnit deviationUnits;
-    
-    
+
+
 }

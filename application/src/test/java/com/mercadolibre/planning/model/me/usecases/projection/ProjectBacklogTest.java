@@ -88,9 +88,9 @@ public class ProjectBacklogTest {
                 .dateTo(A_DATE.plusHours(25))
                 .groupType(ORDER_GROUP_TYPE)
                 .currentBacklog(List.of(
-                        new Consolidation(null, Map.of("process", "waving"), 0),
-                        new Consolidation(null, Map.of("process", "picking"), 2232),
-                        new Consolidation(null, Map.of("process", "packing"), 1442)
+                        new Consolidation(null, Map.of("process", "waving"), 0, true),
+                        new Consolidation(null, Map.of("process", "picking"), 2232, true),
+                        new Consolidation(null, Map.of("process", "packing"), 1442, true)
                 ))
                 .build();
 
@@ -146,10 +146,10 @@ public class ProjectBacklogTest {
                 .dateFrom(A_DATE)
                 .dateTo(A_DATE.plusHours(25))
                 .currentBacklog(List.of(
-                        new Consolidation(Instant.from(firstDate), Map.of("process", "check_in"), 100),
-                        new Consolidation(Instant.from(firstDate.plusHours(1)), Map.of("process", "check_in"), 200),
-                        new Consolidation(Instant.from(firstDate), Map.of("process", "put_away"), 120),
-                        new Consolidation(Instant.from(firstDate.plusHours(1)), Map.of("process", "put_away"), 220)))
+                        new Consolidation(Instant.from(firstDate), Map.of("process", "check_in"), 100, true),
+                        new Consolidation(Instant.from(firstDate.plusHours(1)), Map.of("process", "check_in"), 200, true),
+                        new Consolidation(Instant.from(firstDate), Map.of("process", "put_away"), 120, true),
+                        new Consolidation(Instant.from(firstDate.plusHours(1)), Map.of("process", "put_away"), 220, true)))
                 .build();
 
         // WHEN

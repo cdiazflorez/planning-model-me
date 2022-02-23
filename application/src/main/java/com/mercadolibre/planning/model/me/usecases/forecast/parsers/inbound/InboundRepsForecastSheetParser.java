@@ -1,13 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivityData;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistributionData;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.SheetParser;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.MetadataCell;
@@ -17,9 +15,6 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.mode
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
 import com.mercadolibre.spreadsheet.MeliSheet;
-import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
 
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -32,8 +27,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
@@ -58,8 +51,6 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDateTimeCellValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getStringValueAt;
 
-@Named
-@AllArgsConstructor
 public class InboundRepsForecastSheetParser implements SheetParser {
 
     private static final String TARGET_SHEET = "Plan de Staffing";
@@ -68,21 +59,18 @@ public class InboundRepsForecastSheetParser implements SheetParser {
     private static final int LAST_ROW = 174;
     private static final int DEFAULT_ABILITY_LEVEL = 1;
 
-    private final LogisticCenterGateway logisticCenterGateway;
-
     @Override
     public String name() {
         return TARGET_SHEET;
     }
 
     @Override
-    public Workflow workflow() {
-        return FBM_WMS_INBOUND;
-    }
-
-    @Override
-    public ForecastSheetDto parse(final String requestWarehouseId, final MeliSheet sheet) {
-        final ZoneId zoneId = logisticCenterGateway.getConfiguration(requestWarehouseId).getZoneId();
+    public ForecastSheetDto parse(
+            final String requestWarehouseId,
+            final MeliSheet sheet,
+            final LogisticCenterConfiguration config
+    ) {
+        final ZoneId zoneId = config.getZoneId();
 
         final String week = getStringValueAt(
                 sheet, MetadataCell.WEEK.getRow(), MetadataCell.WEEK.getColumn());

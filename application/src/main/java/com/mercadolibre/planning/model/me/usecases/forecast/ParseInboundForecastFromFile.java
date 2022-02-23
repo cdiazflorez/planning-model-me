@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
@@ -7,15 +8,16 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.InboundFor
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PolyvalentProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
-import com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParser;
-
-import javax.inject.Named;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParserHelper;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.InboundRepsForecastSheetParser;
+import com.mercadolibre.spreadsheet.MeliDocument;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParserHelper.adaptWeekFormat;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
@@ -23,22 +25,20 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WEEK;
 
-@Named
-public class ParseInboundForecastFromFile extends ParseForecastFromFile {
+public interface ParseInboundForecastFromFile {
 
-    public ParseInboundForecastFromFile(ForecastParser forecastParser) {
-        super(forecastParser);
-    }
-
-    @Override
-    public Workflow getWorkflow() {
-        return Workflow.FBM_WMS_INBOUND;
-    }
-
-    @Override
-    protected Forecast createForecastFrom(final String warehouseId,
-                                          final Map<ForecastColumn, Object> parsedValues,
-                                          final long userId) {
+    static Forecast parse(
+            final String warehouseId,
+            final MeliDocument document,
+            final long userId,
+            final LogisticCenterConfiguration config
+    ) {
+        var parsedValues = ForecastParserHelper.parseSheets(
+                document,
+                Stream.of(new InboundRepsForecastSheetParser()),
+                warehouseId,
+                config
+        );
 
         return InboundForecast.builder()
                 .metadata(buildForecastMetadata(warehouseId, parsedValues))
@@ -54,12 +54,13 @@ public class ParseInboundForecastFromFile extends ParseForecastFromFile {
                 .build();
     }
 
-    private List<Metadata> buildForecastMetadata(final String warehouseId,
-                                                 final Map<ForecastColumn, Object> parsedValues) {
+    private static List<Metadata> buildForecastMetadata(
+            final String warehouseId,
+            final Map<ForecastColumn, Object> parsedValues
+    ) {
         return List.of(
                 new Metadata(WAREHOUSE_ID.getName(), warehouseId),
                 new Metadata(WEEK.getName(), adaptWeekFormat(String.valueOf(parsedValues.get(WEEK))))
         );
     }
-
 }

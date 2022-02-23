@@ -1,26 +1,5 @@
 package com.mercadolibre.planning.model.me.clients.rest.backlog;
 
-import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
-import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
-import com.mercadolibre.restclient.MockResponse;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -31,6 +10,27 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.OK;
+
+import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
+import com.mercadolibre.planning.model.me.controller.backlog.exception.BacklogNotRespondingException;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
+import com.mercadolibre.restclient.MockResponse;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class BacklogApiClientTest extends BaseClientTest {
     private static final String URL = "/backlogs/logistic_centers/%s/backlogs";
@@ -139,6 +139,30 @@ class BacklogApiClientTest extends BaseClientTest {
     }
 
     @Test
+    void testGetCurrentBacklogWithDateInOK() throws JSONException {
+        // GIVEN
+        mockSuccessfulResponse("/current");
+
+        // WHEN
+        final List<Consolidation> result = client.getCurrentBacklog(
+                new BacklogCurrentRequest(WAREHOUSE_ID)
+        );
+
+        // THEN
+        assertEquals(3, result.size());
+
+        final Consolidation firstConsolidation = result.get(0);
+        assertEquals(1255, firstConsolidation.getTotal());
+        assertEquals(DATE_FROM, firstConsolidation.getDate());
+
+        final Map<String, String> keys = firstConsolidation.getKeys();
+        assertEquals("wms-outbound", keys.get("workflow"));
+        assertEquals("picking", keys.get("process"));
+        assertEquals("MZ-0", keys.get("area"));
+        assertEquals("2021-01-02T00:00", keys.get("date_out"));
+    }
+
+    @Test
     void testGetBacklogErr() {
         // GIVEN
         mockErroneousResponse();
@@ -156,7 +180,7 @@ class BacklogApiClientTest extends BaseClientTest {
         );
 
         // WHEN
-        assertThrows(ClientException.class, () ->
+        assertThrows(BacklogNotRespondingException.class, () ->
                 client.getBacklog(request)
         );
     }

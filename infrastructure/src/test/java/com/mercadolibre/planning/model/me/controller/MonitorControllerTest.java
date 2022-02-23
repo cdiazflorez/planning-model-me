@@ -1,17 +1,16 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import com.mercadolibre.planning.model.me.controller.monitor.MonitorController;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogScheduled;
 import com.mercadolibre.planning.model.me.usecases.monitor.GetMonitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.Monitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationActions;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationAppliedData;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationMetric;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnit;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.*;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound;
@@ -23,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,16 +30,12 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.DEVIATION;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.OUTBOUND_PLANNING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PICKING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.WALL_IN;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.*;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.*;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -59,10 +55,16 @@ class MonitorControllerTest {
     private GetMonitor getMonitor;
 
     @MockBean
+    private GetBacklogScheduled getBacklogScheduled;
+
+    @MockBean
+    private RequestClock requestClock;
+
+    @MockBean
     private AuthorizeUser authorizeUser;
 
     @Test
-    void testGetMonitors() throws Exception {
+    void testGetOutboundMonitors() throws Exception {
         // GIVEN
         when(getMonitor.execute(any()))
                 .thenReturn(mockCurrentStatus());
@@ -81,6 +83,40 @@ class MonitorControllerTest {
         result.andExpect(content().json(getResourceAsString("get_current_status_response.json")));
 
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    @Test
+    void testGetInboundMonitors() throws Exception {
+        // GIVEN
+        when(requestClock.now()).thenReturn(Instant.now());
+        when(getBacklogScheduled.execute(
+                        WAREHOUSE_ID,
+                        requestClock.now()
+        ))
+                .thenReturn(mockBacklogScheduled());
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors")
+                .param("logistic_center_id", WAREHOUSE_ID)
+                .param("caller.id", String.valueOf(USER_ID))
+        );
+
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(getResourceAsString("get_current_status_response_inbound.json")));
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+    private BacklogScheduled mockBacklogScheduled(){
+        return new BacklogScheduled(
+                Indicator.builder().shipments(500).units(15500).build(),
+                Indicator.builder().shipments(350).units(10850).build(),
+                Indicator.builder().shipments(2100).units(65100).build(),
+                Indicator.builder().shipments(150).units(4650).percentage(0.3).build()
+        );
     }
 
     private Monitor mockCurrentStatus() {

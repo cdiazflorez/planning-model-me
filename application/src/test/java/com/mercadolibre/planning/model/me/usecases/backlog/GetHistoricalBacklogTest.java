@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
@@ -28,6 +30,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.List.of;
@@ -44,7 +47,7 @@ class GetHistoricalBacklogTest {
             parse("2021-08-28T04:00:00Z", ISO_OFFSET_DATE_TIME)
     );
 
-    private static final ZonedDateTime DATE_CURRENT = DATES.get(1);
+    private static final ZonedDateTime REQUEST_DATE = DATES.get(1);
 
     private static final ZonedDateTime DATE_FROM = DATES.get(0);
 
@@ -66,13 +69,16 @@ class GetHistoricalBacklogTest {
         final var dateFrom = DATE_FROM.minusWeeks(3L);
         final var dateTo = DATE_TO.minusWeeks(1L).plusHours(1L);
 
-        mockHistoricalBacklog(dateFrom, dateTo);
+        mockHistoricalBacklog(1);
+        mockHistoricalBacklog(2);
+        mockHistoricalBacklog(3);
+
         mockThroughput(dateFrom, dateTo);
 
         final var input = new GetHistoricalBacklogInput(
-                DATE_CURRENT.toInstant(),
+                REQUEST_DATE.toInstant(),
                 WAREHOUSE_ID,
-                of(FBM_WMS_OUTBOUND),
+                FBM_WMS_OUTBOUND,
                 of(WAVING, PICKING, PACKING),
                 DATE_FROM.toInstant(),
                 DATE_TO.toInstant()
@@ -86,11 +92,11 @@ class GetHistoricalBacklogTest {
 
         // waving
         final var waving = backlogs.get(WAVING);
-        assertEquals(239, waving.get(DATE_FROM.toInstant()).getUnits()); // 232, 239, 246
+        assertEquals(232, waving.get(DATE_FROM.toInstant()).getUnits()); // 239, 232, 225
         assertEquals(181, waving.get(DATE_FROM.toInstant()).getMinutes()); // 77, 79, 82
 
-        assertEquals(938, waving.get(DATE_TO.toInstant()).getUnits()); // 910, 938, 966
-        assertEquals(180, waving.get(DATE_TO.toInstant()).getMinutes()); // 303, 312, 322
+        assertEquals(910, waving.get(DATE_TO.toInstant()).getUnits()); // 938, 910, 882
+        assertEquals(181, waving.get(DATE_TO.toInstant()).getMinutes()); // 303, 312, 322
     }
 
     private void mockThroughput(ZonedDateTime dateFrom, ZonedDateTime dateTo) {
@@ -118,37 +124,47 @@ class GetHistoricalBacklogTest {
         when(getProcessThroughput.execute(input)).thenReturn(new GetThroughputResult(result));
     }
 
-    private void mockHistoricalBacklog(ZonedDateTime dateFrom, ZonedDateTime dateTo) {
-        final List<ZonedDateTime> dates = dates(DATE_FROM, DATE_TO, 3);
+    private void mockHistoricalBacklog(final long shift) {
         final List<String> processes = of("waving", "packing", "picking");
 
-        List<Consolidation> consolidations = processes.stream()
-                .flatMap(process -> dates.stream()
+        final Instant mockFromDate = DATE_FROM.minusWeeks(shift).toInstant();
+        final Instant mockToDate = DATE_TO.minusWeeks(shift).toInstant();
+
+        final long hours = ChronoUnit.HOURS.between(mockFromDate, mockToDate);
+
+        final List<Consolidation> consolidations = processes.stream()
+                .flatMap(process -> LongStream.rangeClosed(0, hours)
+                        .mapToObj(hour -> mockFromDate.plus(hour, ChronoUnit.HOURS))
                         .map(date -> new Consolidation(
-                                date.toInstant(),
+                                date,
                                 Map.of("process", process),
-                                dateValue(date) * (processes.indexOf(process) + 1)
+                                dateValue(date) * (processes.indexOf(process) + 1),
+                                true
+
                         ))
                 )
                 .collect(Collectors.toList());
 
         when(backlogApiAdapter.getCurrentBacklog(
-                DATE_CURRENT.toInstant(),
+                REQUEST_DATE.toInstant(),
                 WAREHOUSE_ID,
                 of(FBM_WMS_OUTBOUND),
                 of(WAVING, PICKING, PACKING),
                 of(PROCESS),
-                dateFrom.toInstant(),
-                dateTo.toInstant(),
-                null,
-                null)
+                mockFromDate,
+                mockToDate.plus(5, ChronoUnit.MINUTES),
+                REQUEST_DATE.minusWeeks(shift).toInstant(),
+                REQUEST_DATE.minusWeeks(shift).plusHours(24).toInstant())
         ).thenReturn(consolidations);
     }
 
-    private List<ZonedDateTime> dates(ZonedDateTime dateFrom, ZonedDateTime dateTo, int weeks) {
+    private List<ZonedDateTime> dates(final ZonedDateTime dateFrom,
+                                      final ZonedDateTime dateTo,
+                                      final int weeks) {
+
         final long hours = ChronoUnit.HOURS.between(dateFrom, dateTo);
 
-        List<ZonedDateTime> dates = new ArrayList<>();
+        final List<ZonedDateTime> dates = new ArrayList<>();
         for (int weekShift = 0; weekShift < weeks; weekShift++) {
             var from = dateFrom.minusWeeks(weekShift);
             for (int hoursShift = 0; hoursShift <= hours; hoursShift++) {
@@ -159,7 +175,11 @@ class GetHistoricalBacklogTest {
         return dates;
     }
 
-    private int dateValue(ZonedDateTime date) {
+    private int dateValue(final ZonedDateTime date) {
         return date.getDayOfWeek().getValue() + date.getHour() * date.getDayOfYear();
+    }
+
+    private int dateValue(final Instant instant) {
+        return dateValue(ZonedDateTime.ofInstant(instant, UTC));
     }
 }

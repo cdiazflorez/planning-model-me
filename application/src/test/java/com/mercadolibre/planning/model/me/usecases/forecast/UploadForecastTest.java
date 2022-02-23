@@ -1,10 +1,10 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
-import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastCreationResponse;
-import com.mercadolibre.planning.model.me.usecases.forecast.dto.FileUploadDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastDto;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.Target;
 import com.mercadolibre.planning.model.me.utils.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,70 +12,51 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.stream.Stream;
+import java.util.TimeZone;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UploadForecastTest {
+    private static final String VALID_FILE_PATH = "forecast_example.xlsx";
+
+    private static final LogisticCenterConfiguration CONFIG =
+            new LogisticCenterConfiguration(TimeZone.getDefault());
 
     @InjectMocks
     private UploadForecast uploadForecast;
 
     @Mock
-    private List<ParseForecastFromFile> parsers;
+    private CreateForecast createForecast;
 
     @Mock
-    private CreateForecast createForecast;
+    private LogisticCenterGateway logisticCenterGateway;
 
     @Test
     void testUploadOk() {
         // GIVEN
-        final byte[] file = new byte[0];
-        final FileUploadDto fileUploadDto =
-                new FileUploadDto(WAREHOUSE_ID, FBM_WMS_OUTBOUND, file, 1234);
+        final byte[] bytes = TestUtils.getResource(VALID_FILE_PATH);
+        var expectedResponse = new ForecastCreationResponse("ok");
 
-        final Forecast forecast = mock(Forecast.class);
-        final ForecastDto forecastDto = new ForecastDto(FBM_WMS_OUTBOUND, forecast);
+        when(logisticCenterGateway.getConfiguration(anyString())).thenReturn(CONFIG);
 
-        final ParseForecastFromFile parser = mock(ParseForecastFromFile.class);
-        when(parser.getWorkflow()).thenReturn(FBM_WMS_OUTBOUND);
-        when(parser.execute(fileUploadDto)).thenReturn(forecast);
-
-        final ForecastCreationResponse response = new ForecastCreationResponse("ok");
-        when(createForecast.execute(forecastDto)).thenReturn(response);
-
-        when(parsers.stream()).thenReturn(Stream.of(parser));
+        when(createForecast.execute(any(ForecastDto.class))).thenReturn(expectedResponse);
 
         // WHEN
-        final ForecastCreationResponse result = uploadForecast.upload(
-                TestUtils.WAREHOUSE_ID, FBM_WMS_OUTBOUND, file, 1234L
+        var response = uploadForecast.upload(
+                WAREHOUSE_ID,
+                FBM_WMS_OUTBOUND,
+                Target.FBM_WMS_OUTBOUND.forecastParser,
+                bytes,
+                1234L
         );
 
-        //THEN
-        assertNotNull(result);
-        assertEquals(response, result);
+        // VERIFY
+        assertEquals(expectedResponse, response);
     }
-
-    @Test
-    void testNoParserFound() {
-        // GIVEN
-        final byte[] file = new byte[0];
-
-        when(parsers.stream()).thenReturn(Stream.empty());
-
-        // WHEN
-        assertThrows(ForecastParsingException.class,
-                () -> uploadForecast.upload(
-                        TestUtils.WAREHOUSE_ID, FBM_WMS_OUTBOUND, file, 1234L
-                ));
-    }
-
 }
