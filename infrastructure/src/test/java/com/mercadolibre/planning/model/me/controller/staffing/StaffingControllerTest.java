@@ -73,7 +73,6 @@ public class StaffingControllerTest {
         // THEN
         result.andExpect(status().isOk());
         result.andExpect(content().json(getResourceAsString("get_staffing_response.json")));
-
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
     }
 
@@ -162,7 +161,7 @@ public class StaffingControllerTest {
                         mockedOutboundWorkflow,
                         mockedInboundWorkflow,
                         mockedWithdrawalsWorkflow
-                        ))
+                ))
                 .build();
     }
 

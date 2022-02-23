@@ -59,8 +59,8 @@ class GetStaffingTest {
         final Staffing staffing = useCase.execute(input);
 
         //THEN
-        assertEquals(122, staffing.getTotalWorkers());
-        assertEquals(2, staffing.getWorkflows().size());
+        assertEquals(176, staffing.getTotalWorkers());
+        assertEquals(3, staffing.getWorkflows().size());
 
         final StaffingWorkflow outbound = staffing.getWorkflows().stream()
                 .filter(w -> w.getWorkflow().equals("fbm-wms-outbound"))
@@ -68,6 +68,10 @@ class GetStaffingTest {
 
         final StaffingWorkflow inbound = staffing.getWorkflows().stream()
                 .filter(w -> w.getWorkflow().equals("fbm-wms-inbound"))
+                .findFirst().orElseThrow();
+
+        final StaffingWorkflow withdrawals = staffing.getWorkflows().stream()
+                .filter(w -> w.getWorkflow().equals("fbm-wms-withdrawals"))
                 .findFirst().orElseThrow();
 
         assertEquals("fbm-wms-outbound", outbound.getWorkflow());
@@ -91,7 +95,7 @@ class GetStaffingTest {
         assertEquals(60, pickingAreas.get(0).getNetProductivity());
         assertEquals("MZ2", pickingAreas.get(1).getArea());
         assertEquals(10, pickingAreas.get(1).getWorkers().getBusy());
-        assertEquals(0, pickingAreas.get(0).getWorkers().getIdle());
+        assertEquals(0, pickingAreas.get(1).getWorkers().getIdle());
         assertEquals(75, pickingAreas.get(1).getNetProductivity());
 
         final Process batchSorter = outbound.getProcesses().get(1);
@@ -122,6 +126,29 @@ class GetStaffingTest {
         assertEquals(20, inbound.getTotalWorkers());
         assertEquals(0, inbound.getTotalNonSystemicWorkers());
         assertEquals(3, inbound.getProcesses().size());
+
+        assertEquals("fbm-wms-withdrawals", withdrawals.getWorkflow());
+        assertEquals(54, withdrawals.getTotalWorkers());
+        assertEquals(24, withdrawals.getTotalNonSystemicWorkers());
+        assertEquals(2, withdrawals.getProcesses().size());
+
+        final Process pickingWithdrawals = withdrawals.getProcesses().get(0);
+        assertEquals("picking", pickingWithdrawals.getProcess());
+        assertEquals(45, pickingWithdrawals.getNetProductivity());
+        assertEquals(14, pickingWithdrawals.getWorkers().getBusy());
+        assertEquals(10, pickingWithdrawals.getWorkers().getIdle());
+        assertEquals(2700, pickingWithdrawals.getThroughput());
+
+        final var pickingWithdrawalsAreas = pickingWithdrawals.getAreas();
+        assertEquals(2, pickingWithdrawalsAreas.size());
+        assertEquals("MZ1", pickingWithdrawalsAreas.get(0).getArea());
+        assertEquals(8, pickingWithdrawalsAreas.get(0).getWorkers().getBusy());
+        assertEquals(6, pickingWithdrawalsAreas.get(0).getWorkers().getIdle());
+        assertEquals(60, pickingWithdrawalsAreas.get(0).getNetProductivity());
+        assertEquals("MZ2", pickingWithdrawalsAreas.get(1).getArea());
+        assertEquals(6, pickingWithdrawalsAreas.get(1).getWorkers().getBusy());
+        assertEquals(4, pickingWithdrawalsAreas.get(1).getWorkers().getIdle());
+        assertEquals(75, pickingWithdrawalsAreas.get(1).getNetProductivity());
     }
 
     @Test
@@ -140,7 +167,7 @@ class GetStaffingTest {
 
         //THEN
         assertNull(staffing.getTotalWorkers());
-        assertEquals(2, staffing.getWorkflows().size());
+        assertEquals(3, staffing.getWorkflows().size());
 
         final StaffingWorkflow outbound = staffing.getWorkflows().stream()
                 .filter(w -> w.getWorkflow().equals("fbm-wms-outbound"))
@@ -150,11 +177,18 @@ class GetStaffingTest {
                 .filter(w -> w.getWorkflow().equals("fbm-wms-inbound"))
                 .findFirst().orElseThrow();
 
+        final StaffingWorkflow withdrawals = staffing.getWorkflows().stream()
+                .filter(w -> w.getWorkflow().equals("fbm-wms-withdrawals"))
+                .findFirst().orElseThrow();
+
         assertNull(outbound.getTotalWorkers());
         assertNull(outbound.getTotalNonSystemicWorkers());
 
         assertNull(inbound.getTotalWorkers());
         assertNull(inbound.getTotalNonSystemicWorkers());
+
+        assertNull(withdrawals.getTotalWorkers());
+        assertNull(withdrawals.getTotalNonSystemicWorkers());
     }
 
     private StaffingResponse mockStaffingResponse() {
@@ -167,7 +201,11 @@ class GetStaffingTest {
                         new StaffingWorkflowResponse(
                                 "fbm-wms-outbound",
                                 new WorkflowTotals(12, 70, 20),
-                                outboundProcesses())
+                                outboundProcesses()),
+                        new StaffingWorkflowResponse(
+                                "fbm-wms-withdrawals",
+                                new WorkflowTotals(12, 18, 24),
+                                withdrawalsProcesses())
                 )
         );
     }
@@ -181,6 +219,10 @@ class GetStaffingTest {
                                 inboundProcesses()),
                         new StaffingWorkflowResponse(
                                 "fbm-wms-outbound",
+                                new WorkflowTotals(null, null, null),
+                                outboundProcesses()),
+                        new StaffingWorkflowResponse(
+                                "fbm-wms-withdrawals",
                                 new WorkflowTotals(null, null, null),
                                 outboundProcesses())
                 )
@@ -236,12 +278,28 @@ class GetStaffingTest {
         );
     }
 
+    private List<StaffingProcess> withdrawalsProcesses() {
+        return List.of(
+                new StaffingProcess(
+                        "picking",
+                        new ProcessTotals(10, 14, 45.71, null, 2700.0),
+                        List.of(
+                                new Area("MZ1", new Totals(6, 8, 60.33, 3.3)),
+                                new Area("MZ2", new Totals(4, 6, 75.42, 1.3))
+                        )),
+                new StaffingProcess(
+                        "packing",
+                        new ProcessTotals(2, 4, null, 34.5, 1350.0),
+                        emptyList())
+        );
+    }
+
     private Map<MagnitudeType, List<MagnitudePhoto>> mockForecastEntities() {
         return Map.of(MagnitudeType.PRODUCTIVITY, List.of(
-            MagnitudePhoto.builder().processName(ProcessName.PICKING).value(30).build(),
-            MagnitudePhoto.builder().processName(ProcessName.WALL_IN).value(20).build(),
-            MagnitudePhoto.builder().processName(ProcessName.WAVING).value(40).build(),
-            MagnitudePhoto.builder().processName(ProcessName.PACKING).value(35).build()
+                MagnitudePhoto.builder().processName(ProcessName.PICKING).value(30).build(),
+                MagnitudePhoto.builder().processName(ProcessName.WALL_IN).value(20).build(),
+                MagnitudePhoto.builder().processName(ProcessName.WAVING).value(40).build(),
+                MagnitudePhoto.builder().processName(ProcessName.PACKING).value(35).build()
         ));
     }
 }
