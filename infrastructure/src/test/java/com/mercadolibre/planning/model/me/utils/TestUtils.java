@@ -107,6 +107,7 @@ public class TestUtils {
    * @param resourceName to process
    * @return the toString value of the resource
    * @throws IOException when class loader fails
+   * @throws IllegalStateException from IOException
    */
   public static String getResourceAsString(final String resourceName) throws IOException {
     final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();

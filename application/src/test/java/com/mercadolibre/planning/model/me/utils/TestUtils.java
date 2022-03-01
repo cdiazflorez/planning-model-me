@@ -178,6 +178,10 @@ public class TestUtils {
 
   private static final MeliDocumentFactory MELI_DOCUMENT_FACTORY = new PoiMeliDocumentFactory();
 
+  private static final int SIMULATIONS_QUANTITY_BY_DATE = 20;
+
+  private static final int ABILITY_2_LEVEL = 2;
+
   /**
    * Creates a MeliDocument based on list of sheet names.
    *
@@ -267,10 +271,10 @@ public class TestUtils {
         .processName(List.of(PICKING, PACKING, PACKING_WALL))
         .dateFrom(currentTime)
         .dateTo(currentTime.plusDays(1))
-        .abilityLevel(List.of(1, 2))
+        .abilityLevel(List.of(1, ABILITY_2_LEVEL))
         .simulations(List.of(new Simulation(PICKING,
             List.of(new SimulationEntity(
-                HEADCOUNT, List.of(new QuantityByDate(currentTime, 20)))))))
+                HEADCOUNT, List.of(new QuantityByDate(currentTime, SIMULATIONS_QUANTITY_BY_DATE)))))))
         .build();
   }
 

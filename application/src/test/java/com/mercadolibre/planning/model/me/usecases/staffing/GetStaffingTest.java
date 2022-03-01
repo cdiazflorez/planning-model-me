@@ -81,6 +81,12 @@ class GetStaffingTest {
 
   private static final int TOTAL_INBOUND_WORKERS = 20;
 
+  private static final int INDEX_WALL_IN_PROCESS = 1;
+
+  private static final int INDEX_PACKING_PROCESS = 2;
+
+  private static final int INDEX_PACKING_WALL_PROCESS = 3;
+
   private static final Integer EXPECTED_RECEIVING_NET_PRODUCTIVITY = 25;
 
   private static final Integer EXPECTED_RECEIVING_THROUGHPUT = 1;
@@ -232,12 +238,14 @@ class GetStaffingTest {
 
     assertNullProcess(outbound.getProcesses().get(1), BATCH_SORTER_PROCESS);
 
-    assertEqualsProcess(outbound.getProcesses().get(2), WALL_IN_PROCESS, 0, FORECAST_WALL_IN, 0, 0, 0, 0);
+    assertEqualsProcess(outbound.getProcesses().get(INDEX_WALL_IN_PROCESS), WALL_IN_PROCESS, 0, FORECAST_WALL_IN, 0, 0, 0, 0);
 
-    assertEqualsProcess(outbound.getProcesses().get(3), PACKING_PROCESS, EXPECTED_OUTBOUND_PACKING_NET_PRODUCTIVITY, FORECAST_PACKING, 1,
+    assertEqualsProcess(outbound.getProcesses().get(INDEX_PACKING_PROCESS), PACKING_PROCESS, EXPECTED_OUTBOUND_PACKING_NET_PRODUCTIVITY,
+        FORECAST_PACKING, 1,
         OUTBOUND_PACKING_SYS_WORKERS, EXPECTED_OUTBOUND_PACKING_THROUGHPUT, 0);
 
-    assertEqualsProcess(outbound.getProcesses().get(4), PACKING_WALL_PROCESS, EXPECTED_OUTBOUND_PACKING_WALL_NET_PRODUCTIVITY, null,
+    assertEqualsProcess(outbound.getProcesses().get(INDEX_PACKING_WALL_PROCESS), PACKING_WALL_PROCESS,
+        EXPECTED_OUTBOUND_PACKING_WALL_NET_PRODUCTIVITY, null,
         OUTBOUND_PACKING_WALL_IDLE_WORKERS, OUTBOUND_PACKING_WALL_SYS_WORKERS, EXPECTED_OUTBOUND_PACKING_WALL_THROUGHPUT, 0);
 
     assertEqualsWorkflow(withdrawals, WITHDRAWALS_WORKFLOW, TOTAL_WITHDRAWALS_WORKERS, WITHDRAWALS_NS_WORKERS, TOTAL_WITHDRAWALS_PROCESSES);
