@@ -18,7 +18,7 @@
             },
             "areas": [
                 {
-                    "area": "BL",
+                    "area": "MZ-1",
                     "net_productivity": 40,
                     "workers": {
                         "idle": 10,
@@ -52,7 +52,7 @@
             },
             "areas": [
                 {
-                    "area": "BL",
+                    "area": "MZ-1",
                     "net_productivity": 40,
                     "workers": {
                         "idle": 10,
