@@ -81,11 +81,11 @@ class GetStaffingTest {
 
   private static final int TOTAL_INBOUND_WORKERS = 20;
 
-  private static final int INDEX_WALL_IN_PROCESS = 1;
+  private static final int INDEX_WALL_IN_PROCESS = 2;
 
-  private static final int INDEX_PACKING_PROCESS = 2;
+  private static final int INDEX_PACKING_PROCESS = 3;
 
-  private static final int INDEX_PACKING_WALL_PROCESS = 3;
+  private static final int INDEX_PACKING_WALL_PROCESS = 4;
 
   private static final Integer EXPECTED_RECEIVING_NET_PRODUCTIVITY = 25;
 
