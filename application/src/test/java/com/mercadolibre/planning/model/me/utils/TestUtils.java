@@ -28,7 +28,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
- *
+ * Build methods and constants to be used in testing.
  */
 public class TestUtils {
 
