@@ -86,12 +86,11 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
   @Override
   public Staffing execute(final GetStaffingInput input) {
-    final String logisticCenterId = input.getLogisticCenterId();
-    final ZonedDateTime now = getCurrentUtcDateTime();
+
 
     final StaffingResponse staffing = staffingGateway.getStaffing(input.getLogisticCenterId());
 
-    return mapMetricsResults(logisticCenterId, now, staffing);
+    return mapMetricsResults(input.getLogisticCenterId(), getCurrentUtcDateTime(), staffing);
   }
 
   private Staffing mapMetricsResults(final String logisticCenterId,
