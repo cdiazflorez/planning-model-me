@@ -66,7 +66,6 @@ public class BacklogApiAdapter {
             .withGroupingFields(groupings.stream().map(BacklogGrouper::getName).collect(Collectors.toList()))
             .withSlaRange(slaFrom, slaTo);
 
-
         return backlogApiGateway.getBacklog(adapterRequest);
     }
 
