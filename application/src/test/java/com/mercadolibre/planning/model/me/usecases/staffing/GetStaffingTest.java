@@ -30,6 +30,14 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.PUT_AWAY_RKL_SY
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PUT_AWAY_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_NS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_PICKING_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_PICKING_RKL_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_PICKING_RKL_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_PICKING_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WALL_IN_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_IDLE_WORKERS;
@@ -44,6 +52,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_SYS
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.inboundProcesses;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.outboundProcesses;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.transferProcesses;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.withdrawalsProcesses;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -73,9 +82,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class GetStaffingTest {
 
-  private static final int TOTAL_WORKFLOWS = 3;
+  private static final int TOTAL_WORKFLOWS = 4;
 
-  private static final int TOTAL_WORKERS = 176;
+  private static final int TOTAL_WORKERS = 203;
 
   private static final int TOTAL_INBOUND_PROCESSES = 3;
 
@@ -143,6 +152,18 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_WITHDRAWALS_PACKING_THROUGHPUT = 350;
 
+  private static final int TOTAL_TRANSFER_PROCESSES = 1;
+
+  private static final int TOTAL_TRANSFER_WORKERS = 27;
+
+  private static final Integer EXPECTED_TRANSFER_PICKING_NET_PRODUCTIVITY = 35;
+
+  private static final Integer EXPECTED_TRANSFER_PICKING_THROUGHPUT = 135;
+
+  private static final int TOTAL_TRANSFER_PICKING_AREAS = 1;
+
+  private static final Integer EXPECTED_TRANSFER_PICKING_RKL_NET_PRODUCTIVITY = 35;
+
   private static final Integer FORECAST_PICKING = 30;
 
   private static final Integer FORECAST_WALL_IN = 20;
@@ -151,43 +172,42 @@ class GetStaffingTest {
 
   private static final Integer FORECAST_PACKING = 35;
 
+  @InjectMocks private GetStaffing useCase;
 
-  @InjectMocks
+  @Mock private PlanningModelGateway planningModelGateway;
 
-  private GetStaffing useCase;
-
-  @Mock
-  private PlanningModelGateway planningModelGateway;
-
-  @Mock
-  private StaffingGateway staffingGateway;
+  @Mock private StaffingGateway staffingGateway;
 
   @Test
   void testExecute() {
-    //GIVEN
+    // GIVEN
     final GetStaffingInput input = new GetStaffingInput(WAREHOUSE_ID);
 
-    when(staffingGateway.getStaffing(WAREHOUSE_ID))
-        .thenReturn(mockStaffingResponse());
+    when(staffingGateway.getStaffing(WAREHOUSE_ID)).thenReturn(mockStaffingResponse());
 
-    when(planningModelGateway.searchTrajectories(any()))
-        .thenReturn(mockForecastEntities());
+    when(planningModelGateway.searchTrajectories(any())).thenReturn(mockForecastEntities());
 
-    //WHEN
+    // WHEN
     final Staffing staffing = useCase.execute(input);
 
-    //THEN
-    final StaffingWorkflow outbound = staffing.getWorkflows().stream()
-        .filter(w -> w.getWorkflow().equals(OUTBOUND_WORKFLOW))
-        .findFirst().orElseThrow();
+    // THEN
+    final StaffingWorkflow outbound =
+        staffing.getWorkflows().stream()
+            .filter(w -> w.getWorkflow().equals(OUTBOUND_WORKFLOW))
+            .findFirst()
+            .orElseThrow();
 
-    final StaffingWorkflow inbound = staffing.getWorkflows().stream()
-        .filter(w -> w.getWorkflow().equals(INBOUND_WORKFLOW))
-        .findFirst().orElseThrow();
+    final StaffingWorkflow inbound =
+        staffing.getWorkflows().stream()
+            .filter(w -> w.getWorkflow().equals(INBOUND_WORKFLOW))
+            .findFirst()
+            .orElseThrow();
 
-    final StaffingWorkflow withdrawals = staffing.getWorkflows().stream()
-        .filter(w -> w.getWorkflow().equals(WITHDRAWALS_WORKFLOW))
-        .findFirst().orElseThrow();
+    final StaffingWorkflow withdrawals =
+        staffing.getWorkflows().stream()
+            .filter(w -> w.getWorkflow().equals(WITHDRAWALS_WORKFLOW))
+            .findFirst()
+            .orElseThrow();
 
     final Process putAway = inbound.getProcesses().get(2);
     final Process picking = outbound.getProcesses().get(0);
@@ -199,16 +219,38 @@ class GetStaffingTest {
     assertEquals(TOTAL_WORKERS, staffing.getTotalWorkers());
     assertEquals(TOTAL_WORKFLOWS, staffing.getWorkflows().size());
 
-    assertEqualsWorkflow(inbound, INBOUND_WORKFLOW, TOTAL_INBOUND_WORKERS, 0, TOTAL_INBOUND_PROCESSES);
+    assertEqualsWorkflow(
+        inbound, INBOUND_WORKFLOW, TOTAL_INBOUND_WORKERS, 0, TOTAL_INBOUND_PROCESSES);
 
-    assertEqualsProcess(inbound.getProcesses().get(0), RECEIVING_PROCESS, EXPECTED_RECEIVING_NET_PRODUCTIVITY, null, 0,
-        RECEIVING_SYS_WORKERS, EXPECTED_RECEIVING_THROUGHPUT, 0);
+    assertEqualsProcess(
+        inbound.getProcesses().get(0),
+        RECEIVING_PROCESS,
+        EXPECTED_RECEIVING_NET_PRODUCTIVITY,
+        null,
+        0,
+        RECEIVING_SYS_WORKERS,
+        EXPECTED_RECEIVING_THROUGHPUT,
+        0);
 
-    assertEqualsProcess(inbound.getProcesses().get(1), CHECK_IN_PROCESS, EXPECTED_CHECK_IN_NET_PRODUCTIVITY, null, 1,
-        CHECK_IN_SYS_WORKERS, EXPECTED_CHECK_IN_THROUGHPUT, 0);
+    assertEqualsProcess(
+        inbound.getProcesses().get(1),
+        CHECK_IN_PROCESS,
+        EXPECTED_CHECK_IN_NET_PRODUCTIVITY,
+        null,
+        1,
+        CHECK_IN_SYS_WORKERS,
+        EXPECTED_CHECK_IN_THROUGHPUT,
+        0);
 
-    assertEqualsProcess(putAway, PUT_AWAY_PROCESS, EXPECTED_PUT_AWAY_NET_PRODUCTIVITY, null, 1,
-        PUT_AWAY_SYS_WORKERS, EXPECTED_PUT_AWAY_THROUGHPUT, TOTAL_PUT_AWAY_AREAS);
+    assertEqualsProcess(
+        putAway,
+        PUT_AWAY_PROCESS,
+        EXPECTED_PUT_AWAY_NET_PRODUCTIVITY,
+        null,
+        1,
+        PUT_AWAY_SYS_WORKERS,
+        EXPECTED_PUT_AWAY_THROUGHPUT,
+        TOTAL_PUT_AWAY_AREAS);
 
     assertEquals(AREA_MZ1, putAwayAreas.get(0).getArea());
     assertEquals(0, putAwayAreas.get(0).getWorkers().getIdle());
@@ -220,78 +262,146 @@ class GetStaffingTest {
     assertEquals(PUT_AWAY_RKL_SYS_WORKERS, putAwayAreas.get(1).getWorkers().getBusy());
     assertEquals(EXPECTED_PUT_AWAY_RKL_NET_PRODUCTIVITY, putAwayAreas.get(1).getNetProductivity());
 
+    assertEqualsWorkflow(
+        outbound,
+        OUTBOUND_WORKFLOW,
+        TOTAL_OUTBOUND_WORKERS,
+        OUTBOUND_NS_WORKERS,
+        TOTAL_OUTBOUND_PROCESSES);
 
-    assertEqualsWorkflow(outbound, OUTBOUND_WORKFLOW, TOTAL_OUTBOUND_WORKERS, OUTBOUND_NS_WORKERS, TOTAL_OUTBOUND_PROCESSES);
-
-    assertEqualsProcess(picking, PICKING_PROCESS, EXPECTED_OUTBOUND_PICKING_NET_PRODUCTIVITY, FORECAST_PICKING,
-        OUTBOUND_PICKING_IDLE_WORKERS, OUTBOUND_PICKING_SYS_WORKERS, EXPECTED_OUTBOUND_PICKING_THROUGHPUT, TOTAL_OUTBOUND_PICKING_AREAS);
+    assertEqualsProcess(
+        picking,
+        PICKING_PROCESS,
+        EXPECTED_OUTBOUND_PICKING_NET_PRODUCTIVITY,
+        FORECAST_PICKING,
+        OUTBOUND_PICKING_IDLE_WORKERS,
+        OUTBOUND_PICKING_SYS_WORKERS,
+        EXPECTED_OUTBOUND_PICKING_THROUGHPUT,
+        TOTAL_OUTBOUND_PICKING_AREAS);
 
     assertEquals(AREA_MZ1, pickingAreas.get(0).getArea());
     assertEquals(OUTBOUND_PICKING_MZ1_IDLE_WORKERS, pickingAreas.get(0).getWorkers().getIdle());
     assertEquals(OUTBOUND_PICKING_MZ1_SYS_WORKERS, pickingAreas.get(0).getWorkers().getBusy());
-    assertEquals(EXPECTED_OUTBOUND_PICKING_MZ1_NET_PRODUCTIVITY, pickingAreas.get(0).getNetProductivity());
+    assertEquals(
+        EXPECTED_OUTBOUND_PICKING_MZ1_NET_PRODUCTIVITY, pickingAreas.get(0).getNetProductivity());
 
     assertEquals(AREA_RKL, pickingAreas.get(1).getArea());
     assertEquals(OUTBOUND_PICKING_RKL_IDLE_WORKERS, pickingAreas.get(1).getWorkers().getIdle());
     assertEquals(OUTBOUND_PICKING_RKL_SYS_WORKERS, pickingAreas.get(1).getWorkers().getBusy());
-    assertEquals(EXPECTED_OUTBOUND_PICKING_RKL_NET_PRODUCTIVITY, pickingAreas.get(1).getNetProductivity());
+    assertEquals(
+        EXPECTED_OUTBOUND_PICKING_RKL_NET_PRODUCTIVITY, pickingAreas.get(1).getNetProductivity());
 
     assertNullProcess(outbound.getProcesses().get(1), BATCH_SORTER_PROCESS);
 
-    assertEqualsProcess(outbound.getProcesses().get(INDEX_WALL_IN_PROCESS), WALL_IN_PROCESS, 0, FORECAST_WALL_IN, 0, 0, 0, 0);
+    assertEqualsProcess(
+        outbound.getProcesses().get(INDEX_WALL_IN_PROCESS),
+        WALL_IN_PROCESS,
+        0,
+        FORECAST_WALL_IN,
+        0,
+        0,
+        0,
+        0);
 
-    assertEqualsProcess(outbound.getProcesses().get(INDEX_PACKING_PROCESS), PACKING_PROCESS, EXPECTED_OUTBOUND_PACKING_NET_PRODUCTIVITY,
-        FORECAST_PACKING, 1,
-        OUTBOUND_PACKING_SYS_WORKERS, EXPECTED_OUTBOUND_PACKING_THROUGHPUT, 0);
+    assertEqualsProcess(
+        outbound.getProcesses().get(INDEX_PACKING_PROCESS),
+        PACKING_PROCESS,
+        EXPECTED_OUTBOUND_PACKING_NET_PRODUCTIVITY,
+        FORECAST_PACKING,
+        1,
+        OUTBOUND_PACKING_SYS_WORKERS,
+        EXPECTED_OUTBOUND_PACKING_THROUGHPUT,
+        0);
 
-    assertEqualsProcess(outbound.getProcesses().get(INDEX_PACKING_WALL_PROCESS), PACKING_WALL_PROCESS,
-        EXPECTED_OUTBOUND_PACKING_WALL_NET_PRODUCTIVITY, null,
-        OUTBOUND_PACKING_WALL_IDLE_WORKERS, OUTBOUND_PACKING_WALL_SYS_WORKERS, EXPECTED_OUTBOUND_PACKING_WALL_THROUGHPUT, 0);
+    assertEqualsProcess(
+        outbound.getProcesses().get(INDEX_PACKING_WALL_PROCESS),
+        PACKING_WALL_PROCESS,
+        EXPECTED_OUTBOUND_PACKING_WALL_NET_PRODUCTIVITY,
+        null,
+        OUTBOUND_PACKING_WALL_IDLE_WORKERS,
+        OUTBOUND_PACKING_WALL_SYS_WORKERS,
+        EXPECTED_OUTBOUND_PACKING_WALL_THROUGHPUT,
+        0);
 
-    assertEqualsWorkflow(withdrawals, WITHDRAWALS_WORKFLOW, TOTAL_WITHDRAWALS_WORKERS, WITHDRAWALS_NS_WORKERS, TOTAL_WITHDRAWALS_PROCESSES);
+    assertEqualsWorkflow(
+        withdrawals,
+        WITHDRAWALS_WORKFLOW,
+        TOTAL_WITHDRAWALS_WORKERS,
+        WITHDRAWALS_NS_WORKERS,
+        TOTAL_WITHDRAWALS_PROCESSES);
 
-    assertEqualsProcess(pickingWithdrawals, PICKING_PROCESS, EXPECTED_WITHDRAWALS_PICKING_NET_PRODUCTIVITY, null,
-        WITHDRAWALS_PICKING_IDLE_WORKERS, WITHDRAWALS_PICKING_SYS_WORKERS, EXPECTED_WITHDRAWALS_PICKING_THROUGHPUT,
+    assertEqualsProcess(
+        pickingWithdrawals,
+        PICKING_PROCESS,
+        EXPECTED_WITHDRAWALS_PICKING_NET_PRODUCTIVITY,
+        null,
+        WITHDRAWALS_PICKING_IDLE_WORKERS,
+        WITHDRAWALS_PICKING_SYS_WORKERS,
+        EXPECTED_WITHDRAWALS_PICKING_THROUGHPUT,
         TOTAL_WITHDRAWALS_PICKING_AREAS);
 
     assertEquals(AREA_RKL, pickingWithdrawalsAreas.get(0).getArea());
-    assertEquals(WITHDRAWALS_PICKING_RKL_IDLE_WORKERS, pickingWithdrawalsAreas.get(0).getWorkers().getIdle());
-    assertEquals(WITHDRAWALS_PICKING_RKL_SYS_WORKERS, pickingWithdrawalsAreas.get(0).getWorkers().getBusy());
-    assertEquals(EXPECTED_WITHDRAWALS_PICKING_RKL_NET_PRODUCTIVITY, pickingWithdrawalsAreas.get(0).getNetProductivity());
+    assertEquals(
+        WITHDRAWALS_PICKING_RKL_IDLE_WORKERS,
+        pickingWithdrawalsAreas.get(0).getWorkers().getIdle());
+    assertEquals(
+        WITHDRAWALS_PICKING_RKL_SYS_WORKERS, pickingWithdrawalsAreas.get(0).getWorkers().getBusy());
+    assertEquals(
+        EXPECTED_WITHDRAWALS_PICKING_RKL_NET_PRODUCTIVITY,
+        pickingWithdrawalsAreas.get(0).getNetProductivity());
 
-    assertEqualsProcess(withdrawals.getProcesses().get(1), PACKING_PROCESS, EXPECTED_WITHDRAWALS_PACKING_NET_PRODUCTIVITY, null,
-        WITHDRAWALS_PACKING_IDLE_WORKERS, WITHDRAWALS_PACKING_SYS_WORKERS, EXPECTED_WITHDRAWALS_PACKING_THROUGHPUT, 0);
+    assertEqualsProcess(
+        withdrawals.getProcesses().get(1),
+        PACKING_PROCESS,
+        EXPECTED_WITHDRAWALS_PACKING_NET_PRODUCTIVITY,
+        null,
+        WITHDRAWALS_PACKING_IDLE_WORKERS,
+        WITHDRAWALS_PACKING_SYS_WORKERS,
+        EXPECTED_WITHDRAWALS_PACKING_THROUGHPUT,
+        0);
+
+    assertTransferWorkflowProcesses(staffing);
   }
 
   @Test
   void testExecuteStaffingError() {
-    //GIVEN
+    // GIVEN
     final GetStaffingInput input = new GetStaffingInput(WAREHOUSE_ID);
 
-    when(staffingGateway.getStaffing(WAREHOUSE_ID))
-        .thenReturn(mockStaffingResponseError());
+    when(staffingGateway.getStaffing(WAREHOUSE_ID)).thenReturn(mockStaffingResponseError());
 
-    when(planningModelGateway.searchTrajectories(any()))
-        .thenReturn(mockForecastEntities());
+    when(planningModelGateway.searchTrajectories(any())).thenReturn(mockForecastEntities());
 
-    //WHEN
+    // WHEN
     final Staffing staffing = useCase.execute(input);
 
-    //THEN
+    // THEN
     assertNull(staffing.getTotalWorkers());
     assertEquals(TOTAL_WORKFLOWS, staffing.getWorkflows().size());
 
-    final StaffingWorkflow outbound = staffing.getWorkflows().stream()
-        .filter(w -> w.getWorkflow().equals(OUTBOUND_WORKFLOW))
-        .findFirst().orElseThrow();
+    final StaffingWorkflow outbound =
+        staffing.getWorkflows().stream()
+            .filter(w -> w.getWorkflow().equals(OUTBOUND_WORKFLOW))
+            .findFirst()
+            .orElseThrow();
 
-    final StaffingWorkflow inbound = staffing.getWorkflows().stream()
-        .filter(w -> w.getWorkflow().equals(INBOUND_WORKFLOW))
-        .findFirst().orElseThrow();
+    final StaffingWorkflow inbound =
+        staffing.getWorkflows().stream()
+            .filter(w -> w.getWorkflow().equals(INBOUND_WORKFLOW))
+            .findFirst()
+            .orElseThrow();
 
-    final StaffingWorkflow withdrawals = staffing.getWorkflows().stream()
-        .filter(w -> w.getWorkflow().equals(WITHDRAWALS_WORKFLOW))
-        .findFirst().orElseThrow();
+    final StaffingWorkflow withdrawals =
+        staffing.getWorkflows().stream()
+            .filter(w -> w.getWorkflow().equals(WITHDRAWALS_WORKFLOW))
+            .findFirst()
+            .orElseThrow();
+
+    final StaffingWorkflow transfer =
+        staffing.getWorkflows().stream()
+            .filter(w -> w.getWorkflow().equals(TRANSFER_WORKFLOW))
+            .findFirst()
+            .orElseThrow();
 
     assertNull(outbound.getTotalWorkers());
     assertNull(outbound.getTotalNonSystemicWorkers());
@@ -301,13 +411,17 @@ class GetStaffingTest {
 
     assertNull(withdrawals.getTotalWorkers());
     assertNull(withdrawals.getTotalNonSystemicWorkers());
+
+    assertNull(transfer.getTotalWorkers());
+    assertNull(transfer.getTotalNonSystemicWorkers());
   }
 
-  private void assertEqualsWorkflow(final StaffingWorkflow workflow,
-                                    final String name,
-                                    final int totalWorkers,
-                                    final int nsWorkers,
-                                    final int processesSize) {
+  private void assertEqualsWorkflow(
+      final StaffingWorkflow workflow,
+      final String name,
+      final int totalWorkers,
+      final int nsWorkers,
+      final int processesSize) {
 
     assertEquals(name, workflow.getWorkflow());
     assertEquals(totalWorkers, workflow.getTotalWorkers());
@@ -315,9 +429,15 @@ class GetStaffingTest {
     assertEquals(processesSize, workflow.getProcesses().size());
   }
 
-  private void assertEqualsProcess(final Process process, final String name, final int netProductivity,
-                                   final Integer targetProductivity, final int idleWorkers, final int busyWorkers,
-                                   final int throughput, final int areasSize) {
+  private void assertEqualsProcess(
+      final Process process,
+      final String name,
+      final int netProductivity,
+      final Integer targetProductivity,
+      final int idleWorkers,
+      final int busyWorkers,
+      final int throughput,
+      final int areasSize) {
 
     assertEquals(name, process.getProcess());
     assertEquals(netProductivity, process.getNetProductivity());
@@ -346,41 +466,87 @@ class GetStaffingTest {
                 inboundProcesses()),
             new StaffingWorkflowResponse(
                 OUTBOUND_WORKFLOW,
-                new WorkflowTotals(OUTBOUND_IDLE_WORKERS, OUTBOUND_SYS_WORKERS, OUTBOUND_NS_WORKERS),
+                new WorkflowTotals(
+                    OUTBOUND_IDLE_WORKERS, OUTBOUND_SYS_WORKERS, OUTBOUND_NS_WORKERS),
                 outboundProcesses()),
             new StaffingWorkflowResponse(
                 WITHDRAWALS_WORKFLOW,
-                new WorkflowTotals(WITHDRAWALS_IDLE_WORKERS, WITHDRAWALS_SYS_WORKERS, WITHDRAWALS_NS_WORKERS),
-                withdrawalsProcesses())
-        )
-    );
+                new WorkflowTotals(
+                    WITHDRAWALS_IDLE_WORKERS, WITHDRAWALS_SYS_WORKERS, WITHDRAWALS_NS_WORKERS),
+                withdrawalsProcesses()),
+            new StaffingWorkflowResponse(
+                TRANSFER_WORKFLOW,
+                new WorkflowTotals(
+                    TRANSFER_IDLE_WORKERS, TRANSFER_SYS_WORKERS, TRANSFER_NS_WORKERS),
+                transferProcesses())));
   }
 
   private StaffingResponse mockStaffingResponseError() {
     return new StaffingResponse(
         List.of(
             new StaffingWorkflowResponse(
-                INBOUND_WORKFLOW,
-                new WorkflowTotals(null, null, null),
-                inboundProcesses()),
+                INBOUND_WORKFLOW, new WorkflowTotals(null, null, null), inboundProcesses()),
             new StaffingWorkflowResponse(
-                OUTBOUND_WORKFLOW,
-                new WorkflowTotals(null, null, null),
-                outboundProcesses()),
+                OUTBOUND_WORKFLOW, new WorkflowTotals(null, null, null), outboundProcesses()),
             new StaffingWorkflowResponse(
-                WITHDRAWALS_WORKFLOW,
-                new WorkflowTotals(null, null, null),
-                outboundProcesses())
-        )
-    );
+                WITHDRAWALS_WORKFLOW, new WorkflowTotals(null, null, null), outboundProcesses()),
+            new StaffingWorkflowResponse(
+                TRANSFER_WORKFLOW, new WorkflowTotals(null, null, null), transferProcesses())));
   }
 
   private Map<MagnitudeType, List<MagnitudePhoto>> mockForecastEntities() {
-    return Map.of(MagnitudeType.PRODUCTIVITY, List.of(
-        MagnitudePhoto.builder().processName(ProcessName.PICKING).value(FORECAST_PICKING).build(),
-        MagnitudePhoto.builder().processName(ProcessName.WALL_IN).value(FORECAST_WALL_IN).build(),
-        MagnitudePhoto.builder().processName(ProcessName.WAVING).value(FORECAST_WAVING).build(),
-        MagnitudePhoto.builder().processName(ProcessName.PACKING).value(FORECAST_PACKING).build()
-    ));
+    return Map.of(
+        MagnitudeType.PRODUCTIVITY,
+        List.of(
+            MagnitudePhoto.builder()
+                .processName(ProcessName.PICKING)
+                .value(FORECAST_PICKING)
+                .build(),
+            MagnitudePhoto.builder()
+                .processName(ProcessName.WALL_IN)
+                .value(FORECAST_WALL_IN)
+                .build(),
+            MagnitudePhoto.builder().processName(ProcessName.WAVING).value(FORECAST_WAVING).build(),
+            MagnitudePhoto.builder()
+                .processName(ProcessName.PACKING)
+                .value(FORECAST_PACKING)
+                .build()));
+  }
+
+  private void assertTransferWorkflowProcesses(final Staffing staffing) {
+    final StaffingWorkflow transfer =
+        staffing.getWorkflows().stream()
+            .filter(w -> w.getWorkflow().equals(TRANSFER_WORKFLOW))
+            .findFirst()
+            .orElseThrow();
+
+    final Process pickingTransfer = transfer.getProcesses().get(0);
+    final var pickingTransferAreas = pickingTransfer.getAreas();
+
+    assertEqualsWorkflow(
+        transfer,
+        TRANSFER_WORKFLOW,
+        TOTAL_TRANSFER_WORKERS,
+        TRANSFER_NS_WORKERS,
+        TOTAL_TRANSFER_PROCESSES);
+
+    assertEqualsProcess(
+        pickingTransfer,
+        PICKING_PROCESS,
+        EXPECTED_TRANSFER_PICKING_NET_PRODUCTIVITY,
+        null,
+        TRANSFER_PICKING_IDLE_WORKERS,
+        TRANSFER_PICKING_SYS_WORKERS,
+        EXPECTED_TRANSFER_PICKING_THROUGHPUT,
+        TOTAL_TRANSFER_PICKING_AREAS);
+
+    assertEquals(AREA_RKL, pickingTransferAreas.get(0).getArea());
+    assertEquals(
+        TRANSFER_PICKING_RKL_IDLE_WORKERS, pickingTransferAreas.get(0).getWorkers().getIdle());
+    assertEquals(
+        TRANSFER_PICKING_RKL_SYS_WORKERS, pickingTransferAreas.get(0).getWorkers().getBusy());
+    assertEquals(
+        EXPECTED_TRANSFER_PICKING_RKL_NET_PRODUCTIVITY,
+        pickingTransferAreas.get(0).getNetProductivity());
   }
 }

@@ -26,16 +26,14 @@ import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 
-/**
- * Build methods and constants to be used in testing.
- */
+/** Build methods and constants to be used in testing. */
 public class TestUtils {
   public static final String WAREHOUSE_ID = "ARTW01";
 
   public static final Long USER_ID = 1234L;
 
-  public static final ZonedDateTime A_DATE = ZonedDateTime.of(2020, 8, 19, 17, 40, 0, 0,
-      ZoneId.of("UTC"));
+  public static final ZonedDateTime A_DATE =
+      ZonedDateTime.of(2020, 8, 19, 17, 40, 0, 0, ZoneId.of("UTC"));
 
   public static final String CALLER_ID = "caller.id";
 
@@ -44,6 +42,8 @@ public class TestUtils {
   public static final String INBOUND_WORKFLOW = "fbm-wms-inbound";
 
   public static final String WITHDRAWALS_WORKFLOW = "fbm-wms-withdrawals";
+
+  public static final String TRANSFER_WORKFLOW = "fbm-wms-transfer";
 
   public static final String RECEIVING_PROCESS = "receiving";
 
@@ -79,6 +79,7 @@ public class TestUtils {
 
   /**
    * Builds a known object mapper, ready to use in test.
+   *
    * @return an {@link ObjectMapper} instance
    */
   public static ObjectMapper objectMapper() {
@@ -89,7 +90,8 @@ public class TestUtils {
 
   /**
    * Mocks a Success Response for the given params.
-   * @param url     url to build the Response
+   *
+   * @param url url to build the Response
    * @param request to be assumed as ok
    */
   public static void mockPostUrlSuccess(final String url, final JSONObject request) {
@@ -104,6 +106,7 @@ public class TestUtils {
 
   /**
    * Uses a class loader to get the resource and returns it as String.
+   *
    * @param resourceName to process
    * @return the toString value of the resource
    * @throws IOException when class loader fails
@@ -124,15 +127,24 @@ public class TestUtils {
 
   /**
    * Mocks an CircuitBreaker -> ExponentialBreaker from known values
-   * <p>resource: {@value C_BREAKER_RESOURCE}</p>
-   * <p>interval: {@value C_BREAKER_INTERVAL}</p>
-   * <p>tryWindow: {@value C_BREAKER_TRY_WINDOW}</p>
-   * <p>coefficient: {@value C_BREAKER_COEFFICIENT}</p>
-   * <p>buckets: {@value C_BREAKER_BUCKETS}</p>
-   * <p>bucketWithMs: {@value C_BREAKER_MS_BUCKET}</p>
-   * <p>minScore: {@value C_BREAKER_MIN_SCORE}</p>
-   * <p>staleInterval: {@value C_BREAKER_STALE_INTERVAL}</p>
-   * <p>minMeasures: {@value C_BREAKER_MIN_MEASURES}</p>.
+   *
+   * <p>resource: {@value C_BREAKER_RESOURCE}
+   *
+   * <p>interval: {@value C_BREAKER_INTERVAL}
+   *
+   * <p>tryWindow: {@value C_BREAKER_TRY_WINDOW}
+   *
+   * <p>coefficient: {@value C_BREAKER_COEFFICIENT}
+   *
+   * <p>buckets: {@value C_BREAKER_BUCKETS}
+   *
+   * <p>bucketWithMs: {@value C_BREAKER_MS_BUCKET}
+   *
+   * <p>minScore: {@value C_BREAKER_MIN_SCORE}
+   *
+   * <p>staleInterval: {@value C_BREAKER_STALE_INTERVAL}
+   *
+   * <p>minMeasures: {@value C_BREAKER_MIN_MEASURES}.
    *
    * @return a new {@link CircuitBreaker} instance
    */
@@ -146,54 +158,62 @@ public class TestUtils {
         C_BREAKER_MS_BUCKET,
         C_BREAKER_MIN_SCORE,
         C_BREAKER_STALE_INTERVAL,
-        C_BREAKER_MIN_MEASURES
-    );
+        C_BREAKER_MIN_MEASURES);
   }
 
   /**
    * Mocks a Run Simulation Request from known values:
-   * <p>warehouseId: {@value WAREHOUSE_ID}</p>
-   * <p>SimulationRequest.processName: {@value PICKING_PROCESS}</p>
-   * <p>SimulationRequest.entities(EntityRequest.type): {@value HEADCOUNT}.</p>
+   *
+   * <p>warehouseId: {@value WAREHOUSE_ID}
+   *
+   * <p>SimulationRequest.processName: {@value PICKING_PROCESS}
+   *
+   * <p>SimulationRequest.entities(EntityRequest.type): {@value HEADCOUNT}.
    *
    * @return a {@link RunSimulationRequest} instance
    */
   public static RunSimulationRequest mockRunSimulationRequest() {
     return RunSimulationRequest.builder()
         .warehouseId(WAREHOUSE_ID)
-        .simulations(List.of(SimulationRequest.builder()
-            .processName(PICKING_PROCESS)
-            .entities(List.of(EntityRequest.builder()
-                .type(HEADCOUNT)
-                .build()))
-            .build()))
+        .simulations(
+            List.of(
+                SimulationRequest.builder()
+                    .processName(PICKING_PROCESS)
+                    .entities(List.of(EntityRequest.builder().type(HEADCOUNT).build()))
+                    .build()))
         .build();
   }
 
   /**
    * Mocks a SaveSimulationRequest from known values:
-   * <p>warehouseId: {@value WAREHOUSE_ID}</p>
-   * <p>simulations(SimulationRequest.processName): {@value PICKING_PROCESS}</p>
-   * <p>SimulationRequest.entities(EntityRequest.type): {@value HEADCOUNT}.</p>
+   *
+   * <p>warehouseId: {@value WAREHOUSE_ID}
+   *
+   * <p>simulations(SimulationRequest.processName): {@value PICKING_PROCESS}
+   *
+   * <p>SimulationRequest.entities(EntityRequest.type): {@value HEADCOUNT}.
    *
    * @return a {@link SaveSimulationRequest} instance
    */
   public static SaveSimulationRequest mockSaveSimulationRequest() {
     return SaveSimulationRequest.builder()
         .warehouseId(WAREHOUSE_ID)
-        .simulations(List.of(SimulationRequest.builder()
-            .processName(PICKING_PROCESS)
-            .entities(List.of(EntityRequest.builder()
-                .type(HEADCOUNT)
-                .build()))
-            .build()))
+        .simulations(
+            List.of(
+                SimulationRequest.builder()
+                    .processName(PICKING_PROCESS)
+                    .entities(List.of(EntityRequest.builder().type(HEADCOUNT).build()))
+                    .build()))
         .build();
   }
 
   /**
    * Mocks a DeviationRequest from known values:
-   * <p>warehouseId: {@value WAREHOUSE_ID}</p>
-   * <p>value: {@value DEVIATION_VALUE}.</p>
+   *
+   * <p>warehouseId: {@value WAREHOUSE_ID}
+   *
+   * <p>value: {@value DEVIATION_VALUE}.
+   *
    * @param hours top value from now in date time range
    * @return a {@link DeviationRequest} instance
    */

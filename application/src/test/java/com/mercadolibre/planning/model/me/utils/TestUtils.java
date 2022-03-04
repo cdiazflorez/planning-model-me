@@ -27,9 +27,7 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-/**
- * Build methods and constants to be used in testing.
- */
+/** Build methods and constants to be used in testing. */
 public class TestUtils {
 
   public static final String WAREHOUSE_ID = "ARTW01";
@@ -47,6 +45,8 @@ public class TestUtils {
   public static final String INBOUND_WORKFLOW = "fbm-wms-inbound";
 
   public static final String WITHDRAWALS_WORKFLOW = "fbm-wms-withdrawals";
+
+  public static final String TRANSFER_WORKFLOW = "fbm-wms-transfer";
 
   public static final String RECEIVING_PROCESS = "receiving";
 
@@ -83,6 +83,12 @@ public class TestUtils {
   public static final int WITHDRAWALS_SYS_WORKERS = 18;
 
   public static final int WITHDRAWALS_NS_WORKERS = 24;
+
+  public static final int TRANSFER_IDLE_WORKERS = 6;
+
+  public static final int TRANSFER_SYS_WORKERS = 9;
+
+  public static final int TRANSFER_NS_WORKERS = 12;
 
   public static final Double RECEIVING_NET_PRODUCTIVITY = 25.40;
 
@@ -176,6 +182,22 @@ public class TestUtils {
 
   public static final Double WITHDRAWALS_PACKING_THROUGHPUT = 350.13;
 
+  public static final int TRANSFER_PICKING_IDLE_WORKERS = 6;
+
+  public static final int TRANSFER_PICKING_SYS_WORKERS = 9;
+
+  public static final Double TRANSFER_PICKING_NET_PRODUCTIVITY = 35.5;
+
+  public static final Double TRANSFER_PICKING_THROUGHPUT = 135.0;
+
+  public static final int TRANSFER_PICKING_RKL_IDLE_WORKERS = 6;
+
+  public static final int TRANSFER_PICKING_RKL_SYS_WORKERS = 9;
+
+  public static final Double TRANSFER_PICKING_RKL_NET_PRODUCTIVITY = 35.5;
+
+  public static final Double TRANSFER_PICKING_RKL_THROUGHPUT = 135.0;
+
   private static final MeliDocumentFactory MELI_DOCUMENT_FACTORY = new PoiMeliDocumentFactory();
 
   private static final int SIMULATIONS_QUANTITY_BY_DATE = 20;
@@ -218,7 +240,7 @@ public class TestUtils {
   /**
    * Creates a MeliSheet based on a filepath and a sheet name.
    *
-   * @param name     sheet's name
+   * @param name sheet's name
    * @param filePath to search the sheet by name
    * @return a {@link MeliSheet} or null
    */
@@ -242,8 +264,7 @@ public class TestUtils {
    */
   public static byte[] getResource(final String resourceName) {
     try {
-      var resource = TestUtils.class.getClassLoader()
-          .getResourceAsStream(resourceName);
+      var resource = TestUtils.class.getClassLoader().getResourceAsStream(resourceName);
       return resource == null ? null : resource.readAllBytes();
     } catch (IOException exception) {
       exception.printStackTrace();
@@ -253,12 +274,18 @@ public class TestUtils {
 
   /**
    * Creates a Productivity Request from known values:
-   * <p>workflow: FBM_WMS_OUTBOUND</p>
-   * <p>warehouseId: {@value WAREHOUSE_ID}</p>
-   * <p>entityType: PRODUCTIVITY</p>
-   * <p>processName: [PICKING, PACKING, PACKING_WALL]</p>
-   * <p>simulations(Simulation): [PICKING].</p>
-   * <p>simulations(SimulationEntity): [HEADCOUNT].</p>
+   *
+   * <p>workflow: FBM_WMS_OUTBOUND
+   *
+   * <p>warehouseId: {@value WAREHOUSE_ID}
+   *
+   * <p>entityType: PRODUCTIVITY
+   *
+   * <p>processName: [PICKING, PACKING, PACKING_WALL]
+   *
+   * <p>simulations(Simulation): [PICKING].
+   *
+   * <p>simulations(SimulationEntity): [HEADCOUNT].
    *
    * @param currentTime to evaluate dates from-to
    * @return a {@link ProductivityRequest} instance
@@ -272,9 +299,15 @@ public class TestUtils {
         .dateFrom(currentTime)
         .dateTo(currentTime.plusDays(1))
         .abilityLevel(List.of(1, ABILITY_2_LEVEL))
-        .simulations(List.of(new Simulation(PICKING,
-            List.of(new SimulationEntity(
-                HEADCOUNT, List.of(new QuantityByDate(currentTime, SIMULATIONS_QUANTITY_BY_DATE)))))))
+        .simulations(
+            List.of(
+                new Simulation(
+                    PICKING,
+                    List.of(
+                        new SimulationEntity(
+                            HEADCOUNT,
+                            List.of(
+                                new QuantityByDate(currentTime, SIMULATIONS_QUANTITY_BY_DATE)))))))
         .build();
   }
 
@@ -287,22 +320,33 @@ public class TestUtils {
     return List.of(
         new StaffingProcess(
             RECEIVING_PROCESS,
-            new ProcessTotals(0, RECEIVING_SYS_WORKERS, RECEIVING_NET_PRODUCTIVITY, null, RECEIVING_THROUGHPUT),
+            new ProcessTotals(
+                0, RECEIVING_SYS_WORKERS, RECEIVING_NET_PRODUCTIVITY, null, RECEIVING_THROUGHPUT),
             emptyList()),
         new StaffingProcess(
             CHECK_IN_PROCESS,
-            new ProcessTotals(1, CHECK_IN_SYS_WORKERS, CHECK_IN_NET_PRODUCTIVITY, null, CHECK_IN_THROUGHPUT),
+            new ProcessTotals(
+                1, CHECK_IN_SYS_WORKERS, CHECK_IN_NET_PRODUCTIVITY, null, CHECK_IN_THROUGHPUT),
             emptyList()),
         new StaffingProcess(
             PUT_AWAY_PROCESS,
-            new ProcessTotals(1, PUT_AWAY_SYS_WORKERS, PUT_AWAY_NET_PRODUCTIVITY, null, PUT_AWAY_THROUGHPUT),
+            new ProcessTotals(
+                1, PUT_AWAY_SYS_WORKERS, PUT_AWAY_NET_PRODUCTIVITY, null, PUT_AWAY_THROUGHPUT),
             List.of(
-                new Area(AREA_MZ1,
-                    new Totals(0, PUT_AWAY_MZ1_SYS_WORKERS, PUT_AWAY_MZ1_NET_PRODUCTIVITY, PUT_AWAY_MZ1_THROUGHPUT)),
-                new Area(AREA_RKL,
-                    new Totals(1, PUT_AWAY_RKL_SYS_WORKERS, PUT_AWAY_RKL_NET_PRODUCTIVITY, PUT_AWAY_RKL_THROUGHPUT))
-            ))
-    );
+                new Area(
+                    AREA_MZ1,
+                    new Totals(
+                        0,
+                        PUT_AWAY_MZ1_SYS_WORKERS,
+                        PUT_AWAY_MZ1_NET_PRODUCTIVITY,
+                        PUT_AWAY_MZ1_THROUGHPUT)),
+                new Area(
+                    AREA_RKL,
+                    new Totals(
+                        1,
+                        PUT_AWAY_RKL_SYS_WORKERS,
+                        PUT_AWAY_RKL_NET_PRODUCTIVITY,
+                        PUT_AWAY_RKL_THROUGHPUT)))));
   }
 
   /**
@@ -314,35 +358,48 @@ public class TestUtils {
     return List.of(
         new StaffingProcess(
             PICKING_PROCESS,
-            new ProcessTotals(OUTBOUND_PICKING_IDLE_WORKERS, OUTBOUND_PICKING_SYS_WORKERS, OUTBOUND_PICKING_NET_PRODUCTIVITY, null,
+            new ProcessTotals(
+                OUTBOUND_PICKING_IDLE_WORKERS,
+                OUTBOUND_PICKING_SYS_WORKERS,
+                OUTBOUND_PICKING_NET_PRODUCTIVITY,
+                null,
                 OUTBOUND_PICKING_THROUGHPUT),
             List.of(
-                new Area(AREA_MZ1,
-                    new Totals(OUTBOUND_PICKING_MZ1_IDLE_WORKERS, OUTBOUND_PICKING_MZ1_SYS_WORKERS, OUTBOUND_PICKING_MZ1_NET_PRODUCTIVITY,
+                new Area(
+                    AREA_MZ1,
+                    new Totals(
+                        OUTBOUND_PICKING_MZ1_IDLE_WORKERS,
+                        OUTBOUND_PICKING_MZ1_SYS_WORKERS,
+                        OUTBOUND_PICKING_MZ1_NET_PRODUCTIVITY,
                         OUTBOUND_PICKING_MZ1_THROUGHPUT)),
-                new Area(AREA_RKL,
-                    new Totals(OUTBOUND_PICKING_RKL_IDLE_WORKERS, OUTBOUND_PICKING_RKL_SYS_WORKERS, OUTBOUND_PICKING_RKL_NET_PRODUCTIVITY,
-                        OUTBOUND_PICKING_RKL_THROUGHPUT))
-            )),
+                new Area(
+                    AREA_RKL,
+                    new Totals(
+                        OUTBOUND_PICKING_RKL_IDLE_WORKERS,
+                        OUTBOUND_PICKING_RKL_SYS_WORKERS,
+                        OUTBOUND_PICKING_RKL_NET_PRODUCTIVITY,
+                        OUTBOUND_PICKING_RKL_THROUGHPUT)))),
         new StaffingProcess(
-            BATCH_SORTER_PROCESS,
-            new ProcessTotals(null, null, null, null, null),
-            emptyList()),
-        new StaffingProcess(
-            WALL_IN_PROCESS,
-            new ProcessTotals(0, 0, 0.0, null, 0.0),
-            emptyList()),
+            BATCH_SORTER_PROCESS, new ProcessTotals(null, null, null, null, null), emptyList()),
+        new StaffingProcess(WALL_IN_PROCESS, new ProcessTotals(0, 0, 0.0, null, 0.0), emptyList()),
         new StaffingProcess(
             PACKING_PROCESS,
-            new ProcessTotals(1, OUTBOUND_PACKING_SYS_WORKERS, null, OUTBOUND_PACKING_EFF_PRODUCTIVITY,
+            new ProcessTotals(
+                1,
+                OUTBOUND_PACKING_SYS_WORKERS,
+                null,
+                OUTBOUND_PACKING_EFF_PRODUCTIVITY,
                 OUTBOUND_PACKING_THROUGHPUT),
             emptyList()),
         new StaffingProcess(
             PACKING_WALL_PROCESS,
-            new ProcessTotals(OUTBOUND_PACKING_WALL_IDLE_WORKERS, OUTBOUND_PACKING_WALL_SYS_WORKERS, null,
-                OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY, OUTBOUND_PACKING_WALL_THROUGHPUT),
-            emptyList())
-    );
+            new ProcessTotals(
+                OUTBOUND_PACKING_WALL_IDLE_WORKERS,
+                OUTBOUND_PACKING_WALL_SYS_WORKERS,
+                null,
+                OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY,
+                OUTBOUND_PACKING_WALL_THROUGHPUT),
+            emptyList()));
   }
 
   /**
@@ -354,17 +411,53 @@ public class TestUtils {
     return List.of(
         new StaffingProcess(
             PICKING_PROCESS,
-            new ProcessTotals(WITHDRAWALS_PICKING_IDLE_WORKERS, WITHDRAWALS_PICKING_SYS_WORKERS, WITHDRAWALS_PICKING_NET_PRODUCTIVITY, null,
+            new ProcessTotals(
+                WITHDRAWALS_PICKING_IDLE_WORKERS,
+                WITHDRAWALS_PICKING_SYS_WORKERS,
+                WITHDRAWALS_PICKING_NET_PRODUCTIVITY,
+                null,
                 WITHDRAWALS_PICKING_THROUGHPUT),
             List.of(
-                new Area(AREA_RKL, new Totals(WITHDRAWALS_PICKING_RKL_IDLE_WORKERS, WITHDRAWALS_PICKING_RKL_SYS_WORKERS,
-                    WITHDRAWALS_PICKING_RKL_NET_PRODUCTIVITY, WITHDRAWALS_PICKING_RKL_THROUGHPUT))
-            )),
+                new Area(
+                    AREA_RKL,
+                    new Totals(
+                        WITHDRAWALS_PICKING_RKL_IDLE_WORKERS,
+                        WITHDRAWALS_PICKING_RKL_SYS_WORKERS,
+                        WITHDRAWALS_PICKING_RKL_NET_PRODUCTIVITY,
+                        WITHDRAWALS_PICKING_RKL_THROUGHPUT)))),
         new StaffingProcess(
             PACKING_PROCESS,
-            new ProcessTotals(WITHDRAWALS_PACKING_IDLE_WORKERS, WITHDRAWALS_PACKING_SYS_WORKERS, null,
-                WITHDRAWALS_PACKING_EFF_PRODUCTIVITY, WITHDRAWALS_PACKING_THROUGHPUT),
-            emptyList())
-    );
+            new ProcessTotals(
+                WITHDRAWALS_PACKING_IDLE_WORKERS,
+                WITHDRAWALS_PACKING_SYS_WORKERS,
+                null,
+                WITHDRAWALS_PACKING_EFF_PRODUCTIVITY,
+                WITHDRAWALS_PACKING_THROUGHPUT),
+            emptyList()));
+  }
+
+  /**
+   * Creates the list of Processes belonging to transfer based on static values.
+   *
+   * @return a List of {@link StaffingProcess}
+   */
+  public static List<StaffingProcess> transferProcesses() {
+    return List.of(
+        new StaffingProcess(
+            PICKING_PROCESS,
+            new ProcessTotals(
+                TRANSFER_PICKING_IDLE_WORKERS,
+                TRANSFER_PICKING_SYS_WORKERS,
+                TRANSFER_PICKING_NET_PRODUCTIVITY,
+                null,
+                TRANSFER_PICKING_THROUGHPUT),
+            List.of(
+                new Area(
+                    AREA_RKL,
+                    new Totals(
+                        TRANSFER_PICKING_RKL_IDLE_WORKERS,
+                        TRANSFER_PICKING_RKL_SYS_WORKERS,
+                        TRANSFER_PICKING_RKL_NET_PRODUCTIVITY,
+                        TRANSFER_PICKING_RKL_THROUGHPUT)))));
   }
 }
