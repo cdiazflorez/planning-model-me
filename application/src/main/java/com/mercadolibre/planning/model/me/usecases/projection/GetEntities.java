@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import lombok.AllArgsConstructor;
@@ -62,7 +63,7 @@ import static org.apache.commons.lang.StringUtils.capitalize;
 public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable> {
 
     private static final Map<Workflow, List<ProcessName>> processesByWorkflow = Map.of(
-            Workflow.FBM_WMS_OUTBOUND, List.of(PICKING, PACKING, PACKING_WALL),
+            Workflow.FBM_WMS_OUTBOUND, List.of(PACKING, PACKING_WALL),
             Workflow.FBM_WMS_INBOUND, List.of(PUT_AWAY, CHECK_IN)
     );
 
@@ -74,6 +75,8 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
     private final PlanningModelGateway planningModelGateway;
 
     private final LogisticCenterGateway logisticCenterGateway;
+
+    private final FeatureSwitches featureSwitches;
 
     @Override
     public ComplexTable execute(final GetProjectionInputDto input) {
@@ -93,7 +96,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                                 .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
                                 .dateFrom(utcDateFrom)
                                 .dateTo(utcDateTo)
-                                .processName(processesByWorkflow.get(input.getWorkflow()))
+                                .processName(getProcesses(input.getWarehouseId(), input.getWorkflow()))
                                 .simulations(input.getSimulations())
                                 .entityFilters(Map.of(
                                         HEADCOUNT, Map.of(
@@ -148,6 +151,14 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                 action,
                 "Headcount / Throughput"
         );
+    }
+
+    // TODO remove when FT no longer applies
+    private List<ProcessName> getProcesses(final String warehouseId, final Workflow workflow) {
+        if (workflow == Workflow.FBM_WMS_OUTBOUND && !featureSwitches.isProjectToPackEnabled(warehouseId)) {
+            return List.of(PICKING, PACKING, PACKING_WALL);
+        }
+        return processesByWorkflow.get(workflow);
     }
 
     private Data createData(final LogisticCenterConfiguration config,
