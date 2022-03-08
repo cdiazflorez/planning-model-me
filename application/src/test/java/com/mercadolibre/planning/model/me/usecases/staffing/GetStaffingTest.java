@@ -30,6 +30,10 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.PUT_AWAY_RKL_SY
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PUT_AWAY_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_NS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WALL_IN_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_IDLE_WORKERS;
@@ -44,6 +48,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_SYS
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.inboundProcesses;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.outboundProcesses;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.stockProcesses;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.withdrawalsProcesses;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -351,6 +356,10 @@ class GetStaffingTest {
             new StaffingWorkflowResponse(
                 WITHDRAWALS_WORKFLOW,
                 new WorkflowTotals(WITHDRAWALS_IDLE_WORKERS, WITHDRAWALS_SYS_WORKERS, WITHDRAWALS_NS_WORKERS),
+                withdrawalsProcesses()),
+            new StaffingWorkflowResponse(
+                STOCK_WORKFLOW,
+                new WorkflowTotals(STOCK_IDLE_WORKERS, STOCK_SYS_WORKERS, STOCK_NS_WORKERS),
                 withdrawalsProcesses())
         )
     );
@@ -370,7 +379,11 @@ class GetStaffingTest {
             new StaffingWorkflowResponse(
                 WITHDRAWALS_WORKFLOW,
                 new WorkflowTotals(null, null, null),
-                outboundProcesses())
+                withdrawalsProcesses()),
+            new StaffingWorkflowResponse(
+                STOCK_WORKFLOW,
+                new WorkflowTotals(null, null, null),
+                stockProcesses())
         )
     );
   }

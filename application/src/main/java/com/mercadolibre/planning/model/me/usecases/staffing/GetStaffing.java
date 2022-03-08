@@ -52,6 +52,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
   private static final String WITHDRAWALS_WORKFLOW = "fbm-wms-withdrawals";
 
+  private static final String STOCK_WORKFLOW = "fbm-wms-stock";
+
   private static final String RECEIVING_PROCESS = "receiving";
 
   private static final String CHECK_IN_PROCESS = "check_in";
@@ -68,17 +70,24 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
   private static final String PACKING_WALL_PROCESS = "packing_wall";
 
+  private static final String CYCLE_COUNT_PROCESS = "cycle_count";
+
+  private static final String INBOUND_AUDIT_PROCESS = "inbound_audit";
+
+  private static final String STOCK_AUDIT_PROCESS = "stock_audit";
+
   //TODO: Unificar esta config que esta repetida en staffing-api
   private static final Map<String, List<String>> WORKFLOWS = Map.of(
       OUTBOUND_WORKFLOW, List.of(
           PICKING_PROCESS, BATCH_SORTER_PROCESS, WALL_IN_PROCESS, PACKING_PROCESS, PACKING_WALL_PROCESS
       ),
       INBOUND_WORKFLOW, List.of(RECEIVING_PROCESS, CHECK_IN_PROCESS, PUT_AWAY_PROCESS),
-      WITHDRAWALS_WORKFLOW, List.of(PICKING_PROCESS, PACKING_PROCESS)
+      WITHDRAWALS_WORKFLOW, List.of(PICKING_PROCESS, PACKING_PROCESS),
+      STOCK_WORKFLOW, List.of(CYCLE_COUNT_PROCESS, INBOUND_AUDIT_PROCESS, STOCK_AUDIT_PROCESS)
   );
 
   private static final List<String> EFFECTIVE_PROCESSES =
-      List.of(PACKING_PROCESS, PACKING_WALL_PROCESS);
+      List.of(PACKING_PROCESS, PACKING_WALL_PROCESS, CYCLE_COUNT_PROCESS, INBOUND_AUDIT_PROCESS);
 
   private final PlanningModelGateway planningModelGateway;
 
