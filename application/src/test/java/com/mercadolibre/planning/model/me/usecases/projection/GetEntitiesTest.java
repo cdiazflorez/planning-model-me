@@ -10,6 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeP
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +32,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
@@ -57,10 +57,16 @@ public class GetEntitiesTest {
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
 
+    @Mock
+    private FeatureSwitches featureSwitches;
+
     @Test
     public void testExecute() {
         //GIVEN
         final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
+
+        // TODO remove when FT no longer applies
+        when(featureSwitches.isProjectToPackEnabled(WAREHOUSE_ID)).thenReturn(true);
 
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
                 .thenReturn(new LogisticCenterConfiguration(getDefault()));
@@ -71,7 +77,7 @@ public class GetEntitiesTest {
                 .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
                 .dateFrom(utcCurrentTime)
                 .dateTo(utcCurrentTime.plusDays(1))
-                .processName(List.of(PICKING, PACKING, PACKING_WALL))
+                .processName(List.of(PACKING, PACKING_WALL))
                 .entityFilters(Map.of(
                         HEADCOUNT, Map.of(
                                 PROCESSING_TYPE.toJson(),
@@ -106,39 +112,27 @@ public class GetEntitiesTest {
         return List.of(
                 MagnitudePhoto.builder()
                         .date(utcCurrentTime)
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(10)
                         .build(),
                 MagnitudePhoto.builder()
                         .date(utcCurrentTime)
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.SIMULATION)
                         .value(20)
                         .build(),
                 MagnitudePhoto.builder()
                         .date(utcCurrentTime.plusHours(2))
-                        .processName(PACKING)
+                        .processName(PACKING_WALL)
                         .source(Source.FORECAST)
                         .value(15)
                         .build(),
                 MagnitudePhoto.builder()
                         .date(utcCurrentTime.plusDays(1))
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(30)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(utcCurrentTime.plusHours(3))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(79)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(utcCurrentTime.plusDays(3))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(32)
                         .build()
         );
     }
@@ -147,73 +141,66 @@ public class GetEntitiesTest {
         return List.of(
                 Productivity.builder()
                         .date(utcCurrentTime)
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(60)
                         .abilityLevel(1)
                         .build(),
                 Productivity.builder()
                         .date(utcCurrentTime.plusHours(1))
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.SIMULATION)
                         .value(30)
                         .abilityLevel(1)
                         .build(),
                 Productivity.builder()
                         .date(utcCurrentTime.plusHours(2))
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(50)
                         .abilityLevel(1)
                         .build(),
                 Productivity.builder()
                         .date(utcCurrentTime.plusDays(1))
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(75)
                         .abilityLevel(1)
                         .build(),
                 Productivity.builder()
                         .date(utcCurrentTime)
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(50)
                         .abilityLevel(2)
                         .build(),
                 Productivity.builder()
                         .date(utcCurrentTime.plusHours(1))
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.SIMULATION)
                         .value(20)
                         .abilityLevel(2)
                         .build(),
                 Productivity.builder()
                         .date(utcCurrentTime.plusHours(2))
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(40)
                         .abilityLevel(2)
                         .build(),
                 Productivity.builder()
                         .date(utcCurrentTime.plusDays(1))
-                        .processName(PICKING)
+                        .processName(PACKING)
                         .source(Source.FORECAST)
                         .value(65)
                         .abilityLevel(2)
                         .build(),
                 Productivity.builder()
                         .date(utcCurrentTime.plusDays(1))
-                        .processName(PACKING)
+                        .processName(PACKING_WALL)
                         .source(Source.FORECAST)
                         .value(98)
                         .abilityLevel(1)
-                        .build(),
-                Productivity.builder()
-                        .date(utcCurrentTime.plusDays(1))
-                        .processName(PACKING_WALL)
-                        .source(Source.FORECAST)
-                        .value(14)
-                        .abilityLevel(3)
                         .build()
         );
     }
