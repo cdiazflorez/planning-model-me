@@ -5,6 +5,8 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_RKL;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.BATCH_SORTER_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.CHECK_IN_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.CHECK_IN_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.CYCLE_COUNT_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_AUDIT_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_WORKFLOW;
@@ -30,8 +32,17 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.PUT_AWAY_RKL_SY
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PUT_AWAY_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_AUDIT_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_MZ1_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_MZ1_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_INBOUND_AUDIT_RKL_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_INBOUND_AUDIT_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_NS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_STOCK_AUDIT_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_STOCK_AUDIT_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WALL_IN_PROCESS;
@@ -78,9 +89,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class GetStaffingTest {
 
-  private static final int TOTAL_WORKFLOWS = 3;
+  private static final int TOTAL_WORKFLOWS = 4;
 
-  private static final int TOTAL_WORKERS = 176;
+  private static final int TOTAL_WORKERS = 196;
 
   private static final int TOTAL_INBOUND_PROCESSES = 3;
 
@@ -148,6 +159,30 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_WITHDRAWALS_PACKING_THROUGHPUT = 350;
 
+  private static final int TOTAL_STOCK_PROCESSES = 3;
+
+  private static final int TOTAL_STOCK_WORKERS = 20;
+
+  private static final Integer EXPECTED_STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY = 565;
+
+  private static final Integer EXPECTED_STOCK_STOCK_CYCLE_COUNT_THROUGHPUT = 1585;
+
+  private static final int TOTAL_STOCK_CYCLE_COUNT_AREAS = 1;
+
+  private static final Integer EXPECTED_STOCK_CYCLE_COUNT_MZ1_EFF_PRODUCTIVITY = 565;
+
+  private static final Integer EXPECTED_STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY = 1200;
+
+  private static final Integer EXPECTED_STOCK_STOCK_INBOUND_AUDIT_THROUGHPUT = 225;
+
+  private static final int TOTAL_STOCK_INBOUND_AUDIT_AREAS = 1;
+
+  private static final Integer EXPECTED_STOCK_INBOUND_AUDIT_RKL_EFF_PRODUCTIVITY = 1200;
+
+  private static final Integer EXPECTED_STOCK_STOCK_AUDIT_NET_PRODUCTIVITY = 594;
+
+  private static final Integer EXPECTED_STOCK_STOCK_AUDIT_THROUGHPUT = 2615;
+
   private static final Integer FORECAST_PICKING = 30;
 
   private static final Integer FORECAST_WALL_IN = 20;
@@ -194,12 +229,20 @@ class GetStaffingTest {
         .filter(w -> w.getWorkflow().equals(WITHDRAWALS_WORKFLOW))
         .findFirst().orElseThrow();
 
+    final StaffingWorkflow stock = staffing.getWorkflows().stream()
+        .filter(w -> w.getWorkflow().equals(STOCK_WORKFLOW))
+        .findFirst().orElseThrow();
+
     final Process putAway = inbound.getProcesses().get(2);
     final Process picking = outbound.getProcesses().get(0);
     final Process pickingWithdrawals = withdrawals.getProcesses().get(0);
+    final Process cycleCount = stock.getProcesses().get(0);
+    final Process inboundAudit = stock.getProcesses().get(1);
     final var putAwayAreas = putAway.getAreas();
     final var pickingAreas = picking.getAreas();
     final var pickingWithdrawalsAreas = pickingWithdrawals.getAreas();
+    final var cycleCountAreas = cycleCount.getAreas();
+    final var inboundAuditAreas = inboundAudit.getAreas();
 
     assertEquals(TOTAL_WORKERS, staffing.getTotalWorkers());
     assertEquals(TOTAL_WORKFLOWS, staffing.getWorkflows().size());
@@ -266,6 +309,29 @@ class GetStaffingTest {
 
     assertEqualsProcess(withdrawals.getProcesses().get(1), PACKING_PROCESS, EXPECTED_WITHDRAWALS_PACKING_NET_PRODUCTIVITY, null,
         WITHDRAWALS_PACKING_IDLE_WORKERS, WITHDRAWALS_PACKING_SYS_WORKERS, EXPECTED_WITHDRAWALS_PACKING_THROUGHPUT, 0);
+
+    assertEqualsWorkflow(stock, STOCK_WORKFLOW, TOTAL_STOCK_WORKERS, STOCK_NS_WORKERS, TOTAL_STOCK_PROCESSES);
+
+    assertEqualsProcess(cycleCount, CYCLE_COUNT_PROCESS, EXPECTED_STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY, null,
+        STOCK_CYCLE_COUNT_IDLE_WORKERS, STOCK_CYCLE_COUNT_SYS_WORKERS, EXPECTED_STOCK_STOCK_CYCLE_COUNT_THROUGHPUT,
+        TOTAL_STOCK_CYCLE_COUNT_AREAS);
+
+    assertEquals(AREA_MZ1, cycleCountAreas.get(0).getArea());
+    assertEquals(STOCK_CYCLE_COUNT_MZ1_IDLE_WORKERS, cycleCountAreas.get(0).getWorkers().getIdle());
+    assertEquals(STOCK_CYCLE_COUNT_MZ1_SYS_WORKERS, cycleCountAreas.get(0).getWorkers().getBusy());
+    assertEquals(EXPECTED_STOCK_CYCLE_COUNT_MZ1_EFF_PRODUCTIVITY, cycleCountAreas.get(0).getNetProductivity());
+
+    assertEqualsProcess(inboundAudit, INBOUND_AUDIT_PROCESS, EXPECTED_STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY, null,
+        0, STOCK_INBOUND_AUDIT_SYS_WORKERS, EXPECTED_STOCK_STOCK_INBOUND_AUDIT_THROUGHPUT,
+        TOTAL_STOCK_INBOUND_AUDIT_AREAS);
+
+    assertEquals(AREA_RKL, inboundAuditAreas.get(0).getArea());
+    assertEquals(0, inboundAuditAreas.get(0).getWorkers().getIdle());
+    assertEquals(STOCK_INBOUND_AUDIT_RKL_SYS_WORKERS, inboundAuditAreas.get(0).getWorkers().getBusy());
+    assertEquals(EXPECTED_STOCK_INBOUND_AUDIT_RKL_EFF_PRODUCTIVITY, inboundAuditAreas.get(0).getNetProductivity());
+
+    assertEqualsProcess(stock.getProcesses().get(2), STOCK_AUDIT_PROCESS, EXPECTED_STOCK_STOCK_AUDIT_NET_PRODUCTIVITY, null,
+        STOCK_STOCK_AUDIT_IDLE_WORKERS, STOCK_STOCK_AUDIT_SYS_WORKERS, EXPECTED_STOCK_STOCK_AUDIT_THROUGHPUT, 0);
   }
 
   @Test
@@ -360,7 +426,7 @@ class GetStaffingTest {
             new StaffingWorkflowResponse(
                 STOCK_WORKFLOW,
                 new WorkflowTotals(STOCK_IDLE_WORKERS, STOCK_SYS_WORKERS, STOCK_NS_WORKERS),
-                withdrawalsProcesses())
+                stockProcesses())
         )
     );
   }

@@ -190,6 +190,7 @@ public class TestUtils {
 
   public static final Double WITHDRAWALS_PACKING_THROUGHPUT = 350.13;
 
+  // Stock
   public static final int STOCK_CYCLE_COUNT_IDLE_WORKERS = 1;
 
   public static final int STOCK_CYCLE_COUNT_SYS_WORKERS = 4;
