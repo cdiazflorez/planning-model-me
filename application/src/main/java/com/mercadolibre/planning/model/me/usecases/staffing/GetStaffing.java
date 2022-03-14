@@ -122,33 +122,37 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
           }
 
           final StaffingWorkflowResponse staffingWorkflow = staffingByWorkflow.get(workflow);
-          final Map<String, StaffingProcess> staffingByProcess =
-              staffingWorkflow.getProcesses().stream()
-                  .collect(Collectors.toMap(StaffingProcess::getName, Function.identity()));
 
-          final List<Process> processes =
-              processNames.stream()
-                  .map(
-                      process ->
-                          toProcess(
-                              process,
-                              staffingByProcess.get(process),
-                              filterProductivity(forecastStaffing, process)))
-                  .collect(toList());
+          if (staffingWorkflow != null) {
+            final Map<String, StaffingProcess> staffingByProcess =
+                staffingWorkflow.getProcesses().stream()
+                    .collect(Collectors.toMap(StaffingProcess::getName, Function.identity()));
 
-          final Integer totalNonSystemic = staffingWorkflow.getTotals().getWorkingNonSystemic();
-          final Integer totalSystemic = staffingWorkflow.getTotals().getWorkingSystemic();
-          final Integer totalIdle = staffingWorkflow.getTotals().getIdle();
+            final List<Process> processes =
+                processNames.stream()
+                    .map(
+                        process ->
+                            toProcess(
+                                process,
+                                staffingByProcess.get(process),
+                                filterProductivity(forecastStaffing, process)))
+                    .collect(toList());
 
-          final Integer totalWorkers = total(Stream.of(totalIdle, totalSystemic, totalNonSystemic));
+            final Integer totalNonSystemic = staffingWorkflow.getTotals().getWorkingNonSystemic();
+            final Integer totalSystemic = staffingWorkflow.getTotals().getWorkingSystemic();
+            final Integer totalIdle = staffingWorkflow.getTotals().getIdle();
 
-          workflows.add(
-              StaffingWorkflow.builder()
-                  .workflow(workflow)
-                  .processes(processes)
-                  .totalWorkers(totalWorkers)
-                  .totalNonSystemicWorkers(totalNonSystemic)
-                  .build());
+            final Integer totalWorkers =
+                total(Stream.of(totalIdle, totalSystemic, totalNonSystemic));
+
+            workflows.add(
+                StaffingWorkflow.builder()
+                    .workflow(workflow)
+                    .processes(processes)
+                    .totalWorkers(totalWorkers)
+                    .totalNonSystemicWorkers(totalNonSystemic)
+                    .build());
+          }
         });
 
     final Integer totalWorkers = total(workflows.stream().map(StaffingWorkflow::getTotalWorkers));

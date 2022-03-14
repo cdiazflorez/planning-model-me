@@ -416,6 +416,25 @@ class GetStaffingTest {
     assertNull(transfer.getTotalNonSystemicWorkers());
   }
 
+  @Test
+  void testExecuteWithoutAnyWorkflow() {
+    // GIVEN
+    final int TOTAL_WITHOUT_ANY_WORKFLOW = 3;
+    final GetStaffingInput input = new GetStaffingInput(WAREHOUSE_ID);
+
+    when(staffingGateway.getStaffing(WAREHOUSE_ID))
+        .thenReturn(mockStaffingResponseWithoutSomeWorkflow());
+
+    when(planningModelGateway.searchTrajectories(any())).thenReturn(mockForecastEntities());
+
+    // WHEN
+    final Staffing staffing = useCase.execute(input);
+
+    // THEN
+    final List<StaffingWorkflow> staffingWorkflows = staffing.getWorkflows();
+    assertEquals(TOTAL_WITHOUT_ANY_WORKFLOW, staffingWorkflows.size());
+  }
+
   private void assertEqualsWorkflow(
       final StaffingWorkflow workflow,
       final String name,
@@ -479,6 +498,25 @@ class GetStaffingTest {
                 new WorkflowTotals(
                     TRANSFER_IDLE_WORKERS, TRANSFER_SYS_WORKERS, TRANSFER_NS_WORKERS),
                 transferProcesses())));
+  }
+
+  private StaffingResponse mockStaffingResponseWithoutSomeWorkflow() {
+    return new StaffingResponse(
+        List.of(
+            new StaffingWorkflowResponse(
+                INBOUND_WORKFLOW,
+                new WorkflowTotals(INBOUND_IDLE_WORKERS, INBOUND_SYS_WORKERS, 0),
+                inboundProcesses()),
+            new StaffingWorkflowResponse(
+                OUTBOUND_WORKFLOW,
+                new WorkflowTotals(
+                    OUTBOUND_IDLE_WORKERS, OUTBOUND_SYS_WORKERS, OUTBOUND_NS_WORKERS),
+                outboundProcesses()),
+            new StaffingWorkflowResponse(
+                WITHDRAWALS_WORKFLOW,
+                new WorkflowTotals(
+                    WITHDRAWALS_IDLE_WORKERS, WITHDRAWALS_SYS_WORKERS, WITHDRAWALS_NS_WORKERS),
+                withdrawalsProcesses())));
   }
 
   private StaffingResponse mockStaffingResponseError() {
