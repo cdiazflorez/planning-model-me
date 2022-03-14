@@ -6,12 +6,15 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_MZ1;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.CALLER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.CHECK_IN_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_AUDIT_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PACKING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PICKING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_WORKFLOW;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_AUDIT_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_WORKFLOW;
@@ -60,9 +63,11 @@ public class StaffingControllerTest {
 
   private static final String PLAN_URL = "/plan";
 
+  private static final List<String> AREA_PROCESSES = List.of(PICKING_PROCESS, INBOUND_AUDIT_PROCESS);
+
   private static final int STAFFING_NET_PRODUCTIVITY = 34;
 
-  private static final int STAFFING_TOTAL_WORKERS = 310;
+  private static final int STAFFING_TOTAL_WORKERS = 550;
 
   private static final int STAFFING_PLANNED_WORKERS = 320;
 
@@ -184,8 +189,33 @@ public class StaffingControllerTest {
     verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
   }
 
-  private StaffingWorkflow mockStaffingWorkflow(
-      final String workflow, final List<Process> processes) {
+  private Staffing mockStaffing() {
+    final StaffingWorkflow mockedOutboundWorkflow = mockStaffingWorkflow(OUTBOUND_WORKFLOW,
+        List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
+    final StaffingWorkflow mockedInboundWorkflow = mockStaffingWorkflow(INBOUND_WORKFLOW,
+        List.of(mockProcess(RECEIVING_PROCESS), mockProcess(CHECK_IN_PROCESS)));
+    final StaffingWorkflow mockedWithdrawalsWorkflow = mockStaffingWorkflow(WITHDRAWALS_WORKFLOW,
+        List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
+    final StaffingWorkflow mockedStockWorkflow = mockStaffingWorkflow(STOCK_WORKFLOW,
+        List.of(mockProcess(STOCK_AUDIT_PROCESS), mockProcess(INBOUND_AUDIT_PROCESS)));
+    final StaffingWorkflow mockedTransferWorkflow =
+        mockStaffingWorkflow(TRANSFER_WORKFLOW, List.of(mockProcess(PICKING_PROCESS)));
+
+    return Staffing.builder()
+        .globalNetProductivity(STAFFING_NET_PRODUCTIVITY)
+        .totalWorkers(STAFFING_TOTAL_WORKERS)
+        .plannedWorkers(STAFFING_PLANNED_WORKERS)
+        .workflows(List.of(
+            mockedOutboundWorkflow,
+            mockedInboundWorkflow,
+            mockedWithdrawalsWorkflow,
+            mockedStockWorkflow,
+            mockedTransferWorkflow
+        ))
+        .build();
+  }
+
+  private StaffingWorkflow mockStaffingWorkflow(final String workflow, final List<Process> processes) {
     return StaffingWorkflow.builder()
         .workflow(workflow)
         .totalWorkers(WORKFLOW_TOTAL_WORKERS)
@@ -202,42 +232,9 @@ public class StaffingControllerTest {
         .workers(new Worker(PROCESS_IDLE_WORKERS, PROCESS_BUSY_WORKERS))
         .targetProductivity(PROCESS_TARGET_PRODUCTIVITY)
         .throughput(PROCESS_THROUGHPUT)
-        .areas(
-            process.equals(PICKING_PROCESS)
-                ? List.of(
-                    new Area(
-                        AREA_MZ1,
-                        AREA_NET_PRODUCTIVITY,
-                        new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS)))
-                : Collections.emptyList())
-        .build();
-  }
-
-  private Staffing mockStaffing() {
-    final StaffingWorkflow mockedOutboundWorkflow =
-        mockStaffingWorkflow(
-            OUTBOUND_WORKFLOW, List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
-    final StaffingWorkflow mockedInboundWorkflow =
-        mockStaffingWorkflow(
-            INBOUND_WORKFLOW,
-            List.of(mockProcess(RECEIVING_PROCESS), mockProcess(CHECK_IN_PROCESS)));
-    final StaffingWorkflow mockedWithdrawalsWorkflow =
-        mockStaffingWorkflow(
-            WITHDRAWALS_WORKFLOW,
-            List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
-    final StaffingWorkflow mockedTransferWorkflow =
-        mockStaffingWorkflow(TRANSFER_WORKFLOW, List.of(mockProcess(PICKING_PROCESS)));
-
-    return Staffing.builder()
-        .globalNetProductivity(STAFFING_NET_PRODUCTIVITY)
-        .totalWorkers(STAFFING_TOTAL_WORKERS)
-        .plannedWorkers(STAFFING_PLANNED_WORKERS)
-        .workflows(
-            List.of(
-                mockedOutboundWorkflow,
-                mockedInboundWorkflow,
-                mockedWithdrawalsWorkflow,
-                mockedTransferWorkflow))
+        .areas(AREA_PROCESSES.contains(process)
+            ? List.of(new Area(AREA_MZ1, AREA_NET_PRODUCTIVITY, new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS)))
+            : Collections.emptyList())
         .build();
   }
 

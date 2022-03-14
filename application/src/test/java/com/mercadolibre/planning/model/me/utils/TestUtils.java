@@ -48,6 +48,8 @@ public class TestUtils {
 
   public static final String TRANSFER_WORKFLOW = "fbm-wms-transfer";
 
+  public static final String STOCK_WORKFLOW = "fbm-wms-stock";
+
   public static final String RECEIVING_PROCESS = "receiving";
 
   public static final String CHECK_IN_PROCESS = "check_in";
@@ -63,6 +65,12 @@ public class TestUtils {
   public static final String PACKING_PROCESS = "packing";
 
   public static final String PACKING_WALL_PROCESS = "packing_wall";
+
+  public static final String CYCLE_COUNT_PROCESS = "cycle_count";
+
+  public static final String INBOUND_AUDIT_PROCESS = "inbound_audit";
+
+  public static final String STOCK_AUDIT_PROCESS = "stock_audit";
 
   public static final String AREA_MZ1 = "MZ-1";
 
@@ -89,6 +97,12 @@ public class TestUtils {
   public static final int TRANSFER_SYS_WORKERS = 9;
 
   public static final int TRANSFER_NS_WORKERS = 12;
+
+  public static final int STOCK_IDLE_WORKERS = 2;
+
+  public static final int STOCK_SYS_WORKERS = 10;
+
+  public static final int STOCK_NS_WORKERS = 8;
 
   public static final Double RECEIVING_NET_PRODUCTIVITY = 25.40;
 
@@ -197,6 +211,43 @@ public class TestUtils {
   public static final Double TRANSFER_PICKING_RKL_NET_PRODUCTIVITY = 35.5;
 
   public static final Double TRANSFER_PICKING_RKL_THROUGHPUT = 135.0;
+
+  // Stock
+  public static final int STOCK_CYCLE_COUNT_IDLE_WORKERS = 1;
+
+  public static final int STOCK_CYCLE_COUNT_SYS_WORKERS = 4;
+
+  public static final Double STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY = 565.95;
+
+  public static final Double STOCK_CYCLE_COUNT_THROUGHPUT = 1585.0;
+
+  public static final int STOCK_CYCLE_COUNT_MZ1_IDLE_WORKERS = 1;
+
+  public static final int STOCK_CYCLE_COUNT_MZ1_SYS_WORKERS = 4;
+
+  public static final Double STOCK_CYCLE_COUNT_MZ1_EFF_PRODUCTIVITY = 565.95;
+
+  public static final Double STOCK_CYCLE_COUNT_MZ1_THROUGHPUT = 1585.0;
+
+  public static final int STOCK_INBOUND_AUDIT_SYS_WORKERS = 2;
+
+  public static final Double STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY = 1200.73;
+
+  public static final Double STOCK_INBOUND_AUDIT_THROUGHPUT = 225.0;
+
+  public static final int STOCK_INBOUND_AUDIT_RKL_SYS_WORKERS = 2;
+
+  public static final Double STOCK_INBOUND_AUDIT_RKL_EFF_PRODUCTIVITY = 1200.73;
+
+  public static final Double STOCK_INBOUND_AUDIT_RKL_THROUGHPUT = 225.0;
+
+  public static final int STOCK_STOCK_AUDIT_IDLE_WORKERS = 1;
+
+  public static final int STOCK_STOCK_AUDIT_SYS_WORKERS = 4;
+
+  public static final Double STOCK_STOCK_AUDIT_NET_PRODUCTIVITY = 594.84;
+
+  public static final Double STOCK_STOCK_AUDIT_THROUGHPUT = 2615.0;
 
   private static final MeliDocumentFactory MELI_DOCUMENT_FACTORY = new PoiMeliDocumentFactory();
 
@@ -459,5 +510,55 @@ public class TestUtils {
                         TRANSFER_PICKING_RKL_SYS_WORKERS,
                         TRANSFER_PICKING_RKL_NET_PRODUCTIVITY,
                         TRANSFER_PICKING_RKL_THROUGHPUT)))));
+  }
+
+  /**
+   * Creates the list of Processes belonging to stock based on static values.
+   *
+   * @return a List of {@link StaffingProcess}
+   */
+  public static List<StaffingProcess> stockProcesses() {
+    return List.of(
+        new StaffingProcess(
+            CYCLE_COUNT_PROCESS,
+            new ProcessTotals(
+                STOCK_CYCLE_COUNT_IDLE_WORKERS,
+                STOCK_CYCLE_COUNT_SYS_WORKERS,
+                null,
+                STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY,
+                STOCK_CYCLE_COUNT_THROUGHPUT),
+            List.of(
+                new Area(
+                    AREA_MZ1,
+                    new Totals(
+                        STOCK_CYCLE_COUNT_MZ1_IDLE_WORKERS,
+                        STOCK_CYCLE_COUNT_MZ1_SYS_WORKERS,
+                        STOCK_CYCLE_COUNT_MZ1_EFF_PRODUCTIVITY,
+                        STOCK_CYCLE_COUNT_MZ1_THROUGHPUT)))),
+        new StaffingProcess(
+            INBOUND_AUDIT_PROCESS,
+            new ProcessTotals(
+                0,
+                STOCK_INBOUND_AUDIT_SYS_WORKERS,
+                null,
+                STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY,
+                STOCK_INBOUND_AUDIT_THROUGHPUT),
+            List.of(
+                new Area(
+                    AREA_RKL,
+                    new Totals(
+                        0,
+                        STOCK_INBOUND_AUDIT_RKL_SYS_WORKERS,
+                        STOCK_INBOUND_AUDIT_RKL_EFF_PRODUCTIVITY,
+                        STOCK_INBOUND_AUDIT_RKL_THROUGHPUT)))),
+        new StaffingProcess(
+            STOCK_AUDIT_PROCESS,
+            new ProcessTotals(
+                STOCK_STOCK_AUDIT_IDLE_WORKERS,
+                STOCK_STOCK_AUDIT_SYS_WORKERS,
+                STOCK_STOCK_AUDIT_NET_PRODUCTIVITY,
+                null,
+                STOCK_STOCK_AUDIT_THROUGHPUT),
+            emptyList()));
   }
 }

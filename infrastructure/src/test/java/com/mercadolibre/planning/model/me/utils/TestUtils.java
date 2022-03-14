@@ -45,6 +45,12 @@ public class TestUtils {
 
   public static final String TRANSFER_WORKFLOW = "fbm-wms-transfer";
 
+  public static final String STOCK_WORKFLOW = "fbm-wms-stock";
+
+  public static final String INBOUND_AUDIT_PROCESS = "inbound_audit";
+
+  public static final String STOCK_AUDIT_PROCESS = "stock_audit";
+
   public static final String RECEIVING_PROCESS = "receiving";
 
   public static final String CHECK_IN_PROCESS = "check_in";
