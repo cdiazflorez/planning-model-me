@@ -12,9 +12,9 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_WORKFL
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PACKING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PICKING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_PROCESS;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_AUDIT_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_WORKFLOW;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_WORKFLOW;
