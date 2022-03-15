@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller;
 
+import com.mercadolibre.planning.model.me.gateways.clock.RequestClockGateway;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
@@ -10,7 +11,7 @@ import java.time.Instant;
  */
 @Component
 @RequestScope
-public class RequestClock {
+public class RequestClock implements RequestClockGateway {
     private final Instant requestInstant;
 
     public RequestClock() {

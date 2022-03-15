@@ -9,6 +9,7 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
+import com.mercadolibre.planning.model.me.gateways.clock.RequestClockGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.*;
@@ -21,8 +22,10 @@ import org.apache.commons.collections.CollectionUtils;
 
 import javax.inject.Named;
 
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,13 +36,12 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.MAX_CAPACITY;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.*;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createData;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
+import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.toList;
 
 @Named
@@ -65,13 +67,23 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
     private final BacklogApiGateway backlogGateway;
 
+    private final RequestClockGateway requestClockGateway;
+
     @Override
     public Projection execute(final GetProjectionInput input) {
 
+        final ZonedDateTime requestDateTime = ZonedDateTime.ofInstant(requestClockGateway.now(), UTC);
+        final ZonedDateTime dateFromToProject = requestDateTime.truncatedTo(ChronoUnit.HOURS);
+        final ZonedDateTime dateToToProject = dateFromToProject.plusDays(DEFERRAL_DAYS_TO_PROJECT);
+        final Instant requestDate = requestDateTime.truncatedTo(ChronoUnit.MINUTES).toInstant();
+
         try {
-            final ZonedDateTime dateFromToProject = getCurrentUtcDate();
-            final ZonedDateTime dateToToProject = dateFromToProject.plusDays(DEFERRAL_DAYS_TO_PROJECT);
-            final ZonedDateTime dateFromToShow = input.getDate() == null ? dateFromToProject : input.getDate();
+
+            final boolean isSameDayHour = isSameDayHour(input.getDate(), requestDate);
+            final ZonedDateTime dateFromToShow = isSameDayHour
+                    ? ZonedDateTime.ofInstant(requestDate, UTC)
+                    : input.getDate();
+
             final ZonedDateTime dateToToShow = dateFromToShow.plusDays(DEFERRAL_DAYS_TO_SHOW);
 
             final List<Backlog> backlogsToProject = getBacklog(
@@ -119,14 +131,24 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
         } catch (RuntimeException ex) {
             return new Projection("Proyección",
                     getDateSelector(
-                            getCurrentUtcDate(),
+                            requestDateTime,
                             input.getDate() != null
                                     ? input.getDate()
-                                    : getCurrentUtcDate(),
+                                    : requestDateTime,
                             SELECTOR_DAYS_TO_SHOW),
                     ex.getMessage(),
                     createOutboundTabs(),
                     null);
+        }
+    }
+
+    private boolean isSameDayHour(final ZonedDateTime inputDate, final Instant requestDate) {
+        if (inputDate == null) {
+            return true;
+        } else {
+            final Instant selectedDate = inputDate.truncatedTo(ChronoUnit.HOURS).toInstant();
+            final Instant currentDate = requestDate.truncatedTo(ChronoUnit.HOURS);
+            return selectedDate.equals(currentDate);
         }
     }
 
@@ -230,7 +252,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
         return backlogs.stream().filter(p ->
                         (p.getDate().isEqual(dateFrom) || p.getDate().isAfter(dateFrom))
-                                && (p.getDate().isEqual(dateTo) || p.getDate().isBefore(dateTo)))
+                                && p.getDate().isBefore(dateTo))
                 .collect(toList());
     }
 
