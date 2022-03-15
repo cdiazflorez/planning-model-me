@@ -6,11 +6,15 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_MZ1;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.CALLER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.CHECK_IN_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_AUDIT_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PACKING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.PICKING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_AUDIT_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_WORKFLOW;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_WORKFLOW;
@@ -49,9 +53,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-/**
- * This class tests the behavior of "/current" and "/plan" endpoints for the StaffingController.
- */
+/** This class tests the behavior of "/current" and "/plan" endpoints for the StaffingController. */
 @WebMvcTest(controllers = StaffingController.class)
 public class StaffingControllerTest {
 
@@ -61,9 +63,11 @@ public class StaffingControllerTest {
 
   private static final String PLAN_URL = "/plan";
 
+  private static final List<String> AREA_PROCESSES = List.of(PICKING_PROCESS, INBOUND_AUDIT_PROCESS);
+
   private static final int STAFFING_NET_PRODUCTIVITY = 34;
 
-  private static final int STAFFING_TOTAL_WORKERS = 310;
+  private static final int STAFFING_TOTAL_WORKERS = 550;
 
   private static final int STAFFING_PLANNED_WORKERS = 320;
 
@@ -113,17 +117,13 @@ public class StaffingControllerTest {
 
   private static final String HEADCOUNT_HOUR_2 = "13:00";
 
-  @Autowired
-  private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-  @MockBean
-  private AuthorizeUser authorizeUser;
+  @MockBean private AuthorizeUser authorizeUser;
 
-  @MockBean
-  private GetStaffing getStaffing;
+  @MockBean private GetStaffing getStaffing;
 
-  @MockBean
-  private GetPlannedHeadcount getPlannedHeadcount;
+  @MockBean private GetPlannedHeadcount getPlannedHeadcount;
 
   @Test
   public void testGetStaffing() throws Exception {
@@ -131,11 +131,11 @@ public class StaffingControllerTest {
     when(getStaffing.execute(new GetStaffingInput(WAREHOUSE_ID))).thenReturn(mockStaffing());
 
     // WHEN
-    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-        .get(format(URL, WAREHOUSE_ID) + CURRENT_URL)
-        .param(CALLER_ID, String.valueOf(USER_ID))
-        .contentType(APPLICATION_JSON)
-    );
+    final ResultActions result =
+        mockMvc.perform(
+            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID) + CURRENT_URL)
+                .param(CALLER_ID, String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON));
 
     // THEN
     result.andExpect(status().isOk());
@@ -150,17 +150,15 @@ public class StaffingControllerTest {
         .thenReturn(mockPlannedHeadcount());
 
     // WHEN
-    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-        .get(format(URL, WAREHOUSE_ID) + PLAN_URL)
-        .param(CALLER_ID, String.valueOf(USER_ID))
-        .contentType(APPLICATION_JSON)
-    );
+    final ResultActions result =
+        mockMvc.perform(
+            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID) + PLAN_URL)
+                .param(CALLER_ID, String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON));
 
     // THEN
     result.andExpect(status().isOk());
-    result.andExpect(content().json(
-        getResourceAsString("get_planned_headcount_response.json"))
-    );
+    result.andExpect(content().json(getResourceAsString("get_planned_headcount_response.json")));
 
     verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
   }
@@ -172,21 +170,49 @@ public class StaffingControllerTest {
         .thenThrow(ForecastNotFoundException.class);
 
     // WHEN
-    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-        .get(format(URL, WAREHOUSE_ID) + PLAN_URL)
-        .param(CALLER_ID, String.valueOf(USER_ID))
-        .contentType(APPLICATION_JSON)
-    );
+    final ResultActions result =
+        mockMvc.perform(
+            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID) + PLAN_URL)
+                .param(CALLER_ID, String.valueOf(USER_ID))
+                .contentType(APPLICATION_JSON));
 
     // THEN
     result.andExpect(status().isNotFound());
-    result.andExpect(content().json(new JSONObject()
-        .put("status", "NOT_FOUND")
-        .put("error", "forecast_not_found")
-        .toString())
-    );
+    result.andExpect(
+        content()
+            .json(
+                new JSONObject()
+                    .put("status", "NOT_FOUND")
+                    .put("error", "forecast_not_found")
+                    .toString()));
 
     verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+  }
+
+  private Staffing mockStaffing() {
+    final StaffingWorkflow mockedOutboundWorkflow = mockStaffingWorkflow(OUTBOUND_WORKFLOW,
+        List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
+    final StaffingWorkflow mockedInboundWorkflow = mockStaffingWorkflow(INBOUND_WORKFLOW,
+        List.of(mockProcess(RECEIVING_PROCESS), mockProcess(CHECK_IN_PROCESS)));
+    final StaffingWorkflow mockedWithdrawalsWorkflow = mockStaffingWorkflow(WITHDRAWALS_WORKFLOW,
+        List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
+    final StaffingWorkflow mockedStockWorkflow = mockStaffingWorkflow(STOCK_WORKFLOW,
+        List.of(mockProcess(STOCK_AUDIT_PROCESS), mockProcess(INBOUND_AUDIT_PROCESS)));
+    final StaffingWorkflow mockedTransferWorkflow =
+        mockStaffingWorkflow(TRANSFER_WORKFLOW, List.of(mockProcess(PICKING_PROCESS)));
+
+    return Staffing.builder()
+        .globalNetProductivity(STAFFING_NET_PRODUCTIVITY)
+        .totalWorkers(STAFFING_TOTAL_WORKERS)
+        .plannedWorkers(STAFFING_PLANNED_WORKERS)
+        .workflows(List.of(
+            mockedOutboundWorkflow,
+            mockedInboundWorkflow,
+            mockedWithdrawalsWorkflow,
+            mockedStockWorkflow,
+            mockedTransferWorkflow
+        ))
+        .build();
   }
 
   private StaffingWorkflow mockStaffingWorkflow(final String workflow, final List<Process> processes) {
@@ -206,56 +232,44 @@ public class StaffingControllerTest {
         .workers(new Worker(PROCESS_IDLE_WORKERS, PROCESS_BUSY_WORKERS))
         .targetProductivity(PROCESS_TARGET_PRODUCTIVITY)
         .throughput(PROCESS_THROUGHPUT)
-        .areas(process.equals(PICKING_PROCESS)
+        .areas(AREA_PROCESSES.contains(process)
             ? List.of(new Area(AREA_MZ1, AREA_NET_PRODUCTIVITY, new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS)))
             : Collections.emptyList())
         .build();
   }
 
-  private Staffing mockStaffing() {
-    final StaffingWorkflow mockedOutboundWorkflow = mockStaffingWorkflow(OUTBOUND_WORKFLOW,
-        List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
-    final StaffingWorkflow mockedInboundWorkflow = mockStaffingWorkflow(INBOUND_WORKFLOW,
-        List.of(mockProcess(RECEIVING_PROCESS), mockProcess(CHECK_IN_PROCESS)));
-    final StaffingWorkflow mockedWithdrawalsWorkflow = mockStaffingWorkflow(WITHDRAWALS_WORKFLOW,
-        List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
-
-    return Staffing.builder()
-        .globalNetProductivity(STAFFING_NET_PRODUCTIVITY)
-        .totalWorkers(STAFFING_TOTAL_WORKERS)
-        .plannedWorkers(STAFFING_PLANNED_WORKERS)
-        .workflows(List.of(
-            mockedOutboundWorkflow,
-            mockedInboundWorkflow,
-            mockedWithdrawalsWorkflow
-        ))
-        .build();
-  }
-
   private PlannedHeadcount mockPlannedHeadcount() {
-    return new PlannedHeadcount(List.of(
-        new PlannedHeadcountByHour(
-            HEADCOUNT_HOUR_1,
-            List.of(
-                new PlannedHeadcountByWorkflow(OUTBOUND_WORKFLOW, HEADCOUNT_OUTBOUND_WORKFLOW_WORKERS_1, List.of(
-                    new PlannedHeadcountByProcess(PACKING.getName(), HEADCOUNT_PACKING_PROCESS_WORKERS_1,
-                        HEADCOUNT_PACKING_PROCESS_THROUGHPUT_1),
-                    new PlannedHeadcountByProcess(PICKING.getName(), HEADCOUNT_PICKING_PROCESS_WORKERS_1,
-                        HEADCOUNT_PICKING_PROCESS_THROUGHPUT_1)
-                ))
-            )
-        ),
-        new PlannedHeadcountByHour(
-            HEADCOUNT_HOUR_2,
-            List.of(
-                new PlannedHeadcountByWorkflow(OUTBOUND_WORKFLOW, HEADCOUNT_OUTBOUND_WORKFLOW_WORKERS_2, List.of(
-                    new PlannedHeadcountByProcess(PACKING.getName(), HEADCOUNT_PACKING_PROCESS_WORKERS_2,
-                        HEADCOUNT_PACKING_PROCESS_THROUGHPUT_2),
-                    new PlannedHeadcountByProcess(PICKING.getName(), HEADCOUNT_PICKING_PROCESS_WORKERS_2,
-                        HEADCOUNT_PICKING_PROCESS_THROUGHPUT_2)
-                ))
-            )
-        )
-    ));
+    return new PlannedHeadcount(
+        List.of(
+            new PlannedHeadcountByHour(
+                HEADCOUNT_HOUR_1,
+                List.of(
+                    new PlannedHeadcountByWorkflow(
+                        OUTBOUND_WORKFLOW,
+                        HEADCOUNT_OUTBOUND_WORKFLOW_WORKERS_1,
+                        List.of(
+                            new PlannedHeadcountByProcess(
+                                PACKING.getName(),
+                                HEADCOUNT_PACKING_PROCESS_WORKERS_1,
+                                HEADCOUNT_PACKING_PROCESS_THROUGHPUT_1),
+                            new PlannedHeadcountByProcess(
+                                PICKING.getName(),
+                                HEADCOUNT_PICKING_PROCESS_WORKERS_1,
+                                HEADCOUNT_PICKING_PROCESS_THROUGHPUT_1))))),
+            new PlannedHeadcountByHour(
+                HEADCOUNT_HOUR_2,
+                List.of(
+                    new PlannedHeadcountByWorkflow(
+                        OUTBOUND_WORKFLOW,
+                        HEADCOUNT_OUTBOUND_WORKFLOW_WORKERS_2,
+                        List.of(
+                            new PlannedHeadcountByProcess(
+                                PACKING.getName(),
+                                HEADCOUNT_PACKING_PROCESS_WORKERS_2,
+                                HEADCOUNT_PACKING_PROCESS_THROUGHPUT_2),
+                            new PlannedHeadcountByProcess(
+                                PICKING.getName(),
+                                HEADCOUNT_PICKING_PROCESS_WORKERS_2,
+                                HEADCOUNT_PICKING_PROCESS_THROUGHPUT_2)))))));
   }
 }
