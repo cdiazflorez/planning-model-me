@@ -1,101 +1,178 @@
 {
-    "total_workers": 310,
-    "planned_workers": 320,
-    "global_net_productivity": 34,
-    "workflows": [{
-        "workflow": "fbm-wms-outbound",
-        "global_net_productivity": 60,
-        "total_workers": 100,
-        "total_non_systemic_workers": 10,
-        "processes": [{
-            "process": "picking",
+  "total_workers": 550,
+  "planned_workers": 320,
+  "global_net_productivity": 34,
+  "workflows": [
+    {
+      "workflow": "fbm-wms-outbound",
+      "global_net_productivity": 60,
+      "total_workers": 100,
+      "total_non_systemic_workers": 10,
+      "processes": [
+        {
+          "process": "picking",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10
+          },
+          "areas": [
+            {
+              "area": "MZ-1",
+              "net_productivity": 40,
+              "workers": {
+                "idle": 10,
+                "busy": 30
+              }
+            }
+          ]
+        },
+        {
+          "process": "packing",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10
+          },
+          "areas": []
+        }
+      ]
+    },
+    {
+      "workflow": "fbm-wms-withdrawals",
+      "global_net_productivity": 60,
+      "total_workers": 100,
+      "total_non_systemic_workers": 10,
+      "processes": [
+        {
+          "process": "picking",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10
+          },
+          "areas": [
+            {
+              "area": "MZ-1",
+              "net_productivity": 40,
+              "workers": {
+                "idle": 10,
+                "busy": 30
+              }
+            }
+          ]
+        },
+        {
+          "process": "packing",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10
+          },
+          "areas": []
+        }
+      ]
+    },
+    {
+      "workflow": "fbm-wms-inbound",
+      "global_net_productivity": 60,
+      "total_workers": 100,
+      "total_non_systemic_workers": 10,
+      "processes": [
+        {
+          "process": "receiving",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10
+          },
+          "areas": []
+        },
+        {
+          "process": "check_in",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10
+          },
+          "areas": []
+        }
+      ]
+    },
+    {
+      "workflow": "fbm-wms-transfer",
+      "global_net_productivity": 60,
+      "total_workers": 100,
+      "total_non_systemic_workers": 10,
+      "processes": [
+        {
+          "process": "picking",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10
+          },
+          "areas": [
+            {
+              "area": "MZ-1",
+              "net_productivity": 40,
+              "workers": {
+                "idle": 10,
+                "busy": 30
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "workflow": "fbm-wms-stock",
+      "global_net_productivity": 60,
+      "total_workers": 100,
+      "total_non_systemic_workers": 10,
+      "processes": [{
+        "process": "stock_audit",
+        "net_productivity": 40,
+        "target_productivity": 50,
+        "throughput": 1200,
+        "workers": {
+          "busy": 30,
+          "idle": 10
+        },
+        "areas": []
+      }, {
+        "process": "inbound_audit",
+        "net_productivity": 40,
+        "target_productivity": 50,
+        "throughput": 1200,
+        "workers": {
+          "busy": 30,
+          "idle": 10
+        },
+        "areas": [
+          {
+            "area": "MZ-1",
             "net_productivity": 40,
-            "target_productivity": 50,
-            "throughput": 1200,
             "workers": {
-                "busy": 30,
-                "idle": 10
-            },
-            "areas": [
-                {
-                    "area": "MZ-1",
-                    "net_productivity": 40,
-                    "workers": {
-                        "idle": 10,
-                        "busy": 30
-                    }
-                }]
-        }, {
-            "process": "packing",
-            "net_productivity": 40,
-            "target_productivity": 50,
-            "throughput": 1200,
-            "workers": {
-                "busy": 30,
-                "idle": 10
-            },
-            "areas": []
-        }]
-    }, {
-        "workflow": "fbm-wms-withdrawals",
-        "global_net_productivity": 60,
-        "total_workers": 100,
-        "total_non_systemic_workers": 10,
-        "processes": [{
-            "process": "picking",
-            "net_productivity": 40,
-            "target_productivity": 50,
-            "throughput": 1200,
-            "workers": {
-                "busy": 30,
-                "idle": 10
-            },
-            "areas": [
-                {
-                    "area": "MZ-1",
-                    "net_productivity": 40,
-                    "workers": {
-                        "idle": 10,
-                        "busy": 30
-                    }
-                }]
-        }, {
-            "process": "packing",
-            "net_productivity": 40,
-            "target_productivity": 50,
-            "throughput": 1200,
-            "workers": {
-                "busy": 30,
-                "idle": 10
-            },
-            "areas": []
-        }]
-    }, {
-        "workflow": "fbm-wms-inbound",
-        "global_net_productivity": 60,
-        "total_workers": 100,
-        "total_non_systemic_workers": 10,
-        "processes": [{
-            "process": "receiving",
-            "net_productivity": 40,
-            "target_productivity": 50,
-            "throughput": 1200,
-            "workers": {
-                "busy": 30,
-                "idle": 10
-            },
-            "areas": []
-        }, {
-            "process": "check_in",
-            "net_productivity": 40,
-            "target_productivity": 50,
-            "throughput": 1200,
-            "workers": {
-                "busy": 30,
-                "idle": 10
-            },
-            "areas": []
-        }]
+              "idle": 10,
+              "busy": 30
+            }
+          }]
+      }]
     }
-    ]
+  ]
 }

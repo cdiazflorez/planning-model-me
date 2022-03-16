@@ -181,8 +181,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                           final Map<Instant, BacklogLimit> limits,
                                           final Map<Instant, UnitMeasure> backlogMeasuredInHours) {
 
+        final UnitMeasure total = backlogMeasuredInHours.getOrDefault(date, emptyMeasure());
         final Instant truncatedDate = date.truncatedTo(ChronoUnit.HOURS);
-        final UnitMeasure total = backlogMeasuredInHours.getOrDefault(truncatedDate, emptyMeasure());
         final int tphDefault = throughput.getOrDefault(truncatedDate, 0);
 
         final int tphAverage = getTphAverage(total);

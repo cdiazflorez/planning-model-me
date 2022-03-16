@@ -63,7 +63,8 @@ class GetBacklogMonitorDetailsTest {
             parse("2021-08-12T01:00:00Z", ISO_OFFSET_DATE_TIME),
             parse("2021-08-12T02:00:00Z", ISO_OFFSET_DATE_TIME),
             parse("2021-08-12T03:00:00Z", ISO_OFFSET_DATE_TIME),
-            parse("2021-08-12T04:00:00Z", ISO_OFFSET_DATE_TIME)
+            parse("2021-08-12T04:00:00Z", ISO_OFFSET_DATE_TIME),
+            parse("2021-08-12T02:15:00Z", ISO_OFFSET_DATE_TIME)
     );
 
     private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
@@ -134,28 +135,28 @@ class GetBacklogMonitorDetailsTest {
 
         // THEN
         var results = response.getDates();
-        assertEquals(4, results.size());
+        assertEquals(5, results.size());
 
         var firstResult = results.get(0);
         assertEquals(DATE_FROM.toInstant(), firstResult.getDate());
 
         var firstAreas = firstResult.getAreas();
-        assertEquals(2, firstAreas.size());
+        assertEquals(3, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
         assertEquals(113, firstAreas.get(0).getValue().getMinutes());
 
-        assertEquals(2, results.get(1).getAreas().size());
+        assertEquals(3, results.get(1).getAreas().size());
 
-        var lastResults = results.get(3);
+        var lastResults = results.get(4);
         assertEquals(DATE_TO.toInstant(), lastResults.getDate());
         assertNotNull(lastResults.getAreas());
 
         var graph = response.getProcess();
         assertEquals("picking", graph.getProcess());
-        assertEquals(50, graph.getTotal().getUnits());
-        assertEquals(240, graph.getTotal().getMinutes());
-        assertEquals(4, graph.getBacklogs().size());
+        assertEquals(130, graph.getTotal().getUnits());
+        assertEquals(1269, graph.getTotal().getMinutes());
+        assertEquals(5, graph.getBacklogs().size());
 
         var graphFirstResult = graph.getBacklogs().get(0);
         assertNotNull(graphFirstResult.getHistorical());
@@ -188,7 +189,7 @@ class GetBacklogMonitorDetailsTest {
 
         // THEN
         var results = response.getDates();
-        assertEquals(4, results.size());
+        assertEquals(5, results.size());
 
         var firstResult = results.get(0);
         assertEquals(DATE_FROM.toInstant(), firstResult.getDate());
@@ -199,12 +200,12 @@ class GetBacklogMonitorDetailsTest {
         assertEquals(660, firstTotals.getMinutes());
 
         var firstAreas = firstResult.getAreas();
-        assertEquals(2, firstAreas.size());
+        assertEquals(3, firstAreas.size());
         assertEquals("RK-H", firstAreas.get(0).getId());
         assertEquals(15, firstAreas.get(0).getValue().getUnits());
         assertEquals(113, firstAreas.get(0).getValue().getMinutes());
 
-        var lastResults = results.get(3);
+        var lastResults = results.get(4);
         assertEquals(DATE_TO.toInstant(), lastResults.getDate());
         assertNotNull(lastResults.getAreas());
         assertNull(lastResults.getTarget());
@@ -274,9 +275,11 @@ class GetBacklogMonitorDetailsTest {
     private void mockPastBacklogWithAreas(final GetBacklogMonitorDetailsInput input) {
         Instant firstDate = DATES.get(0).toInstant();
         Instant secondDate = DATES.get(1).toInstant();
+        Instant dateWithMinutes = DATES.get(4).toInstant();
 
         var rkH = Map.of("area", "RK-H");
         var rkL = Map.of("area", "RK-L");
+        var rs = Map.of("area", "RS");
 
         when(backlogApiAdapter.getCurrentBacklog(
                 input.getRequestDate(),
@@ -291,7 +294,8 @@ class GetBacklogMonitorDetailsTest {
         ).thenReturn(List.of(
                 new Consolidation(firstDate, rkH, 15, true),
                 new Consolidation(secondDate, rkH, 50, true),
-                new Consolidation(firstDate, rkL, 75, true)
+                new Consolidation(firstDate, rkL, 75, true),
+                new Consolidation(dateWithMinutes, rs, 130, false)
         ));
     }
 
@@ -317,6 +321,7 @@ class GetBacklogMonitorDetailsTest {
 
         Instant firstDate = DATES.get(0).toInstant();
         Instant secondDate = DATES.get(1).toInstant();
+        Instant dateWithMinutes = DATES.get(4).toInstant();
 
         final Instant dateFrom = input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
 
@@ -327,6 +332,7 @@ class GetBacklogMonitorDetailsTest {
         var rkH = Map.of("area", "RK-H");
         var rkL = Map.of("area", "RK-L");
         var na = Map.of("area", "N/A");
+        var rs = Map.of("area", "RS");
 
         when(backlogApiAdapter.getProjectedBacklog(input.getWarehouseId(),
                 input.getWorkflow(),
@@ -336,7 +342,8 @@ class GetBacklogMonitorDetailsTest {
                 input.getCallerId(), input.getProcess() == PICKING ? List.of(
                         new Consolidation(firstDate, rkH, 15, true),
                         new Consolidation(secondDate, rkH, 50, true),
-                        new Consolidation(firstDate, rkL, 75, true)) : List.of(
+                        new Consolidation(firstDate, rkL, 75, true),
+                        new Consolidation(dateWithMinutes, rs, 130, false)) : of(
                         new Consolidation(firstDate, na, 28, true),
                         new Consolidation(secondDate, na, 50, true)))).thenReturn(
                 List.of(
