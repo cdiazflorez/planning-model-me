@@ -97,8 +97,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
           TRANSFER_WORKFLOW,
           List.of(PICKING_PROCESS));
 
-  private static final List<String> EFFECTIVE_PROCESSES =
-      List.of(PACKING_PROCESS, PACKING_WALL_PROCESS, CYCLE_COUNT_PROCESS, INBOUND_AUDIT_PROCESS);
+  private static final List<String> EFFECTIVE_PROCESSES = List.of(PACKING_PROCESS, PACKING_WALL_PROCESS);
 
   private final PlanningModelGateway planningModelGateway;
 
