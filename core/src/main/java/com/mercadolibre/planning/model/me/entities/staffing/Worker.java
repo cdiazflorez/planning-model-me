@@ -8,4 +8,6 @@ public class Worker {
     private Integer idle;
 
     private Integer busy;
+
+    private Integer planned;
 }
