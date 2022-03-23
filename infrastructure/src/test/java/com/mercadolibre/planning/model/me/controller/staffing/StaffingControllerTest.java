@@ -247,17 +247,20 @@ public class StaffingControllerTest {
 
   private Process mockProcess(final String process, final String workflow) {
     Integer FORECAST_PLANNED_WORKERS = null;
+    Integer delta = null;
     if ((workflow.equals(INBOUND_WORKFLOW) || workflow.equals(OUTBOUND_WORKFLOW))
         && (process.equals(CHECK_IN_PROCESS)
             || process.equals(PICKING_PROCESS)
             || process.equals(PACKING_PROCESS))) {
       FORECAST_PLANNED_WORKERS = 15;
+      delta = (PROCESS_BUSY_WORKERS + PROCESS_IDLE_WORKERS) - FORECAST_PLANNED_WORKERS;
     }
 
     return Process.builder()
         .process(process)
         .netProductivity(PROCESS_NET_PRODUCTIVITY)
-        .workers(new Worker(PROCESS_IDLE_WORKERS, PROCESS_BUSY_WORKERS, FORECAST_PLANNED_WORKERS))
+        .workers(
+            new Worker(PROCESS_IDLE_WORKERS, PROCESS_BUSY_WORKERS, FORECAST_PLANNED_WORKERS, delta))
         .targetProductivity(PROCESS_TARGET_PRODUCTIVITY)
         .throughput(PROCESS_THROUGHPUT)
         .areas(
@@ -266,7 +269,7 @@ public class StaffingControllerTest {
                     new Area(
                         AREA_MZ1,
                         AREA_NET_PRODUCTIVITY,
-                        new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS, null)))
+                        new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS, null, null)))
                 : Collections.emptyList())
         .build();
   }

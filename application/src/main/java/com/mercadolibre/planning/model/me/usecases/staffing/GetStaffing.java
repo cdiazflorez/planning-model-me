@@ -207,6 +207,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
     final Integer planned = plannedWorkers == null || plannedWorkers == 0 ? null : plannedWorkers;
+    final Integer delta = planned == null ? null : (working + idle) - planned;
     final Double throughput = totals.getThroughput();
 
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
@@ -221,7 +222,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                   return new Area(
                       area.getName(),
                       areaProductivity == null ? null : areaProductivity.intValue(),
-                      new Worker(areaTotals.getIdle(), areaTotals.getWorkingSystemic(), null));
+                      new Worker(
+                          areaTotals.getIdle(), areaTotals.getWorkingSystemic(), null, null));
                 })
             .sorted(Comparator.comparing(Area::getArea, Comparator.naturalOrder()))
             .collect(toList());
@@ -229,7 +231,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return Process.builder()
         .process(process)
         .netProductivity(realProductivity)
-        .workers(new Worker(idle, working, planned))
+        .workers(new Worker(idle, working, planned, delta))
         .areas(areas)
         .throughput(realThroughput)
         .targetProductivity(targetProductivity)
@@ -289,7 +291,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final OptionalInt productivity =
         staffingHeadcount.get(HEADCOUNT).stream()
             .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-            .mapToInt(MagnitudePhoto::getValue).findAny();
+            .mapToInt(MagnitudePhoto::getValue)
+            .findAny();
 
     return productivity.isPresent() ? productivity.getAsInt() : null;
   }
