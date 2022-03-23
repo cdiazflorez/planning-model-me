@@ -16,7 +16,8 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "planned": 15
           },
           "areas": [
             {
@@ -36,7 +37,8 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "planned": 15
           },
           "areas": []
         }
@@ -105,7 +107,8 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "planned": 15
           },
           "areas": []
         }
