@@ -3,7 +3,6 @@ package com.mercadolibre.planning.model.me.usecases.staffing;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.util.stream.Collectors.toList;
 
@@ -289,8 +288,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final OptionalInt productivity =
         staffingHeadcount.get(HEADCOUNT).stream()
             .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-            .mapToInt(MagnitudePhoto::getValue)
-            .findFirst();
+            .mapToInt(MagnitudePhoto::getValue).findAny();
 
     return productivity.isPresent() ? productivity.getAsInt() : null;
   }
