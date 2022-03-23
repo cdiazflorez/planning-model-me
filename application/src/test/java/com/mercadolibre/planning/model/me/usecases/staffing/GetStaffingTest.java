@@ -225,7 +225,7 @@ class GetStaffingTest {
 
   private static final Integer FORECAST_HEADCOUNT_PICKING = 4;
 
-  private static final Integer FORECAST_HEADCOUNT_PACKING_WALL = 5;
+  private static final Integer FORECAST_HEADCOUNT_PACKING_WALL = 0;
 
   private static final Integer FORECAST_HEADCOUNT_PACKING = 10;
 
@@ -612,8 +612,7 @@ class GetStaffingTest {
     assertNull(outbound.getProcesses().get(2).getWorkers().getPlanned());
     assertEquals(
         FORECAST_HEADCOUNT_PACKING, outbound.getProcesses().get(3).getWorkers().getPlanned());
-    assertEquals(
-        FORECAST_HEADCOUNT_PACKING_WALL, outbound.getProcesses().get(4).getWorkers().getPlanned());
+    assertNull(outbound.getProcesses().get(4).getWorkers().getPlanned());
 
     // withdrawals
     assertNull(withdrawals.getProcesses().get(0).getWorkers().getPlanned());

@@ -199,13 +199,14 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
       final String process,
       final StaffingProcess processStaffing,
       final Integer targetProductivity,
-      final Integer planned) {
+      final Integer plannedWorkers) {
 
     final ProcessTotals totals = processStaffing.getTotals();
 
     final Double productivity = getProductivity(process, totals);
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
+    final Integer planned = plannedWorkers == null || plannedWorkers == 0 ? null : plannedWorkers;
     final Double throughput = totals.getThroughput();
 
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
