@@ -1,5 +1,15 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
+import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
+import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
+import static com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog.emptyBacklog;
+import static java.time.ZoneOffset.UTC;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Comparator.naturalOrder;
+import static java.util.List.of;
+
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
@@ -16,12 +26,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklo
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
-import lombok.AllArgsConstructor;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
-
-import javax.inject.Named;
-
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -30,16 +34,10 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
-import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
-import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
-import static com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog.emptyBacklog;
-import static java.time.ZoneOffset.UTC;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Comparator.naturalOrder;
-import static java.util.List.of;
+import javax.inject.Named;
+import lombok.AllArgsConstructor;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Named
@@ -47,6 +45,9 @@ import static java.util.List.of;
 public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
     private static final int HOUR_TPH_FUTURE = 24;
+
+    private static final int GAP = 30;
+
 
     private final BacklogApiAdapter backlogApiAdapter;
 
@@ -145,12 +146,14 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             final List<ProcessName> processes,
             final Instant dateFrom
     ) {
+        final List<Consolidation> sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot =
+                this.filterSumsOfCellByTakenOnTheDot(sumsOfCellsGroupedByTakenOnDateAndProcess);
         final Instant takenOnDateOfLastPhoto = getDateWhenLatestPhotoWasTaken(
-                sumsOfCellsGroupedByTakenOnDateAndProcess,
+                sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot,
                 requestDate.truncatedTo(ChronoUnit.SECONDS));
 
         final List<Consolidation> truncatedConsolidation =
-                truncateToHoursTheTakenOnDate(sumsOfCellsGroupedByTakenOnDateAndProcess);
+                truncateToHoursTheTakenOnDate(sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot);
 
         final Map<ProcessName, List<Consolidation>> backlogByProcess =
                 truncatedConsolidation.stream()
@@ -167,6 +170,18 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                                         dateFrom,
                                         takenOnDateOfLastPhoto,
                                         date -> new Consolidation(date, null, 0, true))));
+    }
+
+    /**
+     * Filters by taken on only dates on the dot and the last photo, excluding the others
+     * @param sumsOfCellsGroupedByTakenOnDateAndProcess the backlog photos taken between `dateFrom`
+     *        and `requestInstant`, with all the cells corresponding to the same photo
+     *        and process consolidated.
+     */
+    private static List<Consolidation> filterSumsOfCellByTakenOnTheDot(List<Consolidation> sumsOfCellsGroupedByTakenOnDateAndProcess) {
+         return sumsOfCellsGroupedByTakenOnDateAndProcess.stream()
+                .filter(v -> (v.getDate().atZone(UTC).getMinute() < GAP || !v.isFirstPhotoOfPeriod()))
+                 .collect(Collectors.toList());
     }
 
     private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(final BacklogWorkflow workflow,
