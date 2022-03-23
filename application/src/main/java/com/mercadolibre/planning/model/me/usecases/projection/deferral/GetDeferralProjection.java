@@ -115,7 +115,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                     new Data(null,
                             getThroughput(deferralBaseOutput.getConfiguration(),
                                     input,
-                                    dateFromToShow,
+                                    dateFromToShow.truncatedTo(ChronoUnit.HOURS),
                                     dateToToShow),
                             getProjectionSummary(input,
                                     dateFromToShow,
