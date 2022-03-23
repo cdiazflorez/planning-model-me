@@ -241,8 +241,6 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_DELTA_PACKING = 6;
 
-  //private static final Integer EXPECTED_DELTA_PACKING_WALL = 35;
-
   @InjectMocks private GetStaffing useCase;
 
   @Mock private PlanningModelGateway planningModelGateway;
