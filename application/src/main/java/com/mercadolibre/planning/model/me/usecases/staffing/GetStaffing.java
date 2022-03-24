@@ -1,8 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.staffing;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilter.HEADCOUNT_FILTER;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilter.PRODUCTIVITY_FILTER;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.util.stream.Collectors.toList;
 
@@ -12,7 +13,6 @@ import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
 import com.mercadolibre.planning.model.me.entities.staffing.Worker;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -128,18 +127,15 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     WORKFLOWS.forEach(
         (workflow, processNames) -> {
           final Map<MagnitudeType, List<MagnitudePhoto>> forecastStaffing;
-          final Map<MagnitudeType, List<MagnitudePhoto>> plannedStaffing;
+          final Map<MagnitudeType, List<MagnitudePhoto>> plannedStaffing =
+              getForecastStaffing(logisticCenterId, workflow, processNames, now, HEADCOUNT);
           // TODO: Eliminar este IF cuando planning model api devuelva otros workflows
           if (OUTBOUND_WORKFLOW.equals(workflow)) {
             forecastStaffing =
-                getForecastStaffing(
-                    logisticCenterId, workflow, processNames, now, MagnitudeType.PRODUCTIVITY);
+                getForecastStaffing(logisticCenterId, workflow, processNames, now, PRODUCTIVITY);
           } else {
-            forecastStaffing = Map.of(MagnitudeType.PRODUCTIVITY, Collections.emptyList());
+            forecastStaffing = Map.of(PRODUCTIVITY, Collections.emptyList());
           }
-
-          plannedStaffing =
-              getForecastStaffing(logisticCenterId, workflow, processNames, now, HEADCOUNT);
 
           final StaffingWorkflowResponse staffingWorkflow = staffingByWorkflow.get(workflow);
 
@@ -221,7 +217,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                   return new Area(
                       area.getName(),
                       areaProductivity == null ? null : areaProductivity.intValue(),
-                      new Worker(areaTotals.getIdle(), areaTotals.getWorkingSystemic(), null));
+                      new Worker(areaTotals.getIdle(), areaTotals.getWorkingSystemic()));
                 })
             .sorted(Comparator.comparing(Area::getArea, Comparator.naturalOrder()))
             .collect(toList());
@@ -243,17 +239,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
       final ZonedDateTime now,
       final MagnitudeType magnitudeType) {
 
-    ZonedDateTime dateFrom = now.truncatedTo(ChronoUnit.HOURS);
-    Map<MagnitudeType, Map<String, List<String>>> entityFilters =
-        Map.of(HEADCOUNT, Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName())));
-
-    if (magnitudeType.equals(MagnitudeType.PRODUCTIVITY)) {
-      entityFilters =
-          Map.of(
-              MagnitudeType.PRODUCTIVITY,
-              Map.of(EntityFilters.ABILITY_LEVEL.toJson(), List.of(String.valueOf(1))));
-      dateFrom = dateFrom.minusHours(1);
-    }
+    final ZonedDateTime date = now.truncatedTo(ChronoUnit.HOURS);
 
     try {
 
@@ -262,10 +248,13 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
               .warehouseId(logisticCenterId)
               .workflow(Workflow.from(workflow).get())
               .entityTypes(List.of(magnitudeType))
-              .dateFrom(dateFrom)
-              .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+              .dateFrom(magnitudeType.equals(PRODUCTIVITY) ? date.minusHours(1) : date)
+              .dateTo(date)
               .processName(processes.stream().map(ProcessName::from).collect(toList()))
-              .entityFilters(entityFilters)
+              .entityFilters(
+                  magnitudeType.equals(PRODUCTIVITY)
+                      ? PRODUCTIVITY_FILTER.getEntity()
+                      : HEADCOUNT_FILTER.getEntity())
               .build());
 
     } catch (Exception exception) {
@@ -276,7 +265,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
   private Integer filterProductivity(
       final Map<MagnitudeType, List<MagnitudePhoto>> staffingForecast, final String process) {
     final OptionalDouble productivity =
-        staffingForecast.get(MagnitudeType.PRODUCTIVITY).stream()
+        staffingForecast.get(PRODUCTIVITY).stream()
             .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
             .mapToInt(MagnitudePhoto::getValue)
             .average();
@@ -286,11 +275,11 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
   private Integer filterHeadcount(
       final Map<MagnitudeType, List<MagnitudePhoto>> staffingHeadcount, final String process) {
-    final OptionalInt productivity =
-        staffingHeadcount.get(HEADCOUNT).stream()
-            .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-            .mapToInt(MagnitudePhoto::getValue).findAny();
 
-    return productivity.isPresent() ? productivity.getAsInt() : null;
+    return staffingHeadcount.get(HEADCOUNT).stream()
+        .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
+        .map(MagnitudePhoto::getValue)
+        .findAny()
+        .orElse(null);
   }
 }

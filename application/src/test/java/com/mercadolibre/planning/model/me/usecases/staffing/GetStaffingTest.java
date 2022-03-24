@@ -565,6 +565,7 @@ class GetStaffingTest {
     when(staffingGateway.getStaffing(WAREHOUSE_ID))
         .thenReturn(mockStaffingResponseWithoutSomeWorkflow());
 
+    givenSearchTrajectoriesWithProductivityForecast();
     givenSearchTrajectoriesWithoutHeadcountForecast();
 
     // WHEN
