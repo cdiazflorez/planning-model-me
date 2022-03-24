@@ -573,6 +573,7 @@ class GetStaffingTest {
     when(staffingGateway.getStaffing(WAREHOUSE_ID))
         .thenReturn(mockStaffingResponseWithoutSomeWorkflow());
 
+    givenSearchTrajectoriesWithProductivityForecast();
     givenSearchTrajectoriesWithoutHeadcountForecast();
 
     // WHEN
@@ -830,7 +831,7 @@ class GetStaffingTest {
             SearchTrajectoriesRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
-                .entityTypes(List.of(MagnitudeType.HEADCOUNT))
+                .entityTypes(List.of(HEADCOUNT))
                 .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
                 .dateTo(now.truncatedTo(ChronoUnit.HOURS))
                 .processName(
@@ -851,7 +852,7 @@ class GetStaffingTest {
             SearchTrajectoriesRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(Workflow.FBM_WMS_INBOUND)
-                .entityTypes(List.of(MagnitudeType.HEADCOUNT))
+                .entityTypes(List.of(HEADCOUNT))
                 .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
                 .dateTo(now.truncatedTo(ChronoUnit.HOURS))
                 .processName(
@@ -871,7 +872,7 @@ class GetStaffingTest {
             SearchTrajectoriesRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
-                .entityTypes(List.of(MagnitudeType.HEADCOUNT))
+                .entityTypes(List.of(HEADCOUNT))
                 .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
                 .dateTo(now.truncatedTo(ChronoUnit.HOURS))
                 .processName(
@@ -892,7 +893,7 @@ class GetStaffingTest {
             SearchTrajectoriesRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
                 .workflow(Workflow.FBM_WMS_INBOUND)
-                .entityTypes(List.of(MagnitudeType.HEADCOUNT))
+                .entityTypes(List.of(HEADCOUNT))
                 .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
                 .dateTo(now.truncatedTo(ChronoUnit.HOURS))
                 .processName(
@@ -908,7 +909,7 @@ class GetStaffingTest {
   private List<Map<MagnitudeType, List<MagnitudePhoto>>> mockHeadcountForecastEntities() {
     return List.of(
         Map.of(
-            MagnitudeType.HEADCOUNT,
+            HEADCOUNT,
             List.of(
                 MagnitudePhoto.builder()
                     .processName(ProcessName.CHECK_IN)
@@ -919,7 +920,7 @@ class GetStaffingTest {
                     .value(FORECAST_HEADCOUNT_PUT_AWAY)
                     .build())),
         Map.of(
-            MagnitudeType.HEADCOUNT,
+            HEADCOUNT,
             List.of(
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PICKING)

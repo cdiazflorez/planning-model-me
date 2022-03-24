@@ -269,7 +269,7 @@ public class StaffingControllerTest {
                     new Area(
                         AREA_MZ1,
                         AREA_NET_PRODUCTIVITY,
-                        new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS, null, null)))
+                        new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS)))
                 : Collections.emptyList())
         .build();
   }
