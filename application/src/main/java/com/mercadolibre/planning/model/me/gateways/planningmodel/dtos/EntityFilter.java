@@ -13,6 +13,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum EntityFilter {
+
   PRODUCTIVITY_FILTER(
       Map.of(
           PRODUCTIVITY, Map.of(EntityFilters.ABILITY_LEVEL.toJson(), List.of(String.valueOf(1))))),
