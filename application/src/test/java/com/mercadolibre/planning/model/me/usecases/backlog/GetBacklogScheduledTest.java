@@ -32,7 +32,7 @@ public class GetBacklogScheduledTest {
     private static final int AMOUNT_TO_ADD_MINUTES = 5;
     private static final int AMOUNT_TO_ADD_DAYS = 1;
     private static final int QUANTITY_BACKLOG = 500;
-    private static final int QUANTITY_BACKLOG_CURRENT = 225;
+    private static final int QUANTITY_BACKLOG_CURRENT = 275;
 
     @InjectMocks
     private GetBacklogScheduled getBacklogScheduled;
@@ -71,13 +71,14 @@ public class GetBacklogScheduledTest {
                 new BacklogRequest(WAREHOUSE_ID, today, photoDateTo)
                         .withWorkflows(List.of("inbound"))
                         .withGroupingFields(List.of("date_in"))
+                        .withSteps(List.of("SCHEDULED"))
                         .withDateInRange(today, today.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS))
         )).thenReturn(responseGetBacklog());
 
         when(backlogGateway.getCurrentBacklog(
                 new BacklogCurrentRequest(WAREHOUSE_ID)
                         .withWorkflows(List.of("inbound"))
-                        .withSteps(List.of("SCHEDULED"))
+                        .withSteps(List.of("CHECK_IN", "PUT_AWAY", "FINISHED"))
                         .withDateInRange(today, now)
                         .withGroupingFields(List.of("process"))
         )).thenReturn(responseGetCurrentBacklog());

@@ -11,5 +11,4 @@ public class Indicator{
     Integer units;
     Double percentage;
 
-
 }
