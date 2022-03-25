@@ -217,7 +217,7 @@ public class TestUtils {
 
   public static final int STOCK_CYCLE_COUNT_SYS_WORKERS = 4;
 
-  public static final Double STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY = 565.95;
+  public static final Double STOCK_CYCLE_COUNT_NET_PRODUCTIVITY = 565.95;
 
   public static final Double STOCK_CYCLE_COUNT_THROUGHPUT = 1585.0;
 
@@ -231,7 +231,7 @@ public class TestUtils {
 
   public static final int STOCK_INBOUND_AUDIT_SYS_WORKERS = 2;
 
-  public static final Double STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY = 1200.73;
+  public static final Double STOCK_INBOUND_AUDIT_NET_PRODUCTIVITY = 1200.73;
 
   public static final Double STOCK_INBOUND_AUDIT_THROUGHPUT = 225.0;
 
@@ -524,8 +524,8 @@ public class TestUtils {
             new ProcessTotals(
                 STOCK_CYCLE_COUNT_IDLE_WORKERS,
                 STOCK_CYCLE_COUNT_SYS_WORKERS,
+                STOCK_CYCLE_COUNT_NET_PRODUCTIVITY,
                 null,
-                STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY,
                 STOCK_CYCLE_COUNT_THROUGHPUT),
             List.of(
                 new Area(
@@ -540,8 +540,8 @@ public class TestUtils {
             new ProcessTotals(
                 0,
                 STOCK_INBOUND_AUDIT_SYS_WORKERS,
+                STOCK_INBOUND_AUDIT_NET_PRODUCTIVITY,
                 null,
-                STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY,
                 STOCK_INBOUND_AUDIT_THROUGHPUT),
             List.of(
                 new Area(

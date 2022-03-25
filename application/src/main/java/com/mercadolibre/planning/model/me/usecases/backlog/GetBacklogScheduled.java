@@ -7,8 +7,6 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -18,6 +16,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
+import org.apache.commons.math3.util.Precision;
 
 
 @Named
@@ -40,37 +39,38 @@ public class GetBacklogScheduled {
         )
         .truncatedTo(ChronoUnit.DAYS)
         .toInstant();
-    final int lateBacklog = this.getNumberOfUnitsThatAreScheduledToArriveBetween(logisticCenterId, today, requestDate);
+    final int receivedBacklog = this.getReceivedInboundBacklog(logisticCenterId, today, requestDate);
     final Map<Instant, Integer> firstBacklogPhotoTaken = getFirstBacklogPhotoTaken(logisticCenterId, today);
-    int backlogExpected = 0;
+    int expectedBacklog = 0;
     int remainBacklog = 0;
     for (Map.Entry<Instant, Integer>
         entry : firstBacklogPhotoTaken.entrySet()) {
       if (entry.getKey().isBefore(requestDate)) {
-        backlogExpected = backlogExpected + entry.getValue();
+        expectedBacklog += entry.getValue();
       } else {
-        remainBacklog = remainBacklog + entry.getValue();
+        remainBacklog += entry.getValue();
       }
     }
-    return createBacklogScheduledResponse(backlogExpected, lateBacklog, remainBacklog);
+    return createBacklogScheduledResponse(expectedBacklog, receivedBacklog, remainBacklog);
   }
 
-  private BacklogScheduled createBacklogScheduledResponse(int backlogExpected, int lateBacklog, int remainBacklog) {
+  private BacklogScheduled createBacklogScheduledResponse(int backlogExpected, int receivedBacklog, int remainBacklog) {
+    final int deviatedBacklog = backlogExpected - receivedBacklog;
+
     return new BacklogScheduled(
-        Indicator.builder().units(backlogExpected)
-            .build(),
-        getReceivedBacklog(backlogExpected, lateBacklog),
+        Indicator.builder().units(backlogExpected).build(),
+        Indicator.builder().units(receivedBacklog).build(),
         Indicator.builder().units(remainBacklog).build(),
-        Indicator.builder().units(lateBacklog).percentage(getDeviationPercentage(lateBacklog, backlogExpected))
+        Indicator.builder()
+            .units(deviatedBacklog)
+            .percentage(getDeviationPercentage(deviatedBacklog, backlogExpected))
             .build());
   }
 
-  private double getDeviationPercentage(int desvio, int backlogExpected) {
+  private double getDeviationPercentage(int deviation, int backlogExpected) {
     if (backlogExpected != 0) {
-      double percentage = ((double) desvio / (double) backlogExpected) * (-1);
-      return new BigDecimal(String.valueOf(percentage))
-          .setScale(SCALE_DECIMAL, RoundingMode.FLOOR)
-          .doubleValue();
+      double percentage = ((double) deviation / (double) backlogExpected) * (-1);
+      return Precision.round(percentage, SCALE_DECIMAL);
     }
     return 0;
   }
@@ -78,23 +78,15 @@ public class GetBacklogScheduled {
   /**
    * Get the total number of units corresponding to shipments whose scheduled arrival date is between the specified dates, according to the last backlog photo
    */
-  private int getNumberOfUnitsThatAreScheduledToArriveBetween(String warehouse, Instant scheduledDateFrom, Instant scheduledDateTo) {
-    final List<Consolidation> getBacklogScheduledBetween = backlogGateway.getCurrentBacklog(
+  private int getReceivedInboundBacklog(String warehouse, Instant scheduledDateFrom, Instant scheduledDateTo) {
+    final List<Consolidation> receivedInboundBacklog = backlogGateway.getCurrentBacklog(
         new BacklogCurrentRequest(warehouse)
             .withDateInRange(scheduledDateFrom, scheduledDateTo)
             .withWorkflows(List.of("inbound"))
-            .withSteps(List.of("SCHEDULED"))
+            .withSteps(List.of("CHECK_IN", "PUT_AWAY", "FINISHED"))
             .withGroupingFields(List.of("process")));
-    return getBacklogScheduledBetween.stream()
-        .mapToInt(Consolidation::getTotal)
-        .sum();
-  }
 
-  private Indicator getReceivedBacklog(int expectedBacklog, int lateBacklog) {
-    return Indicator
-        .builder()
-        .units(expectedBacklog - lateBacklog)
-        .build();
+    return receivedInboundBacklog.stream().mapToInt(Consolidation::getTotal).sum();
   }
 
   private Map<Instant, Integer> getFirstBacklogPhotoTaken(String warehouse, Instant since) {
@@ -115,6 +107,7 @@ public class GetBacklogScheduled {
     List<Consolidation> photos = backlogGateway.getBacklog(
         new BacklogRequest(warehouseId, dayDate, photoDateTo)
             .withWorkflows(List.of("inbound"))
+            .withSteps(List.of("SCHEDULED"))
             .withGroupingFields(List.of("date_in"))
             .withDateInRange(dayDate, dayDate.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS))
     );

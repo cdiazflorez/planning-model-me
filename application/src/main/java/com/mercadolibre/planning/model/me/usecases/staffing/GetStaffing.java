@@ -54,12 +54,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
   private static final String PACKING_WALL_PROCESS = "packing_wall";
 
-  private static final String CYCLE_COUNT_PROCESS = "cycle_count";
-
-  private static final String INBOUND_AUDIT_PROCESS = "inbound_audit";
-
   private static final List<String> EFFECTIVE_PROCESSES =
-      List.of(PACKING_PROCESS, PACKING_WALL_PROCESS, CYCLE_COUNT_PROCESS, INBOUND_AUDIT_PROCESS);
+      List.of(PACKING_PROCESS, PACKING_WALL_PROCESS);
 
   private final PlanningModelGateway planningModelGateway;
 

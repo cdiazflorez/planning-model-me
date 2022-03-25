@@ -21,7 +21,7 @@ public enum ProcessOutbound {
             "Ready to Wave",
             "Outbound Planning",
             0,
-            asList(TOTAL_BACKLOG, IMMEDIATE_BACKLOG, THROUGHPUT_PER_HOUR)),
+            asList(TOTAL_BACKLOG, IMMEDIATE_BACKLOG)),
     PICKING(
             "to_pick",
             "Ready to Pick",
