@@ -34,7 +34,6 @@ import java.util.TreeSet;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.CURRENT_STATUS;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.THROUGHPUT_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.OUTBOUND_PLANNING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
@@ -109,13 +108,7 @@ class GetMonitorTest {
         assertEquals(TOTAL_BACKLOG.getType(), pickingBacklogMetric.getType());
         assertEquals("2.232 uds.", pickingBacklogMetric.getValue());
 
-        Metric pickingThroughputMetric = picking.getMetrics().get(1);
-        assertEquals(THROUGHPUT_PER_HOUR.getSubtitle(), pickingThroughputMetric.getSubtitle());
-        assertEquals(THROUGHPUT_PER_HOUR.getTitle(), pickingThroughputMetric.getTitle());
-        assertEquals(THROUGHPUT_PER_HOUR.getType(), pickingThroughputMetric.getType());
-        assertEquals("3020 uds./h", pickingThroughputMetric.getValue());
-
-        Metric pickingProductivityMetric = picking.getMetrics().get(2);
+        Metric pickingProductivityMetric = picking.getMetrics().get(1);
         assertEquals(PRODUCTIVITY.getSubtitle(), pickingProductivityMetric.getSubtitle());
         assertEquals(PRODUCTIVITY.getTitle(), pickingProductivityMetric.getTitle());
         assertEquals(PRODUCTIVITY.getType(), pickingProductivityMetric.getType());
@@ -130,13 +123,7 @@ class GetMonitorTest {
         assertEquals(TOTAL_BACKLOG.getType(), packingBacklogMetric.getType());
         assertEquals("1.442 uds.", packingBacklogMetric.getValue());
 
-        Metric packingThroughputMetric = packing.getMetrics().get(1);
-        assertEquals(THROUGHPUT_PER_HOUR.getSubtitle(), packingThroughputMetric.getSubtitle());
-        assertEquals(THROUGHPUT_PER_HOUR.getTitle(), packingThroughputMetric.getTitle());
-        assertEquals(THROUGHPUT_PER_HOUR.getType(), packingThroughputMetric.getType());
-        assertEquals("150 uds./h", packingThroughputMetric.getValue());
-
-        Metric packingProductivityMetric = packing.getMetrics().get(2);
+        Metric packingProductivityMetric = packing.getMetrics().get(1);
         assertEquals(PRODUCTIVITY.getSubtitle(), packingProductivityMetric.getSubtitle());
         assertEquals(PRODUCTIVITY.getTitle(), packingProductivityMetric.getTitle());
         assertEquals(PRODUCTIVITY.getType(), packingProductivityMetric.getType());
@@ -198,10 +185,6 @@ class GetMonitorTest {
                                                                 TOTAL_BACKLOG.getType(),
                                                                 PICKING.getSubtitle(),
                                                                 "2.232 uds."),
-                                                        createMetric(THROUGHPUT_PER_HOUR.getTitle(),
-                                                                THROUGHPUT_PER_HOUR.getType(),
-                                                                THROUGHPUT_PER_HOUR.getSubtitle(),
-                                                                "3020 uds./h"),
                                                         createMetric(PRODUCTIVITY.getTitle(),
                                                                 PRODUCTIVITY.getType(),
                                                                 PRODUCTIVITY.getSubtitle(),
@@ -215,10 +198,6 @@ class GetMonitorTest {
                                                                 TOTAL_BACKLOG.getType(),
                                                                 PACKING.getSubtitle(),
                                                                 "1.442 uds."),
-                                                        createMetric(THROUGHPUT_PER_HOUR.getTitle(),
-                                                                THROUGHPUT_PER_HOUR.getType(),
-                                                                THROUGHPUT_PER_HOUR.getSubtitle(),
-                                                                "150 uds./h"),
                                                         createMetric(PRODUCTIVITY.getTitle(),
                                                                 PRODUCTIVITY.getType(),
                                                                 PRODUCTIVITY.getSubtitle(),

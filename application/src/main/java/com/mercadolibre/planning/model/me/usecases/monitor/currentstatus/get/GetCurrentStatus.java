@@ -8,7 +8,6 @@ import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInp
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
-import com.mercadolibre.planning.model.me.gateways.outboundwave.OutboundWaveGateway;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
@@ -17,8 +16,6 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.proc
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.BacklogMetricInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.GetBacklogMetricUseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.immediatebacklog.get.GetImmediateBacklogMetricUseCase;
-import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.GetThroughput;
-import com.mercadolibre.planning.model.me.usecases.monitor.metric.throughput.ThroughputInput;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,7 +38,6 @@ import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitorda
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PICKING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.monitor.metric.GetMetric.createEmptyMetric;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Collections.*;
@@ -54,8 +50,6 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
 
     private final GetBacklogMetricUseCase getBacklogMetric;
     private final GetImmediateBacklogMetricUseCase getImmediateBacklogMetric;
-    private final GetThroughput getThroughputMetric;
-    private final OutboundWaveGateway outboundWaveGateway;
     private final LogisticCenterGateway logisticCenterGateway;
     private final BacklogGatewayProvider backlogGatewayProvider;
 
@@ -192,19 +186,14 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 inputs, pickingIsNotPresent, PICKING
         );
 
-        getProcessBy(inputs, OUTBOUND_PLANNING,
-                getUnitsCountWaves(inputs.getInput())
-        ).ifPresentOrElse(processes::add, outboundPlanningIsNotPresent);
+        getProcessBy(inputs, OUTBOUND_PLANNING).ifPresentOrElse(processes::add, outboundPlanningIsNotPresent);
     }
 
     private Runnable getRunnableProcessToAdd(final TreeSet<Process> processes,
                                              final CurrentStatusMetricInputs inputs,
                                              final Runnable runnableOrElseMethod,
                                              final ProcessOutbound processOutbound) {
-        return () -> getProcessBy(inputs,
-                processOutbound,getUnitResumeForProcess(processOutbound,
-                        inputs.getProcessedUnitsLastHour())
-        ).ifPresentOrElse(processes::add, runnableOrElseMethod);
+        return () -> getProcessBy(inputs, processOutbound).ifPresentOrElse(processes::add, runnableOrElseMethod);
     }
 
     private void completeProcess(final TreeSet<Process> processes) {
@@ -223,8 +212,7 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
     }
 
     private Optional<Process> getProcessBy(final CurrentStatusMetricInputs inputs,
-                                           final ProcessOutbound processOutbound,
-                                           final UnitsResume unitResume) {
+                                           final ProcessOutbound processOutbound) {
 
         if (inputs.getProcessBacklog().getProcess().equalsIgnoreCase(processOutbound.getStatus())
                 && Objects.equals(inputs.getProcessBacklog().getArea(),
@@ -232,7 +220,7 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
 
             final Process process = Process.builder()
                     .title(processOutbound.getTitle())
-                    .metrics(createMetricsList(inputs, processOutbound, unitResume))
+                    .metrics(createMetricsList(inputs, processOutbound))
                     .build();
             return Optional.of(process);
         }
@@ -257,18 +245,8 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 .orElse(null);
     }
 
-    private UnitsResume getUnitsCountWaves(GetCurrentStatusInput input) {
-        ZonedDateTime currentTime = getCurrentUtcDateTime();
-        return outboundWaveGateway.getUnitsCount(
-                input.getWarehouseId(),
-                currentTime.minusHours(1),
-                currentTime,
-                "order");
-    }
-
     private List<Metric> createMetricsList(final CurrentStatusMetricInputs inputs,
-                                           final ProcessOutbound processOutbound,
-                                           final UnitsResume unitResume) {
+                                           final ProcessOutbound processOutbound) {
         List<Metric> metrics = new ArrayList<>();
         processOutbound.getMetricTypes().forEach(metricType -> {
             switch (metricType) {
@@ -285,15 +263,6 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                             .processOutbound(processOutbound)
                             .build()
                     ));
-                    break;
-                case THROUGHPUT_PER_HOUR:
-                    metrics.add(
-                            getThroughputMetric.execute(ThroughputInput.builder()
-                                    .processOutbound(processOutbound)
-                                    .processedUnitLastHour(unitResume)
-                                    .build()
-                            )
-                    );
                     break;
                 default:
                     break;

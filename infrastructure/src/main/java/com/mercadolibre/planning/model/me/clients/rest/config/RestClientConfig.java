@@ -19,7 +19,6 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.BA
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT_SEARCH;
-import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_WAVE;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_FORECAST;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.STAFFING;
@@ -63,8 +62,6 @@ public class RestClientConfig {
                                         "authorizations", 200)),
                         restPool(PLANNING_MODEL_FORECAST.name(),
                                 planningModelForecastClientProperties),
-                        restPool(OUTBOUND_WAVE.name(),
-                                outboundWaveClientProperties),
                         restPool(OUTBOUND_UNIT_SEARCH.name(),
                                 outboundUnitSearchClientProperties),
                         restPool(STAFFING.name(), staffingClientProperties, localCache(
