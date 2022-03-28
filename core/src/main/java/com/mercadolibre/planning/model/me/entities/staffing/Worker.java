@@ -13,9 +13,12 @@ public class Worker {
 
   private Integer planned;
 
+  private Integer delta;
+
   public Worker(Integer idle, Integer busy) {
     this.idle = idle;
     this.busy = busy;
     this.planned = null;
+    this.delta = null;
   }
 }

@@ -159,6 +159,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
     final Integer planned = plannedWorkers == null || plannedWorkers == 0 ? null : plannedWorkers;
+    final Integer delta = planned == null ? null : (working + idle) - planned;
     final Double throughput = totals.getThroughput();
 
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
@@ -181,7 +182,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return Process.builder()
         .process(process)
         .netProductivity(realProductivity)
-        .workers(new Worker(idle, working, planned))
+        .workers(new Worker(idle, working, planned, delta))
         .areas(areas)
         .throughput(realThroughput)
         .targetProductivity(targetProductivity)
@@ -231,7 +232,6 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
   private Integer filterHeadcount(
       final Map<MagnitudeType, List<MagnitudePhoto>> staffingHeadcount, final String process) {
-
     return staffingHeadcount.get(HEADCOUNT).stream()
         .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
         .map(MagnitudePhoto::getValue)

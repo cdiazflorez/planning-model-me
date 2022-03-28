@@ -17,7 +17,8 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "planned": 15
+            "planned": 15,
+            "delta": 25
           },
           "areas": [
             {
@@ -38,7 +39,8 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "planned": 15
+            "planned": 15,
+            "delta": 25
           },
           "areas": []
         }
@@ -108,7 +110,8 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "planned": 15
+            "planned": 15,
+            "delta": 25
           },
           "areas": []
         }
