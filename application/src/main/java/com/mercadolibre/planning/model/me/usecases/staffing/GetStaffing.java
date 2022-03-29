@@ -4,6 +4,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.staffing.Area;
+import com.mercadolibre.planning.model.me.entities.staffing.NonSystemicWorkers;
 import com.mercadolibre.planning.model.me.entities.staffing.Process;
 import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
@@ -154,13 +155,27 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
             final Integer totalWorkers =
                 total(Stream.of(totalIdle, totalSystemic, totalNonSystemic));
+            final Integer totalNonSystemicProcess =
+                processes.stream()
+                    .mapToInt(
+                        value ->
+                            value.getWorkers().getNonSystemic() == null
+                                ? 0
+                                : value.getWorkers().getNonSystemic())
+                    .sum();
+            final Integer totalCross = totalNonSystemic - totalNonSystemicProcess;
 
             workflows.add(
                 StaffingWorkflow.builder()
                     .workflow(workflow)
                     .processes(processes)
                     .totalWorkers(totalWorkers)
-                    .totalNonSystemicWorkers(totalNonSystemic)
+                    .totalNonSystemicWorkers(
+                        NonSystemicWorkers.builder()
+                            .total(totalNonSystemic)
+                            .subProcesses(totalNonSystemicProcess)
+                            .cross(totalCross)
+                            .build())
                     .build());
           }
         });
