@@ -284,7 +284,7 @@ class GetStaffingTest {
         null,
         0,
         RECEIVING_SYS_WORKERS,
-        null,
+        0,
         EXPECTED_RECEIVING_THROUGHPUT,
         0);
 
@@ -295,7 +295,7 @@ class GetStaffingTest {
         null,
         1,
         CHECK_IN_SYS_WORKERS,
-        null,
+        0,
         EXPECTED_CHECK_IN_THROUGHPUT,
         0);
 
@@ -306,7 +306,7 @@ class GetStaffingTest {
         null,
         1,
         PUT_AWAY_SYS_WORKERS,
-        null,
+        0,
         EXPECTED_PUT_AWAY_THROUGHPUT,
         TOTAL_PUT_AWAY_AREAS);
 
@@ -359,7 +359,7 @@ class GetStaffingTest {
         FORECAST_WALL_IN,
         0,
         0,
-        null,
+        0,
         0,
         0);
 
@@ -435,7 +435,7 @@ class GetStaffingTest {
         null,
         STOCK_CYCLE_COUNT_IDLE_WORKERS,
         STOCK_CYCLE_COUNT_SYS_WORKERS,
-        null,
+        0,
         EXPECTED_STOCK_STOCK_CYCLE_COUNT_THROUGHPUT,
         TOTAL_STOCK_CYCLE_COUNT_AREAS);
 
@@ -453,7 +453,7 @@ class GetStaffingTest {
         null,
         0,
         STOCK_INBOUND_AUDIT_SYS_WORKERS,
-        null,
+        0,
         EXPECTED_STOCK_STOCK_INBOUND_AUDIT_THROUGHPUT,
         TOTAL_STOCK_INBOUND_AUDIT_AREAS);
 
@@ -472,7 +472,7 @@ class GetStaffingTest {
         null,
         STOCK_STOCK_AUDIT_IDLE_WORKERS,
         STOCK_STOCK_AUDIT_SYS_WORKERS,
-        null,
+        0,
         EXPECTED_STOCK_STOCK_AUDIT_THROUGHPUT,
         0);
 
@@ -700,7 +700,7 @@ class GetStaffingTest {
         null,
         TRANSFER_PICKING_IDLE_WORKERS,
         TRANSFER_PICKING_SYS_WORKERS,
-        null,
+        0,
         EXPECTED_TRANSFER_PICKING_THROUGHPUT,
         TOTAL_TRANSFER_PICKING_AREAS);
 
