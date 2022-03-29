@@ -63,7 +63,8 @@ public class StaffingControllerTest {
 
   private static final String PLAN_URL = "/plan";
 
-  private static final List<String> AREA_PROCESSES = List.of(PICKING_PROCESS, INBOUND_AUDIT_PROCESS);
+  private static final List<String> AREA_PROCESSES =
+      List.of(PICKING_PROCESS, INBOUND_AUDIT_PROCESS);
 
   private static final int STAFFING_NET_PRODUCTIVITY = 34;
 
@@ -84,6 +85,8 @@ public class StaffingControllerTest {
   private static final int PROCESS_IDLE_WORKERS = 10;
 
   private static final int PROCESS_BUSY_WORKERS = 30;
+
+  private static final int PROCESS_NON_SYS_WORKERS = 5;
 
   private static final int PROCESS_THROUGHPUT = 1200;
 
@@ -190,14 +193,21 @@ public class StaffingControllerTest {
   }
 
   private Staffing mockStaffing() {
-    final StaffingWorkflow mockedOutboundWorkflow = mockStaffingWorkflow(OUTBOUND_WORKFLOW,
-        List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
-    final StaffingWorkflow mockedInboundWorkflow = mockStaffingWorkflow(INBOUND_WORKFLOW,
-        List.of(mockProcess(RECEIVING_PROCESS), mockProcess(CHECK_IN_PROCESS)));
-    final StaffingWorkflow mockedWithdrawalsWorkflow = mockStaffingWorkflow(WITHDRAWALS_WORKFLOW,
-        List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
-    final StaffingWorkflow mockedStockWorkflow = mockStaffingWorkflow(STOCK_WORKFLOW,
-        List.of(mockProcess(STOCK_AUDIT_PROCESS), mockProcess(INBOUND_AUDIT_PROCESS)));
+    final StaffingWorkflow mockedOutboundWorkflow =
+        mockStaffingWorkflow(
+            OUTBOUND_WORKFLOW, List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
+    final StaffingWorkflow mockedInboundWorkflow =
+        mockStaffingWorkflow(
+            INBOUND_WORKFLOW,
+            List.of(mockProcess(RECEIVING_PROCESS), mockProcess(CHECK_IN_PROCESS)));
+    final StaffingWorkflow mockedWithdrawalsWorkflow =
+        mockStaffingWorkflow(
+            WITHDRAWALS_WORKFLOW,
+            List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
+    final StaffingWorkflow mockedStockWorkflow =
+        mockStaffingWorkflow(
+            STOCK_WORKFLOW,
+            List.of(mockProcess(STOCK_AUDIT_PROCESS), mockProcess(INBOUND_AUDIT_PROCESS)));
     final StaffingWorkflow mockedTransferWorkflow =
         mockStaffingWorkflow(TRANSFER_WORKFLOW, List.of(mockProcess(PICKING_PROCESS)));
 
@@ -205,17 +215,18 @@ public class StaffingControllerTest {
         .globalNetProductivity(STAFFING_NET_PRODUCTIVITY)
         .totalWorkers(STAFFING_TOTAL_WORKERS)
         .plannedWorkers(STAFFING_PLANNED_WORKERS)
-        .workflows(List.of(
-            mockedOutboundWorkflow,
-            mockedInboundWorkflow,
-            mockedWithdrawalsWorkflow,
-            mockedStockWorkflow,
-            mockedTransferWorkflow
-        ))
+        .workflows(
+            List.of(
+                mockedOutboundWorkflow,
+                mockedInboundWorkflow,
+                mockedWithdrawalsWorkflow,
+                mockedStockWorkflow,
+                mockedTransferWorkflow))
         .build();
   }
 
-  private StaffingWorkflow mockStaffingWorkflow(final String workflow, final List<Process> processes) {
+  private StaffingWorkflow mockStaffingWorkflow(
+      final String workflow, final List<Process> processes) {
     return StaffingWorkflow.builder()
         .workflow(workflow)
         .totalWorkers(WORKFLOW_TOTAL_WORKERS)
@@ -229,12 +240,17 @@ public class StaffingControllerTest {
     return Process.builder()
         .process(process)
         .netProductivity(PROCESS_NET_PRODUCTIVITY)
-        .workers(new Worker(PROCESS_IDLE_WORKERS, PROCESS_BUSY_WORKERS))
+        .workers(new Worker(PROCESS_IDLE_WORKERS, PROCESS_BUSY_WORKERS, PROCESS_NON_SYS_WORKERS))
         .targetProductivity(PROCESS_TARGET_PRODUCTIVITY)
         .throughput(PROCESS_THROUGHPUT)
-        .areas(AREA_PROCESSES.contains(process)
-            ? List.of(new Area(AREA_MZ1, AREA_NET_PRODUCTIVITY, new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS)))
-            : Collections.emptyList())
+        .areas(
+            AREA_PROCESSES.contains(process)
+                ? List.of(
+                    new Area(
+                        AREA_MZ1,
+                        AREA_NET_PRODUCTIVITY,
+                        new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS)))
+                : Collections.emptyList())
         .build();
   }
 

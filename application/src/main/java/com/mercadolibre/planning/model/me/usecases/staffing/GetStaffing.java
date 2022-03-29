@@ -97,7 +97,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
           TRANSFER_WORKFLOW,
           List.of(PICKING_PROCESS));
 
-  private static final List<String> EFFECTIVE_PROCESSES = List.of(PACKING_PROCESS, PACKING_WALL_PROCESS);
+  private static final List<String> EFFECTIVE_PROCESSES =
+      List.of(PACKING_PROCESS, PACKING_WALL_PROCESS);
 
   private final PlanningModelGateway planningModelGateway;
 
@@ -194,6 +195,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
     final Double throughput = totals.getThroughput();
+    final Integer nonSystemicWorkers = totals.getWorkingNonSys();
 
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
     final Integer realThroughput = throughput == null ? null : throughput.intValue();
@@ -215,7 +217,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return Process.builder()
         .process(process)
         .netProductivity(realProductivity)
-        .workers(new Worker(idle, working))
+        .workers(new Worker(idle, working, nonSystemicWorkers))
         .areas(areas)
         .throughput(realThroughput)
         .targetProductivity(targetProductivity)
