@@ -9,14 +9,13 @@ import java.util.List;
 @Builder
 public class StaffingWorkflow {
 
-    private String workflow;
+  private String workflow;
 
-    private Integer globalNetProductivity;
+  private Integer globalNetProductivity;
 
-    private Integer totalWorkers;
+  private Integer totalWorkers;
 
-    private NonSystemicWorkers totalNonSystemicWorkers;
+  private NonSystemicWorkers nonSystemicWorkers;
 
-    private List<Process> processes;
-
+  private List<Process> processes;
 }

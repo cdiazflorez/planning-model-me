@@ -163,14 +163,15 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                                 ? 0
                                 : value.getWorkers().getNonSystemic())
                     .sum();
-            final Integer totalCross = totalNonSystemic - totalNonSystemicProcess;
+            final Integer totalCross =
+                (totalNonSystemic == null ? 0 : totalNonSystemic) - totalNonSystemicProcess;
 
             workflows.add(
                 StaffingWorkflow.builder()
                     .workflow(workflow)
                     .processes(processes)
                     .totalWorkers(totalWorkers)
-                    .totalNonSystemicWorkers(
+                    .nonSystemicWorkers(
                         NonSystemicWorkers.builder()
                             .total(totalNonSystemic)
                             .subProcesses(totalNonSystemicProcess)

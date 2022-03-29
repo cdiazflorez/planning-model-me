@@ -12,6 +12,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_SYS_WOR
 import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_NS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_NS_WORKERS_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PACKING_NON_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PACKING_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PACKING_WALL_IDLE_WORKERS;
@@ -39,11 +40,13 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_AUDIT_PRO
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_MZ1_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_MZ1_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_NON_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_CYCLE_COUNT_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_INBOUND_AUDIT_RKL_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_INBOUND_AUDIT_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_NS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_NS_WORKERS_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_STOCK_AUDIT_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_STOCK_AUDIT_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_SYS_WORKERS;
@@ -60,6 +63,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WALL_IN_PROCESS
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_NS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_NS_WORKERS_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PACKING_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PACKING_NON_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PACKING_SYS_WORKERS;
@@ -80,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.mercadolibre.planning.model.me.entities.staffing.NonSystemicWorkers;
 import com.mercadolibre.planning.model.me.entities.staffing.Process;
 import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
@@ -275,7 +280,11 @@ class GetStaffingTest {
     assertEquals(TOTAL_WORKFLOWS, staffing.getWorkflows().size());
 
     assertEqualsWorkflow(
-        inbound, INBOUND_WORKFLOW, TOTAL_INBOUND_WORKERS, 0, TOTAL_INBOUND_PROCESSES);
+        inbound,
+        INBOUND_WORKFLOW,
+        TOTAL_INBOUND_WORKERS,
+        NonSystemicWorkers.builder().total(0).cross(0).subProcesses(0).build(),
+        TOTAL_INBOUND_PROCESSES);
 
     assertEqualsProcess(
         inbound.getProcesses().get(0),
@@ -324,7 +333,11 @@ class GetStaffingTest {
         outbound,
         OUTBOUND_WORKFLOW,
         TOTAL_OUTBOUND_WORKERS,
-        OUTBOUND_NS_WORKERS,
+        NonSystemicWorkers.builder()
+            .total(OUTBOUND_NS_WORKERS)
+            .cross(OUTBOUND_NS_WORKERS - OUTBOUND_NS_WORKERS_PROCESS)
+            .subProcesses(OUTBOUND_NS_WORKERS_PROCESS)
+            .build(),
         TOTAL_OUTBOUND_PROCESSES);
 
     assertEqualsProcess(
@@ -389,7 +402,11 @@ class GetStaffingTest {
         withdrawals,
         WITHDRAWALS_WORKFLOW,
         TOTAL_WITHDRAWALS_WORKERS,
-        WITHDRAWALS_NS_WORKERS,
+        NonSystemicWorkers.builder()
+            .total(WITHDRAWALS_NS_WORKERS)
+            .cross(WITHDRAWALS_NS_WORKERS - WITHDRAWALS_NS_WORKERS_PROCESS)
+            .subProcesses(WITHDRAWALS_NS_WORKERS_PROCESS)
+            .build(),
         TOTAL_WITHDRAWALS_PROCESSES);
 
     assertEqualsProcess(
@@ -426,7 +443,15 @@ class GetStaffingTest {
         0);
 
     assertEqualsWorkflow(
-        stock, STOCK_WORKFLOW, TOTAL_STOCK_WORKERS, STOCK_NS_WORKERS, TOTAL_STOCK_PROCESSES);
+        stock,
+        STOCK_WORKFLOW,
+        TOTAL_STOCK_WORKERS,
+        NonSystemicWorkers.builder()
+            .total(STOCK_NS_WORKERS)
+            .cross(STOCK_NS_WORKERS - STOCK_NS_WORKERS_PROCESS)
+            .subProcesses(STOCK_NS_WORKERS_PROCESS)
+            .build(),
+        TOTAL_STOCK_PROCESSES);
 
     assertEqualsProcess(
         cycleCount,
@@ -435,7 +460,7 @@ class GetStaffingTest {
         null,
         STOCK_CYCLE_COUNT_IDLE_WORKERS,
         STOCK_CYCLE_COUNT_SYS_WORKERS,
-        0,
+        STOCK_CYCLE_COUNT_NON_SYS_WORKERS,
         EXPECTED_STOCK_STOCK_CYCLE_COUNT_THROUGHPUT,
         TOTAL_STOCK_CYCLE_COUNT_AREAS);
 
@@ -520,16 +545,16 @@ class GetStaffingTest {
             .orElseThrow();
 
     assertNull(outbound.getTotalWorkers());
-    assertNull(outbound.getTotalNonSystemicWorkers());
+    assertNull(outbound.getNonSystemicWorkers().getTotal());
 
     assertNull(inbound.getTotalWorkers());
-    assertNull(inbound.getTotalNonSystemicWorkers());
+    assertNull(inbound.getNonSystemicWorkers().getTotal());
 
     assertNull(withdrawals.getTotalWorkers());
-    assertNull(withdrawals.getTotalNonSystemicWorkers());
+    assertNull(withdrawals.getNonSystemicWorkers().getTotal());
 
     assertNull(transfer.getTotalWorkers());
-    assertNull(transfer.getTotalNonSystemicWorkers());
+    assertNull(transfer.getNonSystemicWorkers().getTotal());
   }
 
   @Test
@@ -555,12 +580,12 @@ class GetStaffingTest {
       final StaffingWorkflow workflow,
       final String name,
       final int totalWorkers,
-      final int nsWorkers,
+      final NonSystemicWorkers nsWorkers,
       final int processesSize) {
 
     assertEquals(name, workflow.getWorkflow());
     assertEquals(totalWorkers, workflow.getTotalWorkers());
-    assertEquals(nsWorkers, workflow.getTotalNonSystemicWorkers());
+    assertEquals(nsWorkers, workflow.getNonSystemicWorkers());
     assertEquals(processesSize, workflow.getProcesses().size());
   }
 
@@ -690,7 +715,11 @@ class GetStaffingTest {
         transfer,
         TRANSFER_WORKFLOW,
         TOTAL_TRANSFER_WORKERS,
-        TRANSFER_NS_WORKERS,
+        NonSystemicWorkers.builder()
+            .total(TRANSFER_NS_WORKERS)
+            .cross(TRANSFER_NS_WORKERS)
+            .subProcesses(0)
+            .build(),
         TOTAL_TRANSFER_PROCESSES);
 
     assertEqualsProcess(
