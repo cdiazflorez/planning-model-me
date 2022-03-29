@@ -387,27 +387,17 @@ public class TestUtils {
                 RECEIVING_NET_PRODUCTIVITY,
                 null,
                 RECEIVING_THROUGHPUT,
-                null),
+                0),
             emptyList()),
         new StaffingProcess(
             CHECK_IN_PROCESS,
             new ProcessTotals(
-                1,
-                CHECK_IN_SYS_WORKERS,
-                CHECK_IN_NET_PRODUCTIVITY,
-                null,
-                CHECK_IN_THROUGHPUT,
-                null),
+                1, CHECK_IN_SYS_WORKERS, CHECK_IN_NET_PRODUCTIVITY, null, CHECK_IN_THROUGHPUT, 0),
             emptyList()),
         new StaffingProcess(
             PUT_AWAY_PROCESS,
             new ProcessTotals(
-                1,
-                PUT_AWAY_SYS_WORKERS,
-                PUT_AWAY_NET_PRODUCTIVITY,
-                null,
-                PUT_AWAY_THROUGHPUT,
-                null),
+                1, PUT_AWAY_SYS_WORKERS, PUT_AWAY_NET_PRODUCTIVITY, null, PUT_AWAY_THROUGHPUT, 0),
             List.of(
                 new Area(
                     AREA_MZ1,
@@ -461,7 +451,7 @@ public class TestUtils {
             new ProcessTotals(null, null, null, null, null, null),
             emptyList()),
         new StaffingProcess(
-            WALL_IN_PROCESS, new ProcessTotals(0, 0, 0.0, null, 0.0, null), emptyList()),
+            WALL_IN_PROCESS, new ProcessTotals(0, 0, 0.0, null, 0.0, 0), emptyList()),
         new StaffingProcess(
             PACKING_PROCESS,
             new ProcessTotals(
@@ -535,7 +525,7 @@ public class TestUtils {
                 TRANSFER_PICKING_NET_PRODUCTIVITY,
                 null,
                 TRANSFER_PICKING_THROUGHPUT,
-                null),
+                0),
             List.of(
                 new Area(
                     AREA_RKL,
@@ -561,7 +551,7 @@ public class TestUtils {
                 STOCK_CYCLE_COUNT_NET_PRODUCTIVITY,
                 null,
                 STOCK_CYCLE_COUNT_THROUGHPUT,
-                null),
+                0),
             List.of(
                 new Area(
                     AREA_MZ1,
@@ -578,7 +568,7 @@ public class TestUtils {
                 STOCK_INBOUND_AUDIT_NET_PRODUCTIVITY,
                 null,
                 STOCK_INBOUND_AUDIT_THROUGHPUT,
-                null),
+                0),
             List.of(
                 new Area(
                     AREA_RKL,
@@ -595,7 +585,7 @@ public class TestUtils {
                 STOCK_STOCK_AUDIT_NET_PRODUCTIVITY,
                 null,
                 STOCK_STOCK_AUDIT_THROUGHPUT,
-                null),
+                0),
             emptyList()));
   }
 }
