@@ -1,7 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.staffing;
 
-import static com.mercadolibre.planning.model.me.usecases.staffing.EntityFilter.HEADCOUNT_FILTER;
-import static com.mercadolibre.planning.model.me.usecases.staffing.EntityFilter.PRODUCTIVITY_FILTER;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
@@ -29,7 +27,6 @@ import com.mercadolibre.planning.model.me.usecases.staffing.dtos.GetStaffingInpu
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
