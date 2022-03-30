@@ -1,4 +1,4 @@
-package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
+package com.mercadolibre.planning.model.me.usecases.staffing;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
