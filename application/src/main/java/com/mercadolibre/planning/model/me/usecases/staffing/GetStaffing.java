@@ -211,7 +211,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
     final Double throughput = totals.getThroughput();
-    final Integer nonSystemicWorkers = totals.getWorkingNonSys();
+    final Integer nonSystemicWorkers = totals.getWorkingNonSystemic();
 
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
     final Integer realThroughput = throughput == null ? null : throughput.intValue();

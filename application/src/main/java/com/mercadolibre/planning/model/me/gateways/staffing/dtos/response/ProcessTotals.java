@@ -9,5 +9,5 @@ public class ProcessTotals {
   private Double netProductivity;
   private Double effProductivity;
   private Double throughput;
-  private Integer workingNonSys;
+  private Integer workingNonSystemic;
 }
