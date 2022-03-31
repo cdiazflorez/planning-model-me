@@ -241,6 +241,8 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_DELTA_PACKING = 6;
 
+  private static final Integer EXPECTED_DELTA_PACKING_WALL = 40;
+
   @InjectMocks private GetStaffing useCase;
 
   @Mock private PlanningModelGateway planningModelGateway;
@@ -625,13 +627,15 @@ class GetStaffingTest {
     assertNull(outbound.getProcesses().get(2).getWorkers().getPlanned());
     assertEquals(
         FORECAST_HEADCOUNT_PACKING, outbound.getProcesses().get(3).getWorkers().getPlanned());
-    assertNull(outbound.getProcesses().get(4).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_PACKING_WALL, outbound.getProcesses().get(4).getWorkers().getPlanned());
 
     assertEquals(EXPECTED_DELTA_PICKING, outbound.getProcesses().get(0).getWorkers().getDelta());
     assertNull(outbound.getProcesses().get(1).getWorkers().getDelta());
     assertNull(outbound.getProcesses().get(2).getWorkers().getDelta());
     assertEquals(EXPECTED_DELTA_PACKING, outbound.getProcesses().get(3).getWorkers().getDelta());
-    assertNull(outbound.getProcesses().get(4).getWorkers().getDelta());
+    assertEquals(
+        EXPECTED_DELTA_PACKING_WALL, outbound.getProcesses().get(4).getWorkers().getDelta());
 
     // withdrawals
     assertNull(withdrawals.getProcesses().get(0).getWorkers().getPlanned());
