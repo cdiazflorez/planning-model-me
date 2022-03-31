@@ -16,7 +16,10 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "non_systemic": 5,
+            "planned": 15,
+            "delta": 25
           },
           "areas": [
             {
@@ -36,7 +39,10 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "non_systemic": 5,
+            "planned": 15,
+            "delta": 25
           },
           "areas": []
         }
@@ -55,7 +61,8 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "non_systemic": 5
           },
           "areas": [
             {
@@ -75,7 +82,8 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "non_systemic": 5
           },
           "areas": []
         }
@@ -94,7 +102,8 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "non_systemic": 5
           },
           "areas": []
         },
@@ -105,7 +114,10 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "non_systemic": 5,
+            "planned": 15,
+            "delta": 25
           },
           "areas": []
         }
@@ -124,7 +136,8 @@
           "throughput": 1200,
           "workers": {
             "busy": 30,
-            "idle": 10
+            "idle": 10,
+            "non_systemic": 5
           },
           "areas": [
             {
@@ -144,35 +157,41 @@
       "global_net_productivity": 60,
       "total_workers": 100,
       "total_non_systemic_workers": 10,
-      "processes": [{
-        "process": "stock_audit",
-        "net_productivity": 40,
-        "target_productivity": 50,
-        "throughput": 1200,
-        "workers": {
-          "busy": 30,
-          "idle": 10
+      "processes": [
+        {
+          "process": "stock_audit",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10,
+            "non_systemic": 5
+          },
+          "areas": []
         },
-        "areas": []
-      }, {
-        "process": "inbound_audit",
-        "net_productivity": 40,
-        "target_productivity": 50,
-        "throughput": 1200,
-        "workers": {
-          "busy": 30,
-          "idle": 10
-        },
-        "areas": [
-          {
-            "area": "MZ-1",
-            "net_productivity": 40,
-            "workers": {
-              "idle": 10,
-              "busy": 30
+        {
+          "process": "inbound_audit",
+          "net_productivity": 40,
+          "target_productivity": 50,
+          "throughput": 1200,
+          "workers": {
+            "busy": 30,
+            "idle": 10,
+            "non_systemic": 5
+          },
+          "areas": [
+            {
+              "area": "MZ-1",
+              "net_productivity": 40,
+              "workers": {
+                "idle": 10,
+                "busy": 30
+              }
             }
-          }]
-      }]
+          ]
+        }
+      ]
     }
   ]
 }

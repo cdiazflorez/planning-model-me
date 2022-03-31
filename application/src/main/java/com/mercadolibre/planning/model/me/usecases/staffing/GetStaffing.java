@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.staffing;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.util.stream.Collectors.toList;
 
@@ -9,7 +11,6 @@ import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
 import com.mercadolibre.planning.model.me.entities.staffing.Worker;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
@@ -46,58 +47,12 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
-  private static final String OUTBOUND_WORKFLOW = "fbm-wms-outbound";
-
-  private static final String INBOUND_WORKFLOW = "fbm-wms-inbound";
-
-  private static final String WITHDRAWALS_WORKFLOW = "fbm-wms-withdrawals";
-
-  private static final String STOCK_WORKFLOW = "fbm-wms-stock";
-
-  private static final String TRANSFER_WORKFLOW = "fbm-wms-transfer";
-
-  private static final String RECEIVING_PROCESS = "receiving";
-
-  private static final String CHECK_IN_PROCESS = "check_in";
-
-  private static final String PUT_AWAY_PROCESS = "put_away";
-
-  private static final String PICKING_PROCESS = "picking";
-
-  private static final String BATCH_SORTER_PROCESS = "batch_sorter";
-
-  private static final String WALL_IN_PROCESS = "wall_in";
-
   private static final String PACKING_PROCESS = "packing";
 
   private static final String PACKING_WALL_PROCESS = "packing_wall";
 
-  private static final String CYCLE_COUNT_PROCESS = "cycle_count";
-
-  private static final String INBOUND_AUDIT_PROCESS = "inbound_audit";
-
-  private static final String STOCK_AUDIT_PROCESS = "stock_audit";
-
-  // TODO: Unificar esta config que esta repetida en staffing-api
-  private static final Map<String, List<String>> WORKFLOWS =
-      Map.of(
-          OUTBOUND_WORKFLOW,
-          List.of(
-              PICKING_PROCESS,
-              BATCH_SORTER_PROCESS,
-              WALL_IN_PROCESS,
-              PACKING_PROCESS,
-              PACKING_WALL_PROCESS),
-          INBOUND_WORKFLOW,
-          List.of(RECEIVING_PROCESS, CHECK_IN_PROCESS, PUT_AWAY_PROCESS),
-          WITHDRAWALS_WORKFLOW,
-          List.of(PICKING_PROCESS, PACKING_PROCESS),
-          STOCK_WORKFLOW,
-          List.of(CYCLE_COUNT_PROCESS, INBOUND_AUDIT_PROCESS, STOCK_AUDIT_PROCESS),
-          TRANSFER_WORKFLOW,
-          List.of(PICKING_PROCESS));
-
-  private static final List<String> EFFECTIVE_PROCESSES = List.of(PACKING_PROCESS, PACKING_WALL_PROCESS);
+  private static final List<String> EFFECTIVE_PROCESSES =
+      List.of(PACKING_PROCESS, PACKING_WALL_PROCESS);
 
   private final PlanningModelGateway planningModelGateway;
 
@@ -120,49 +75,55 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
         staffing.getWorkflows().stream()
             .collect(Collectors.toMap(StaffingWorkflowResponse::getName, Function.identity()));
 
-    WORKFLOWS.forEach(
-        (workflow, processNames) -> {
-          final Map<MagnitudeType, List<MagnitudePhoto>> forecastStaffing;
-          // TODO: Eliminar este IF cuando planning model api devuelva otros workflows
-          if (OUTBOUND_WORKFLOW.equals(workflow)) {
-            forecastStaffing = getForecastStaffing(logisticCenterId, processNames, now);
-          } else {
-            forecastStaffing = Map.of(MagnitudeType.PRODUCTIVITY, Collections.emptyList());
-          }
+    for (StaffingWorkflowConfig workflowConfig : StaffingWorkflowConfig.values()) {
+      final List<String> processNames = workflowConfig.getProcesses();
+      final String workflow = workflowConfig.getName();
 
-          final StaffingWorkflowResponse staffingWorkflow = staffingByWorkflow.get(workflow);
+      /* TODO: Ajustar la configuración de Workflow cuando planning model api devuelva otros
+      workflows */
+      final Map<MagnitudeType, List<MagnitudePhoto>> forecastStaffing =
+          workflowConfig.isShouldRetrieveProductivity()
+              ? getForecastStaffing(logisticCenterId, workflow, processNames, now, PRODUCTIVITY)
+              : Map.of(PRODUCTIVITY, Collections.emptyList());
 
-          if (staffingWorkflow != null) {
-            final Map<String, StaffingProcess> staffingByProcess =
-                staffingWorkflow.getProcesses().stream()
-                    .collect(Collectors.toMap(StaffingProcess::getName, Function.identity()));
+      final Map<MagnitudeType, List<MagnitudePhoto>> plannedStaffing =
+          workflowConfig.isShouldRetrieveHeadcount()
+              ? getForecastStaffing(logisticCenterId, workflow, processNames, now, HEADCOUNT)
+              : Map.of(HEADCOUNT, Collections.emptyList());
 
-            final List<Process> processes =
-                processNames.stream()
-                    .map(
-                        process ->
-                            toProcess(
-                                process,
-                                staffingByProcess.get(process),
-                                filterProductivity(forecastStaffing, process)))
-                    .collect(toList());
+      final StaffingWorkflowResponse staffingWorkflow = staffingByWorkflow.get(workflow);
 
-            final Integer totalNonSystemic = staffingWorkflow.getTotals().getWorkingNonSystemic();
-            final Integer totalSystemic = staffingWorkflow.getTotals().getWorkingSystemic();
-            final Integer totalIdle = staffingWorkflow.getTotals().getIdle();
+      if (staffingWorkflow != null) {
+        final Map<String, StaffingProcess> staffingByProcess =
+            staffingWorkflow.getProcesses().stream()
+                .collect(Collectors.toMap(StaffingProcess::getName, Function.identity()));
 
-            final Integer totalWorkers =
-                total(Stream.of(totalIdle, totalSystemic, totalNonSystemic));
+        final List<Process> processes =
+            processNames.stream()
+                .map(
+                    process ->
+                        toProcess(
+                            process,
+                            staffingByProcess.get(process),
+                            filterProductivity(forecastStaffing, process),
+                            filterHeadcount(plannedStaffing, process)))
+                .collect(toList());
 
-            workflows.add(
-                StaffingWorkflow.builder()
-                    .workflow(workflow)
-                    .processes(processes)
-                    .totalWorkers(totalWorkers)
-                    .totalNonSystemicWorkers(totalNonSystemic)
-                    .build());
-          }
-        });
+        final Integer totalNonSystemic = staffingWorkflow.getTotals().getWorkingNonSystemic();
+        final Integer totalSystemic = staffingWorkflow.getTotals().getWorkingSystemic();
+        final Integer totalIdle = staffingWorkflow.getTotals().getIdle();
+
+        final Integer totalWorkers = total(Stream.of(totalIdle, totalSystemic, totalNonSystemic));
+
+        workflows.add(
+            StaffingWorkflow.builder()
+                .workflow(workflow)
+                .processes(processes)
+                .totalWorkers(totalWorkers)
+                .totalNonSystemicWorkers(totalNonSystemic)
+                .build());
+      }
+    }
 
     final Integer totalWorkers = total(workflows.stream().map(StaffingWorkflow::getTotalWorkers));
 
@@ -186,13 +147,16 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
   private Process toProcess(
       final String process,
       final StaffingProcess processStaffing,
-      final Integer targetProductivity) {
+      final Integer targetProductivity,
+      final Integer planned) {
 
     final ProcessTotals totals = processStaffing.getTotals();
 
     final Double productivity = getProductivity(process, totals);
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
+    final Integer nonSystemicWorkers = totals.getWorkingNonSystemic();
+    final Integer delta = planned == null ? null : (working + idle) - planned;
     final Double throughput = totals.getThroughput();
 
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
@@ -215,7 +179,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return Process.builder()
         .process(process)
         .netProductivity(realProductivity)
-        .workers(new Worker(idle, working))
+        .workers(new Worker(idle, working, nonSystemicWorkers, planned, delta))
         .areas(areas)
         .throughput(realThroughput)
         .targetProductivity(targetProductivity)
@@ -223,34 +187,49 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
   }
 
   private Map<MagnitudeType, List<MagnitudePhoto>> getForecastStaffing(
-      final String logisticCenterId, final List<String> processes, final ZonedDateTime now) {
+      final String logisticCenterId,
+      final String workflow,
+      final List<String> processes,
+      final ZonedDateTime now,
+      final MagnitudeType magnitudeType) {
+
+    final ZonedDateTime date = now.truncatedTo(ChronoUnit.HOURS);
+
     try {
+
       return planningModelGateway.searchTrajectories(
           SearchTrajectoriesRequest.builder()
               .warehouseId(logisticCenterId)
-              .workflow(Workflow.FBM_WMS_OUTBOUND)
-              .entityTypes(List.of(MagnitudeType.PRODUCTIVITY))
-              .dateFrom(now.truncatedTo(ChronoUnit.HOURS).minusHours(1))
-              .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+              .workflow(Workflow.from(workflow).get())
+              .entityTypes(List.of(magnitudeType))
+              .dateFrom(magnitudeType.equals(PRODUCTIVITY) ? date.minusHours(1) : date)
+              .dateTo(date)
               .processName(processes.stream().map(ProcessName::from).collect(toList()))
-              .entityFilters(
-                  Map.of(
-                      MagnitudeType.PRODUCTIVITY,
-                      Map.of(EntityFilters.ABILITY_LEVEL.toJson(), List.of(String.valueOf(1)))))
+              .entityFilters(EntityFilter.getEntityFilter(magnitudeType))
               .build());
+
     } catch (Exception exception) {
-      return Map.of(MagnitudeType.PRODUCTIVITY, Collections.emptyList());
+      return Map.of(magnitudeType, Collections.emptyList());
     }
   }
 
   private Integer filterProductivity(
       final Map<MagnitudeType, List<MagnitudePhoto>> staffingForecast, final String process) {
     final OptionalDouble productivity =
-        staffingForecast.get(MagnitudeType.PRODUCTIVITY).stream()
+        staffingForecast.get(PRODUCTIVITY).stream()
             .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
             .mapToInt(MagnitudePhoto::getValue)
             .average();
 
     return productivity.isPresent() ? (int) productivity.getAsDouble() : null;
+  }
+
+  private Integer filterHeadcount(
+      final Map<MagnitudeType, List<MagnitudePhoto>> staffingHeadcount, final String process) {
+    return staffingHeadcount.get(HEADCOUNT).stream()
+        .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
+        .map(MagnitudePhoto::getValue)
+        .findAny()
+        .orElse(null);
   }
 }
