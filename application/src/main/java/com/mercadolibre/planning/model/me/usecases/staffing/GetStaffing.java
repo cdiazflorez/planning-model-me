@@ -155,6 +155,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Double productivity = getProductivity(process, totals);
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
+    final Integer nonSystemicWorkers = totals.getWorkingNonSystemic();
     final Integer delta = planned == null ? null : (working + idle) - planned;
     final Double throughput = totals.getThroughput();
 
@@ -178,7 +179,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return Process.builder()
         .process(process)
         .netProductivity(realProductivity)
-        .workers(new Worker(idle, working, planned, delta))
+        .workers(new Worker(idle, working, nonSystemicWorkers, planned, delta))
         .areas(areas)
         .throughput(realThroughput)
         .targetProductivity(targetProductivity)

@@ -86,6 +86,8 @@ public class StaffingControllerTest {
 
   private static final int PROCESS_BUSY_WORKERS = 30;
 
+  private static final int PROCESS_NON_SYS_WORKERS = 5;
+
   private static final int PROCESS_THROUGHPUT = 1200;
 
   private static final int AREA_NET_PRODUCTIVITY = 40;
@@ -260,7 +262,12 @@ public class StaffingControllerTest {
         .process(process)
         .netProductivity(PROCESS_NET_PRODUCTIVITY)
         .workers(
-            new Worker(PROCESS_IDLE_WORKERS, PROCESS_BUSY_WORKERS, FORECAST_PLANNED_WORKERS, delta))
+            new Worker(
+                PROCESS_IDLE_WORKERS,
+                PROCESS_BUSY_WORKERS,
+                PROCESS_NON_SYS_WORKERS,
+                FORECAST_PLANNED_WORKERS,
+                delta))
         .targetProductivity(PROCESS_TARGET_PRODUCTIVITY)
         .throughput(PROCESS_THROUGHPUT)
         .areas(

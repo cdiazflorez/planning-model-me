@@ -15,12 +15,15 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_SYS_WOR
 import static com.mercadolibre.planning.model.me.utils.TestUtils.INBOUND_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_NS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PACKING_NON_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PACKING_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PACKING_WALL_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PACKING_WALL_NON_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PACKING_WALL_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PICKING_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PICKING_MZ1_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PICKING_MZ1_SYS_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PICKING_NON_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PICKING_RKL_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PICKING_RKL_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.OUTBOUND_PICKING_SYS_WORKERS;
@@ -61,8 +64,10 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_NS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PACKING_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PACKING_NON_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PACKING_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PICKING_IDLE_WORKERS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PICKING_NON_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PICKING_RKL_IDLE_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PICKING_RKL_SYS_WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_PICKING_SYS_WORKERS;
@@ -311,6 +316,7 @@ class GetStaffingTest {
         null,
         0,
         RECEIVING_SYS_WORKERS,
+        0,
         EXPECTED_RECEIVING_THROUGHPUT,
         0);
 
@@ -321,6 +327,7 @@ class GetStaffingTest {
         null,
         1,
         CHECK_IN_SYS_WORKERS,
+        0,
         EXPECTED_CHECK_IN_THROUGHPUT,
         0);
 
@@ -331,6 +338,7 @@ class GetStaffingTest {
         null,
         1,
         PUT_AWAY_SYS_WORKERS,
+        0,
         EXPECTED_PUT_AWAY_THROUGHPUT,
         TOTAL_PUT_AWAY_AREAS);
 
@@ -358,6 +366,7 @@ class GetStaffingTest {
         FORECAST_PICKING,
         OUTBOUND_PICKING_IDLE_WORKERS,
         OUTBOUND_PICKING_SYS_WORKERS,
+        OUTBOUND_PICKING_NON_SYS_WORKERS,
         EXPECTED_OUTBOUND_PICKING_THROUGHPUT,
         TOTAL_OUTBOUND_PICKING_AREAS);
 
@@ -383,6 +392,7 @@ class GetStaffingTest {
         0,
         0,
         0,
+        0,
         0);
 
     assertEqualsProcess(
@@ -392,6 +402,7 @@ class GetStaffingTest {
         FORECAST_PACKING,
         1,
         OUTBOUND_PACKING_SYS_WORKERS,
+        OUTBOUND_PACKING_NON_SYS_WORKERS,
         EXPECTED_OUTBOUND_PACKING_THROUGHPUT,
         0);
 
@@ -402,6 +413,7 @@ class GetStaffingTest {
         null,
         OUTBOUND_PACKING_WALL_IDLE_WORKERS,
         OUTBOUND_PACKING_WALL_SYS_WORKERS,
+        OUTBOUND_PACKING_WALL_NON_SYS_WORKERS,
         EXPECTED_OUTBOUND_PACKING_WALL_THROUGHPUT,
         0);
 
@@ -419,6 +431,7 @@ class GetStaffingTest {
         null,
         WITHDRAWALS_PICKING_IDLE_WORKERS,
         WITHDRAWALS_PICKING_SYS_WORKERS,
+        WITHDRAWALS_PICKING_NON_SYS_WORKERS,
         EXPECTED_WITHDRAWALS_PICKING_THROUGHPUT,
         TOTAL_WITHDRAWALS_PICKING_AREAS);
 
@@ -440,25 +453,7 @@ class GetStaffingTest {
         null,
         WITHDRAWALS_PACKING_IDLE_WORKERS,
         WITHDRAWALS_PACKING_SYS_WORKERS,
-        EXPECTED_WITHDRAWALS_PACKING_THROUGHPUT,
-        0);
-
-    assertEquals(
-        WITHDRAWALS_PICKING_RKL_IDLE_WORKERS,
-        pickingWithdrawalsAreas.get(0).getWorkers().getIdle());
-    assertEquals(
-        WITHDRAWALS_PICKING_RKL_SYS_WORKERS, pickingWithdrawalsAreas.get(0).getWorkers().getBusy());
-    assertEquals(
-        EXPECTED_WITHDRAWALS_PICKING_RKL_NET_PRODUCTIVITY,
-        pickingWithdrawalsAreas.get(0).getNetProductivity());
-
-    assertEqualsProcess(
-        withdrawals.getProcesses().get(1),
-        PACKING_PROCESS,
-        EXPECTED_WITHDRAWALS_PACKING_NET_PRODUCTIVITY,
-        null,
-        WITHDRAWALS_PACKING_IDLE_WORKERS,
-        WITHDRAWALS_PACKING_SYS_WORKERS,
+        WITHDRAWALS_PACKING_NON_SYS_WORKERS,
         EXPECTED_WITHDRAWALS_PACKING_THROUGHPUT,
         0);
 
@@ -472,6 +467,7 @@ class GetStaffingTest {
         null,
         STOCK_CYCLE_COUNT_IDLE_WORKERS,
         STOCK_CYCLE_COUNT_SYS_WORKERS,
+        0,
         EXPECTED_STOCK_STOCK_CYCLE_COUNT_THROUGHPUT,
         TOTAL_STOCK_CYCLE_COUNT_AREAS);
 
@@ -489,6 +485,7 @@ class GetStaffingTest {
         null,
         0,
         STOCK_INBOUND_AUDIT_SYS_WORKERS,
+        0,
         EXPECTED_STOCK_STOCK_INBOUND_AUDIT_THROUGHPUT,
         TOTAL_STOCK_INBOUND_AUDIT_AREAS);
 
@@ -507,6 +504,7 @@ class GetStaffingTest {
         null,
         STOCK_STOCK_AUDIT_IDLE_WORKERS,
         STOCK_STOCK_AUDIT_SYS_WORKERS,
+        0,
         EXPECTED_STOCK_STOCK_AUDIT_THROUGHPUT,
         0);
 
@@ -664,6 +662,7 @@ class GetStaffingTest {
       final Integer targetProductivity,
       final int idleWorkers,
       final int busyWorkers,
+      final Integer nonSysWorkers,
       final int throughput,
       final int areasSize) {
 
@@ -672,6 +671,7 @@ class GetStaffingTest {
     assertEquals(targetProductivity, process.getTargetProductivity());
     assertEquals(busyWorkers, process.getWorkers().getBusy());
     assertEquals(idleWorkers, process.getWorkers().getIdle());
+    assertEquals(nonSysWorkers, process.getWorkers().getNonSystemic());
     assertEquals(throughput, process.getThroughput());
     assertEquals(areasSize, process.getAreas().size());
   }
@@ -682,6 +682,7 @@ class GetStaffingTest {
     assertNull(process.getTargetProductivity());
     assertNull(process.getWorkers().getBusy());
     assertNull(process.getWorkers().getIdle());
+    assertNull(process.getWorkers().getNonSystemic());
     assertNull(process.getThroughput());
   }
 
@@ -790,6 +791,7 @@ class GetStaffingTest {
         null,
         TRANSFER_PICKING_IDLE_WORKERS,
         TRANSFER_PICKING_SYS_WORKERS,
+        0,
         EXPECTED_TRANSFER_PICKING_THROUGHPUT,
         TOTAL_TRANSFER_PICKING_AREAS);
 
