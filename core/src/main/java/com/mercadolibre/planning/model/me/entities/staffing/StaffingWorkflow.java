@@ -15,6 +15,7 @@ public class StaffingWorkflow {
 
   private Integer totalWorkers;
 
+  // TODO: retirar atributo cuando la version en FE se encuentra desplegada.
   private Integer totalNonSystemicWorkers;
 
   private NonSystemicWorkers nonSystemicWorkers;
