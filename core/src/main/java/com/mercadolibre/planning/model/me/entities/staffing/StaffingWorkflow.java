@@ -9,14 +9,16 @@ import java.util.List;
 @Builder
 public class StaffingWorkflow {
 
-    private String workflow;
+  private String workflow;
 
-    private Integer globalNetProductivity;
+  private Integer globalNetProductivity;
 
-    private Integer totalWorkers;
+  private Integer totalWorkers;
 
-    private Integer totalNonSystemicWorkers;
+  // TODO: retirar atributo cuando la version en FE se encuentra desplegada.
+  private Integer totalNonSystemicWorkers;
 
-    private List<Process> processes;
+  private NonSystemicWorkers nonSystemicWorkers;
 
+  private List<Process> processes;
 }
