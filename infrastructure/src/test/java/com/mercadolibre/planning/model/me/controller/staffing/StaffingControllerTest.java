@@ -89,7 +89,7 @@ public class StaffingControllerTest {
 
   private static final int PROCESS_BUSY_WORKERS = 30;
 
-  private static final int PROCESS_NON_SYS_WORKERS = 1;
+  private static final int PROCESS_NON_SYS_WORKERS = 5;
 
   private static final int PROCESS_THROUGHPUT = 1200;
 
@@ -198,21 +198,32 @@ public class StaffingControllerTest {
   private Staffing mockStaffing() {
     final StaffingWorkflow mockedOutboundWorkflow =
         mockStaffingWorkflow(
-            OUTBOUND_WORKFLOW, List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
+            OUTBOUND_WORKFLOW,
+            List.of(
+                mockProcess(PICKING_PROCESS, OUTBOUND_WORKFLOW),
+                mockProcess(PACKING_PROCESS, OUTBOUND_WORKFLOW)));
+
     final StaffingWorkflow mockedInboundWorkflow =
         mockStaffingWorkflow(
             INBOUND_WORKFLOW,
-            List.of(mockProcess(RECEIVING_PROCESS), mockProcess(CHECK_IN_PROCESS)));
+            List.of(
+                mockProcess(RECEIVING_PROCESS, INBOUND_WORKFLOW),
+                mockProcess(CHECK_IN_PROCESS, INBOUND_WORKFLOW)));
     final StaffingWorkflow mockedWithdrawalsWorkflow =
         mockStaffingWorkflow(
             WITHDRAWALS_WORKFLOW,
-            List.of(mockProcess(PICKING_PROCESS), mockProcess(PACKING_PROCESS)));
+            List.of(
+                mockProcess(PICKING_PROCESS, WITHDRAWALS_WORKFLOW),
+                mockProcess(PACKING_PROCESS, WITHDRAWALS_WORKFLOW)));
     final StaffingWorkflow mockedStockWorkflow =
         mockStaffingWorkflow(
             STOCK_WORKFLOW,
-            List.of(mockProcess(STOCK_AUDIT_PROCESS), mockProcess(INBOUND_AUDIT_PROCESS)));
+            List.of(
+                mockProcess(STOCK_AUDIT_PROCESS, STOCK_WORKFLOW),
+                mockProcess(INBOUND_AUDIT_PROCESS, STOCK_WORKFLOW)));
     final StaffingWorkflow mockedTransferWorkflow =
-        mockStaffingWorkflow(TRANSFER_WORKFLOW, List.of(mockProcess(PICKING_PROCESS)));
+        mockStaffingWorkflow(
+            TRANSFER_WORKFLOW, List.of(mockProcess(PICKING_PROCESS, TRANSFER_WORKFLOW)));
 
     return Staffing.builder()
         .globalNetProductivity(STAFFING_NET_PRODUCTIVITY)
@@ -234,6 +245,7 @@ public class StaffingControllerTest {
         .workflow(workflow)
         .totalWorkers(WORKFLOW_TOTAL_WORKERS)
         .globalNetProductivity(WORKFLOW_NET_PRODUCTIVITY)
+        .totalNonSystemicWorkers(WORKFLOW_NS_WORKERS)
         .nonSystemicWorkers(
             NonSystemicWorkers.builder()
                 .total(WORKFLOW_NS_WORKERS)
@@ -244,11 +256,27 @@ public class StaffingControllerTest {
         .build();
   }
 
-  private Process mockProcess(final String process) {
+  private Process mockProcess(final String process, final String workflow) {
+    Integer FORECAST_PLANNED_WORKERS = null;
+    Integer delta = null;
+    if ((workflow.equals(INBOUND_WORKFLOW) || workflow.equals(OUTBOUND_WORKFLOW))
+        && (process.equals(CHECK_IN_PROCESS)
+            || process.equals(PICKING_PROCESS)
+            || process.equals(PACKING_PROCESS))) {
+      FORECAST_PLANNED_WORKERS = 15;
+      delta = (PROCESS_BUSY_WORKERS + PROCESS_IDLE_WORKERS) - FORECAST_PLANNED_WORKERS;
+    }
+
     return Process.builder()
         .process(process)
         .netProductivity(PROCESS_NET_PRODUCTIVITY)
-        .workers(new Worker(PROCESS_IDLE_WORKERS, PROCESS_BUSY_WORKERS, PROCESS_NON_SYS_WORKERS))
+        .workers(
+            new Worker(
+                PROCESS_IDLE_WORKERS,
+                PROCESS_BUSY_WORKERS,
+                PROCESS_NON_SYS_WORKERS,
+                FORECAST_PLANNED_WORKERS,
+                delta))
         .targetProductivity(PROCESS_TARGET_PRODUCTIVITY)
         .throughput(PROCESS_THROUGHPUT)
         .areas(

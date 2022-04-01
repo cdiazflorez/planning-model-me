@@ -15,6 +15,8 @@ public class StaffingWorkflow {
 
   private Integer totalWorkers;
 
+  private Integer totalNonSystemicWorkers;
+
   private NonSystemicWorkers nonSystemicWorkers;
 
   private List<Process> processes;

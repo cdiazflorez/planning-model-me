@@ -7,6 +7,7 @@
       "workflow": "fbm-wms-outbound",
       "global_net_productivity": 60,
       "total_workers": 100,
+      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -21,7 +22,9 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5,
+            "planned": 15,
+            "delta": 25
           },
           "areas": [
             {
@@ -42,7 +45,9 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5,
+            "planned": 15,
+            "delta": 25
           },
           "areas": []
         }
@@ -52,6 +57,7 @@
       "workflow": "fbm-wms-withdrawals",
       "global_net_productivity": 60,
       "total_workers": 100,
+      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -66,7 +72,7 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5
           },
           "areas": [
             {
@@ -87,7 +93,7 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5
           },
           "areas": []
         }
@@ -97,6 +103,7 @@
       "workflow": "fbm-wms-inbound",
       "global_net_productivity": 60,
       "total_workers": 100,
+      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -111,7 +118,7 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5
           },
           "areas": []
         },
@@ -123,7 +130,9 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5,
+            "planned": 15,
+            "delta": 25
           },
           "areas": []
         }
@@ -133,6 +142,7 @@
       "workflow": "fbm-wms-transfer",
       "global_net_productivity": 60,
       "total_workers": 100,
+      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -147,7 +157,7 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5
           },
           "areas": [
             {
@@ -166,6 +176,7 @@
       "workflow": "fbm-wms-stock",
       "global_net_productivity": 60,
       "total_workers": 100,
+      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -180,7 +191,7 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5
           },
           "areas": []
         },
@@ -192,7 +203,7 @@
           "workers": {
             "busy": 30,
             "idle": 10,
-            "non_systemic": 1
+            "non_systemic": 5
           },
           "areas": [
             {

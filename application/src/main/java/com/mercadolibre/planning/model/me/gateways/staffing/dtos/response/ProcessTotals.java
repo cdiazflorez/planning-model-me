@@ -5,9 +5,14 @@ import lombok.Value;
 @Value
 public class ProcessTotals {
   private Integer idle;
+
   private Integer workingSystemic;
+
   private Double netProductivity;
+
   private Double effProductivity;
+
   private Double throughput;
+
   private Integer workingNonSystemic;
 }
