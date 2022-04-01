@@ -46,9 +46,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
     private static final int HOUR_TPH_FUTURE = 24;
 
-    private static final int GAP = 30;
-
-
     private final BacklogApiAdapter backlogApiAdapter;
 
     private final GetProcessThroughput getProcessThroughput;
@@ -147,7 +144,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             final Instant dateFrom
     ) {
         final List<Consolidation> sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot =
-                this.filterSumsOfCellByTakenOnTheDot(sumsOfCellsGroupedByTakenOnDateAndProcess);
+                filterSumsOfCellByTakenOnTheDot(sumsOfCellsGroupedByTakenOnDateAndProcess);
         final Instant takenOnDateOfLastPhoto = getDateWhenLatestPhotoWasTaken(
                 sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot,
                 requestDate.truncatedTo(ChronoUnit.SECONDS));
@@ -170,18 +167,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                                         dateFrom,
                                         takenOnDateOfLastPhoto,
                                         date -> new Consolidation(date, null, 0, true))));
-    }
-
-    /**
-     * Filters by taken on only dates on the dot and the last photo, excluding the others
-     * @param sumsOfCellsGroupedByTakenOnDateAndProcess the backlog photos taken between `dateFrom`
-     *        and `requestInstant`, with all the cells corresponding to the same photo
-     *        and process consolidated.
-     */
-    private static List<Consolidation> filterSumsOfCellByTakenOnTheDot(List<Consolidation> sumsOfCellsGroupedByTakenOnDateAndProcess) {
-         return sumsOfCellsGroupedByTakenOnDateAndProcess.stream()
-                .filter(v -> (v.getDate().atZone(UTC).getMinute() < GAP || !v.isFirstPhotoOfPeriod()))
-                 .collect(Collectors.toList());
     }
 
     private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(final BacklogWorkflow workflow,
