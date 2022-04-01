@@ -26,7 +26,8 @@ public enum ProcessName {
     GLOBAL(false, false, new Single("GLOBAL")),
     CHECK_IN(false, false, new Single("CHECK_IN")),
     SCHEDULED(false, false, new Single("SCHEDULED")),
-    PUT_AWAY(false, false, new Single("PUT_AWAY"));
+    PUT_AWAY(false, false, new Single("PUT_AWAY")),
+    RECEIVING(false, false, new Single("RECEIVING"));
 
     public final boolean hasAreas;
 

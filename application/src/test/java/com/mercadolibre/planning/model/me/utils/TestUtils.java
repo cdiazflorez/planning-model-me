@@ -138,6 +138,8 @@ public class TestUtils {
 
   public static final int OUTBOUND_PICKING_SYS_WORKERS = 20;
 
+  public static final int OUTBOUND_PICKING_NON_SYS_WORKERS = 5;
+
   public static final Double OUTBOUND_PICKING_NET_PRODUCTIVITY = 45.71;
 
   public static final Double OUTBOUND_PICKING_THROUGHPUT = 2700.0;
@@ -160,6 +162,8 @@ public class TestUtils {
 
   public static final int OUTBOUND_PACKING_SYS_WORKERS = 15;
 
+  public static final int OUTBOUND_PACKING_NON_SYS_WORKERS = 10;
+
   public static final Double OUTBOUND_PACKING_EFF_PRODUCTIVITY = 34.5;
 
   public static final Double OUTBOUND_PACKING_THROUGHPUT = 1350.13;
@@ -168,13 +172,17 @@ public class TestUtils {
 
   public static final int OUTBOUND_PACKING_WALL_SYS_WORKERS = 35;
 
+  public static final int OUTBOUND_PACKING_WALL_NON_SYS_WORKERS = 10;
+
   public static final Double OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY = 32.4;
 
   public static final Double OUTBOUND_PACKING_WALL_THROUGHPUT = 11.10;
 
-  public static final int WITHDRAWALS_PICKING_IDLE_WORKERS = 10;
+  public static final int WITHDRAWALS_PICKING_IDLE_WORKERS = 3;
 
   public static final int WITHDRAWALS_PICKING_SYS_WORKERS = 14;
+
+  public static final int WITHDRAWALS_PICKING_NON_SYS_WORKERS = 7;
 
   public static final Double WITHDRAWALS_PICKING_NET_PRODUCTIVITY = 71.45;
 
@@ -191,6 +199,8 @@ public class TestUtils {
   public static final int WITHDRAWALS_PACKING_IDLE_WORKERS = 2;
 
   public static final int WITHDRAWALS_PACKING_SYS_WORKERS = 4;
+
+  public static final int WITHDRAWALS_PACKING_NON_SYS_WORKERS = 10;
 
   public static final Double WITHDRAWALS_PACKING_EFF_PRODUCTIVITY = 54.3;
 
@@ -372,17 +382,22 @@ public class TestUtils {
         new StaffingProcess(
             RECEIVING_PROCESS,
             new ProcessTotals(
-                0, RECEIVING_SYS_WORKERS, RECEIVING_NET_PRODUCTIVITY, null, RECEIVING_THROUGHPUT),
+                0,
+                RECEIVING_SYS_WORKERS,
+                RECEIVING_NET_PRODUCTIVITY,
+                null,
+                RECEIVING_THROUGHPUT,
+                0),
             emptyList()),
         new StaffingProcess(
             CHECK_IN_PROCESS,
             new ProcessTotals(
-                1, CHECK_IN_SYS_WORKERS, CHECK_IN_NET_PRODUCTIVITY, null, CHECK_IN_THROUGHPUT),
+                1, CHECK_IN_SYS_WORKERS, CHECK_IN_NET_PRODUCTIVITY, null, CHECK_IN_THROUGHPUT, 0),
             emptyList()),
         new StaffingProcess(
             PUT_AWAY_PROCESS,
             new ProcessTotals(
-                1, PUT_AWAY_SYS_WORKERS, PUT_AWAY_NET_PRODUCTIVITY, null, PUT_AWAY_THROUGHPUT),
+                1, PUT_AWAY_SYS_WORKERS, PUT_AWAY_NET_PRODUCTIVITY, null, PUT_AWAY_THROUGHPUT, 0),
             List.of(
                 new Area(
                     AREA_MZ1,
@@ -414,7 +429,8 @@ public class TestUtils {
                 OUTBOUND_PICKING_SYS_WORKERS,
                 OUTBOUND_PICKING_NET_PRODUCTIVITY,
                 null,
-                OUTBOUND_PICKING_THROUGHPUT),
+                OUTBOUND_PICKING_THROUGHPUT,
+                OUTBOUND_PICKING_NON_SYS_WORKERS),
             List.of(
                 new Area(
                     AREA_MZ1,
@@ -431,8 +447,11 @@ public class TestUtils {
                         OUTBOUND_PICKING_RKL_NET_PRODUCTIVITY,
                         OUTBOUND_PICKING_RKL_THROUGHPUT)))),
         new StaffingProcess(
-            BATCH_SORTER_PROCESS, new ProcessTotals(null, null, null, null, null), emptyList()),
-        new StaffingProcess(WALL_IN_PROCESS, new ProcessTotals(0, 0, 0.0, null, 0.0), emptyList()),
+            BATCH_SORTER_PROCESS,
+            new ProcessTotals(null, null, null, null, null, null),
+            emptyList()),
+        new StaffingProcess(
+            WALL_IN_PROCESS, new ProcessTotals(0, 0, 0.0, null, 0.0, 0), emptyList()),
         new StaffingProcess(
             PACKING_PROCESS,
             new ProcessTotals(
@@ -440,7 +459,8 @@ public class TestUtils {
                 OUTBOUND_PACKING_SYS_WORKERS,
                 null,
                 OUTBOUND_PACKING_EFF_PRODUCTIVITY,
-                OUTBOUND_PACKING_THROUGHPUT),
+                OUTBOUND_PACKING_THROUGHPUT,
+                OUTBOUND_PACKING_NON_SYS_WORKERS),
             emptyList()),
         new StaffingProcess(
             PACKING_WALL_PROCESS,
@@ -449,7 +469,8 @@ public class TestUtils {
                 OUTBOUND_PACKING_WALL_SYS_WORKERS,
                 null,
                 OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY,
-                OUTBOUND_PACKING_WALL_THROUGHPUT),
+                OUTBOUND_PACKING_WALL_THROUGHPUT,
+                OUTBOUND_PACKING_WALL_NON_SYS_WORKERS),
             emptyList()));
   }
 
@@ -467,7 +488,8 @@ public class TestUtils {
                 WITHDRAWALS_PICKING_SYS_WORKERS,
                 WITHDRAWALS_PICKING_NET_PRODUCTIVITY,
                 null,
-                WITHDRAWALS_PICKING_THROUGHPUT),
+                WITHDRAWALS_PICKING_THROUGHPUT,
+                WITHDRAWALS_PICKING_NON_SYS_WORKERS),
             List.of(
                 new Area(
                     AREA_RKL,
@@ -483,7 +505,8 @@ public class TestUtils {
                 WITHDRAWALS_PACKING_SYS_WORKERS,
                 null,
                 WITHDRAWALS_PACKING_EFF_PRODUCTIVITY,
-                WITHDRAWALS_PACKING_THROUGHPUT),
+                WITHDRAWALS_PACKING_THROUGHPUT,
+                WITHDRAWALS_PACKING_NON_SYS_WORKERS),
             emptyList()));
   }
 
@@ -501,7 +524,8 @@ public class TestUtils {
                 TRANSFER_PICKING_SYS_WORKERS,
                 TRANSFER_PICKING_NET_PRODUCTIVITY,
                 null,
-                TRANSFER_PICKING_THROUGHPUT),
+                TRANSFER_PICKING_THROUGHPUT,
+                0),
             List.of(
                 new Area(
                     AREA_RKL,
@@ -526,7 +550,8 @@ public class TestUtils {
                 STOCK_CYCLE_COUNT_SYS_WORKERS,
                 STOCK_CYCLE_COUNT_NET_PRODUCTIVITY,
                 null,
-                STOCK_CYCLE_COUNT_THROUGHPUT),
+                STOCK_CYCLE_COUNT_THROUGHPUT,
+                0),
             List.of(
                 new Area(
                     AREA_MZ1,
@@ -542,7 +567,8 @@ public class TestUtils {
                 STOCK_INBOUND_AUDIT_SYS_WORKERS,
                 STOCK_INBOUND_AUDIT_NET_PRODUCTIVITY,
                 null,
-                STOCK_INBOUND_AUDIT_THROUGHPUT),
+                STOCK_INBOUND_AUDIT_THROUGHPUT,
+                0),
             List.of(
                 new Area(
                     AREA_RKL,
@@ -558,7 +584,8 @@ public class TestUtils {
                 STOCK_STOCK_AUDIT_SYS_WORKERS,
                 STOCK_STOCK_AUDIT_NET_PRODUCTIVITY,
                 null,
-                STOCK_STOCK_AUDIT_THROUGHPUT),
+                STOCK_STOCK_AUDIT_THROUGHPUT,
+                0),
             emptyList()));
   }
 }
