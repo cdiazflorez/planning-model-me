@@ -237,8 +237,10 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                            final Instant dateFrom,
                                            final Function<Instant, Consolidation> backlogSupplier) {
 
-        final Instant latestPhotoDate = getDateWhenLatestPhotoWasTaken(consolidation, requestDate);
-        final List<Consolidation> truncatedConsolidations = truncateToHoursTheTakenOnDate(consolidation);
+        final List<Consolidation> sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot =
+            filterSumsOfCellByTakenOnTheDot(consolidation);
+        final Instant latestPhotoDate = getDateWhenLatestPhotoWasTaken(sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot, requestDate);
+        final List<Consolidation> truncatedConsolidations = truncateToHoursTheTakenOnDate(sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot);
         return fillMissing(truncatedConsolidations, dateFrom, latestPhotoDate, backlogSupplier);
     }
 

@@ -8,6 +8,11 @@
       "global_net_productivity": 60,
       "total_workers": 100,
       "total_non_systemic_workers": 10,
+      "non_systemic_workers": {
+        "total": 10,
+        "sub_processes": 2,
+        "cross": 8
+      },
       "processes": [
         {
           "process": "picking",
@@ -53,6 +58,11 @@
       "global_net_productivity": 60,
       "total_workers": 100,
       "total_non_systemic_workers": 10,
+      "non_systemic_workers": {
+        "total": 10,
+        "sub_processes": 2,
+        "cross": 8
+      },
       "processes": [
         {
           "process": "picking",
@@ -94,6 +104,11 @@
       "global_net_productivity": 60,
       "total_workers": 100,
       "total_non_systemic_workers": 10,
+      "non_systemic_workers": {
+        "total": 10,
+        "sub_processes": 2,
+        "cross": 8
+      },
       "processes": [
         {
           "process": "receiving",
@@ -128,6 +143,11 @@
       "global_net_productivity": 60,
       "total_workers": 100,
       "total_non_systemic_workers": 10,
+      "non_systemic_workers": {
+        "total": 10,
+        "sub_processes": 2,
+        "cross": 8
+      },
       "processes": [
         {
           "process": "picking",
@@ -157,6 +177,11 @@
       "global_net_productivity": 60,
       "total_workers": 100,
       "total_non_systemic_workers": 10,
+      "non_systemic_workers": {
+        "total": 10,
+        "sub_processes": 2,
+        "cross": 8
+      },
       "processes": [
         {
           "process": "stock_audit",

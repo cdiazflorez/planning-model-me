@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.entities.staffing.Area;
+import com.mercadolibre.planning.model.me.entities.staffing.NonSystemicWorkers;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcount;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByHour;
 import com.mercadolibre.planning.model.me.entities.staffing.PlannedHeadcountByProcess;
@@ -77,6 +78,8 @@ public class StaffingControllerTest {
   private static final int WORKFLOW_TOTAL_WORKERS = 100;
 
   private static final int WORKFLOW_NS_WORKERS = 10;
+
+  private static final int WORKFLOW_NS_WORKERS_PROCESS = 2;
 
   private static final int PROCESS_NET_PRODUCTIVITY = 40;
 
@@ -243,6 +246,12 @@ public class StaffingControllerTest {
         .totalWorkers(WORKFLOW_TOTAL_WORKERS)
         .globalNetProductivity(WORKFLOW_NET_PRODUCTIVITY)
         .totalNonSystemicWorkers(WORKFLOW_NS_WORKERS)
+        .nonSystemicWorkers(
+            NonSystemicWorkers.builder()
+                .total(WORKFLOW_NS_WORKERS)
+                .cross(WORKFLOW_NS_WORKERS - WORKFLOW_NS_WORKERS_PROCESS)
+                .subProcesses(WORKFLOW_NS_WORKERS_PROCESS)
+                .build())
         .processes(processes)
         .build();
   }

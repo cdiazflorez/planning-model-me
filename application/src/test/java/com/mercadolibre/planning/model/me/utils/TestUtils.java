@@ -86,11 +86,15 @@ public class TestUtils {
 
   public static final int OUTBOUND_NS_WORKERS = 20;
 
+  public static final int OUTBOUND_NS_WORKERS_PROCESS = 25;
+
   public static final int WITHDRAWALS_IDLE_WORKERS = 12;
 
   public static final int WITHDRAWALS_SYS_WORKERS = 18;
 
   public static final int WITHDRAWALS_NS_WORKERS = 24;
+
+  public static final int WITHDRAWALS_NS_WORKERS_PROCESS = 17;
 
   public static final int TRANSFER_IDLE_WORKERS = 6;
 
@@ -103,6 +107,8 @@ public class TestUtils {
   public static final int STOCK_SYS_WORKERS = 10;
 
   public static final int STOCK_NS_WORKERS = 8;
+
+  public static final int STOCK_NS_WORKERS_PROCESS = 3;
 
   public static final Double RECEIVING_NET_PRODUCTIVITY = 25.40;
 
@@ -226,6 +232,8 @@ public class TestUtils {
   public static final int STOCK_CYCLE_COUNT_IDLE_WORKERS = 1;
 
   public static final int STOCK_CYCLE_COUNT_SYS_WORKERS = 4;
+
+  public static final int STOCK_CYCLE_COUNT_NON_SYS_WORKERS = 3;
 
   public static final Double STOCK_CYCLE_COUNT_NET_PRODUCTIVITY = 565.95;
 
@@ -551,7 +559,7 @@ public class TestUtils {
                 STOCK_CYCLE_COUNT_NET_PRODUCTIVITY,
                 null,
                 STOCK_CYCLE_COUNT_THROUGHPUT,
-                0),
+                STOCK_CYCLE_COUNT_NON_SYS_WORKERS),
             List.of(
                 new Area(
                     AREA_MZ1,
