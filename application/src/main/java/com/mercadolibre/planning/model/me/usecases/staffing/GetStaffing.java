@@ -117,11 +117,9 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
         final Integer totalWorkers = total(Stream.of(totalIdle, totalSystemic, totalNonSystemic));
         final int totalNonSystemicProcess =
             processes.stream()
-                .mapToInt(
-                    value ->
-                        value.getWorkers().getNonSystemic() == null
-                            ? 0
-                            : value.getWorkers().getNonSystemic())
+                .map(value -> value.getWorkers().getNonSystemic())
+                .filter(Objects::nonNull)
+                .mapToInt(i -> i)
                 .sum();
         final Integer totalCross =
             (totalNonSystemic == null ? 0 : totalNonSystemic) - totalNonSystemicProcess;
@@ -131,7 +129,6 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .workflow(workflow)
                 .processes(processes)
                 .totalWorkers(totalWorkers)
-                .totalNonSystemicWorkers(totalNonSystemic)
                 .nonSystemicWorkers(
                     NonSystemicWorkers.builder()
                         .total(totalNonSystemic)
