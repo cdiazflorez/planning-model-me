@@ -1,5 +1,18 @@
 package com.mercadolibre.planning.model.me.usecases.projection.deferral;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.util.Collections.emptyList;
+import static java.util.TimeZone.getDefault;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
@@ -14,271 +27,340 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
-
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static java.time.ZoneOffset.UTC;
-import static java.util.Collections.emptyList;
-import static java.util.TimeZone.getDefault;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class GetDeferralProjectionTest {
 
-    private static final ZonedDateTime GET_CURRENT_UTC_DATE_TIME = getCurrentUtcDateTime();
-    private static final ZonedDateTime CPT_0 = GET_CURRENT_UTC_DATE_TIME.truncatedTo(ChronoUnit.HOURS); //current hour
-    private static final ZonedDateTime CPT_1 = CPT_0.plusHours(4);
-    private static final ZonedDateTime CPT_2 = CPT_0.plusHours(5);
-    private static final ZonedDateTime CPT_3 = CPT_0.plusHours(6);
+  private static final ZonedDateTime GET_CURRENT_UTC_DATE_TIME = getCurrentUtcDateTime();
 
-    @InjectMocks
-    private GetDeferralProjection getDeferralProjection;
+  private static final ZonedDateTime CPT_0 = GET_CURRENT_UTC_DATE_TIME.truncatedTo(ChronoUnit.HOURS); //current hour
 
-    @Mock
-    private PlanningModelGateway planningModelGateway;
+  private static final ZonedDateTime CPT_1 = CPT_0.plusHours(4);
 
-    @Mock
-    private GetProjectionSummary getProjectionSummary;
+  private static final ZonedDateTime CPT_2 = CPT_0.plusHours(5);
 
-    @Mock
-    private BacklogApiGateway backlogGateway;
+  private static final ZonedDateTime CPT_3 = CPT_0.plusHours(6);
 
-    @Mock
-    private GetSimpleDeferralProjection getSimpleDeferralProjection;
+  @InjectMocks
+  private GetDeferralProjection getDeferralProjection;
 
-    @Mock
-    private RequestClockGateway requestClockGateway;
+  @Mock
+  private PlanningModelGateway planningModelGateway;
 
-    @Test
-    public void testExecute() {
-        // GIVEN
-        final ZonedDateTime currentUtcDate= CPT_0;
+  @Mock
+  private GetProjectionSummary getProjectionSummary;
 
-        when(requestClockGateway.now()).thenReturn(GET_CURRENT_UTC_DATE_TIME.toInstant());
+  @Mock
+  private BacklogApiGateway backlogGateway;
 
-        when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(
-                mockHeadcountEntities());
+  @Mock
+  private GetSimpleDeferralProjection getSimpleDeferralProjection;
 
-        when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
-                .thenReturn(mockSimpleTable());
+  @Mock
+  private RequestClockGateway requestClockGateway;
 
-        when(backlogGateway.getCurrentBacklog(
-                WAREHOUSE_ID,
-                List.of("outbound-orders"),
-                List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted",
-                        "to_group", "grouping", "grouped", "to_pack"),
-                currentUtcDate.toInstant(),
-                currentUtcDate.plusDays(3).toInstant(),
-                List.of("date_out"))
-        ).thenReturn(List.of(
-                new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
-                new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
-                new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true)
-        ));
+  @Test
+  public void testExecute() {
+    // GIVEN
+    final ZonedDateTime currentUtcDate = CPT_0;
 
-        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                currentUtcDate,
-                mockBacklog(),
-                false)))
-                .thenReturn(new GetSimpleDeferralProjectionOutput(
-                        mockProjections(),
-                        new LogisticCenterConfiguration(getDefault())));
+    when(requestClockGateway.now()).thenReturn(GET_CURRENT_UTC_DATE_TIME.toInstant());
 
-        // when the input date are different from the current hour (at least hour of difference)
-        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                currentUtcDate.plusHours(1),
-                mockBacklog(),
-                false)))
-                .thenReturn(new GetSimpleDeferralProjectionOutput(
-                        mockProjections(),
-                        new LogisticCenterConfiguration(getDefault())));
+    when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(
+        mockHeadcountEntities());
 
-        // when the input date are null
-        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                null,
-                mockBacklog(),
-                false)))
-                .thenReturn(new GetSimpleDeferralProjectionOutput(
-                        mockProjections(),
-                        new LogisticCenterConfiguration(getDefault())));
+    when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
+        .thenReturn(mockSimpleTable());
 
-        // WHEN
-        final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                currentUtcDate,
-                mockBacklog(),
-                false));
+    when(backlogGateway.getCurrentBacklog(
+        WAREHOUSE_ID,
+        List.of("outbound-orders"),
+        List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted",
+            "to_group", "grouping", "grouped", "to_pack"),
+        currentUtcDate.toInstant(),
+        currentUtcDate.plusDays(3).toInstant(),
+        List.of("date_out"))
+    ).thenReturn(List.of(
+        new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
+        new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
+        new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true)
+    ));
 
-        final Projection projectionFutureInputDate = getDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                currentUtcDate.plusHours(1),
-                mockBacklog(),
-                false));
+    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            mockProjections(),
+            new LogisticCenterConfiguration(getDefault())));
 
-        final Projection projectionNullInputDate = getDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                null,
-                mockBacklog(),
-                false));
+    // when the input date are different from the current hour (at least hour of difference)
+    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate.plusHours(1),
+        mockBacklog(),
+        false)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            mockProjections(),
+            new LogisticCenterConfiguration(getDefault())));
 
-        //THEN
-        assertEquals("Proyección", projection.getTitle());
-        assertEquals(1, projection.getTabs().size());
-        assertEquals(false, projection.getData().getChart().getData().get(0).getIsDeferred());
-        assertEquals(false, projection.getData().getChart().getData().get(1).getIsDeferred());
-        assertEquals(false, projection.getData().getChart().getData().get(2).getIsDeferred());
-        assertEquals("throughput", projection.getData().getComplexTable1().getData()
-                .get(0).getId());
-        assertEquals("Throughput", projection.getData().getComplexTable1().getData()
-                .get(0).getTitle());
+    // when the input date are null
+    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        null,
+        mockBacklog(),
+        false)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            mockProjections(),
+            new LogisticCenterConfiguration(getDefault())));
 
-        //check if the first CPT and the current date are in the same hour and minute, if is the case then the CPT_0 have to be in the projection, otherwise
-        //the CPT_0 shouldn't be because there is not in the date range anymore
-        final Instant selectedDate = currentUtcDate.truncatedTo(ChronoUnit.MINUTES).toInstant();
-        final Instant currentDate = GET_CURRENT_UTC_DATE_TIME.toInstant();
-        final boolean cptAreSameHourMinuteWithCurrentDate = selectedDate.equals(currentDate);
+    // WHEN
+    final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false));
 
-        final int expectedCPTs = cptAreSameHourMinuteWithCurrentDate ? 4 : 3;
-        assertEquals(expectedCPTs, projection.getData().getChart().getData().size());
-        assertEquals(3, projectionFutureInputDate.getData().getChart().getData().size());
-        assertEquals(3, projectionNullInputDate.getData().getChart().getData().size());
-    }
+    final Projection projectionFutureInputDate = getDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate.plusHours(1),
+        mockBacklog(),
+        false));
 
-    @Test
-    public void testExecuteWithError() {
-        // GIVEN
-        final ZonedDateTime currentUtcDate= CPT_0;
+    final Projection projectionNullInputDate = getDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        null,
+        mockBacklog(),
+        false));
 
-        when(requestClockGateway.now()).thenReturn(GET_CURRENT_UTC_DATE_TIME.toInstant());
+    //THEN
+    assertEquals("Proyección", projection.getTitle());
+    assertEquals(1, projection.getTabs().size());
+    assertEquals(false, projection.getData().getChart().getData().get(0).getIsDeferred());
+    assertEquals(false, projection.getData().getChart().getData().get(1).getIsDeferred());
+    assertEquals(false, projection.getData().getChart().getData().get(2).getIsDeferred());
+    assertEquals("throughput", projection.getData().getComplexTable1().getData()
+        .get(0).getId());
+    assertEquals("Throughput", projection.getData().getComplexTable1().getData()
+        .get(0).getTitle());
 
-        when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                currentUtcDate,
-                mockBacklog(),
-                false)))
-                .thenReturn(new GetSimpleDeferralProjectionOutput(
-                        mockProjections(),
-                        new LogisticCenterConfiguration(getDefault())));
+    //check if the first CPT and the current date are in the same hour and minute, if is the case then the CPT_0 have to be in the projection, otherwise
+    //the CPT_0 shouldn't be because there is not in the date range anymore
+    final Instant selectedDate = currentUtcDate.truncatedTo(ChronoUnit.MINUTES).toInstant();
+    final Instant currentDate = GET_CURRENT_UTC_DATE_TIME.toInstant();
+    final boolean cptAreSameHourMinuteWithCurrentDate = selectedDate.equals(currentDate);
 
-        // WHEN
-        final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
-                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-                currentUtcDate,
-                mockBacklog(),
-                false));
+    final int expectedCPTs = cptAreSameHourMinuteWithCurrentDate ? 4 : 3;
+    assertEquals(expectedCPTs, projection.getData().getChart().getData().size());
+    assertEquals(3, projectionFutureInputDate.getData().getChart().getData().size());
+    assertEquals(3, projectionNullInputDate.getData().getChart().getData().size());
+  }
 
-        //THEN
-        assertEquals("Proyección", projection.getTitle());
-        assertEquals(1, projection.getTabs().size());
-        assertNull(projection.getData());
-    }
+  @Test
+  public void testExecuteNoProjections() {
+    // GIVEN
+    final ZonedDateTime currentUtcDate = CPT_0;
 
-    private List<Backlog> mockBacklog() {
-        return List.of(
-                new Backlog(CPT_1, 150),
-                new Backlog(CPT_2, 235),
-                new Backlog(CPT_3, 300)
-        );
-    }
+    when(requestClockGateway.now()).thenReturn(GET_CURRENT_UTC_DATE_TIME.toInstant());
 
-    private List<ProjectionResult> mockProjections() {
-        return List.of(
-                ProjectionResult.builder()
-                        .date(CPT_0)
-                        .remainingQuantity(1000)
-                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
-                        .isDeferred(false)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(CPT_1)
-                        .projectedEndDate(CPT_1.plusMinutes(-300))
-                        .remainingQuantity(0)
-                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
-                        .isDeferred(false)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(CPT_2)
-                        .projectedEndDate(CPT_2.plusMinutes(120))
-                        .remainingQuantity(200)
-                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
-                        .isDeferred(false)
-                        .build(),
-                ProjectionResult.builder()
-                        .date(CPT_3)
-                        .projectedEndDate(CPT_3.plusMinutes(-240))
-                        .remainingQuantity(0)
-                        .processingTime(new ProcessingTime(240, MINUTES.getName()))
-                        .isDeferred(false)
-                        .build()
-        );
-    }
+    when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(
+        mockHeadcountEntities());
 
-    private List<MagnitudePhoto> mockHeadcountEntities() {
-        return List.of(
-                MagnitudePhoto.builder()
-                        .date(CPT_1.plusHours(-4))
-                        .processName(GLOBAL)
-                        .value(10)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(CPT_1.plusHours(-3))
-                        .processName(GLOBAL)
-                        .value(20)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(CPT_1.plusHours(-2))
-                        .processName(GLOBAL)
-                        .value(15)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(CPT_1.plusHours(-1))
-                        .processName(GLOBAL)
-                        .value(30)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(CPT_1)
-                        .processName(GLOBAL)
-                        .value(79)
-                        .build(),
-                MagnitudePhoto.builder()
-                        .date(CPT_1.plusDays(1))
-                        .processName(GLOBAL)
-                        .value(32)
-                        .build()
-        );
-    }
+    when(backlogGateway.getCurrentBacklog(
+        WAREHOUSE_ID,
+        List.of("outbound-orders"),
+        List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted",
+            "to_group", "grouping", "grouped", "to_pack"),
+        currentUtcDate.toInstant(),
+        currentUtcDate.plusDays(3).toInstant(),
+        List.of("date_out"))
+    ).thenReturn(List.of(
+        new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
+        new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
+        new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true)
+    ));
 
-    private SimpleTable mockSimpleTable() {
-        return new SimpleTable(
-                "title",
-                emptyList(),
-                emptyList()
-        );
-    }
+    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            emptyList(),
+            new LogisticCenterConfiguration(getDefault())));
+
+    // WHEN
+    getDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false));
+
+    //THEN
+    verifyNoInteractions(getProjectionSummary);
+  }
+
+  @Test
+  public void testExecuteNullProjections() {
+    // GIVEN
+    final ZonedDateTime currentUtcDate = CPT_0;
+
+    when(requestClockGateway.now()).thenReturn(GET_CURRENT_UTC_DATE_TIME.toInstant());
+
+    when(backlogGateway.getCurrentBacklog(
+        WAREHOUSE_ID,
+        List.of("outbound-orders"),
+        List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted",
+            "to_group", "grouping", "grouped", "to_pack"),
+        currentUtcDate.toInstant(),
+        currentUtcDate.plusDays(3).toInstant(),
+        List.of("date_out"))
+    ).thenReturn(List.of(
+        new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
+        new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
+        new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true)
+    ));
+
+    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            null,
+            new LogisticCenterConfiguration(getDefault())));
+
+    // WHEN
+    getDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false));
+
+    //THEN
+    verifyNoInteractions(getProjectionSummary);
+  }
+
+  @Test
+  public void testExecuteWithError() {
+    // GIVEN
+    final ZonedDateTime currentUtcDate = CPT_0;
+
+    when(requestClockGateway.now()).thenReturn(GET_CURRENT_UTC_DATE_TIME.toInstant());
+
+    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            mockProjections(),
+            new LogisticCenterConfiguration(getDefault())));
+
+    // WHEN
+    final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false));
+
+    //THEN
+    assertEquals("Proyección", projection.getTitle());
+    assertEquals(1, projection.getTabs().size());
+    assertNull(projection.getData());
+  }
+
+  private List<Backlog> mockBacklog() {
+    return List.of(
+        new Backlog(CPT_1, 150),
+        new Backlog(CPT_2, 235),
+        new Backlog(CPT_3, 300)
+    );
+  }
+
+  private List<ProjectionResult> mockProjections() {
+    return List.of(
+        ProjectionResult.builder()
+            .date(CPT_0)
+            .remainingQuantity(1000)
+            .processingTime(new ProcessingTime(240, MINUTES.getName()))
+            .isDeferred(false)
+            .build(),
+        ProjectionResult.builder()
+            .date(CPT_1)
+            .projectedEndDate(CPT_1.plusMinutes(-300))
+            .remainingQuantity(0)
+            .processingTime(new ProcessingTime(240, MINUTES.getName()))
+            .isDeferred(false)
+            .build(),
+        ProjectionResult.builder()
+            .date(CPT_2)
+            .projectedEndDate(CPT_2.plusMinutes(120))
+            .remainingQuantity(200)
+            .processingTime(new ProcessingTime(240, MINUTES.getName()))
+            .isDeferred(false)
+            .build(),
+        ProjectionResult.builder()
+            .date(CPT_3)
+            .projectedEndDate(CPT_3.plusMinutes(-240))
+            .remainingQuantity(0)
+            .processingTime(new ProcessingTime(240, MINUTES.getName()))
+            .isDeferred(false)
+            .build()
+    );
+  }
+
+  private List<MagnitudePhoto> mockHeadcountEntities() {
+    return List.of(
+        MagnitudePhoto.builder()
+            .date(CPT_1.plusHours(-4))
+            .processName(GLOBAL)
+            .value(10)
+            .build(),
+        MagnitudePhoto.builder()
+            .date(CPT_1.plusHours(-3))
+            .processName(GLOBAL)
+            .value(20)
+            .build(),
+        MagnitudePhoto.builder()
+            .date(CPT_1.plusHours(-2))
+            .processName(GLOBAL)
+            .value(15)
+            .build(),
+        MagnitudePhoto.builder()
+            .date(CPT_1.plusHours(-1))
+            .processName(GLOBAL)
+            .value(30)
+            .build(),
+        MagnitudePhoto.builder()
+            .date(CPT_1)
+            .processName(GLOBAL)
+            .value(79)
+            .build(),
+        MagnitudePhoto.builder()
+            .date(CPT_1.plusDays(1))
+            .processName(GLOBAL)
+            .value(32)
+            .build()
+    );
+  }
+
+  private SimpleTable mockSimpleTable() {
+    return new SimpleTable(
+        "title",
+        emptyList(),
+        emptyList()
+    );
+  }
 }

@@ -18,7 +18,6 @@ import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import lombok.AllArgsConstructor;
-import org.apache.commons.collections.CollectionUtils;
 
 import javax.inject.Named;
 
@@ -182,7 +181,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                              final List<Backlog> backlogs,
                                              final List<ProjectionResult> projection) {
 
-        if (CollectionUtils.isEmpty(projection)) {
+        if (projection.isEmpty()) {
             return new SimpleTable(
                     "Resumen de Proyección",
                     new ArrayList<>(List.of(
