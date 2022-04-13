@@ -40,7 +40,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
-import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
@@ -55,12 +54,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -68,6 +63,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /** Tests {@link GetSlaProjectionOutbound}. */
 @ExtendWith(MockitoExtension.class)
 public class GetSlaProjectionOutboundTest {
+
+  private static final List<String> STATUSES = List.of("pending", "to_route", "to_pick", "picked", "to_sort",
+      "sorted", "to_group", "grouping", "grouped", "to_pack");
 
   private static final String BA_ZONE = "America/Argentina/Buenos_Aires";
 
@@ -111,39 +109,15 @@ public class GetSlaProjectionOutboundTest {
   @Mock
   private BacklogApiGateway backlogGateway;
 
-  @Mock
-  private FeatureSwitches featureSwitches;
-
-  private static Stream<Arguments> arguments() {
-    return Stream.of(
-        Arguments.of(
-            false,
-            List.of("pending"),
-            List.of(PICKING, PACKING, PACKING_WALL),
-            List.of(240, 240, 240, 240, 240),
-            List.of("4 horas", "4 horas", "4 horas", "4 horas", "4 horas")
-        ),
-        Arguments.of(
-            true,
-            List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
-                "grouping", "grouped", "to_pack"),
-            List.of(PACKING, PACKING_WALL),
-            List.of(45, 240, 240, 250, 300),
-            List.of("45 minutos", "4 horas", "4 horas", "4 horas y 10 minutos", "5 horas")
-        )
-    );
-  }
-
-  @ParameterizedTest
-  @MethodSource("arguments")
-  void testOutboundExecute(final boolean isToPackEnabled,
-                           final List<String> steps,
-                           final List<ProcessName> processes,
-                           final List<Integer> processingTimes,
-                           final List<String> subtitles) {
+  @Test
+  void testOutboundExecute() {
     // Given
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
     final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
+
+    final List<ProcessName> processes = List.of(PACKING, PACKING_WALL);
+    final List<Integer> processingTimes = List.of(45, 240, 240, 250, 300);
+    final List<String> subtitles = List.of("45 minutos", "4 horas", "4 horas", "4 horas y 10 minutos", "5 horas");
 
     final GetProjectionInputDto input = GetProjectionInputDto.builder()
         .workflow(FBM_WMS_OUTBOUND)
@@ -151,8 +125,6 @@ public class GetSlaProjectionOutboundTest {
         .date(currentUtcDateTime)
         .requestDate(currentUtcDateTime.toInstant())
         .build();
-
-    when(featureSwitches.isProjectToPackEnabled(WAREHOUSE_ID)).thenReturn(isToPackEnabled);
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
@@ -188,7 +160,7 @@ public class GetSlaProjectionOutboundTest {
     when(backlogGateway.getCurrentBacklog(
         WAREHOUSE_ID,
         List.of("outbound-orders"),
-        steps,
+        STATUSES,
         now().truncatedTo(ChronoUnit.HOURS).toInstant(),
         now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
         List.of("date_out"))
@@ -238,7 +210,7 @@ public class GetSlaProjectionOutboundTest {
     when(backlogGateway.getCurrentBacklog(
         WAREHOUSE_ID,
         List.of("outbound-orders"),
-        List.of("pending"),
+        STATUSES,
         now().truncatedTo(ChronoUnit.HOURS).toInstant(),
         now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
         List.of("date_out"))
