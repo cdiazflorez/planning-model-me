@@ -15,15 +15,10 @@ import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationI
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.restclient.MockResponse;
-import org.assertj.core.util.Arrays;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,24 +31,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.*;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.PERCENTAGE;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.*;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.*;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.objectMapper;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.*;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
@@ -62,15 +46,9 @@ import static java.lang.String.format;
 import static java.time.ZonedDateTime.now;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 class PlanningModelApiClientTest extends BaseClientTest {
 
@@ -198,7 +176,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
         //WHEN
         final List<Metadata> forecastMetadata =
-                client.getForecastMetadata(FBM_WMS_OUTBOUND,request);
+                client.getForecastMetadata(FBM_WMS_OUTBOUND, request);
 
         //THEN
         assertNotNull(forecastMetadata);
@@ -224,9 +202,9 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .dateTo(now().plusDays(1))
                 .build();
         // WHEN
-        Map<String, String> forecastMetadataParams =  client.createForecastMetadataParams(request);
+        Map<String, String> forecastMetadataParams = client.createForecastMetadataParams(request);
         // THEN
-        assertEquals("ARTW01",forecastMetadataParams.get("warehouse_id"));
+        assertEquals("ARTW01", forecastMetadataParams.get("warehouse_id"));
         assertNotNull(forecastMetadataParams.get("date_from"));
         assertNotNull(forecastMetadataParams.get("date_to"));
     }
@@ -250,7 +228,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .dateTo(now().plusDays(1))
                 .source(Source.FORECAST)
                 .processName(List.of(PICKING, PACKING, PACKING_WALL))
-                .abilityLevel(List.of(1,2))
+                .abilityLevel(List.of(1, 2))
                 .build();
 
 
@@ -395,11 +373,11 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .processName(List.of(PICKING, PACKING))
                 .build();
         // WHEN
-        Map<String, String> entityParams =  client.createEntityParams(request);
+        Map<String, String> entityParams = client.createEntityParams(request);
         // THEN
         assertEquals("picking,packing", entityParams.get("process_name"));
         assertNull(entityParams.get("source"));
-        assertEquals("ARTW01",entityParams.get("warehouse_id"));
+        assertEquals("ARTW01", entityParams.get("warehouse_id"));
         assertNotNull(entityParams.get("date_from"));
         assertNotNull(entityParams.get("date_to"));
     }
@@ -941,7 +919,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         assertEquals(2, entities.get(PRODUCTIVITY).size());
 
         final MagnitudePhoto headcount = entities.get(HEADCOUNT).get(0);
-        final Productivity productivity = (Productivity)entities.get(PRODUCTIVITY).get(0);
+        final Productivity productivity = (Productivity) entities.get(PRODUCTIVITY).get(0);
 
         assertEquals(FBM_WMS_OUTBOUND, headcount.getWorkflow());
         assertEquals(PACKING, headcount.getProcessName());
@@ -1132,7 +1110,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         void testDisableDeviationOk() throws Exception {
             // Given
             final DisableDeviationInput disableDeviationInput =
-                    new DisableDeviationInput(WAREHOUSE_ID,FBM_WMS_OUTBOUND);
+                    new DisableDeviationInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND);
 
             MockResponse.builder()
                     .withMethod(POST)
@@ -1157,7 +1135,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         void testDisableDeviationError() throws Exception {
             // Given
             final DisableDeviationInput disableDeviationInput =
-                    new DisableDeviationInput(WAREHOUSE_ID,FBM_WMS_OUTBOUND);
+                    new DisableDeviationInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND);
 
             MockResponse.builder()
                     .withMethod(POST)
@@ -1200,9 +1178,9 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
             // Then
             assertNotNull(getDeviationResponse);
-            assertEquals(ZonedDateTime.of(2021, 1, 21, 15, 0,0,0, ZoneId.of("Z")),
+            assertEquals(ZonedDateTime.of(2021, 1, 21, 15, 0, 0, 0, ZoneId.of("Z")),
                     getDeviationResponse.getDateFrom());
-            assertEquals(ZonedDateTime.of(2021, 1, 21, 17, 0,0,0, ZoneId.of("Z")),
+            assertEquals(ZonedDateTime.of(2021, 1, 21, 17, 0, 0, 0, ZoneId.of("Z")),
                     getDeviationResponse.getDateTo());
             assertEquals(5.8, getDeviationResponse.getValue());
             assertEquals(PERCENTAGE, getDeviationResponse.getMetricUnit());
@@ -1220,7 +1198,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                             .put("status", "NOT_FOUND")
                             .put("message",
                                     "Entity CurrentForecastDeviation with id ARTW01 was not found")
-                            .put("error","entity_not_found")
+                            .put("error", "entity_not_found")
                             .toString())
                     .build();
 
@@ -1237,9 +1215,9 @@ class PlanningModelApiClientTest extends BaseClientTest {
         List<ShareDistribution> shareDistributionList = List.of(ShareDistribution.builder().build());
 
         final JSONObject apiResponse = new JSONObject()
-                        .put("warehouse_id", "ARTW01")
-                        .put("response", "Successfully")
-                        .put("quantity_save", "0");
+                .put("warehouse_id", "ARTW01")
+                .put("response", "Successfully")
+                .put("quantity_save", "0");
 
         MockResponse.builder()
                 .withMethod(POST)
@@ -1250,9 +1228,9 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .build();
 
         //WHEN
-         SaveUnitsResponse response = client.saveShareDistribution(shareDistributionList);
+        SaveUnitsResponse response = client.saveShareDistribution(shareDistributionList);
 
-         //THEN
+        //THEN
         assertNotNull(response);
     }
 
@@ -1286,7 +1264,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
         //THEN
         assertNotNull(response);
     }
-
 
 
 }
