@@ -1,0 +1,54 @@
+package com.mercadolibre.planning.model.me.usecases.sharedistribution;
+
+import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
+import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import javax.inject.Named;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+
+@Named
+@AllArgsConstructor
+@Slf4j
+public class SaveShareDistribution {
+
+    private final EntityGateway entityGateway;
+    GetMetrics getMetrics;
+
+
+    public List<SaveUnitsResponse> execute(List<String> warehouseIds, int days) {
+
+        ZonedDateTime now = DateUtils.getCurrentUtcDate();
+        ZonedDateTime dateFrom = now.plusDays(1).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime dateTo = dateFrom.plusDays(days);
+
+        List<SaveUnitsResponse> saveUnitsResponseList = new ArrayList<>();
+
+
+        warehouseIds.forEach(id -> {
+            List<ShareDistribution> list = getMetrics.execute(id, dateFrom, dateTo);
+            SaveUnitsResponse saveUnitsResponse;
+            if(!list.isEmpty()){
+                try{
+                    saveUnitsResponse = entityGateway.saveShareDistribution(list);
+                } catch (Exception e){
+                    saveUnitsResponse = SaveUnitsResponse.builder().response("Error saving").quantitySave(0).build();
+                    log.error(e.getMessage(),e);
+                }
+            } else {
+                saveUnitsResponse = SaveUnitsResponse.builder().response("Empty records").quantitySave(0).build();
+            }
+            saveUnitsResponse.setWarehouseId(id);
+            saveUnitsResponseList.add(saveUnitsResponse);
+
+        });
+
+        return saveUnitsResponseList;
+    }
+}

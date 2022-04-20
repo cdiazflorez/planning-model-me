@@ -32,6 +32,10 @@ dependencies {
     implementation 'com.mercadolibre.resilience:resilience-core:1.1.1'
     implementation 'com.mercadolibre.library:kraken-client-java:1.4.0'
 
+    // bigquery
+    implementation platform('com.google.cloud:libraries-bom:25.0.0')
+    implementation 'com.google.cloud:google-cloud-bigquery'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation "com.mercadolibre.restclient:meli-restclient-core:0.5.5:tests"
 }

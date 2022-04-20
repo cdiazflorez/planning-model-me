@@ -4,39 +4,18 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
+import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.*;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
+import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.restclient.MockResponse;
+import org.assertj.core.util.Arrays;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -111,6 +90,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             "/planning/model/workflows/%s/projections/suggested_waves";
     private static final String DEVIATION_URL =
             "/planning/model/workflows/%s/deviations";
+    private static final String UNITS_DISTRIBUTION = "/planning/model/units_distribution";
 
     private PlanningModelApiClient client;
 
@@ -1249,4 +1229,64 @@ class PlanningModelApiClientTest extends BaseClientTest {
                     () -> client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID, A_DATE));
         }
     }
+
+    @Test
+    public void saveShareDistributionTest() throws JSONException {
+
+        //GIVEN
+        List<ShareDistribution> shareDistributionList = List.of(ShareDistribution.builder().build());
+
+        final JSONObject apiResponse = new JSONObject()
+                        .put("warehouse_id", "ARTW01")
+                        .put("response", "Successfully")
+                        .put("quantity_save", "0");
+
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(BASE_URL + UNITS_DISTRIBUTION + "/save")
+                .withStatusCode(OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(apiResponse.toString())
+                .build();
+
+        //WHEN
+         SaveUnitsResponse response = client.saveShareDistribution(shareDistributionList);
+
+         //THEN
+        assertNotNull(response);
+    }
+
+    @Test
+    public void getShareDistributionTest() throws JSONException {
+
+        //GIVEN
+        final JSONArray apiResponse = new JSONArray()
+                .put(new JSONObject()
+                        .put("id", "34")
+                        .put("logistic_center_id", "ARBA01")
+                        .put("date", "2020-07-27T09:00:00Z")
+                        .put("process_name", "PICKING")
+                        .put("area", "MZ-05")
+                        .put("quantity", "0.5")
+                        .put("quantity_metric_unit", "PERCENTAGE")
+                );
+        GetShareDistributionInput request = GetShareDistributionInput.builder().wareHouseId("ARBA01").dateFrom(ZonedDateTime.now()).dateTo(ZonedDateTime.now().plusDays(1)).build();
+
+        MockResponse.builder()
+                .withMethod(GET)
+                .withURL(BASE_URL + UNITS_DISTRIBUTION + "/data")
+                .withStatusCode(OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody(apiResponse.toString())
+                .build();
+
+        //WHEN
+        List<GetUnitsResponse> response = client.getShareDistribution(request);
+
+        //THEN
+        assertNotNull(response);
+    }
+
+
+
 }

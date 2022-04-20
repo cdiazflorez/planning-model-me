@@ -10,34 +10,15 @@ import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.ProductivityResponse;
+import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
+import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.*;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
+import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +46,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 @Slf4j
 @Component
-public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway {
+public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway, EntityGateway {
 
     private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
     private static final String CONFIGURATION_URL = "/planning/model/configuration";
@@ -75,6 +56,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     private static final String WAREHOUSE_ID = "warehouse_id";
     private static final String DATE_FROM = "date_from";
     private static final String DATE_TO = "date_to";
+    private static final String UNITS_DISTRIBUTION = "/planning/model/units_distribution";
     private final ObjectMapper objectMapper;
 
     public PlanningModelApiClient(MeliRestClient client, ObjectMapper objectMapper) {
@@ -312,6 +294,34 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .acceptedHttpStatuses(Set.of(OK, CREATED))
                 .build();
 
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public SaveUnitsResponse saveShareDistribution(List<ShareDistribution> shareDistributionList) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(UNITS_DISTRIBUTION + "/save")
+                .POST(requestSupplier(shareDistributionList))
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {}));
+    }
+
+    @Override
+    public List<GetUnitsResponse> getShareDistribution(GetShareDistributionInput getShareDistributionInput) {
+
+        final Map<String, String> params = new HashMap<>();
+        params.put("warehouse_id", getShareDistributionInput.getWareHouseId());
+        params.put("date_from", getShareDistributionInput.getDateFrom().toString());
+        params.put("date_to", getShareDistributionInput.getDateTo().toString());
+
+        final HttpRequest request = HttpRequest.builder()
+                .url(UNITS_DISTRIBUTION + "/data")
+                .GET()
+                .queryParams(params)
+                .acceptedHttpStatuses(Set.of(OK))
+                .build();
         return send(request, response -> response.getData(new TypeReference<>() {}));
     }
 
