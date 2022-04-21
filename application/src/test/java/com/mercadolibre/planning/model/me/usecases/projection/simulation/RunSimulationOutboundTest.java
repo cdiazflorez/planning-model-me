@@ -40,7 +40,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityBy
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
@@ -56,11 +55,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -101,26 +97,15 @@ public class RunSimulationOutboundTest {
   @Mock
   private BacklogApiGateway backlogGateway;
 
-  @Mock
-  private FeatureSwitches featureSwitches;
-
-  private static Stream<Arguments> arguments() {
-    return Stream.of(
-        Arguments.of(false, List.of("pending"), List.of(PICKING, PACKING, PACKING_WALL)),
-        Arguments.of(true, List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
-            "grouping", "grouped", "to_pack"), List.of(PACKING, PACKING_WALL))
-    );
-  }
-
-  @ParameterizedTest
-  @MethodSource("arguments")
-  public void testExecute(final boolean isToPackEnabled,
-                          final List<String> steps,
-                          final List<ProcessName> processes) {
+  @Test
+  public void testExecute() {
     // Given
     final ZonedDateTime utcCurrentTime = getCurrentTime();
 
-    when(featureSwitches.isProjectToPackEnabled(WAREHOUSE_ID)).thenReturn(isToPackEnabled);
+    final List<String> steps = List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
+        "grouping", "grouped", "to_pack");
+
+    final List<ProcessName> processes = List.of(PACKING, PACKING_WALL);
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));

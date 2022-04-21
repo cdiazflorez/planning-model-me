@@ -315,7 +315,6 @@ class GetStaffingTest {
         inbound,
         INBOUND_WORKFLOW,
         TOTAL_INBOUND_WORKERS,
-        0,
         NonSystemicWorkers.builder().total(0).cross(0).subProcesses(0).build(),
         TOTAL_INBOUND_PROCESSES);
 
@@ -366,7 +365,6 @@ class GetStaffingTest {
         outbound,
         OUTBOUND_WORKFLOW,
         TOTAL_OUTBOUND_WORKERS,
-        OUTBOUND_NS_WORKERS,
         NonSystemicWorkers.builder()
             .total(OUTBOUND_NS_WORKERS)
             .cross(OUTBOUND_NS_WORKERS - OUTBOUND_NS_WORKERS_PROCESS)
@@ -436,7 +434,6 @@ class GetStaffingTest {
         withdrawals,
         WITHDRAWALS_WORKFLOW,
         TOTAL_WITHDRAWALS_WORKERS,
-        WITHDRAWALS_NS_WORKERS,
         NonSystemicWorkers.builder()
             .total(WITHDRAWALS_NS_WORKERS)
             .cross(WITHDRAWALS_NS_WORKERS - WITHDRAWALS_NS_WORKERS_PROCESS)
@@ -481,7 +478,6 @@ class GetStaffingTest {
         stock,
         STOCK_WORKFLOW,
         TOTAL_STOCK_WORKERS,
-        STOCK_NS_WORKERS,
         NonSystemicWorkers.builder()
             .total(STOCK_NS_WORKERS)
             .cross(STOCK_NS_WORKERS - STOCK_NS_WORKERS_PROCESS)
@@ -675,13 +671,11 @@ class GetStaffingTest {
       final StaffingWorkflow workflow,
       final String name,
       final int totalWorkers,
-      final int nsWorkersTotal,
       final NonSystemicWorkers nsWorkers,
       final int processesSize) {
 
     assertEquals(name, workflow.getWorkflow());
     assertEquals(totalWorkers, workflow.getTotalWorkers());
-    assertEquals(nsWorkersTotal, workflow.getTotalNonSystemicWorkers());
     assertEquals(nsWorkers, workflow.getNonSystemicWorkers());
     assertEquals(processesSize, workflow.getProcesses().size());
   }
@@ -812,7 +806,6 @@ class GetStaffingTest {
         transfer,
         TRANSFER_WORKFLOW,
         TOTAL_TRANSFER_WORKERS,
-        TRANSFER_NS_WORKERS,
         NonSystemicWorkers.builder()
             .total(TRANSFER_NS_WORKERS)
             .cross(TRANSFER_NS_WORKERS)

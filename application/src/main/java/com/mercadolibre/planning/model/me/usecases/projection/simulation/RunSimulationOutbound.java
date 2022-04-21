@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
@@ -9,10 +10,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
+import com.mercadolibre.planning.model.me.usecases.projection.ProjectionWorkflow;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
@@ -31,11 +32,10 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
                                   final GetEntities getEntities,
                                   final GetProjectionSummary getProjectionSummary,
                                   final GetSimpleDeferralProjection getSimpleDeferralProjection,
-                                  final BacklogApiGateway backlogGateway,
-                                  final FeatureSwitches featureSwitches) {
+                                  final BacklogApiGateway backlogGateway) {
 
     super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities, getProjectionSummary,
-        getSimpleDeferralProjection, backlogGateway, featureSwitches);
+        getSimpleDeferralProjection, backlogGateway);
   }
 
   @Override
@@ -48,7 +48,7 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
     return planningModelGateway.runSimulation(SimulationRequest.builder()
         .warehouseId(input.getWarehouseId())
         .workflow(input.getWorkflow())
-        .processName(getProjectionProcesses(input.getWarehouseId()))
+        .processName(ProjectionWorkflow.getProcesses(FBM_WMS_OUTBOUND))
         .dateFrom(dateFrom)
         .dateTo(dateTo)
         .backlog(backlogs.stream()

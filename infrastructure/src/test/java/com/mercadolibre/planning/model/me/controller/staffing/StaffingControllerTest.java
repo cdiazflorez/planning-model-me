@@ -245,7 +245,6 @@ public class StaffingControllerTest {
         .workflow(workflow)
         .totalWorkers(WORKFLOW_TOTAL_WORKERS)
         .globalNetProductivity(WORKFLOW_NET_PRODUCTIVITY)
-        .totalNonSystemicWorkers(WORKFLOW_NS_WORKERS)
         .nonSystemicWorkers(
             NonSystemicWorkers.builder()
                 .total(WORKFLOW_NS_WORKERS)

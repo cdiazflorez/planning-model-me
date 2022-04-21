@@ -1,8 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static java.util.stream.Collectors.toList;
@@ -11,14 +8,11 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.Tab;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
@@ -54,23 +48,19 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
   private final GetWaveSuggestion getWaveSuggestion;
 
-  private final FeatureSwitches featureSwitches;
-
   protected GetProjectionOutbound(final PlanningModelGateway planningModelGateway,
                                   final LogisticCenterGateway logisticCenterGateway,
                                   final GetWaveSuggestion getWaveSuggestion,
                                   final GetEntities getEntities,
                                   final GetProjectionSummary getProjectionSummary,
                                   final GetSimpleDeferralProjection getSimpleDeferralProjection,
-                                  final BacklogApiGateway backlogGateway,
-                                  final FeatureSwitches featureSwitches) {
+                                  final BacklogApiGateway backlogGateway) {
 
     super(planningModelGateway, logisticCenterGateway, getEntities, getProjectionSummary);
 
     this.getSimpleDeferralProjection = getSimpleDeferralProjection;
     this.getWaveSuggestion = getWaveSuggestion;
     this.backlogGateway = backlogGateway;
-    this.featureSwitches = featureSwitches;
   }
 
   @Override
@@ -87,23 +77,7 @@ public abstract class GetProjectionOutbound extends GetProjection {
                 backlogsToProject,
                 false));
 
-    final ProcessingTime defaultProcessingTime = new ProcessingTime(240, "minutes");
-
-    final List<ProjectionResult> projections = featureSwitches.isProjectToPackEnabled(input.getWarehouseId())
-        ? projectionsSla
-        : projectionsSla.stream()
-        .map(projection -> new ProjectionResult(
-            projection.getDate(),
-            projection.getProjectedEndDate(),
-            projection.getSimulatedEndDate(),
-            projection.getRemainingQuantity(),
-            defaultProcessingTime,
-            projection.isDeferred(),
-            projection.isExpired()
-        ))
-        .collect(toList());
-
-    return transferDeferralFlag(projections, deferralProjectionOutput.getProjections());
+    return setIsDeferred(projectionsSla, deferralProjectionOutput.getProjections());
   }
 
   @Override
@@ -116,14 +90,10 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
     final String groupingKey = BacklogGrouper.DATE_OUT.getName();
 
-    final List<String> steps = featureSwitches.isProjectToPackEnabled(warehouseId)
-        ? ProjectionWorkflow.getStatuses(FBM_WMS_OUTBOUND)
-        : List.of("pending");
-
     final var backlogBySla = backlogGateway.getCurrentBacklog(
         warehouseId,
         List.of("outbound-orders"),
-        steps,
+        ProjectionWorkflow.getStatuses(FBM_WMS_OUTBOUND),
         dateFromToProject,
         dateToToProject,
         List.of(groupingKey));
@@ -196,15 +166,8 @@ public abstract class GetProjectionOutbound extends GetProjection {
     return ResponseUtils.createOutboundTabs();
   }
 
-  // TODO remove when FT no longer applies
-  protected final List<ProcessName> getProjectionProcesses(final String warehouseId) {
-    return featureSwitches.isProjectToPackEnabled(warehouseId)
-        ? ProjectionWorkflow.getProcesses(FBM_WMS_OUTBOUND)
-        : List.of(PICKING, PACKING, PACKING_WALL);
-  }
-
-  private List<ProjectionResult> transferDeferralFlag(final List<ProjectionResult> slaProjections,
-                                                      final List<ProjectionResult> deferralProjections) {
+  private List<ProjectionResult> setIsDeferred(final List<ProjectionResult> slaProjections,
+                                               final List<ProjectionResult> deferralProjections) {
 
     final Map<Instant, ProjectionResult> deferralProjectionsByDateOut =
         deferralProjections.stream().collect(Collectors.toMap(

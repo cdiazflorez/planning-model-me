@@ -7,7 +7,6 @@
       "workflow": "fbm-wms-outbound",
       "global_net_productivity": 60,
       "total_workers": 100,
-      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -57,7 +56,6 @@
       "workflow": "fbm-wms-withdrawals",
       "global_net_productivity": 60,
       "total_workers": 100,
-      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -103,7 +101,6 @@
       "workflow": "fbm-wms-inbound",
       "global_net_productivity": 60,
       "total_workers": 100,
-      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -142,7 +139,6 @@
       "workflow": "fbm-wms-transfer",
       "global_net_productivity": 60,
       "total_workers": 100,
-      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
@@ -176,7 +172,6 @@
       "workflow": "fbm-wms-stock",
       "global_net_productivity": 60,
       "total_workers": 100,
-      "total_non_systemic_workers": 10,
       "non_systemic_workers": {
         "total": 10,
         "sub_processes": 2,
