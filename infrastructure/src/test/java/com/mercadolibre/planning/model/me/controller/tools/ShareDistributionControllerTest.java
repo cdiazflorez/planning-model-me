@@ -2,6 +2,9 @@ package com.mercadolibre.planning.model.me.controller.tools;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.SaveShareDistribution;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -36,9 +39,10 @@ public class ShareDistributionControllerTest {
 
         //GIVE
 
-        List<String> warehouseIds = Arrays.asList(WH);
+        List<String> warehouseIds = List.of(WH);
+        ZonedDateTime from = DateUtils.getCurrentUtcDate().truncatedTo(ChronoUnit.DAYS);
 
-        when(saveShareDistribution.execute(warehouseIds, 3)).thenReturn(List.of(SaveUnitsResponse.builder().build()));
+        when(saveShareDistribution.execute(warehouseIds, from, from.plusDays(3))).thenReturn(List.of(SaveUnitsResponse.builder().build()));
 
 
         //WHEN

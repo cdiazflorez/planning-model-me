@@ -61,7 +61,7 @@ public class SaveShareDistributionTest {
 
         List<String> warehouses = Arrays.asList(WH,WHP,WHC);
         //WHEN
-        List<SaveUnitsResponse>  result = saveShareDistribution.execute(warehouses,DAYS);
+        List<SaveUnitsResponse>  result = saveShareDistribution.execute(warehouses,dateFrom,dateTo);
 
 
 

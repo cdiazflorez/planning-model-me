@@ -22,11 +22,7 @@ public class SaveShareDistribution {
     GetMetrics getMetrics;
 
 
-    public List<SaveUnitsResponse> execute(List<String> warehouseIds, int days) {
-
-        ZonedDateTime now = DateUtils.getCurrentUtcDate();
-        ZonedDateTime dateFrom = now.plusDays(1).truncatedTo(ChronoUnit.DAYS);
-        ZonedDateTime dateTo = dateFrom.plusDays(days);
+    public List<SaveUnitsResponse> execute(List<String> warehouseIds, ZonedDateTime dateFrom, ZonedDateTime dateTo  ) {
 
         List<SaveUnitsResponse> saveUnitsResponseList = new ArrayList<>();
 

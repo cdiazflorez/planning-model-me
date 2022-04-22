@@ -3,6 +3,9 @@ package com.mercadolibre.planning.model.me.usecases.sharedistribution;
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.ShareDistributionGateway;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionResponse;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
+import java.time.temporal.ChronoUnit;
+import java.util.stream.LongStream;
 import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
@@ -17,51 +20,62 @@ public class GetMetrics {
 
     private final ShareDistributionGateway shareDistributionGateway;
 
-    public List<ShareDistribution> execute(String warehouseId, ZonedDateTime dateFrom, ZonedDateTime dateTo) {
+    public List<ShareDistribution> execute(String warehouseId,ZonedDateTime dateFrom, ZonedDateTime dateTo) {
 
         List<DistributionResponse> distributionResponses = shareDistributionGateway.getMetrics(warehouseId);
+        List<ZonedDateTime> dateTimeList = getDaysToProject(dateFrom,dateTo);
 
         Map<String, List<DistributionResponse>> listDistribution = distributionResponses.stream().collect(Collectors.groupingBy(this::getKey));
 
-        return listDistribution.values().stream().flatMap(this::filterMetrics)
-                .collect(Collectors.filtering(shareDistribution ->
-                        shareDistribution.getDate().isAfter(dateFrom) &&  shareDistribution.getDate().isBefore(dateTo), Collectors.toList()));
+        List<ShareDistribution> response = new ArrayList<>();
+        for(ZonedDateTime z: dateTimeList){
+            List<DistributionResponse> distributionResponsesDay = listDistribution.get(z.getDayOfWeek().name());
+            if(distributionResponsesDay != null && !distributionResponsesDay.isEmpty()) {
+                Map<String, List<DistributionResponse>> mapDistributionResponse = distributionResponsesDay.stream().collect(Collectors.groupingBy(this::getKeyHour));
+                response.addAll(mapDistributionResponse.values().stream().flatMap(value -> filterMetrics(value, z))
+                    .collect(Collectors.toList()));
+            }
+        }
 
+        return response;
+
+    }
+
+    private List<ZonedDateTime> getDaysToProject(ZonedDateTime dateFrom, ZonedDateTime dateTo){
+        long n = ChronoUnit.DAYS.between(dateFrom,dateTo);
+        return LongStream.range(0,n).mapToObj(dateFrom::plusDays).collect(Collectors.toList());
+    }
+
+
+    private String getKeyHour(DistributionResponse distribution) {
+        return distribution.getCptTime().getHour() + "_" + distribution.getCptTime().getMinute();
     }
 
     private String getKey(DistributionResponse distribution) {
-        return distribution.getCptTime().getDayOfWeek() + "_" + distribution.getCptTime().getHour() + "_" + distribution.getCptTime().getMinute();
+        return distribution.getCptTime().getDayOfWeek().name();
     }
 
-    private Stream<ShareDistribution> filterMetrics(List<DistributionResponse> list) {
+    private Stream<ShareDistribution> filterMetrics(List<DistributionResponse> list, ZonedDateTime dateTime) {
 
         Map<String, Double> shareDistributionByArea =
                 list.stream().collect(Collectors.groupingBy(DistributionResponse::getArea, Collectors.summingDouble(DistributionResponse::getSis)));
 
         Double total = shareDistributionByArea.values().stream().reduce(0D, Double::sum);
 
-        Optional<DistributionResponse> optionalShareDistribution = list.stream().max(Comparator.comparing(DistributionResponse::getCptTime));
+        ZonedDateTime cptTime = list.get(0).getCptTime();
 
-
-        if (optionalShareDistribution.isPresent()) {
-            DistributionResponse shareDistribution = optionalShareDistribution.get();
-            ZonedDateTime cptTime = shareDistribution.getCptTime().plusWeeks(1);
-
-            List<ShareDistribution> shareDistributionList = new ArrayList<>();
-            for (String area : shareDistributionByArea.keySet()) {
+        List<ShareDistribution> shareDistributionList = new ArrayList<>();
+        for (String area : shareDistributionByArea.keySet()) {
                 shareDistributionList.add(ShareDistribution.builder()
-                        .logisticCenterId(shareDistribution.getWarehouseID())
-                        .date(cptTime)
+                        .logisticCenterId(list.get(0).getWarehouseID())
+                        .date(dateTime.withHour(cptTime.getHour()).withMinute(cptTime.getMinute()))
                         .processName("PICKING")
                         .area(area)
                         .quantity(Math.round(shareDistributionByArea.get(area) / total * 100.00) / 100.00)
                         .quantityMetricUnit("PERCENTAGE")
                         .build());
-            }
-            return shareDistributionList.stream();
         }
-
-        return Stream.empty();
+        return shareDistributionList.stream();
 
     }
 

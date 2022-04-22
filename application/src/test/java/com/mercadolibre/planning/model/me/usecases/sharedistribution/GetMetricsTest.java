@@ -3,6 +3,8 @@ package com.mercadolibre.planning.model.me.usecases.sharedistribution;
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.ShareDistributionGateway;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionResponse;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,17 +34,18 @@ public class GetMetricsTest {
         //GIVEN
         when(shareDistributionGateway.getMetrics(WAREHOUSE_ID)).thenReturn(mockDistribution());
         List<Double> expectedQuantity = Arrays.asList(0.51,0.23,0.26);
-        ZonedDateTime to = ZonedDateTime.now().plusDays(6).withHour(23).withMinute(30).withSecond(0).withNano(0);
-        ZonedDateTime from = ZonedDateTime.now().withHour(23).withMinute(59).withSecond(0).withNano(0);
+
+        ZonedDateTime from = DateUtils.getCurrentUtcDate().truncatedTo(ChronoUnit.DAYS).plusDays(1);
+        ZonedDateTime to = from.plusDays(3);
 
 
-        // WHEN
+            // WHEN
         List<ShareDistribution> result = getMetrics.execute(WAREHOUSE_ID,from,to);
 
         // THEN
         result.forEach(s ->{
             assertTrue(expectedQuantity.contains(s.getQuantity()));
-            assertTrue( s.getDate().isBefore(to) && s.getDate().isAfter(from));
+            assertTrue( s.getDate().isBefore(to) && (s.getDate().isAfter(from) || s.getDate().isEqual(from)) );
         });
 
 
