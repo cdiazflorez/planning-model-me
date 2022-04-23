@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface ShareDistributionGateway {
 
-    List<DistributionResponse> getMetrics(String wareHouseId);
+  List<DistributionResponse> getMetrics(String wareHouseId);
 
 }

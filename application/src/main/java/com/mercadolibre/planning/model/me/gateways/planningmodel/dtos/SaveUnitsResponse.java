@@ -8,7 +8,9 @@ import lombok.*;
 @Setter
 public class SaveUnitsResponse {
 
-     String response;
-     Integer quantitySave;
-     String warehouseId;
+  String response;
+
+  Integer quantitySave;
+
+  String warehouseId;
 }

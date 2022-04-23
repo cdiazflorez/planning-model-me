@@ -9,7 +9,9 @@ import java.time.ZonedDateTime;
 @Builder
 public class GetShareDistributionInput {
 
-    ZonedDateTime dateFrom;
-    ZonedDateTime dateTo;
-    String wareHouseId;
+  ZonedDateTime dateFrom;
+
+  ZonedDateTime dateTo;
+
+  String wareHouseId;
 }

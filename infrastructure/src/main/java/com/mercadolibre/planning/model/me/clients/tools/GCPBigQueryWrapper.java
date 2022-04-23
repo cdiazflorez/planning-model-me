@@ -9,10 +9,10 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GCPBigQueryWrapper implements BigqueryWrapper {
 
-    private BigQuery bigQuery;
+  private BigQuery bigQuery;
 
-    @Override
-    public TableResult query(QueryJobConfiguration configuration) throws InterruptedException, JobException {
-        return bigQuery.query(configuration);
-    }
+  @Override
+  public TableResult query(QueryJobConfiguration configuration) throws InterruptedException, JobException {
+    return bigQuery.query(configuration);
+  }
 }

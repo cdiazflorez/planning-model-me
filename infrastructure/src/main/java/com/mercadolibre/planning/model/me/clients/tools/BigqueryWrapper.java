@@ -5,5 +5,5 @@ import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 
 interface BigqueryWrapper {
-    TableResult query(QueryJobConfiguration configuration) throws InterruptedException, JobException;
+  TableResult query(QueryJobConfiguration configuration) throws InterruptedException, JobException;
 }

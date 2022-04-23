@@ -9,10 +9,15 @@ import java.time.ZonedDateTime;
 @Value
 public class ShareDistribution {
 
-    String logisticCenterId;
-    ZonedDateTime date;
-    String processName;
-    String area;
-    Double quantity;
-    String quantityMetricUnit;
+  String logisticCenterId;
+
+  ZonedDateTime date;
+
+  String processName;
+
+  String area;
+
+  Double quantity;
+
+  String quantityMetricUnit;
 }

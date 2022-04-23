@@ -7,17 +7,17 @@ import java.time.ZonedDateTime;
 @Value
 public class GetUnitsResponse {
 
-    long id;
+  long id;
 
-    String logisticCenterId;
+  String logisticCenterId;
 
-    ZonedDateTime date;
+  ZonedDateTime date;
 
-    String processName;
+  String processName;
 
-    String area;
+  String area;
 
-    Double quantity;
+  Double quantity;
 
-    MetricUnit quantityMetricUnit;
+  MetricUnit quantityMetricUnit;
 }
