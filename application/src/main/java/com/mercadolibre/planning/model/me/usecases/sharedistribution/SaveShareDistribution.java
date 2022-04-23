@@ -4,12 +4,12 @@ import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistri
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Named;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Named
@@ -24,10 +24,7 @@ public class SaveShareDistribution {
 
   public List<SaveUnitsResponse> execute(List<String> warehouseIds, ZonedDateTime dateFrom, ZonedDateTime dateTo) {
 
-    List<SaveUnitsResponse> saveUnitsResponseList = new ArrayList<>();
-
-
-    warehouseIds.forEach(id -> {
+    return warehouseIds.stream().map(id -> {
       List<ShareDistribution> list = getMetrics.execute(id, dateFrom, dateTo);
       SaveUnitsResponse saveUnitsResponse;
       if (!list.isEmpty()) {
@@ -41,10 +38,8 @@ public class SaveShareDistribution {
         saveUnitsResponse = SaveUnitsResponse.builder().response("Empty records").quantitySave(0).build();
       }
       saveUnitsResponse.setWarehouseId(id);
-      saveUnitsResponseList.add(saveUnitsResponse);
+      return saveUnitsResponse;
+    }).collect(Collectors.toList());
 
-    });
-
-    return saveUnitsResponseList;
   }
 }
