@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
@@ -8,7 +9,6 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
-import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
@@ -33,11 +33,10 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
                                      final GetEntities getEntities,
                                      final GetProjectionSummary getProjectionSummary,
                                      final GetSimpleDeferralProjection getSimpleDeferralProjection,
-                                     final BacklogApiGateway backlogGateway,
-                                     final FeatureSwitches featureSwitches) {
+                                     final BacklogApiGateway backlogGateway) {
 
     super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities, getProjectionSummary,
-        getSimpleDeferralProjection, backlogGateway, featureSwitches);
+        getSimpleDeferralProjection, backlogGateway);
   }
 
 
@@ -51,7 +50,7 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
     return planningModelGateway.runProjection(ProjectionRequest.builder()
         .warehouseId(input.getWarehouseId())
         .workflow(input.getWorkflow())
-        .processName(getProjectionProcesses(input.getWarehouseId()))
+        .processName(ProjectionWorkflow.getProcesses(FBM_WMS_OUTBOUND))
         .type(CPT)
         .dateFrom(dateFrom)
         .dateTo(dateTo)

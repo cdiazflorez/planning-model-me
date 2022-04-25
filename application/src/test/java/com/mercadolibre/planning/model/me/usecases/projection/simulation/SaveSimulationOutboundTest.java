@@ -41,7 +41,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityBy
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
-import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
@@ -57,12 +56,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -103,23 +99,9 @@ public class SaveSimulationOutboundTest {
   @Mock
   private BacklogApiGateway backlogGateway;
 
-  @Mock
-  private FeatureSwitches featureSwitches;
-
-  private static Stream<Arguments> arguments() {
-    return Stream.of(
-        Arguments.of(false, List.of("pending"), List.of(PICKING, PACKING, PACKING_WALL)),
-        Arguments.of(true, List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
-            "grouping", "grouped", "to_pack"), List.of(PACKING, PACKING_WALL))
-    );
-  }
-
-  @ParameterizedTest
-  @MethodSource("arguments")
+  @Test
   @DisplayName("Execute the case when all the data is correctly generated")
-  public void testExecute(final boolean isToPackEnabled,
-                          final List<String> steps,
-                          final List<ProcessName> processes) {
+  public void testExecute() {
     // Given
     final ZonedDateTime utcCurrentTime = getCurrentTime();
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
@@ -128,7 +110,10 @@ public class SaveSimulationOutboundTest {
 
     final List<Backlog> mockedBacklog = mockBacklog();
 
-    when(featureSwitches.isProjectToPackEnabled(WAREHOUSE_ID)).thenReturn(isToPackEnabled);
+    final List<String> steps = List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
+        "grouping", "grouped", "to_pack");
+
+    final List<ProcessName> processes = List.of(PACKING, PACKING_WALL);
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
@@ -192,15 +177,14 @@ public class SaveSimulationOutboundTest {
     final Chart chart = projection.getData().getChart();
     final List<ChartData> chartData = chart.getData();
 
-    thenTestCharDataIsOk(currentTime, chartData, isToPackEnabled);
+    thenTestCharDataIsOk(currentTime, chartData);
 
     assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
     assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
   }
 
   private void thenTestCharDataIsOk(final ZonedDateTime currentTime,
-                                    final List<ChartData> chartData,
-                                    final boolean isToPackEnabled) {
+                                    final List<ChartData> chartData) {
     assertEquals(5, chartData.size());
 
     final ChartData chartData1 = chartData.get(0);
@@ -248,8 +232,7 @@ public class SaveSimulationOutboundTest {
     assertEquals(currentTime.plusDays(1).plusHours(1).format(DATE_FORMATTER),
         chartData5.getProjectedEndTime());
 
-    final var value = isToPackEnabled ? 300 : 240;
-    assertEquals(value, chartData5.getProcessingTime().getValue());
+    assertEquals(300, chartData5.getProcessingTime().getValue());
   }
 
   private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
