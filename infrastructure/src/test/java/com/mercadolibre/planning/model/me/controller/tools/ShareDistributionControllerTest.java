@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.usecases.sharedistribution.SaveShareDi
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -12,22 +13,21 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
-
 import java.util.List;
-
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/** Tests of ShareDistributionController. */
+@Slf4j
 @WebMvcTest(controllers = ShareDistributionController.class)
 public class ShareDistributionControllerTest {
 
-  private final static String URL = "/planning/model/middleend/share_distribution";
+  private static final String URL = "/planning/model/middleend/share_distribution";
 
-  private final static String WH = "ARTW01";
+  private static final String WH = "ARTW01";
 
-  private final static int DAYS = 3;
+  private static final int DAYS = 3;
 
   @Autowired
   private MockMvc mockMvc;
@@ -36,7 +36,7 @@ public class ShareDistributionControllerTest {
   private SaveShareDistribution saveShareDistribution;
 
   @Test
-  public void runTest() throws Exception {
+  public void runTest(){
 
     //GIVE
 
@@ -47,15 +47,23 @@ public class ShareDistributionControllerTest {
 
 
     //WHEN
-    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-        .post(URL + "/execute")
-        .param("warehouse_ids", warehouseIds.toString())
-        .param("days", "3")
-        .contentType(APPLICATION_JSON)
-    );
+    final ResultActions result;
+    try {
+      result = mockMvc.perform(MockMvcRequestBuilders
+          .post(URL + "/execute")
+          .param("warehouse_ids", warehouseIds.toString())
+          .param("days", "3")
+          .contentType(APPLICATION_JSON)
+      );
 
-    //THEN
-    result.andExpect(status().isOk());
+      //THEN
+      result.andExpect(status().isOk());
+
+    } catch (Exception e) {
+      log.error(e.getMessage(),e);
+    }
+
+
 
   }
 

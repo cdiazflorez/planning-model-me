@@ -1,10 +1,10 @@
 package com.mercadolibre.planning.model.me.entities.sharedistribution;
 
+import java.time.ZonedDateTime;
 import lombok.Builder;
 import lombok.Value;
 
-import java.time.ZonedDateTime;
-
+/** Contains projected backlog parameters. */
 @Builder
 @Value
 public class ShareDistribution {

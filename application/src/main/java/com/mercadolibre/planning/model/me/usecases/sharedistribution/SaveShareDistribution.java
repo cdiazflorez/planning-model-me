@@ -4,14 +4,14 @@ import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistri
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
+import javax.inject.Named;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.inject.Named;
-import java.time.ZonedDateTime;
-import java.util.List;
-
+/** Check historical backlogs and get projections to be saved. */
 @Named
 @AllArgsConstructor
 @Slf4j
@@ -19,7 +19,7 @@ public class SaveShareDistribution {
 
   private final EntityGateway entityGateway;
 
-  GetMetrics getMetrics;
+  private GetMetrics getMetrics;
 
 
   public List<SaveUnitsResponse> execute(List<String> warehouseIds, ZonedDateTime dateFrom, ZonedDateTime dateTo) {

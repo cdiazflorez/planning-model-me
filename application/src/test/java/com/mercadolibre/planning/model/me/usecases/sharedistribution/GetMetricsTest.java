@@ -1,22 +1,24 @@
 package com.mercadolibre.planning.model.me.usecases.sharedistribution;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.ShareDistributionGateway;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionResponse;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.ZonedDateTime;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
-
+/** Test of GetMetrics. */
 @ExtendWith(MockitoExtension.class)
 public class GetMetricsTest {
 
@@ -29,7 +31,7 @@ public class GetMetricsTest {
   private ShareDistributionGateway shareDistributionGateway;
 
   @Test
-  public void getMetricsTest() {
+  public void metricsTest() {
 
     //GIVEN
     when(shareDistributionGateway.getMetrics(WAREHOUSE_ID)).thenReturn(mockDistribution());

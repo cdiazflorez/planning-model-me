@@ -6,6 +6,7 @@ import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import lombok.AllArgsConstructor;
 
+/** Execute the query to Bigquery. */
 @AllArgsConstructor
 public class GCPBigQueryWrapper implements BigqueryWrapper {
 

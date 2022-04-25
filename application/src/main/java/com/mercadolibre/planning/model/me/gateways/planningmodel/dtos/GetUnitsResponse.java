@@ -1,9 +1,9 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import java.time.ZonedDateTime;
 import lombok.Value;
 
-import java.time.ZonedDateTime;
-
+/** Response of units distribution. */
 @Value
 public class GetUnitsResponse {
 

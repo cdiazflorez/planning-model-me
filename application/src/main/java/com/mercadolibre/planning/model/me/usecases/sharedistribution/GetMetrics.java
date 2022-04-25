@@ -3,19 +3,23 @@ package com.mercadolibre.planning.model.me.usecases.sharedistribution;
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.ShareDistributionGateway;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionResponse;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
+import javax.inject.Named;
 import lombok.AllArgsConstructor;
 
-import javax.inject.Named;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+/** Build projected backlog metrics. */
 @Named
 @AllArgsConstructor
 public class GetMetrics {
+
+  private static final double ROUND_NUMBER = 100.00;
 
   private final ShareDistributionGateway shareDistributionGateway;
 
@@ -71,7 +75,7 @@ public class GetMetrics {
           .date(dateTime.withHour(cptTime.getHour()).withMinute(cptTime.getMinute()))
           .processName("PICKING")
           .area(area)
-          .quantity(Math.round(shareDistributionByArea.get(area) / total * 100.00) / 100.00)
+          .quantity(Math.round(shareDistributionByArea.get(area) / total * ROUND_NUMBER) / ROUND_NUMBER)
           .quantityMetricUnit("PERCENTAGE")
           .build());
     }

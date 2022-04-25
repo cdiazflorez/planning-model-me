@@ -1,10 +1,17 @@
 package com.mercadolibre.planning.model.me.usecases.sharedistribution;
 
+import static org.mockito.Mockito.when;
+
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,14 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.mockito.Mockito.when;
-
+/** Test of SaveShareDistribution. */
 @ExtendWith(MockitoExtension.class)
 public class SaveShareDistributionTest {
 
@@ -28,6 +28,10 @@ public class SaveShareDistributionTest {
   private static final String WHP = "ARBA01";
 
   private static final String WHC = "COCU01";
+
+  private static final String METRIC_UNIT = "PERCENTAGE";
+
+  private static final String PROCESS = "PICKING";
 
   private static final int DAYS = 3;
 
@@ -38,7 +42,7 @@ public class SaveShareDistributionTest {
   private GetMetrics getMetrics;
 
   @InjectMocks
-  SaveShareDistribution saveShareDistribution;
+  private SaveShareDistribution saveShareDistribution;
 
   @Test
   public void testExecute() {
@@ -46,12 +50,12 @@ public class SaveShareDistributionTest {
     //GIVEN
 
     List<ShareDistribution> shareDistributionList = List.of(
-        ShareDistribution.builder().date(ZonedDateTime.now()).logisticCenterId(WH).area("MZ-0").processName("PICKING").quantity(0.2)
-            .quantityMetricUnit("PERCENTAJE").build());
+        ShareDistribution.builder().date(ZonedDateTime.now()).logisticCenterId(WH).area("MZ-0").processName(PROCESS).quantity(0.2)
+            .quantityMetricUnit(METRIC_UNIT).build());
     List<ShareDistribution> shareDistributionList2 = new ArrayList<>();
     List<ShareDistribution> shareDistributionList3 = List.of(
-        ShareDistribution.builder().date(ZonedDateTime.now()).logisticCenterId(WH).area("MZ-1").processName("PICKING").quantity(0.3)
-            .quantityMetricUnit("PERCENTAJE").build());
+        ShareDistribution.builder().date(ZonedDateTime.now()).logisticCenterId(WH).area("MZ-1").processName(PROCESS).quantity(0.3)
+            .quantityMetricUnit(METRIC_UNIT).build());
 
     ZonedDateTime now = DateUtils.getCurrentUtcDate();
     ZonedDateTime dateFrom = now.plusDays(1).truncatedTo(ChronoUnit.DAYS);
