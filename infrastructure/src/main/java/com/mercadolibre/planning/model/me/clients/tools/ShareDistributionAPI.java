@@ -24,7 +24,7 @@ public class ShareDistributionAPI implements ShareDistributionGateway {
 
   private static final String PATTERN = "yyyy-MM-dd HH:mm:ss";
 
-  private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneOffset.ofHours(-5));
+  private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneOffset.ofHours(-4));
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(PATTERN);
 
@@ -33,7 +33,7 @@ public class ShareDistributionAPI implements ShareDistributionGateway {
   @Override
   public List<DistributionResponse> getMetrics(String wareHouseId) {
 
-    ZonedDateTime dateTo = DateUtils.getCurrentUtcDate().withZoneSameInstant(ZoneOffset.ofHours(-5));
+    ZonedDateTime dateTo = DateUtils.getCurrentUtcDate().withZoneSameInstant(ZoneOffset.ofHours(-4));
     ZonedDateTime dateFrom = dateTo.minusMonths(1);
 
     String dateToStr = dateTo.format(DATE_TIME_FORMATTER);

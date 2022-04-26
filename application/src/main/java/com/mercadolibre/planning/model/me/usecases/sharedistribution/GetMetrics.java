@@ -68,19 +68,14 @@ public class GetMetrics {
 
     ZonedDateTime cptTime = list.get(0).getCptTime();
 
-    List<ShareDistribution> shareDistributionList = new ArrayList<>();
-    for (String area : shareDistributionByArea.keySet()) {
-      shareDistributionList.add(ShareDistribution.builder()
-          .logisticCenterId(list.get(0).getWarehouseID())
-          .date(dateTime.withHour(cptTime.getHour()).withMinute(cptTime.getMinute()))
-          .processName("PICKING")
-          .area(area)
-          .quantity(Math.round(shareDistributionByArea.get(area) / total * ROUND_NUMBER) / ROUND_NUMBER)
-          .quantityMetricUnit("PERCENTAGE")
-          .build());
-    }
-    return shareDistributionList.stream();
-
+    return shareDistributionByArea.entrySet().stream().map(value -> ShareDistribution.builder()
+        .logisticCenterId(list.get(0).getWarehouseID())
+        .date(dateTime.withHour(cptTime.getHour()).withMinute(cptTime.getMinute()))
+        .processName("PICKING")
+        .area(value.getKey())
+        .quantity(Math.round(value.getValue() / total * ROUND_NUMBER) / ROUND_NUMBER)
+        .quantityMetricUnit("PERCENTAGE")
+        .build());
   }
 
 
