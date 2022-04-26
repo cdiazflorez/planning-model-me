@@ -4,7 +4,9 @@ import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistri
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Named;
@@ -22,7 +24,10 @@ public class SaveShareDistribution {
   private GetMetrics getMetrics;
 
 
-  public List<SaveUnitsResponse> execute(List<String> warehouseIds, ZonedDateTime dateFrom, ZonedDateTime dateTo) {
+  public List<SaveUnitsResponse> execute(List<String> warehouseIds, ZonedDateTime viewDate, int days) {
+
+    final ZonedDateTime dateFrom = viewDate == null ? DateUtils.getCurrentUtcDate().truncatedTo(ChronoUnit.DAYS).plusDays(1) : viewDate;
+    final ZonedDateTime dateTo = dateFrom.plusDays(days);
 
     return warehouseIds.stream().map(id -> {
       List<ShareDistribution> list = getMetrics.execute(id, dateFrom, dateTo);

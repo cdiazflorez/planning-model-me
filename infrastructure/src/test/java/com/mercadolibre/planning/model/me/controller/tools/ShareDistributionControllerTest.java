@@ -1,10 +1,15 @@
 package com.mercadolibre.planning.model.me.controller.tools;
 
+import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.SaveShareDistribution;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +18,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import java.util.List;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** Tests of ShareDistributionController. */
 @Slf4j
@@ -36,14 +37,14 @@ public class ShareDistributionControllerTest {
   private SaveShareDistribution saveShareDistribution;
 
   @Test
-  public void runTest(){
+  public void runTest() {
 
     //GIVE
 
     List<String> warehouseIds = List.of(WH);
     ZonedDateTime from = DateUtils.getCurrentUtcDate().truncatedTo(ChronoUnit.DAYS);
 
-    when(saveShareDistribution.execute(warehouseIds, from, from.plusDays(DAYS))).thenReturn(List.of(SaveUnitsResponse.builder().build()));
+    when(saveShareDistribution.execute(warehouseIds, from, DAYS)).thenReturn(List.of(SaveUnitsResponse.builder().build()));
 
 
     //WHEN
@@ -60,9 +61,8 @@ public class ShareDistributionControllerTest {
       result.andExpect(status().isOk());
 
     } catch (Exception e) {
-      log.error(e.getMessage(),e);
+      log.error(e.getMessage(), e);
     }
-
 
 
   }
