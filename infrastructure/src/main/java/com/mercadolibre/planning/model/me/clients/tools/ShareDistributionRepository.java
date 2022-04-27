@@ -4,8 +4,9 @@ import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.ShareDistributionGateway;
-import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionElement;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @AllArgsConstructor
-public class ShareDistributionAPI implements ShareDistributionGateway {
+public class ShareDistributionRepository implements ShareDistributionGateway {
 
 
   private static final String PATTERN = "yyyy-MM-dd HH:mm:ss";
@@ -31,10 +32,11 @@ public class ShareDistributionAPI implements ShareDistributionGateway {
   private final BigqueryWrapper bigQuery;
 
   @Override
-  public List<DistributionResponse> getMetrics(String wareHouseId) {
+  public List<DistributionElement> getMetrics(String wareHouseId, Instant startDate, Instant endDate) {
 
-    ZonedDateTime dateTo = DateUtils.getCurrentUtcDate().withZoneSameInstant(ZoneOffset.ofHours(-4));
-    ZonedDateTime dateFrom = dateTo.minusMonths(1);
+    ZonedDateTime dateFrom = ZonedDateTime.ofInstant(startDate,ZoneOffset.ofHours(-4));
+    ZonedDateTime dateTo = ZonedDateTime.ofInstant(endDate,ZoneOffset.ofHours(-4));
+
 
     String dateToStr = dateTo.format(DATE_TIME_FORMATTER);
     String dateFromStr = dateFrom.format(DATE_TIME_FORMATTER);
@@ -67,9 +69,9 @@ public class ShareDistributionAPI implements ShareDistributionGateway {
     return queryRun(query);
   }
 
-  public List<DistributionResponse> queryRun(String query) {
+  public List<DistributionElement> queryRun(String query) {
 
-    List<DistributionResponse> distributionList = new ArrayList<>();
+    List<DistributionElement> distributionList = new ArrayList<>();
 
     try {
 
@@ -80,7 +82,7 @@ public class ShareDistributionAPI implements ShareDistributionGateway {
 
       result.iterateAll().forEach(rows -> {
             distributionList.add(
-                DistributionResponse.builder().warehouseID(rows.get("WAREHOUSE_ID").getStringValue())
+                DistributionElement.builder().warehouseID(rows.get("WAREHOUSE_ID").getStringValue())
                     .cptTime(ZonedDateTime.parse(rows.get("CPT_TIMEZONE").getStringValue(),
                         TIME_FORMATTER).withZoneSameInstant(ZoneOffset.UTC))
                     .area(rows.get("AREA").getStringValue())

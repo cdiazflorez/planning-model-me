@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.SaveShareDistribution;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -42,9 +43,8 @@ public class ShareDistributionControllerTest {
     //GIVE
 
     List<String> warehouseIds = List.of(WH);
-    ZonedDateTime from = DateUtils.getCurrentUtcDate().truncatedTo(ChronoUnit.DAYS);
 
-    when(saveShareDistribution.execute(warehouseIds, from, DAYS)).thenReturn(List.of(SaveUnitsResponse.builder().build()));
+    when(saveShareDistribution.execute(warehouseIds,null, DAYS, Instant.now())).thenReturn(List.of(SaveUnitsResponse.builder().build()));
 
 
     //WHEN

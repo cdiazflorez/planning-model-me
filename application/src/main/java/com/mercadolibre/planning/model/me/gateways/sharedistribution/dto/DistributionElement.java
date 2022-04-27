@@ -4,10 +4,10 @@ import java.time.ZonedDateTime;
 import lombok.Builder;
 import lombok.Value;
 
-/** Contains the backlog history response parameters. */
+/** Map the parameters of a backlog history record */
 @Builder
 @Value
-public class DistributionResponse {
+public class DistributionElement {
   long sis;
 
   String area;
