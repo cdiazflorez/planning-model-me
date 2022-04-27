@@ -4,7 +4,7 @@ import java.time.ZonedDateTime;
 import lombok.Builder;
 import lombok.Value;
 
-/** Map the parameters of a backlog history record */
+/** Map the parameters of a backlog history record. */
 @Builder
 @Value
 public class DistributionElement {

@@ -5,7 +5,6 @@ import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.ShareDistributionGateway;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionElement;
-import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -34,8 +33,8 @@ public class ShareDistributionRepository implements ShareDistributionGateway {
   @Override
   public List<DistributionElement> getMetrics(String wareHouseId, Instant startDate, Instant endDate) {
 
-    ZonedDateTime dateFrom = ZonedDateTime.ofInstant(startDate,ZoneOffset.ofHours(-4));
-    ZonedDateTime dateTo = ZonedDateTime.ofInstant(endDate,ZoneOffset.ofHours(-4));
+    ZonedDateTime dateFrom = ZonedDateTime.ofInstant(startDate, ZoneOffset.ofHours(-4));
+    ZonedDateTime dateTo = ZonedDateTime.ofInstant(endDate, ZoneOffset.ofHours(-4));
 
 
     String dateToStr = dateTo.format(DATE_TIME_FORMATTER);

@@ -6,7 +6,6 @@ import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistri
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -58,7 +57,6 @@ public class SaveShareDistributionTest {
         ShareDistribution.builder().date(ZonedDateTime.now()).logisticCenterId(WH).area("MZ-1").processName(PROCESS).quantity(0.3)
             .quantityMetricUnit(METRIC_UNIT).build());
 
-    ZonedDateTime now = DateUtils.getCurrentUtcDate();
     Instant dateFrom = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
     Instant dateTo = dateFrom.plus(DAYS, ChronoUnit.DAYS);
 
@@ -74,7 +72,7 @@ public class SaveShareDistributionTest {
 
     List<String> warehouses = Arrays.asList(WH, WHP, WHC);
     //WHEN
-    List<SaveUnitsResponse> result = saveShareDistribution.execute(warehouses,null, DAYS, Instant.now());
+    List<SaveUnitsResponse> result = saveShareDistribution.execute(warehouses, null, DAYS, Instant.now());
 
 
     //THEN

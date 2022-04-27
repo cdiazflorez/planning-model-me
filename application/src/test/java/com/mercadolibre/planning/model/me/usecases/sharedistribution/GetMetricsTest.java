@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.ShareDistributionGateway;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionElement;
-import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -40,11 +39,8 @@ public class GetMetricsTest {
     Instant dateToQuery = from.minus(24, ChronoUnit.HOURS);
     Instant dateFromQuery = dateToQuery.minus(28, ChronoUnit.DAYS);
     //GIVEN
-    when(shareDistributionGateway.getMetrics(WAREHOUSE_ID, dateFromQuery,dateToQuery)).thenReturn(mockDistribution());
+    when(shareDistributionGateway.getMetrics(WAREHOUSE_ID, dateFromQuery, dateToQuery)).thenReturn(mockDistribution());
     List<Double> expectedQuantity = Arrays.asList(0.51, 0.23, 0.26);
-
-
-
 
     // WHEN
     List<ShareDistribution> result = getMetrics.execute(WAREHOUSE_ID, from, to);

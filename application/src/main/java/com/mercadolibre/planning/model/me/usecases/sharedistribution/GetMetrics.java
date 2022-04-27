@@ -24,9 +24,13 @@ import lombok.AllArgsConstructor;
 public class GetMetrics {
 
   private static final double NUMBER_OF_DECIMALS = 2;
-  private static final double TEN_RAISED_TO_THE_NUMBER_OF_DECIMALS = Math.pow(10,NUMBER_OF_DECIMALS);
+
+  private static final double TEN_RAISED_TO_THE_NUMBER_OF_DECIMALS = Math.pow(10, NUMBER_OF_DECIMALS);
+
   private static final int DAYS_IN_WEEK = 7;
+
   private static final int NUMBER_HISTORICAL_SAMPLES = 4;
+
   private static final int FIRST_SAMPLE_OFFSET_IN_DAYS = NUMBER_HISTORICAL_SAMPLES * DAYS_IN_WEEK;
 
 
@@ -40,7 +44,8 @@ public class GetMetrics {
     List<DistributionElement> distributionElements = shareDistributionGateway.getMetrics(warehouseId, dateFromQuery, dateToQuery);
     List<Instant> dateTimeList = buildProjectionTimePartition(dateFrom, dateTo);
 
-    Map<DayOfWeek, List<DistributionElement>> distributionsByCptWeekDay = distributionElements.stream().collect(Collectors.groupingBy(this::getCptWeekDayOf));
+    Map<DayOfWeek, List<DistributionElement>> distributionsByCptWeekDay =
+        distributionElements.stream().collect(Collectors.groupingBy(this::getCptWeekDayOf));
 
     List<ShareDistribution> response = new ArrayList<>();
     for (Instant z : dateTimeList) {
@@ -49,7 +54,8 @@ public class GetMetrics {
       if (distributionAtCptWeekDay != null && !distributionAtCptWeekDay.isEmpty()) {
         Map<String, List<DistributionElement>> distributionAtDayByTime =
             distributionAtCptWeekDay.stream().collect(Collectors.groupingBy(this::getCptTimeOf));
-        response.addAll(distributionAtDayByTime.values().stream().flatMap(value -> splitProportionByAreaAndDate(value, ZonedDateTime.ofInstant(z,ZoneOffset.UTC)))
+        response.addAll(distributionAtDayByTime.values().stream()
+            .flatMap(value -> splitProportionByAreaAndDate(value, ZonedDateTime.ofInstant(z, ZoneOffset.UTC)))
             .collect(Collectors.toList()));
       }
     }
@@ -60,7 +66,7 @@ public class GetMetrics {
 
   private List<Instant> buildProjectionTimePartition(Instant dateFrom, Instant dateTo) {
     long n = ChronoUnit.DAYS.between(dateFrom, dateTo);
-    return LongStream.range(0, n).mapToObj(d -> dateFrom.plus(d,ChronoUnit.DAYS)).collect(Collectors.toList());
+    return LongStream.range(0, n).mapToObj(d -> dateFrom.plus(d, ChronoUnit.DAYS)).collect(Collectors.toList());
   }
 
 

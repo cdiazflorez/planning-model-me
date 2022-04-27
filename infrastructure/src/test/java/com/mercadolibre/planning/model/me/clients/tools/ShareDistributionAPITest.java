@@ -14,8 +14,6 @@ import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.TableResult;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionElement;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,7 +86,8 @@ public class ShareDistributionAPITest {
     GCPBigQueryWrapper wrapper = new GCPBigQueryWrapper(bigQuery);
 
     // WHEN
-    List<DistributionElement> response = api.getMetrics("ARTW01", Instant.parse("2022-03-27T00:00:00Z"),Instant.parse("2022-03-29T00:00:00Z"));
+    List<DistributionElement> response =
+        api.getMetrics("ARTW01", Instant.parse("2022-03-27T00:00:00Z"), Instant.parse("2022-03-29T00:00:00Z"));
     TableResult result = wrapper.query(QueryJobConfiguration.newBuilder("SELECT * FROM meli-bi-data.WHOWNER.LK_SHP_FACILITIES").build());
 
     // THEN
