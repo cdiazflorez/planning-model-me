@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,33 +37,30 @@ public class GetMetrics {
 
   public List<ShareDistribution> execute(String warehouseId, Instant dateFrom, Instant dateTo) {
 
-    Instant dateToQuery = dateFrom.minus(24, ChronoUnit.HOURS);
-    Instant dateFromQuery = dateToQuery.minus(FIRST_SAMPLE_OFFSET_IN_DAYS, ChronoUnit.DAYS);
+    final Instant dateToQuery = dateFrom.minus(24, ChronoUnit.HOURS);
+    final Instant dateFromQuery = dateToQuery.minus(FIRST_SAMPLE_OFFSET_IN_DAYS, ChronoUnit.DAYS);
 
-    List<DistributionElement> distributionElements = shareDistributionGateway.getMetrics(warehouseId, dateFromQuery, dateToQuery);
-    List<Instant> dateTimeList = buildProjectionTimePartition(dateFrom, dateTo);
+    final List<DistributionElement> distributionElements = shareDistributionGateway.getMetrics(warehouseId, dateFromQuery, dateToQuery);
+    final List<Instant> dateTimeList = buildProjectionTimePartition(dateFrom, dateTo);
 
-    Map<DayOfWeek, List<DistributionElement>> distributionsByCptWeekDay =
+    final Map<DayOfWeek, List<DistributionElement>> distributionsByCptWeekDay =
         distributionElements.stream().collect(Collectors.groupingBy(this::getCptWeekDayOf));
 
-    List<ShareDistribution> response = new ArrayList<>();
-    for (Instant z : dateTimeList) {
-      LocalDateTime localDateTime = LocalDateTime.ofInstant(z, ZoneOffset.UTC);
-      List<DistributionElement> distributionAtCptWeekDay = distributionsByCptWeekDay.get(localDateTime.getDayOfWeek());
-      if (distributionAtCptWeekDay != null && !distributionAtCptWeekDay.isEmpty()) {
-        Map<String, List<DistributionElement>> distributionAtDayByTime =
-            distributionAtCptWeekDay.stream().collect(Collectors.groupingBy(this::getCptTimeOf));
-        response.addAll(distributionAtDayByTime.values().stream()
-            .flatMap(value -> splitProportionByAreaAndDate(value, ZonedDateTime.ofInstant(z, ZoneOffset.UTC)))
-            .collect(Collectors.toList()));
-      }
-    }
-
-    return response;
+    return dateTimeList.stream()
+        .filter(date -> distributionsByCptWeekDay.get(LocalDateTime.ofInstant(date, ZoneOffset.UTC).getDayOfWeek()) != null)
+        .map(projectionDay -> distributionsByCptWeekDay.get(LocalDateTime.ofInstant(projectionDay, ZoneOffset.UTC).getDayOfWeek())
+            .stream()
+            .collect(Collectors.groupingBy(this::getCptTimeOf))
+            .values()
+            .stream()
+            .flatMap(value -> splitProportionByAreaAndDate(value, ZonedDateTime.ofInstant(projectionDay, ZoneOffset.UTC)))
+            .collect(Collectors.toList()))
+        .flatMap(List::stream)
+        .collect(Collectors.toList());
 
   }
 
-  private List<Instant> buildProjectionTimePartition(Instant dateFrom, Instant dateTo) {
+  private List<Instant> buildProjectionTimePartition(final Instant dateFrom, final Instant dateTo) {
     long n = ChronoUnit.DAYS.between(dateFrom, dateTo);
     return LongStream.range(0, n).mapToObj(d -> dateFrom.plus(d, ChronoUnit.DAYS)).collect(Collectors.toList());
   }
