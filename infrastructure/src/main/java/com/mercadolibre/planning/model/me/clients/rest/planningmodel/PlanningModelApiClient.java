@@ -64,7 +64,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private static final String DATE_TO = "date_to";
 
-  private static final String UNITS_DISTRIBUTION = "/units_distribution";
+  private static final String UNITS_DISTRIBUTION = "/entities/units_distribution";
 
   private final ObjectMapper objectMapper;
 
