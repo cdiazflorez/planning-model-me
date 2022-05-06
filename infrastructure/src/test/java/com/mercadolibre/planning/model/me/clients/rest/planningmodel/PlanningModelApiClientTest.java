@@ -123,7 +123,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   private static final String DEVIATION_URL =
       "/planning/model/workflows/%s/deviations";
 
-  private static final String UNITS_DISTRIBUTION = "/planning/model/workflows/%s/units_distribution";
+  private static final String UNITS_DISTRIBUTION = "/planning/model/workflows/%s/entities/units_distribution";
 
   private PlanningModelApiClient client;
 
