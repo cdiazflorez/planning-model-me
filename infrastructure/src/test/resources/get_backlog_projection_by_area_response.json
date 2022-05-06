@@ -1,0 +1,86 @@
+[
+  {
+    "operating_hour": "2022-05-05T18:00:00Z",
+    "process": "picking",
+    "area": "BL-0",
+    "status": "PROCESSED",
+    "quantity": 43
+  },
+  {
+    "operating_hour": "2022-05-05T18:00:00Z",
+    "process": "picking",
+    "area": "MZ-1",
+    "status": "PROCESSED",
+    "quantity": 23
+  },
+  {
+    "operating_hour": "2022-05-05T18:00:00Z",
+    "process": "picking",
+    "area": "MZ-2",
+    "status": "PROCESSED",
+    "quantity": 45
+  },
+  {
+    "operating_hour": "2022-05-05T18:00:00Z",
+    "process": "picking",
+    "area": "BL-0",
+    "status": "CARRY_OVER",
+    "quantity": 10
+  },
+  {
+    "operating_hour": "2022-05-05T18:00:00Z",
+    "process": "picking",
+    "area": "MZ-1",
+    "status": "CARRY_OVER",
+    "quantity": 53
+  },
+  {
+    "operating_hour": "2022-05-05T18:00:00Z",
+    "process": "picking",
+    "area": "MZ-2",
+    "status": "CARRY_OVER",
+    "quantity": 25
+  },
+  {
+    "operating_hour": "2022-05-05T19:00:00Z",
+    "process": "picking",
+    "area": "BL-0",
+    "status": "PROCESSED",
+    "quantity": 34
+  },
+  {
+    "operating_hour": "2022-05-05T19:00:00Z",
+    "process": "picking",
+    "area": "MZ-1",
+    "status": "PROCESSED",
+    "quantity": 64
+  },
+  {
+    "operating_hour": "2022-05-05T19:00:00Z",
+    "process": "picking",
+    "area": "MZ-2",
+    "status": "PROCESSED",
+    "quantity": 32
+  },
+  {
+    "operating_hour": "2022-05-05T19:00:00Z",
+    "process": "picking",
+    "area": "BL-0",
+    "status": "CARRY_OVER",
+    "quantity": 19
+  },
+  {
+    "operating_hour": "2022-05-05T19:00:00Z",
+    "process": "picking",
+    "area": "MZ-1",
+    "status": "CARRY_OVER",
+    "quantity": 63
+  },
+  {
+    "operating_hour": "2022-05-05T19:00:00Z",
+    "process": "picking",
+    "area": "MZ-2",
+    "status": "CARRY_OVER",
+    "quantity": 45
+  }
+]

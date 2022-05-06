@@ -8,6 +8,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.RequestBodyHandler;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
+import com.mercadolibre.planning.model.me.clients.rest.planningmodel.request.BacklogProjectionInAreasRequest;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.ProductivityResponse;
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
@@ -16,11 +17,16 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.*;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
+import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
+import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
+import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
+import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +52,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 @Slf4j
 @Component
-public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway, EntityGateway {
+public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway, EntityGateway, ProjectionGateway {
 
   private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
 
@@ -297,11 +303,40 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   }
 
   @Override
+  public List<ProjectedBacklogForAnAreaAndOperatingHour> projectBacklogInAreas(final Instant dateFrom,
+                                                                               final Instant dateTo,
+                                                                               final Workflow workflow,
+                                                                               final List<ProcessName> processes,
+                                                                               final List<BacklogQuantityAtSla> backlog,
+                                                                               final List<PlanningDistributionResponse> plannedUnits,
+                                                                               final List<MagnitudePhoto> throughput,
+                                                                               final List<BacklogAreaDistribution> backlogDistribution) {
+
+    final var request = new BacklogProjectionInAreasRequest(
+        dateFrom,
+        dateTo,
+        processes,
+        throughput,
+        plannedUnits,
+        backlog,
+        backlogDistribution
+    );
+
+    final HttpRequest httpRequest = HttpRequest.builder()
+        .url(format(PROJECTION_URL, workflow, "backlogs/grouped/area"))
+        .POST(requestSupplier(request))
+        .acceptedHttpStatuses(Set.of(OK))
+        .build();
+
+    return send(httpRequest, response -> response.getData(new TypeReference<>() {}));
+  }
+
+  @Override
   public GetDeviationResponse getDeviation(final Workflow workflow,
                                            final String warehouseId,
                                            final ZonedDateTime date) {
     final Map<String, String> params = new HashMap<>();
-    params.put("warehouse_id", warehouseId);
+    params.put(WAREHOUSE_ID, warehouseId);
     params.put("date", date.withFixedOffsetZone().toString());
 
     final HttpRequest request = HttpRequest.builder()
@@ -332,9 +367,9 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public List<GetUnitsResponse> getShareDistribution(final GetShareDistributionInput getShareDistributionInput, final Workflow workflow) {
 
     final Map<String, String> params = new HashMap<>();
-    params.put("warehouse_id", getShareDistributionInput.getWareHouseId());
-    params.put("date_from", getShareDistributionInput.getDateFrom().toString());
-    params.put("date_to", getShareDistributionInput.getDateTo().toString());
+    params.put(WAREHOUSE_ID, getShareDistributionInput.getWareHouseId());
+    params.put(DATE_FROM, getShareDistributionInput.getDateFrom().toString());
+    params.put(DATE_TO, getShareDistributionInput.getDateTo().toString());
 
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, workflow) + UNITS_DISTRIBUTION)
@@ -477,5 +512,4 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     return ex.getResponseStatus() == NOT_FOUND.value()
         && ex.getResponseBody().contains("forecast_not_found");
   }
-
 }
