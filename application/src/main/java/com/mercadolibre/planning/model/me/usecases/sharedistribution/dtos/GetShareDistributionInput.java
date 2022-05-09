@@ -6,7 +6,6 @@ import lombok.Value;
 
 /** Contains query parameters of ShareDistribution. */
 @Value
-@AllArgsConstructor
 public class GetShareDistributionInput {
 
   ZonedDateTime dateFrom;
