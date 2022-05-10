@@ -97,6 +97,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeP
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.staffing.StaffingGateway;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingResponse;
@@ -243,7 +244,9 @@ class GetStaffingTest {
 
   private static final Integer FORECAST_HEADCOUNT_PUT_AWAY = 7;
 
-  private static final Integer EXPECTED_DELTA_PUT_AWAY = 3;
+  private static final Integer SIMULATION_HEADCOUNT_PUT_AWAY = 10;
+
+  private static final Integer EXPECTED_DELTA_PUT_AWAY = 0;
 
   private static final Integer EXPECTED_DELTA_CHECK_IN = 3;
 
@@ -637,7 +640,7 @@ class GetStaffingTest {
     assertEquals(
         FORECAST_HEADCOUNT_CHECK_IN, inbound.getProcesses().get(1).getWorkers().getPlanned());
     assertEquals(
-        FORECAST_HEADCOUNT_PUT_AWAY, inbound.getProcesses().get(2).getWorkers().getPlanned());
+        SIMULATION_HEADCOUNT_PUT_AWAY, inbound.getProcesses().get(2).getWorkers().getPlanned());
 
     assertNull(inbound.getProcesses().get(0).getWorkers().getDelta());
     assertEquals(EXPECTED_DELTA_CHECK_IN, inbound.getProcesses().get(1).getWorkers().getDelta());
@@ -910,6 +913,7 @@ class GetStaffingTest {
                 .entityTypes(List.of(HEADCOUNT))
                 .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
                 .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                .source(Source.SIMULATION)
                 .processName(
                     List.of(
                         ProcessName.PICKING,
@@ -931,6 +935,7 @@ class GetStaffingTest {
                 .entityTypes(List.of(HEADCOUNT))
                 .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
                 .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                .source(Source.SIMULATION)
                 .processName(
                     List.of(ProcessName.RECEIVING, ProcessName.CHECK_IN, ProcessName.PUT_AWAY))
                 .entityFilters(
@@ -949,10 +954,17 @@ class GetStaffingTest {
                 MagnitudePhoto.builder()
                     .processName(ProcessName.CHECK_IN)
                     .value(FORECAST_HEADCOUNT_CHECK_IN)
+                    .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PUT_AWAY)
+                    .source(Source.FORECAST)
                     .value(FORECAST_HEADCOUNT_PUT_AWAY)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.PUT_AWAY)
+                    .source(Source.SIMULATION)
+                    .value(SIMULATION_HEADCOUNT_PUT_AWAY)
                     .build())),
         Map.of(
             HEADCOUNT,
@@ -960,14 +972,17 @@ class GetStaffingTest {
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PICKING)
                     .value(FORECAST_HEADCOUNT_PICKING)
+                    .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING_WALL)
                     .value(FORECAST_HEADCOUNT_PACKING_WALL)
+                    .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING)
                     .value(FORECAST_HEADCOUNT_PACKING)
+                    .source(Source.FORECAST)
                     .build())));
   }
 }
