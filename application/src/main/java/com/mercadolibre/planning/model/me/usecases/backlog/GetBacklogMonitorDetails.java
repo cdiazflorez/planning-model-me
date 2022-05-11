@@ -43,7 +43,10 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBac
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea.NumberOfUnitsInASubarea;
+import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionHeadcount;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadCountByArea;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountBySubArea;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
@@ -87,6 +90,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   private final GetBacklogLimits getBacklogLimits;
 
   private final ProjectBacklog projectBacklog;
+
+  private final GetProjectionHeadcount getProjectionHeadcount;
 
   public GetBacklogMonitorDetailsResponse execute(final GetBacklogMonitorDetailsInput input) {
     final List<VariablesPhoto> backlog = getData(input);
@@ -343,12 +348,76 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
             )
         );
 
-    return groupedProjections.entrySet()
-            .stream()
-            .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                entry -> toUnitsInArea(entry.getValue())
-            ));
+    Map<Instant, List<NumberOfUnitsInAnArea>> mapBacklogs=  groupedProjections.entrySet()
+        .stream()
+        .collect(Collectors.toMap(
+            Map.Entry::getKey,
+            entry -> toUnitsInArea(entry.getValue())
+        ));
+
+    final Map<Instant, List<ProjectedBacklogForAnAreaAndOperatingHour>> groupedProjectionsProcessed = projections.stream()
+        .filter(projection -> projection.getStatus() == BacklogProcessStatus.PROCESSED
+            && projection.getProcess() == PICKING
+            && projection.getOperatingHour().isAfter(input.getRequestDate()))
+        .collect(
+            Collectors.groupingBy(
+                ProjectedBacklogForAnAreaAndOperatingHour::getOperatingHour,
+                Collectors.toList()
+            )
+        );
+
+    Map<Instant, List<NumberOfUnitsInAnArea>> mapBacklogsProcessed=  groupedProjectionsProcessed.entrySet()
+        .stream()
+        .collect(Collectors.toMap(
+            Map.Entry::getKey,
+            entry -> toUnitsInArea(entry.getValue())
+        ));
+
+    Map<Instant, List<HeadCountByArea>> projectionHeadcount =  getProjectionHeadcount.getProjectionHeadcount(input.getWarehouseId(), mapBacklogsProcessed);
+
+
+    return assignHeadcount(mapBacklogs, projectionHeadcount);
+  }
+
+  private Map<Instant, List<NumberOfUnitsInAnArea>> assignHeadcount(Map<Instant, List<NumberOfUnitsInAnArea>> backlogs, Map<Instant, List<HeadCountByArea>> suggestedHeadCount){
+
+    return backlogs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry ->{
+
+      List<HeadCountByArea> headCountByAreaList = suggestedHeadCount.get(entry.getKey());
+      return  entry.getValue()
+          .stream()
+          .map(value -> {
+            HeadCountByArea headCountByArea = headCountByAreaList.stream()
+                .filter(headCount -> headCount.getArea().equals(value.getArea()))
+                .findAny()
+                .orElseGet(() -> new HeadCountByArea(null, null, null, Collections.emptyList()));
+
+            return new NumberOfUnitsInAnArea(value.getArea(),
+                assignSubareas(value.getSubareas(), headCountByArea.getSubAreas()),
+                headCountByArea.getReps(),
+                headCountByArea.getRespPercentage());
+          })
+          .collect(Collectors.toList());
+    }));
+
+  }
+
+  private List<NumberOfUnitsInAnArea.NumberOfUnitsInASubarea> assignSubareas(List<NumberOfUnitsInAnArea.NumberOfUnitsInASubarea> subareas, List<HeadcountBySubArea> subAreasHeadcount){
+    return subareas
+        .stream()
+        .map(value -> {
+          HeadcountBySubArea headcountBySubArea = subAreasHeadcount
+              .stream()
+              .filter(subArea -> subArea.getSubArea().equals(value.getName()))
+              .findAny()
+              .orElseGet(() -> new HeadcountBySubArea(null,null,null));
+
+          return new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea(value.getName(),
+              value.getUnits(),
+              headcountBySubArea.getReps(),
+              headcountBySubArea.getRespPercentage());
+        })
+        .collect(Collectors.toList());
   }
 
   private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input,

@@ -5,7 +5,7 @@ import lombok.Value;
 
 @AllArgsConstructor
 @Value
-public class SuggestedHeadcount {
+public class RepsByArea {
 
   String area;
   Double reps;

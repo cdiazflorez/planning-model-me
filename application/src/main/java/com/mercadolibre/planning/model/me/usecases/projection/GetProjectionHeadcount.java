@@ -13,12 +13,15 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.MetricR
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.AreaResponse;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.MetricResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
-import com.mercadolibre.planning.model.me.usecases.projection.entities.SuggestedHeadcount;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadCountByArea;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountBySubArea;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.RepsByArea;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,9 +39,11 @@ public class GetProjectionHeadcount {
 
   private final PlanningModelGateway planningModelGateway;
 
-  public void getProjectionHeadcount(String warehouseId, Instant dateFrom, Instant dateTo,
-                                     Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {
+  public Map<Instant, List<HeadCountByArea>> getProjectionHeadcount(String warehouseId, Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {
 
+
+    final Instant dateFrom = backlogs.keySet().stream().min(Comparator.comparing(Instant::toEpochMilli)).orElse(Instant.now());
+    final Instant dateTo = backlogs.keySet().stream().max(Comparator.comparing(Instant::toEpochMilli)).orElse(Instant.now());
 
     MetricResponse effectiveProductivity =
         staffingGateway.getMetricsByName(warehouseId, "effective_productivity", new MetricRequest(ProcessName.PICKING,
@@ -56,8 +61,7 @@ public class GetProjectionHeadcount {
         .entityType(MagnitudeType.HEADCOUNT)
         .build());
 
-    Map<Instant, List<SuggestedHeadcount>> suggestedHeadCount =
-        backlogs
+    return backlogs
             .entrySet()
             .stream()
             .collect(Collectors.toMap(Map.Entry::getKey, we -> {
@@ -65,11 +69,11 @@ public class GetProjectionHeadcount {
               Optional<MagnitudePhoto> headcountOptional =
                   headcountList.stream().filter(magnitudePhoto -> magnitudePhoto.getDate().toInstant().equals(we.getKey())).findAny();
               if (headcountOptional.isPresent()) {
-
                 int headcount = headcountOptional.get().getValue();
                 Map<String, Double> calculatedHC = we.getValue()
                     .stream()
-                    .collect(Collectors.toMap(NumberOfUnitsInAnArea::getArea, backlog -> hcArea(backlog, effectiveProductivity)));
+                    .flatMap(v -> v.getSubareas().stream())
+                    .collect(Collectors.toMap(NumberOfUnitsInAnArea.NumberOfUnitsInASubarea::getName, backlog -> hcArea(backlog, effectiveProductivity)));
 
                 double totalHC = calculatedHC.values().stream().reduce(0D, Double::sum);
                 double difHC = headcount - totalHC;
@@ -78,38 +82,76 @@ public class GetProjectionHeadcount {
                     .stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, value -> (value.getValue() / totalHC )* difHC));
 
-                return calculatedHC.entrySet()
+                List<RepsByArea> repsByAreas =  calculatedHC.entrySet()
                     .stream()
-                    .map(value -> new SuggestedHeadcount(value.getKey(), value.getValue() + remainderHC.get(value.getKey())))
+                    .map(value -> new RepsByArea(value.getKey(), value.getValue() + remainderHC.get(value.getKey()))).collect(Collectors.toList());
+
+
+                List <HeadcountBySubArea> headcountProjectionList = repsByAreas.stream().sorted(Comparator.comparing(value -> value.getReps()%1, Comparator.reverseOrder()))
+                    .map(repsByArea -> new HeadcountBySubArea(repsByArea.getArea(), repsByArea.getReps().intValue(), repsByArea.getReps()/ headcount))
+                    .collect(Collectors.toList());
+
+
+                Integer projectedHC = headcountProjectionList.stream().reduce(0, (partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
+
+                if(headcount > projectedHC && !headcountProjectionList.isEmpty()){
+                  int n = (int) headcount- projectedHC;
+                  for(int i = 0; i< n ; i++){
+                    headcountProjectionList.get(i).setReps(headcountProjectionList.get(i).getReps()+ 1);
+                  }
+                }
+                return headcountProjectionList.stream().collect(Collectors.groupingBy(this::getArea))
+                    .entrySet()
+                    .stream()
+                    .map(value -> {
+                      Integer reps = value.getValue()
+                          .stream()
+                          .reduce(0,(partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
+
+                      Double repsPercentage = value.getValue()
+                          .stream()
+                          .mapToDouble(HeadcountBySubArea::getRespPercentage)
+                          .sum();
+                      return new HeadCountByArea(value.getKey(), reps,repsPercentage, value.getValue());
+
+                    })
                     .collect(Collectors.toList());
 
               } else {
                 return Collections.emptyList();
               }
             }));
-
-
+    
   }
 
-  private double hcArea(NumberOfUnitsInAnArea backlog, MetricResponse effectiveProductivity) {
+  private String getArea (HeadcountBySubArea headcountBySubArea){
+    return headcountBySubArea.getSubArea().split("-")[0];
+  }
 
-    double reps = 0D;
+  private double hcArea(final NumberOfUnitsInAnArea.NumberOfUnitsInASubarea backlog, final MetricResponse effectiveProductivity) {
 
     Optional<AreaResponse> productivityOptional = effectiveProductivity
         .getProcesses()
         .get(0)
         .getAreas()
         .stream()
-        .filter(productivity -> productivity.getName().equals(backlog.getArea()))
+        .filter(productivity -> productivity.getName().equals(backlog.getName()))
         .findAny();
 
-    if (productivityOptional.isPresent()) {
+    if (productivityOptional.isEmpty()) {
 
-      AreaResponse productivity = productivityOptional.get();
-      reps = backlog.getUnits() / productivity.getValue();
+      productivityOptional = effectiveProductivity
+          .getProcesses()
+          .get(0)
+          .getAreas()
+          .stream()
+          .filter(productivity -> productivity.getName().equals(backlog.getName().split("-")[0]))
+          .findAny();
     }
 
-    return reps;
+    double productivity = productivityOptional.map(AreaResponse::getValue).orElse(0D);
+
+    return productivity == 0D ? 0D : backlog.getUnits() / productivity;
   }
 
 
