@@ -3,9 +3,15 @@ package com.mercadolibre.planning.model.me.clients.rest.staffing;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.json.type.TypeReference;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.staffing.StaffingGateway;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.MetricRequest;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.MetricResponse;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingResponse;
 import com.mercadolibre.restclient.MeliRestClient;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -30,6 +36,23 @@ public class StaffingApiClient extends HttpClient implements StaffingGateway {
                 .GET()
                 .acceptedHttpStatuses(Set.of(OK))
                 .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {
+        }));
+    }
+
+    @Override
+    public MetricResponse getMetricsByName(String logisticCenter, String metricName, MetricRequest metricRequest) {
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put("processes", metricRequest.getProcessName().getName());
+        params.put("date_from", metricRequest.getDateFrom().toString());
+        params.put("date_to", metricRequest.getDateTo().toString());
+        final HttpRequest request = HttpRequest.builder()
+            .url(format(STAFFING_URL + "/%s", logisticCenter, metricName))
+            .GET()
+            .queryParams(params)
+            .acceptedHttpStatuses(Set.of(OK))
+            .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {
         }));

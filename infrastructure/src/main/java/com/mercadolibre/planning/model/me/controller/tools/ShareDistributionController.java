@@ -34,8 +34,7 @@ public class ShareDistributionController {
   @PostMapping("/execute")
   public ResponseEntity<List<SaveUnitsResponse>> run(@RequestParam @NotNull final List<String> warehouseIds,
                                                      @RequestParam(defaultValue = "6") @NotNull final int windowSize,
-                                                     @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-                                                     final Instant viewDate
+                                                     @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final Instant viewDate
   ) {
 
     Instant now = Instant.now();
