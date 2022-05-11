@@ -226,7 +226,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
               .workflow(Workflow.from(workflow).get())
               .entityTypes(List.of(magnitudeType))
               .dateFrom(magnitudeType.equals(PRODUCTIVITY) ? date.minusHours(1) : date)
-              .source(magnitudeType.equals(HEADCOUNT) ? Source.SIMULATION : null)
+              .source(magnitudeType.equals(HEADCOUNT) ? Source.SIMULATION : Source.FORECAST)
               .dateTo(date)
               .processName(processes.stream().map(ProcessName::from).collect(toList()))
               .entityFilters(EntityFilter.getEntityFilter(magnitudeType))

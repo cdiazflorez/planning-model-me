@@ -847,6 +847,7 @@ class GetStaffingTest {
                 .entityTypes(List.of(MagnitudeType.PRODUCTIVITY))
                 .dateFrom(now.truncatedTo(ChronoUnit.HOURS).minusHours(1))
                 .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                .source(Source.FORECAST)
                 .processName(
                     List.of(
                         ProcessName.PICKING,
