@@ -13,13 +13,14 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
+import static java.lang.Math.max;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
 import static java.util.List.of;
 
 import com.mercadolibre.planning.model.me.entities.monitor.AreaBacklogDetail;
+import com.mercadolibre.planning.model.me.entities.monitor.AreaBacklogDetail.SubAreaBacklogDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.DetailedBacklogPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
@@ -30,8 +31,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
-import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus;
+import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
@@ -55,6 +56,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,6 +71,8 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   private static final String NO_AREA = "N/A";
+
+  private static final String AREA_KEY = "area";
 
   private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
       FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
@@ -93,7 +98,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
     final Instant currentDatetime = getDateOfLatestNonProjectionBacklogPhoto(backlog, input.getRequestDate());
 
-    final List<String> areas = input.getProcess().hasAreas() ? areas(backlog) : emptyList();
+    final Map<String, Set<String>> areas = input.getProcess().hasAreas() ? areasPresentInBacklog(backlog) : emptyMap();
 
     return new GetBacklogMonitorDetailsResponse(
         currentDatetime,
@@ -102,20 +107,26 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     );
   }
 
-  private List<String> areas(final List<VariablesPhoto> backlog) {
-    return backlog.stream()
-        .map(VariablesPhoto::getUnitsByArea)
-        .flatMap(units -> units.keySet().stream())
-        .filter(a -> !a.equals(NO_AREA))
-        .distinct()
-        .sorted()
-        .collect(Collectors.toList());
+  private Map<String, Set<String>> areasPresentInBacklog(final List<VariablesPhoto> backlog) {
+    final Map<String, Set<String>> subareasByArea = backlog.stream()
+        .map(VariablesPhoto::getAreas)
+        .flatMap(entry -> entry.values().stream())
+        .collect(
+            Collectors.groupingBy(
+                NumberOfUnitsInAnArea::getArea,
+                Collectors.flatMapping(
+                    allAreas -> allAreas.getSubareas()
+                        .stream()
+                        .map(NumberOfUnitsInASubarea::getName),
+                    Collectors.toCollection(TreeSet::new)
+                )
+            )
+        );
+
+    return subareasByArea;
   }
 
-  private Instant getDateOfLatestNonProjectionBacklogPhoto(
-      final List<VariablesPhoto> backlog,
-      final Instant requestInstant
-  ) {
+  private Instant getDateOfLatestNonProjectionBacklogPhoto(final List<VariablesPhoto> backlog, final Instant requestInstant) {
     return backlog.stream()
         .filter(stats -> !stats.isProjection())
         .map(VariablesPhoto::getDate)
@@ -218,8 +229,16 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .collect(
             Collectors.toMap(
                 NumberOfUnitsInAnArea::getArea,
-                backlog -> backlog.getUnits() >= 0 ? backlog.getUnits() : 0,
+                backlog -> max(0, backlog.getUnits()),
                 Integer::sum
+            )
+        );
+
+    final Map<String, NumberOfUnitsInAnArea> areasByName = areas.stream()
+        .collect(
+            Collectors.toMap(
+                NumberOfUnitsInAnArea::getArea,
+                Function.identity()
             )
         );
 
@@ -232,7 +251,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         max,
         throughputValue,
         historicalBacklog.getOr(truncatedDate, UnitMeasure::emptyMeasure),
-        unitsByArea);
+        unitsByArea,
+        areasByName);
   }
 
   private boolean isCurrentProcessBacklog(final Consolidation consolidation, final ProcessName processName) {
@@ -254,7 +274,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         input.getRequestDate(),
         filteredConsolidations,
         input.getDateFrom(),
-        date -> new Consolidation(date, Map.of("area", NO_AREA), 0, true)
+        date -> new Consolidation(date, Map.of(AREA_KEY, NO_AREA), 0, true)
     );
 
     return fixedConsolidation.stream()
@@ -344,11 +364,11 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         );
 
     return groupedProjections.entrySet()
-            .stream()
-            .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                entry -> toUnitsInArea(entry.getValue())
-            ));
+        .stream()
+        .collect(Collectors.toMap(
+            Map.Entry::getKey,
+            entry -> toUnitsInArea(entry.getValue())
+        ));
   }
 
   private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input,
@@ -383,8 +403,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                         projectionValue.getQuantity()))))).orElseGet(Collections::emptyMap);
   }
 
-  private Map<Instant, Integer> getTargetBacklog(
-      final GetBacklogMonitorDetailsInput input) {
+  private Map<Instant, Integer> getTargetBacklog(final GetBacklogMonitorDetailsInput input) {
 
     if (!input.getProcess().hasTargetBacklog()) {
       return Collections.emptyMap();
@@ -463,7 +482,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   }
 
   private List<DetailedBacklogPhoto> getBacklogDetails(final List<VariablesPhoto> backlog,
-                                                       final List<String> areas,
+                                                       final Map<String, Set<String>> areas,
                                                        final Instant currentDatetime) {
 
     return backlog.stream()
@@ -489,7 +508,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   }
 
   private DetailedBacklogPhoto toProcessDetail(final VariablesPhoto variablesPhoto,
-                                               final List<String> processAreas,
+                                               final Map<String, Set<String>> processAreas,
                                                final Instant currentDatetime) {
 
     final UnitMeasure totalBacklog = variablesPhoto.getTotal();
@@ -506,23 +525,43 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     return new DetailedBacklogPhoto(date, targetBacklog, totalBacklog, areas);
   }
 
-  private List<AreaBacklogDetail> toAreas(final VariablesPhoto variablesPhoto,
-                                          final List<String> areas) {
+  private AreaBacklogDetail mapBacklogAreaDetail(final String areaName, final Set<String> subareasNames, final NumberOfUnitsInAnArea unitsInThisArea, final Integer throughput) {
+    final Optional<NumberOfUnitsInAnArea> numberOfUnitsInAnArea = Optional.ofNullable(unitsInThisArea);
 
-    return areas.stream()
-        .map(area -> {
-          Integer units = variablesPhoto.getUnitsByArea().getOrDefault(area, 0);
-          Integer throughput = variablesPhoto.getThroughput();
+    final List<SubAreaBacklogDetail> mappedSubareas = subareasNames.stream()
+        .map(subarea -> {
+              final Optional<NumberOfUnitsInASubarea> unitsInSubArea = numberOfUnitsInAnArea.flatMap(subareas -> subareas.getSubareas()
+                  .stream()
+                  .filter(s -> s.getName().equals(subarea))
+                  .findFirst()
+              );
 
-          return new AreaBacklogDetail(
-              area,
-              UnitMeasure.fromUnits(units, throughput));
-        }).collect(Collectors.toList());
+              return unitsInSubArea.map(value -> new SubAreaBacklogDetail(subarea, UnitMeasure.fromUnits(value.getUnits(), throughput)))
+                  .orElseGet(() -> new SubAreaBacklogDetail(subarea, UnitMeasure.emptyMeasure()));
+            }
+        )
+        .collect(Collectors.toList());
+
+
+    final Integer totalUnitsInArea = numberOfUnitsInAnArea.map(NumberOfUnitsInAnArea::getUnits).orElse(0);
+    final UnitMeasure measure = UnitMeasure.fromUnits(totalUnitsInArea, throughput);
+
+    return new AreaBacklogDetail(areaName, measure, mappedSubareas);
+  }
+
+  private List<AreaBacklogDetail> toAreas(final VariablesPhoto variablesPhoto, final Map<String, Set<String>> areas) {
+    final Integer throughput = variablesPhoto.getThroughput();
+    final Map<String, NumberOfUnitsInAnArea> currentPhotoArea = variablesPhoto.getAreas();
+
+    return areas.keySet()
+        .stream()
+        .map(area -> mapBacklogAreaDetail(area, areas.get(area), currentPhotoArea.get(area), throughput))
+        .collect(Collectors.toList());
   }
 
   private NumberOfUnitsInAnArea backlogToAreas(final Consolidation consolidation) {
     return new NumberOfUnitsInAnArea(
-        consolidation.getKeys().get("area"),
+        consolidation.getKeys().get(AREA_KEY),
         consolidation.getTotal()
     );
   }
@@ -535,9 +574,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   }
 
   private int getTphAverage(final UnitMeasure backlogMeasuredInHour) {
-
     double avgByHour = (double) backlogMeasuredInHour.getMinutes() / 60;
-
     return avgByHour > 0 ? (int) ((double) backlogMeasuredInHour.getUnits() / avgByHour) : 0;
   }
 
@@ -591,5 +628,14 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
      * The total backlog broken down by area at that instant.
      */
     Map<String, Integer> unitsByArea;
+
+    Map<String, NumberOfUnitsInAnArea> areas;
+  }
+
+  @Value
+  private static class AreaName {
+    String name;
+
+    Set<String> subareas;
   }
 }
