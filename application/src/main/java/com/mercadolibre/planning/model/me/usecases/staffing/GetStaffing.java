@@ -227,8 +227,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     }
   }
 
-  private Integer filterProductivity(
-      final Map<MagnitudeType, List<MagnitudePhoto>> staffingForecast, final String process) {
+  private Integer filterProductivity(final Map<MagnitudeType, List<MagnitudePhoto>> staffingForecast, final String process) {
     final OptionalDouble productivity =
         staffingForecast.get(PRODUCTIVITY).stream()
             .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))

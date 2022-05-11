@@ -167,7 +167,15 @@ class GetBacklogMonitorDetailsTest {
     final var areas = lastHourDetails.getAreas();
     assertEquals(5, areas.size());
     assertEquals(40, areas.get(0).getValue().getUnits());
-    assertEquals(65, areas.get(1).getValue().getUnits());
+    assertEquals(0, areas.get(1).getValue().getUnits());
+
+    final var mz = areas.get(2);
+    assertEquals(65, mz.getValue().getUnits());
+    assertEquals(2, mz.getSubareas().size());
+    assertEquals("MZ-1", mz.getSubareas().get(0).getName());
+    assertEquals(25, mz.getSubareas().get(0).getValue().getUnits());
+    assertEquals("MZ-2", mz.getSubareas().get(0).getName());
+    assertEquals(40, mz.getSubareas().get(0).getValue().getUnits());
   }
 
   @Test
@@ -264,11 +272,11 @@ class GetBacklogMonitorDetailsTest {
 
     var rkH = Map.of(
         "process", "picking",
-        "area", "RK-H"
+        "area", "RK"
     );
     var rkL = Map.of(
         "process", "picking",
-        "area", "RK-L"
+        "area", "HV"
     );
     var rs = Map.of(
         "process", "picking",
