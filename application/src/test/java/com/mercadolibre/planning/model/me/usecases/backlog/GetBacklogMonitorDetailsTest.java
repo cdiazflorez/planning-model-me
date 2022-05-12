@@ -172,10 +172,10 @@ class GetBacklogMonitorDetailsTest {
     final var mz = areas.get(2);
     assertEquals(65, mz.getValue().getUnits());
     assertEquals(2, mz.getSubareas().size());
-    assertEquals("MZ-1", mz.getSubareas().get(0).getName());
+    assertEquals("MZ-1", mz.getSubareas().get(0).getId());
     assertEquals(25, mz.getSubareas().get(0).getValue().getUnits());
-    assertEquals("MZ-2", mz.getSubareas().get(0).getName());
-    assertEquals(40, mz.getSubareas().get(0).getValue().getUnits());
+    assertEquals("MZ-2", mz.getSubareas().get(1).getId());
+    assertEquals(40, mz.getSubareas().get(1).getValue().getUnits());
   }
 
   @Test

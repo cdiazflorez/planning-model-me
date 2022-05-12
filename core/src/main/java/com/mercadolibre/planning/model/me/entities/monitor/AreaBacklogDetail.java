@@ -14,7 +14,7 @@ public class AreaBacklogDetail {
 
     @Value
     public static class SubAreaBacklogDetail {
-      String name;
+      String id;
 
       UnitMeasure value;
     }
