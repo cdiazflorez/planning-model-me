@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -587,6 +588,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .values()
         .stream()
         .map(NumberOfUnitsInAnArea::getReps)
+        .filter(Objects::nonNull)
         .reduce(0, Integer::sum);
 
     final Headcount headcount = new Headcount(totalReps,1.0);
@@ -623,7 +625,12 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     final Integer totalUnitsInArea = numberOfUnitsInAnArea.map(NumberOfUnitsInAnArea::getUnits).orElse(0);
     final UnitMeasure measure = UnitMeasure.fromUnits(totalUnitsInArea, throughput);
 
-    return new AreaBacklogDetail(areaName, measure, new Headcount(unitsInThisArea.getReps(),unitsInThisArea.getRepsPercentage()), mappedSubareas);
+    Headcount headcountArea = numberOfUnitsInAnArea.stream()
+        .map(value-> new Headcount(value.getUnits() != null ? value.getUnits():0,value.getRepsPercentage()!= null? value.getRepsPercentage(): 0D))
+        .findAny()
+        .orElse(new Headcount(0,0D));
+
+    return new AreaBacklogDetail(areaName, measure, headcountArea, mappedSubareas);
   }
 
   private List<AreaBacklogDetail> toAreas(final VariablesPhoto variablesPhoto, final Map<String, Set<String>> areas) {

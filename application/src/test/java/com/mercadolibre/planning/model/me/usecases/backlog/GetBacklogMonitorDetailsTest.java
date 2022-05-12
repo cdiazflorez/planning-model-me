@@ -41,6 +41,7 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimits
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
+import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionHeadcount;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
@@ -104,6 +105,9 @@ class GetBacklogMonitorDetailsTest {
 
   @Mock
   private ProjectBacklog projectBacklog;
+
+  @Mock
+  GetProjectionHeadcount getProjectionHeadcount;
 
   private MockedStatic<DateUtils> mockDt;
 
