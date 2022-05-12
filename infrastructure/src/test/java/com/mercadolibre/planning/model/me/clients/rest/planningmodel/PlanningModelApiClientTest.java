@@ -13,6 +13,8 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.CARRY_OVER;
+import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.PROCESSED;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -26,6 +28,7 @@ import static java.lang.String.format;
 import static java.time.ZonedDateTime.now;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.time.temporal.ChronoUnit.HOURS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -72,13 +75,17 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
+import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
+import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.restclient.MockResponse;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -126,6 +133,42 @@ class PlanningModelApiClientTest extends BaseClientTest {
   private static final String UNITS_DISTRIBUTION = "/planning/model/workflows/%s/entities/units_distribution";
 
   private PlanningModelApiClient client;
+
+  private static Stream<Arguments> entityRequests() {
+    return Stream.of(
+        of(
+            TrajectoriesRequest.builder()
+                .entityType(HEADCOUNT)
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId("ARTW01")
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
+                .source(Source.FORECAST)
+                .processName(List.of(PICKING, PACKING))
+                .build()
+        ),
+        of(
+            TrajectoriesRequest.builder()
+                .entityType(HEADCOUNT)
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId("ARTW01")
+                .dateFrom(now())
+                .dateTo(now().plusDays(1))
+                .source(Source.FORECAST)
+                .processName(List.of(PICKING, PACKING))
+                .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
+                .build()
+        )
+    );
+  }
+
+  private static Stream<Arguments> errorResponseProvider() throws IOException {
+    return Stream.of(
+        of(ForecastNotFoundException.class,
+            getResourceAsString("forecast_not_found_response.json")),
+        of(ClientException.class, "")
+    );
+  }
 
   @BeforeEach
   void setUp() throws IOException {
@@ -949,6 +992,89 @@ class PlanningModelApiClientTest extends BaseClientTest {
   }
 
   @Test
+  void testBacklogProjectionByArea() throws IOException {
+    // GIVEN
+    final var dateFrom = Instant.parse("2022-05-05T18:00:00Z");
+    final var zonedDateFrom = ZonedDateTime.ofInstant(dateFrom, ZoneOffset.UTC);
+    final var dateTo = Instant.parse("2022-05-05T20:00:00Z");
+    final var zonedDateTo = ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC);
+
+    final var processes = List.of(WAVING, PICKING);
+
+    final var backlog = List.of(
+        new BacklogQuantityAtSla(WAVING, dateFrom.plus(1L, HOURS), 100),
+        new BacklogQuantityAtSla(WAVING, dateFrom.plus(2L, HOURS), 150),
+        new BacklogQuantityAtSla(PICKING, dateFrom.plus(1L, HOURS), 200)
+    );
+
+    final var planned = List.of(
+        PlanningDistributionResponse.builder()
+            .dateIn(zonedDateFrom)
+            .dateOut(zonedDateTo)
+            .metricUnit(UNITS)
+            .total(321)
+            .build(),
+        PlanningDistributionResponse.builder()
+            .dateIn(zonedDateFrom.plusHours(1L))
+            .dateOut(zonedDateTo.plusHours(1L))
+            .metricUnit(UNITS)
+            .total(321)
+            .build()
+    );
+
+    final var tph = List.of(
+        MagnitudePhoto.builder()
+            .date(zonedDateFrom)
+            .workflow(FBM_WMS_OUTBOUND)
+            .processName(WAVING)
+            .value(300)
+            .build(),
+        MagnitudePhoto.builder()
+            .date(zonedDateTo)
+            .workflow(FBM_WMS_OUTBOUND)
+            .processName(PICKING)
+            .value(250)
+            .build()
+    );
+
+    final var share = List.of(
+        new BacklogAreaDistribution(PICKING, dateFrom, "BL-0", 0.10),
+        new BacklogAreaDistribution(PICKING, dateFrom, "MZ-1", 0.75),
+        new BacklogAreaDistribution(PICKING, dateFrom, "MZ-2", 0.15)
+    );
+
+    MockResponse.builder()
+        .withMethod(POST)
+        .withURL(format(BASE_URL + RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND, "backlogs/grouped/area"))
+        .withStatusCode(OK.value())
+        .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+        .withResponseBody(getResourceAsString("get_backlog_projection_by_area_response.json"))
+        .build();
+
+    // WHEN
+    final var response = client.projectBacklogInAreas(dateFrom, dateTo, FBM_WMS_OUTBOUND, processes, backlog, planned, tph, share);
+
+    // THEN
+    assertNotNull(response);
+
+    assertEquals(12, response.size());
+
+    final var firstResult = response.get(0);
+    assertEquals("BL-0", firstResult.getArea());
+    assertEquals(PROCESSED, firstResult.getStatus());
+    assertEquals(PICKING, firstResult.getProcess());
+    assertEquals(43, firstResult.getQuantity());
+    assertEquals(dateFrom, firstResult.getOperatingHour());
+
+    final var lastResult = response.get(11);
+    assertEquals("MZ-2", lastResult.getArea());
+    assertEquals(CARRY_OVER, lastResult.getStatus());
+    assertEquals(PICKING, lastResult.getProcess());
+    assertEquals(45, lastResult.getQuantity());
+    assertEquals(dateFrom.plusSeconds(60L * 60L), lastResult.getOperatingHour());
+  }
+
+  @Test
   void testSearchEntities() throws IOException {
     // Given
     MockResponse.builder()
@@ -988,34 +1114,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
     assertEquals("2021-01-10T00:00Z", productivity.getDate().toString());
     assertEquals(50, productivity.getValue());
     assertEquals(1, productivity.getAbilityLevel());
-  }
-
-  private static Stream<Arguments> entityRequests() {
-    return Stream.of(
-        of(
-            TrajectoriesRequest.builder()
-                .entityType(HEADCOUNT)
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId("ARTW01")
-                .dateFrom(now())
-                .dateTo(now().plusDays(1))
-                .source(Source.FORECAST)
-                .processName(List.of(PICKING, PACKING))
-                .build()
-        ),
-        of(
-            TrajectoriesRequest.builder()
-                .entityType(HEADCOUNT)
-                .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId("ARTW01")
-                .dateFrom(now())
-                .dateTo(now().plusDays(1))
-                .source(Source.FORECAST)
-                .processName(List.of(PICKING, PACKING))
-                .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
-                .build()
-        )
-    );
   }
 
   private void mockPostEntity(final JSONArray response) {
@@ -1084,17 +1182,66 @@ class PlanningModelApiClientTest extends BaseClientTest {
         .build();
   }
 
-  private static Stream<Arguments> errorResponseProvider() throws IOException {
-    return Stream.of(
-        of(ForecastNotFoundException.class,
-            getResourceAsString("forecast_not_found_response.json")),
-        of(ClientException.class, "")
-    );
+  @Test
+  public void saveShareDistributionTest() throws JSONException {
+
+    //GIVEN
+    List<ShareDistribution> shareDistributionList = List.of(ShareDistribution.builder().build());
+
+    final JSONObject apiResponse = new JSONObject()
+        .put("warehouse_id", "ARTW01")
+        .put("response", "Successfully")
+        .put("quantity_save", "0");
+
+    MockResponse.builder()
+        .withMethod(POST)
+        .withURL(BASE_URL + format(UNITS_DISTRIBUTION, FBM_WMS_OUTBOUND))
+        .withStatusCode(OK.value())
+        .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+        .withResponseBody(apiResponse.toString())
+        .build();
+
+    //WHEN
+    SaveUnitsResponse response = client.saveShareDistribution(shareDistributionList, FBM_WMS_OUTBOUND);
+
+    //THEN
+    assertNotNull(response);
+  }
+
+  @Test
+  public void testGetShareDistribution() throws JSONException {
+
+    //GIVEN
+    final JSONArray apiResponse = new JSONArray()
+        .put(new JSONObject()
+            .put("id", "34")
+            .put("logistic_center_id", "ARBA01")
+            .put("date", "2020-07-27T09:00:00Z")
+            .put("process_name", "PICKING")
+            .put("area", "MZ-05")
+            .put("quantity", "0.5")
+            .put("quantity_metric_unit", "PERCENTAGE")
+        );
+    GetShareDistributionInput request = new GetShareDistributionInput(now(), now().plusDays(1), "ARBA01");
+
+    MockResponse.builder()
+        .withMethod(GET)
+        .withURL(BASE_URL + format(UNITS_DISTRIBUTION, FBM_WMS_OUTBOUND))
+        .withStatusCode(OK.value())
+        .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+        .withResponseBody(apiResponse.toString())
+        .build();
+
+    //WHEN
+    List<GetUnitsResponse> response = client.getShareDistribution(request, FBM_WMS_OUTBOUND);
+
+    //THEN
+    assertNotNull(response);
   }
 
   @Nested
   @DisplayName("Test save deviation")
-  class SaveDeviation {
+  class SaveDeviationTest {
 
     @Test
     void testSaveDeviationOk() throws Exception {
@@ -1159,7 +1306,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   @Nested
   @DisplayName("Test disable deviation")
-  class DisableDeviation {
+  class DisableDeviationTest {
 
     @Test
     void testDisableDeviationOk() throws Exception {
@@ -1214,7 +1361,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   @Nested
   @DisplayName("Test get deviation")
-  class GetDeviation {
+  class GetDeviationTest {
 
     @Test
     void testGetDeviationOk() throws Exception {
@@ -1261,63 +1408,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
       assertThrows(ClientException.class,
           () -> client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID, A_DATE));
     }
-  }
-
-  @Test
-  public void saveShareDistributionTest() throws JSONException {
-
-    //GIVEN
-    List<ShareDistribution> shareDistributionList = List.of(ShareDistribution.builder().build());
-
-    final JSONObject apiResponse = new JSONObject()
-        .put("warehouse_id", "ARTW01")
-        .put("response", "Successfully")
-        .put("quantity_save", "0");
-
-    MockResponse.builder()
-        .withMethod(POST)
-        .withURL(BASE_URL + format(UNITS_DISTRIBUTION, FBM_WMS_OUTBOUND))
-        .withStatusCode(OK.value())
-        .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-        .withResponseBody(apiResponse.toString())
-        .build();
-
-    //WHEN
-    SaveUnitsResponse response = client.saveShareDistribution(shareDistributionList, FBM_WMS_OUTBOUND);
-
-    //THEN
-    assertNotNull(response);
-  }
-
-  @Test
-  public void getShareDistributionTest() throws JSONException {
-
-    //GIVEN
-    final JSONArray apiResponse = new JSONArray()
-        .put(new JSONObject()
-            .put("id", "34")
-            .put("logistic_center_id", "ARBA01")
-            .put("date", "2020-07-27T09:00:00Z")
-            .put("process_name", "PICKING")
-            .put("area", "MZ-05")
-            .put("quantity", "0.5")
-            .put("quantity_metric_unit", "PERCENTAGE")
-        );
-    GetShareDistributionInput request = new GetShareDistributionInput(ZonedDateTime.now(), ZonedDateTime.now().plusDays(1), "ARBA01");
-
-    MockResponse.builder()
-        .withMethod(GET)
-        .withURL(BASE_URL + format(UNITS_DISTRIBUTION, FBM_WMS_OUTBOUND))
-        .withStatusCode(OK.value())
-        .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-        .withResponseBody(apiResponse.toString())
-        .build();
-
-    //WHEN
-    List<GetUnitsResponse> response = client.getShareDistribution(request, FBM_WMS_OUTBOUND);
-
-    //THEN
-    assertNotNull(response);
   }
 
 
