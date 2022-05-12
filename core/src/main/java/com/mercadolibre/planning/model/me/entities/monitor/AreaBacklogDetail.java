@@ -10,6 +10,8 @@ public class AreaBacklogDetail {
 
     UnitMeasure value;
 
+    Headcount headcount;
+
     List<SubAreaBacklogDetail> subareas;
 
     @Value
@@ -17,5 +19,7 @@ public class AreaBacklogDetail {
       String name;
 
       UnitMeasure value;
+
+      Headcount headcount;
     }
 }

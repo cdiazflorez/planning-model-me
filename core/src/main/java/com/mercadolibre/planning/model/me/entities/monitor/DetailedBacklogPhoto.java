@@ -13,6 +13,10 @@ public class DetailedBacklogPhoto {
      */
     private Instant date;
     /**
+     * Total reps at the instant in question
+     */
+    private Headcount headcount;
+    /**
      * Desired backlog at the instant in question.
      */
     private UnitMeasure target;
