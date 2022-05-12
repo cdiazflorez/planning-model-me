@@ -152,7 +152,8 @@ class GetBacklogMonitorDetailsTest {
         new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "BL-0", PROCESSED, 50L),
         new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "MZ-1", CARRY_OVER, 25L),
         new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "MZ-2", CARRY_OVER, 40L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "BL-0", CARRY_OVER, 40L)
+        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "BL-0", CARRY_OVER, 40L),
+        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "NA", CARRY_OVER, 100L)
     ));
 
     mockPickingAndWavingPastBacklog(input);
@@ -170,8 +171,16 @@ class GetBacklogMonitorDetailsTest {
     final var lastHourDetails = result.getDates().get(3);
     final var areas = lastHourDetails.getAreas();
     assertEquals(5, areas.size());
-    assertEquals(40, areas.get(0).getValue().getUnits());
-    assertEquals(65, areas.get(1).getValue().getUnits());
+    assertEquals(78, areas.get(0).getValue().getUnits());
+    assertEquals(0, areas.get(1).getValue().getUnits());
+
+    final var mz = areas.get(2);
+    assertEquals(126, mz.getValue().getUnits());
+    assertEquals(2, mz.getSubareas().size());
+    assertEquals("MZ-1", mz.getSubareas().get(0).getId());
+    assertEquals(48, mz.getSubareas().get(0).getValue().getUnits());
+    assertEquals("MZ-2", mz.getSubareas().get(1).getId());
+    assertEquals(78, mz.getSubareas().get(1).getValue().getUnits());
   }
 
   @Test
@@ -268,11 +277,11 @@ class GetBacklogMonitorDetailsTest {
 
     var rkH = Map.of(
         "process", "picking",
-        "area", "RK-H"
+        "area", "RK"
     );
     var rkL = Map.of(
         "process", "picking",
-        "area", "RK-L"
+        "area", "HV"
     );
     var rs = Map.of(
         "process", "picking",
