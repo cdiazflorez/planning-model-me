@@ -160,23 +160,25 @@ class BacklogMonitorControllerTest {
                 List.of(
                         new DetailedBacklogPhoto(
                                 date,
+                                null,
                                 new UnitMeasure(100, 150),
                                 new UnitMeasure(125, 170),
                                 List.of(
                                         new AreaBacklogDetail("RK-H",
-                                                new UnitMeasure(200, 10)),
+                                                new UnitMeasure(200, 10), null,null),
                                         new AreaBacklogDetail("RK-L",
-                                                new UnitMeasure(300, 15))
+                                                new UnitMeasure(300, 15), null, null)
                                 )),
                         new DetailedBacklogPhoto(
                                 anotherDate,
+                                null,
                                 new UnitMeasure(30, 90),
                                 new UnitMeasure(50, 120),
                                 List.of(
                                         new AreaBacklogDetail("RK-H",
-                                                new UnitMeasure(250, 20)),
+                                                new UnitMeasure(250, 20), null, null),
                                         new AreaBacklogDetail("RK-L",
-                                                new UnitMeasure(350, 30))
+                                                new UnitMeasure(350, 30), null, null)
                                 ))
                 ),
                 new ProcessDetail(
