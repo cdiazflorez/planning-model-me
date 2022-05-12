@@ -351,12 +351,29 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   }
 
   private List<NumberOfUnitsInAnArea> toUnitsInArea(final List<ProjectedBacklogForAnAreaAndOperatingHour> projections) {
-    Map<String, List<NumberOfUnitsInASubarea>> subareas = projections.stream()
+    final long undefinedAreaQuantity = projections.stream()
+        .filter(projection -> projection.getArea().equals("NA"))
+        .mapToLong(ProjectedBacklogForAnAreaAndOperatingHour::getQuantity)
+        .sum();
+
+    final long totalUnitsInAllAreas = projections.stream()
+        .mapToLong(ProjectedBacklogForAnAreaAndOperatingHour::getQuantity)
+        .sum();
+
+    final long unitsInAllValidAreas = totalUnitsInAllAreas - undefinedAreaQuantity;
+
+    final Map<String, List<NumberOfUnitsInASubarea>> subareas = projections.stream()
         .collect(
             Collectors.groupingBy(
                 projection -> projection.getArea().substring(0, 2),
                 Collectors.mapping(
-                    projection -> new NumberOfUnitsInASubarea(projection.getArea(), projection.getQuantity().intValue()),
+                    projection -> {
+                      final Long thisAreaBacklog = projection.getQuantity();
+                      final float undefinedAreaProportionalBacklog = (thisAreaBacklog / (float) unitsInAllValidAreas) * undefinedAreaQuantity;
+                      final long thisAreaAssignedBacklog = thisAreaBacklog + (long) undefinedAreaProportionalBacklog;
+
+                      return new NumberOfUnitsInASubarea(projection.getArea(), (int) thisAreaAssignedBacklog);
+                    },
                     Collectors.toList()
                 )
             )
@@ -365,6 +382,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     return subareas.entrySet()
         .stream()
         .map(entry -> new NumberOfUnitsInAnArea(entry.getKey(), entry.getValue()))
+        .filter(areaUnits -> !areaUnits.getArea().equals("NA"))
         .collect(Collectors.toList());
   }
 
@@ -556,7 +574,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     return new DetailedBacklogPhoto(date, targetBacklog, totalBacklog, areas);
   }
 
-  private AreaBacklogDetail mapBacklogAreaDetail(final AreaName area, final NumberOfUnitsInAnArea unitsInThisArea, final Integer throughput) {
+  private AreaBacklogDetail mapBacklogAreaDetail(final AreaName area, final NumberOfUnitsInAnArea unitsInThisArea,
+                                                 final Integer throughput) {
     final Optional<NumberOfUnitsInAnArea> numberOfUnitsInAnArea = Optional.ofNullable(unitsInThisArea);
 
     final List<SubAreaBacklogDetail> mappedSubareas = area.getSubareas()
