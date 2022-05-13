@@ -16,7 +16,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnit
 import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadCountByArea;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountBySubArea;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.RepsByArea;
-import java.text.DecimalFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -42,7 +41,8 @@ public class GetProjectionHeadcount {
 
   private final Double NUMBER_TO_ROUND = 100.0;
 
-  public Map<Instant, List<HeadCountByArea>> getProjectionHeadcount(String warehouseId, Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {
+  public Map<Instant, List<HeadCountByArea>> getProjectionHeadcount(String warehouseId,
+                                                                    Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {
 
 
     final Instant dateFrom = backlogs.keySet().stream().min(Comparator.comparing(Instant::toEpochMilli)).orElse(Instant.now());
@@ -65,79 +65,82 @@ public class GetProjectionHeadcount {
         .build());
 
     return backlogs
-            .entrySet()
-            .stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, we -> {
+        .entrySet()
+        .stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, we -> {
 
-              Optional<MagnitudePhoto> headcountOptional =
-                  headcountList.stream().filter(magnitudePhoto -> magnitudePhoto.getDate().toInstant().equals(we.getKey())).findAny();
-              if (headcountOptional.isPresent()) {
-                int headcount = headcountOptional.get().getValue();
-                Map<String, Double> calculatedHC = we.getValue()
-                    .stream()
-                    .flatMap(v -> v.getSubareas().stream())
-                    .collect(Collectors.toMap(NumberOfUnitsInAnArea.NumberOfUnitsInASubarea::getName, backlog -> hcArea(backlog, effectiveProductivity)));
+          Optional<MagnitudePhoto> headcountOptional =
+              headcountList.stream().filter(magnitudePhoto -> magnitudePhoto.getDate().toInstant().equals(we.getKey())).findAny();
+          if (headcountOptional.isPresent()) {
+            int headcount = headcountOptional.get().getValue();
+            Map<String, Double> calculatedHC = we.getValue()
+                .stream()
+                .flatMap(v -> v.getSubareas().stream())
+                .collect(Collectors.toMap(NumberOfUnitsInAnArea.NumberOfUnitsInASubarea::getName,
+                    backlog -> hcArea(backlog, effectiveProductivity)));
 
-                double totalHC = calculatedHC.values().stream().reduce(0D, Double::sum);
-                double difHC = headcount - totalHC;
+            double totalHC = calculatedHC.values().stream().reduce(0D, Double::sum);
+            double difHC = headcount - totalHC;
 
-                Map<String, Double> remainderHC = calculatedHC.entrySet()
-                    .stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, value -> (value.getValue() / totalHC )* difHC));
+            Map<String, Double> remainderHC = calculatedHC.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, value -> (value.getValue() / totalHC) * difHC));
 
-                List<RepsByArea> repsByAreas =  calculatedHC.entrySet()
-                    .stream()
-                    .map(value -> new RepsByArea(value.getKey(), value.getValue() + remainderHC.get(value.getKey()))).collect(Collectors.toList());
-
-
-                List <HeadcountBySubArea> headcountProjectionList = repsByAreas.stream()
-                    .sorted(Comparator.comparing(value -> value.getReps()%1, Comparator.reverseOrder()))
-                    .map(repsByArea -> new HeadcountBySubArea(repsByArea.getArea(),
-                        repsByArea.getReps().intValue(),
-                        Math.round((repsByArea.getReps()/ headcount)*NUMBER_TO_ROUND)/NUMBER_TO_ROUND))
-                    .collect(Collectors.toList());
+            List<RepsByArea> repsByAreas = calculatedHC.entrySet()
+                .stream()
+                .map(value -> new RepsByArea(value.getKey(), value.getValue() + remainderHC.get(value.getKey())))
+                .collect(Collectors.toList());
 
 
-                Integer projectedHC = headcountProjectionList.stream().reduce(0, (partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
+            List<HeadcountBySubArea> headcountProjectionList = repsByAreas.stream()
+                .sorted(Comparator.comparing(value -> value.getReps() % 1, Comparator.reverseOrder()))
+                .map(repsByArea -> new HeadcountBySubArea(repsByArea.getArea(),
+                    repsByArea.getReps().intValue(),
+                    Math.round((repsByArea.getReps() / headcount) * NUMBER_TO_ROUND) / NUMBER_TO_ROUND))
+                .collect(Collectors.toList());
 
-                if(headcount > projectedHC && !headcountProjectionList.isEmpty()){
-                  int difHeadcount = headcount - projectedHC;
-                  while(difHeadcount > 0){
-                    for(HeadcountBySubArea headcountBySubArea:headcountProjectionList){
-                      if(difHeadcount == 0){
-                        break;
-                      }
-                      headcountBySubArea.setReps(headcountBySubArea.getReps() +1);
-                      difHeadcount--;
-                    }
+
+            Integer projectedHC = headcountProjectionList.stream()
+                .reduce(0, (partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
+
+            if (headcount > projectedHC && !headcountProjectionList.isEmpty()) {
+              int difHeadcount = headcount - projectedHC;
+              while (difHeadcount > 0) {
+                for (HeadcountBySubArea headcountBySubArea : headcountProjectionList) {
+                  if (difHeadcount == 0) {
+                    break;
                   }
+                  headcountBySubArea.setReps(headcountBySubArea.getReps() + 1);
+                  difHeadcount--;
                 }
-
-                return headcountProjectionList.stream().collect(Collectors.groupingBy(this::getArea))
-                    .entrySet()
-                    .stream()
-                    .map(value -> {
-                      Integer reps = value.getValue()
-                          .stream()
-                          .reduce(0,(partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
-
-                      Double repsPercentage = value.getValue()
-                          .stream()
-                          .mapToDouble(HeadcountBySubArea::getRespPercentage)
-                          .sum();
-                      return new HeadCountByArea(value.getKey(), reps,repsPercentage, value.getValue());
-
-                    })
-                    .collect(Collectors.toList());
-
-              } else {
-                return Collections.emptyList();
               }
-            }));
-    
+            }
+
+            return headcountProjectionList.stream().collect(Collectors.groupingBy(this::getArea))
+                .entrySet()
+                .stream()
+                .map(value -> {
+                  Integer reps = value.getValue()
+                      .stream()
+                      .reduce(0, (partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
+
+                  Double repsPercentage = value.getValue()
+                      .stream()
+                      .mapToDouble(HeadcountBySubArea::getRespPercentage)
+                      .sum();
+                  return new HeadCountByArea(value.getKey(), reps, repsPercentage, value.getValue());
+
+                })
+                .collect(Collectors.toList());
+
+          } else {
+            return Collections.emptyList();
+          }
+        }));
+
   }
 
-  private String getArea (HeadcountBySubArea headcountBySubArea){
+  private String getArea(HeadcountBySubArea headcountBySubArea) {
     return headcountBySubArea.getSubArea().split("-")[0];
   }
 

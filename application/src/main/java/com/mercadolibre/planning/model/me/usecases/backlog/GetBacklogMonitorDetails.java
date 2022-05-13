@@ -65,7 +65,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Named;
@@ -377,7 +376,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 Collectors.mapping(
                     projection -> {
                       final Long thisAreaBacklog = projection.getQuantity();
-                      final float undefinedAreaProportionalBacklog = (thisAreaBacklog / (float) unitsInAllValidAreas) * undefinedAreaQuantity;
+                      final float undefinedAreaProportionalBacklog =
+                          (thisAreaBacklog / (float) unitsInAllValidAreas) * undefinedAreaQuantity;
                       final long thisAreaAssignedBacklog = thisAreaBacklog + (long) undefinedAreaProportionalBacklog;
 
                       return new NumberOfUnitsInASubarea(projection.getArea(), (int) thisAreaAssignedBacklog);
@@ -420,7 +420,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
             )
         );
 
-    Map<Instant, List<NumberOfUnitsInAnArea>> mapBacklogs=  groupedProjections.entrySet()
+    Map<Instant, List<NumberOfUnitsInAnArea>> mapBacklogs = groupedProjections.entrySet()
         .stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
@@ -438,25 +438,28 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
             )
         );
 
-    Map<Instant, List<NumberOfUnitsInAnArea>> mapBacklogsProcessed=  groupedProjectionsProcessed.entrySet()
+    Map<Instant, List<NumberOfUnitsInAnArea>> mapBacklogsProcessed = groupedProjectionsProcessed.entrySet()
         .stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
             entry -> toUnitsInArea(entry.getValue())
         ));
 
-    Map<Instant, List<HeadCountByArea>> projectionHeadcount =  getProjectionHeadcount.getProjectionHeadcount(input.getWarehouseId(), mapBacklogsProcessed);
+    Map<Instant, List<HeadCountByArea>> projectionHeadcount =
+        getProjectionHeadcount.getProjectionHeadcount(input.getWarehouseId(), mapBacklogsProcessed);
 
 
     return assignHeadcount(mapBacklogs, projectionHeadcount);
   }
 
-  private Map<Instant, List<NumberOfUnitsInAnArea>> assignHeadcount(Map<Instant, List<NumberOfUnitsInAnArea>> backlogs, Map<Instant, List<HeadCountByArea>> suggestedHeadCount){
+  private Map<Instant, List<NumberOfUnitsInAnArea>> assignHeadcount(Map<Instant, List<NumberOfUnitsInAnArea>> backlogs,
+                                                                    Map<Instant, List<HeadCountByArea>> suggestedHeadCount) {
 
-    return backlogs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry ->{
+    return backlogs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> {
 
-      List<HeadCountByArea> headCountByAreaList = !suggestedHeadCount.isEmpty() ? suggestedHeadCount.get(entry.getKey()): Collections.emptyList();
-      return  entry.getValue()
+      List<HeadCountByArea> headCountByAreaList =
+          !suggestedHeadCount.isEmpty() ? suggestedHeadCount.get(entry.getKey()) : Collections.emptyList();
+      return entry.getValue()
           .stream()
           .map(value -> {
             HeadCountByArea headCountByArea = headCountByAreaList.stream()
@@ -474,7 +477,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
   }
 
-  private List<NumberOfUnitsInAnArea.NumberOfUnitsInASubarea> assignSubareas(List<NumberOfUnitsInAnArea.NumberOfUnitsInASubarea> subareas, List<HeadcountBySubArea> subAreasHeadcount){
+  private List<NumberOfUnitsInAnArea.NumberOfUnitsInASubarea> assignSubareas(List<NumberOfUnitsInAnArea.NumberOfUnitsInASubarea> subareas,
+                                                                             List<HeadcountBySubArea> subAreasHeadcount) {
     return subareas
         .stream()
         .map(value -> {
@@ -482,7 +486,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
               .stream()
               .filter(subArea -> subArea.getSubArea().equals(value.getName()))
               .findAny()
-              .orElseGet(() -> new HeadcountBySubArea(null,null,null));
+              .orElseGet(() -> new HeadcountBySubArea(null, null, null));
 
           return new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea(value.getName(),
               value.getUnits(),
@@ -641,7 +645,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .filter(Objects::nonNull)
         .reduce(0, Integer::sum);
 
-    final Headcount headcount = new Headcount(totalReps,1.0);
+    final Headcount headcount = new Headcount(totalReps, 1.0);
 
     final List<AreaBacklogDetail> areas = processAreas.isEmpty()
         ? null
@@ -651,7 +655,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         ? currentDatetime
         : variablesPhoto.getDate().truncatedTo(ChronoUnit.HOURS);
 
-    return new DetailedBacklogPhoto(date,headcount, targetBacklog, totalBacklog, areas);
+    return new DetailedBacklogPhoto(date, headcount, targetBacklog, totalBacklog, areas);
   }
 
   private AreaBacklogDetail mapBacklogAreaDetail(final AreaName area, final NumberOfUnitsInAnArea unitsInThisArea,
@@ -671,9 +675,10 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                       new SubAreaBacklogDetail(
                           subarea,
                           UnitMeasure.fromUnits(value.getUnits(), throughput),
-                          new Headcount(value.getUnits() != null ? value.getUnits():0,value.getRepsPercentage()!= null? value.getRepsPercentage(): 0D))
+                          new Headcount(value.getReps() != null ? value.getReps() : 0,
+                              value.getRepsPercentage() != null ? value.getRepsPercentage() : 0D))
                   )
-                  .orElseGet(() -> new SubAreaBacklogDetail(subarea, UnitMeasure.emptyMeasure(), new Headcount(0,0.0)));
+                  .orElseGet(() -> new SubAreaBacklogDetail(subarea, UnitMeasure.emptyMeasure(), new Headcount(0, 0.0)));
             }
         )
         .collect(Collectors.toList());
@@ -683,9 +688,10 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     final UnitMeasure measure = UnitMeasure.fromUnits(totalUnitsInArea, throughput);
 
     Headcount headcountArea = numberOfUnitsInAnArea.stream()
-        .map(value-> new Headcount(value.getUnits() != null ? value.getUnits():0,value.getRepsPercentage()!= null? value.getRepsPercentage(): 0D))
+        .map(value -> new Headcount(value.getReps() != null ? value.getReps() : 0,
+            value.getRepsPercentage() != null ? value.getRepsPercentage() : 0D))
         .findAny()
-        .orElse(new Headcount(0,0D));
+        .orElse(new Headcount(0, 0D));
 
     return new AreaBacklogDetail(area.getName(), measure, headcountArea, mappedSubareas);
   }
