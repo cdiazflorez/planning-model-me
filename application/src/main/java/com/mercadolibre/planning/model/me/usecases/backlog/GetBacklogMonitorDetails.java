@@ -65,6 +65,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Named;
@@ -454,7 +455,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
     return backlogs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry ->{
 
-      List<HeadCountByArea> headCountByAreaList = suggestedHeadCount.get(entry.getKey());
+      List<HeadCountByArea> headCountByAreaList = !suggestedHeadCount.isEmpty() ? suggestedHeadCount.get(entry.getKey()): Collections.emptyList();
       return  entry.getValue()
           .stream()
           .map(value -> {
@@ -666,7 +667,12 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                   .findFirst()
               );
 
-              return unitsInSubArea.map(value -> new SubAreaBacklogDetail(subarea, UnitMeasure.fromUnits(value.getUnits(), throughput), new Headcount(value.getReps(), value.getRepsPercentage())))
+              return unitsInSubArea.map(value ->
+                      new SubAreaBacklogDetail(
+                          subarea,
+                          UnitMeasure.fromUnits(value.getUnits(), throughput),
+                          new Headcount(value.getUnits() != null ? value.getUnits():0,value.getRepsPercentage()!= null? value.getRepsPercentage(): 0D))
+                  )
                   .orElseGet(() -> new SubAreaBacklogDetail(subarea, UnitMeasure.emptyMeasure(), new Headcount(0,0.0)));
             }
         )

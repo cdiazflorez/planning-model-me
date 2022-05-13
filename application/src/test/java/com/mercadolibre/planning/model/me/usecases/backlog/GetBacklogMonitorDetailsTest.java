@@ -51,6 +51,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -155,6 +156,8 @@ class GetBacklogMonitorDetailsTest {
         new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "BL-0", CARRY_OVER, 40L),
         new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "NA", CARRY_OVER, 100L)
     ));
+
+    when(getProjectionHeadcount.getProjectionHeadcount(any(),any())).thenReturn(new HashMap<>());
 
     mockPickingAndWavingPastBacklog(input);
     mockThroughput(FBM_WMS_OUTBOUND, of(WAVING, PICKING));
