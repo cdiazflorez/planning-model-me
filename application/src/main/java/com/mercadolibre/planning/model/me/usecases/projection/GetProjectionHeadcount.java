@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnit
 import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadCountByArea;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountBySubArea;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.RepsByArea;
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -38,6 +39,8 @@ public class GetProjectionHeadcount {
   private final StaffingGateway staffingGateway;
 
   private final PlanningModelGateway planningModelGateway;
+
+  private final Double NUMBER_TO_ROUND = 100.0;
 
   public Map<Instant, List<HeadCountByArea>> getProjectionHeadcount(String warehouseId, Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {
 
@@ -87,19 +90,29 @@ public class GetProjectionHeadcount {
                     .map(value -> new RepsByArea(value.getKey(), value.getValue() + remainderHC.get(value.getKey()))).collect(Collectors.toList());
 
 
-                List <HeadcountBySubArea> headcountProjectionList = repsByAreas.stream().sorted(Comparator.comparing(value -> value.getReps()%1, Comparator.reverseOrder()))
-                    .map(repsByArea -> new HeadcountBySubArea(repsByArea.getArea(), repsByArea.getReps().intValue(), repsByArea.getReps()/ headcount))
+                List <HeadcountBySubArea> headcountProjectionList = repsByAreas.stream()
+                    .sorted(Comparator.comparing(value -> value.getReps()%1, Comparator.reverseOrder()))
+                    .map(repsByArea -> new HeadcountBySubArea(repsByArea.getArea(),
+                        repsByArea.getReps().intValue(),
+                        Math.round((repsByArea.getReps()/ headcount)*NUMBER_TO_ROUND)/NUMBER_TO_ROUND))
                     .collect(Collectors.toList());
 
 
                 Integer projectedHC = headcountProjectionList.stream().reduce(0, (partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
 
                 if(headcount > projectedHC && !headcountProjectionList.isEmpty()){
-                  int n = (int) headcount- projectedHC;
-                  for(int i = 0; i< n ; i++){
-                    headcountProjectionList.get(i).setReps(headcountProjectionList.get(i).getReps()+ 1);
+                  int difHeadcount = headcount - projectedHC;
+                  while(difHeadcount > 0){
+                    for(HeadcountBySubArea headcountBySubArea:headcountProjectionList){
+                      if(difHeadcount == 0){
+                        break;
+                      }
+                      headcountBySubArea.setReps(headcountBySubArea.getReps() +1);
+                      difHeadcount--;
+                    }
                   }
                 }
+
                 return headcountProjectionList.stream().collect(Collectors.groupingBy(this::getArea))
                     .entrySet()
                     .stream()
