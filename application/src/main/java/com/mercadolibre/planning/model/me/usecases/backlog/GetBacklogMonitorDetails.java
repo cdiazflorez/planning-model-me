@@ -645,7 +645,14 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .filter(Objects::nonNull)
         .reduce(0, Integer::sum);
 
-    final Headcount headcount = new Headcount(totalReps, 1.0);
+    final Double percentage = variablesPhoto.getAreas()
+        .values()
+        .stream()
+        .map(NumberOfUnitsInAnArea::getRepsPercentage)
+        .filter(Objects::nonNull)
+        .reduce(0.0, Double::sum);
+
+    final Headcount headcount = new Headcount(totalReps, percentage);
 
     final List<AreaBacklogDetail> areas = processAreas.isEmpty()
         ? null
@@ -693,7 +700,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .findAny()
         .orElse(new Headcount(0, 0D));
 
-    return new AreaBacklogDetail(area.getName(), measure, headcountArea, mappedSubareas);
+    return new AreaBacklogDetail(area.getName(), measure, headcountArea, mappedSubareas.size() == 1 ? null : mappedSubareas);
   }
 
   private List<AreaBacklogDetail> toAreas(final VariablesPhoto variablesPhoto, final List<AreaName> areas) {
