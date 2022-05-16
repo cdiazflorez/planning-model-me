@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeP
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.staffing.StaffingGateway;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.ProcessTotals;
@@ -33,6 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -107,7 +109,14 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                             process,
                             staffingByProcess.get(process),
                             filterProductivity(forecastStaffing, process),
-                            filterHeadcount(plannedStaffing, process)))
+                            filterHeadcount(
+                                plannedStaffing.get(HEADCOUNT).stream()
+                                    .filter(
+                                        entity ->
+                                            entity
+                                                .getProcessName()
+                                                .equals(ProcessName.from(process)))
+                                    .collect(toList()))))
                 .collect(toList());
 
         final Integer totalNonSystemic = staffingWorkflow.getTotals().getWorkingNonSystemic();
@@ -217,6 +226,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
               .workflow(Workflow.from(workflow).get())
               .entityTypes(List.of(magnitudeType))
               .dateFrom(magnitudeType.equals(PRODUCTIVITY) ? date.minusHours(1) : date)
+              .source(magnitudeType.equals(HEADCOUNT) ? Source.SIMULATION : Source.FORECAST)
               .dateTo(date)
               .processName(processes.stream().map(ProcessName::from).collect(toList()))
               .entityFilters(EntityFilter.getEntityFilter(magnitudeType))
@@ -238,12 +248,20 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return productivity.isPresent() ? (int) productivity.getAsDouble() : null;
   }
 
-  private Integer filterHeadcount(
-      final Map<MagnitudeType, List<MagnitudePhoto>> staffingHeadcount, final String process) {
-    return staffingHeadcount.get(HEADCOUNT).stream()
-        .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-        .map(MagnitudePhoto::getValue)
-        .findAny()
-        .orElse(null);
+  private Integer filterHeadcount(final List<MagnitudePhoto> staffingHeadcount) {
+
+    Optional<MagnitudePhoto> magnitudePhoto =
+        staffingHeadcount.stream()
+            .filter(entity -> entity.getSource().equals(Source.SIMULATION))
+            .findAny();
+
+    if (magnitudePhoto.isEmpty()) {
+      magnitudePhoto =
+          staffingHeadcount.stream()
+              .filter(entity -> entity.getSource().equals(Source.FORECAST))
+              .findAny();
+    }
+
+    return magnitudePhoto.map(MagnitudePhoto::getValue).orElse(null);
   }
 }
