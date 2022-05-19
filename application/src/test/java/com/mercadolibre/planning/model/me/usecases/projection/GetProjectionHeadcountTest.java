@@ -17,7 +17,7 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.AreaRe
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.MetricResponse;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.ProcessResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
-import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadCountByArea;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountAtArea;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -72,11 +72,24 @@ public class GetProjectionHeadcountTest {
     ).thenReturn(getTrajectoriesMock());
 
     //WHEN
-
-    Map<Instant, List<HeadCountByArea>> response = getProjectionHeadcount.getProjectionHeadcount(WH, backlogsMock());
+    Map<Instant, List<HeadcountAtArea>> response = getProjectionHeadcount.getProjectionHeadcount(WH, backlogsMock());
 
     //THEN
+    List<MagnitudePhoto> headcount = getTrajectoriesMock();
+
     Assertions.assertNotNull(response);
+
+    headcount.forEach(magnitudePhoto -> {
+
+      List<HeadcountAtArea> headcountAtAreas = response.get(magnitudePhoto.getDate().toInstant());
+
+      int totalHeadcountDistributionAtArea = headcountAtAreas.stream()
+          .mapToInt(HeadcountAtArea::getReps)
+          .sum();
+
+      Assertions.assertEquals(magnitudePhoto.getValue(), totalHeadcountDistributionAtArea);
+    });
+
   }
 
   private MetricResponse getMetricsByNameMock() {

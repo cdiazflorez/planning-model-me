@@ -14,7 +14,7 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.AreaRe
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.MetricResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea.NumberOfUnitsInASubarea;
-import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadCountByArea;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountAtArea;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountBySubArea;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.RepsByArea;
 import java.time.Instant;
@@ -47,17 +47,17 @@ public class GetProjectionHeadcount {
   private final PlanningModelGateway planningModelGateway;
 
 
-  public Map<Instant, List<HeadCountByArea>> getProjectionHeadcount(final String warehouseId,
+  public Map<Instant, List<HeadcountAtArea>> getProjectionHeadcount(final String warehouseId,
                                                                     final Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {
 
 
     final Instant dateFrom = backlogs.keySet().stream().min(Comparator.naturalOrder()).orElse(Instant.now());
     final Instant dateTo = backlogs.keySet().stream().max(Comparator.naturalOrder()).orElse(Instant.now());
 
-    MetricResponse lastHourEffectiveProductivity =
-        staffingGateway.getMetricsByName(warehouseId, PRODUCTIVITY, new MetricRequest(ProcessName.PICKING,
-            dateFrom.minus(1, ChronoUnit.HOURS),
-            dateFrom));
+    MetricResponse lastHourEffectiveProductivity = staffingGateway.getMetricsByName(
+        warehouseId,
+        PRODUCTIVITY,
+        new MetricRequest(ProcessName.PICKING, dateFrom.minus(1, ChronoUnit.HOURS), dateFrom));
 
     Map<String, Double> mapLastHourEffectiveProductivity = lastHourEffectiveProductivity.getProcesses()
         .get(0)
@@ -65,7 +65,7 @@ public class GetProjectionHeadcount {
         .stream()
         .collect(Collectors.toMap(AreaResponse::getName, AreaResponse::getValue));
 
-    List<MagnitudePhoto> headcountList = planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
+    List<MagnitudePhoto> operatingHoursPlannedHeadcount = planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
         .warehouseId(warehouseId)
         .dateFrom(ZonedDateTime.ofInstant(dateFrom, ZoneOffset.UTC))
         .dateTo(ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC))
@@ -76,12 +76,11 @@ public class GetProjectionHeadcount {
         .entityType(MagnitudeType.HEADCOUNT)
         .build());
 
-    return backlogs
-        .entrySet()
+    return backlogs.entrySet()
         .stream()
         .collect(Collectors.toMap(Map.Entry::getKey, backlogArea -> {
 
-          Optional<MagnitudePhoto> headcountOptional = headcountList.stream()
+          Optional<MagnitudePhoto> headcountOptional = operatingHoursPlannedHeadcount.stream()
               .filter(magnitudePhoto -> magnitudePhoto.getDate().toInstant().equals(backlogArea.getKey()))
               .findAny();
           if (headcountOptional.isPresent()) {
@@ -108,7 +107,7 @@ public class GetProjectionHeadcount {
                       .stream()
                       .mapToDouble(HeadcountBySubArea::getRespPercentage)
                       .sum();
-                  return new HeadCountByArea(value.getKey(), reps, repsPercentage, value.getValue());
+                  return new HeadcountAtArea(value.getKey(), reps, repsPercentage, value.getValue());
 
                 })
                 .collect(Collectors.toList());
@@ -123,8 +122,7 @@ public class GetProjectionHeadcount {
   private List<HeadcountBySubArea> getHeadcountBySubArea(final List<NumberOfUnitsInAnArea> backlogs,
                                                          final Map<String, Double> mapLastHourEffectiveProductivity,
                                                          final int plannedHeadcount) {
-    Map<String, Double> calculatedHC = backlogs
-        .stream()
+    Map<String, Double> calculatedHC = backlogs.stream()
         .flatMap(v -> v.getSubareas().stream())
         .collect(Collectors.toMap(
             NumberOfUnitsInASubarea::getName,
@@ -152,8 +150,10 @@ public class GetProjectionHeadcount {
 
   private void redistributeHeadcount(List<HeadcountBySubArea> headcountProjectionList, final int plannedHeadcount) {
 
-    Integer projectedHC = headcountProjectionList.stream()
-        .reduce(0, (partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
+    final int projectedHC = headcountProjectionList.stream()
+        .mapToInt(HeadcountBySubArea::getReps)
+        .sum();
+
 
     if (plannedHeadcount > projectedHC && !headcountProjectionList.isEmpty()) {
       int difHeadcount = plannedHeadcount - projectedHC;
@@ -176,7 +176,8 @@ public class GetProjectionHeadcount {
   private double calculateRequiredHeadcountForArea(final NumberOfUnitsInASubarea backlog, final Map<String, Double> effectiveProductivity) {
 
     double productivityByArea = effectiveProductivity.get(backlog.getName()) == null
-        ? effectiveProductivity.getOrDefault(backlog.getName().split(SEPARATOR)[0], 0D) : effectiveProductivity.get(backlog.getName());
+        ? effectiveProductivity.getOrDefault(backlog.getName().split(SEPARATOR)[0], 0D)
+        : effectiveProductivity.get(backlog.getName());
 
     return productivityByArea == 0D ? 0D : backlog.getUnits() / productivityByArea;
   }
