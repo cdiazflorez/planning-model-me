@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata;
 
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
+import java.util.TreeSet;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.TreeSet;
 
 @Builder
 @Getter

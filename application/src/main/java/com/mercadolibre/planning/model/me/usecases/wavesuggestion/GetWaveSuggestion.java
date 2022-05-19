@@ -1,26 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.wavesuggestion;
 
-import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
-import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
-import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
-import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
-import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
-
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
@@ -29,22 +8,52 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FO
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static java.time.temporal.ChronoUnit.HOURS;
+import static java.util.Collections.emptyList;
+
+import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
+import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
+import com.mercadolibre.planning.model.me.usecases.UseCase;
+import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+import javax.inject.Named;
+import lombok.AllArgsConstructor;
 
 @Named
 @AllArgsConstructor
 public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, SimpleTable> {
 
     private static final int NEXT_HOUR_WAVE_SUGGESTION_MINUTES = 40;
+
+    private static final int TO_HOURS = 25;
+
     private final BacklogGatewayProvider backlogGatewayProvider;
+
     private final PlanningModelGateway planningModelGateway;
+
     protected final LogisticCenterGateway logisticCenterGateway;
+
+    private final FeatureSwitches featureSwitches;
+
+    private final BacklogApiGateway backlogGateway;
 
     @Override
     public SimpleTable execute(final GetWaveSuggestionInputDto input) {
 
-        final ZonedDateTime now = input.getDate() == null
-                ? getCurrentUtcDate() : input.getDate();
-
+        final ZonedDateTime now = input.getDate() == null ? getCurrentUtcDate() : input.getDate();
         final ZonedDateTime suggestionTimeFrom = getDateFrom(now);
         final ZonedDateTime suggestionTimeTo = suggestionTimeFrom.plusHours(1);
 
@@ -67,15 +76,31 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
     private List<SuggestedWave> getSuggestedWaves(final GetWaveSuggestionInputDto input,
                                                   final ZonedDateTime now,
                                                   final ZonedDateTime dateTo) {
-        final ZonedDateTime cptFrom = now.truncatedTo(HOURS).plusHours(1);
-        final Integer readyToWaveBacklog = backlogGatewayProvider
-                .getBy(input.getWorkflow())
-                .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()))
-                .getUnitBacklog(new UnitProcessBacklogInput(OUTBOUND_PLANNING.getStatus(), input.getWarehouseId(),
-                        cptFrom, cptFrom.plusHours(25), null, "order")).getQuantity();
 
-        return planningModelGateway
-                .getSuggestedWaves(SuggestedWavesRequest.builder()
+        final ZonedDateTime cptFrom = now.truncatedTo(HOURS).plusHours(1);
+        final int readyToWaveBacklog;
+
+        if (featureSwitches.shouldCallBacklogApi()) {
+            final List<Consolidation> backlogConsolidation = backlogGateway.getCurrentBacklog(
+                    input.getWarehouseId(),
+                    List.of("outbound-orders"),
+                    List.of(OUTBOUND_PLANNING.getStatus()),
+                    cptFrom.toInstant(),
+                    cptFrom.plusHours(TO_HOURS).toInstant(),
+                    emptyList()
+            );
+            readyToWaveBacklog = backlogConsolidation.stream().mapToInt(Consolidation::getTotal).sum();
+
+        } else {
+            readyToWaveBacklog = backlogGatewayProvider
+                    .getBy(input.getWorkflow())
+                    .orElseThrow(() -> new BacklogGatewayNotSupportedException(input.getWorkflow()))
+                    .getUnitBacklog(new UnitProcessBacklogInput(OUTBOUND_PLANNING.getStatus(), input.getWarehouseId(),
+                            cptFrom, cptFrom.plusHours(TO_HOURS), null, "order")).getQuantity();
+        }
+
+        return planningModelGateway.getSuggestedWaves(
+                SuggestedWavesRequest.builder()
                         .workflow(input.getWorkflow())
                         .warehouseId(input.getWarehouseId())
                         .dateFrom(now)
@@ -83,7 +108,7 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
                         .backlog(readyToWaveBacklog)
                         .applyDeviation(true)
                         .build()
-                );
+        );
     }
 
     private SimpleTable createSimpleTableForWaves(final List<SuggestedWave> suggestedWaves,
@@ -125,12 +150,12 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
         );
     }
 
-    private Map<String, Object> createTotalEntry(List<SuggestedWave> suggestedWaves) {
+    private Map<String, Object> createTotalEntry(final List<SuggestedWave> suggestedWaves) {
         return Map.of(
                 "column_1", Map.of("title", "Total"),
                 "column_2", suggestedWaves.stream()
-                .mapToInt(SuggestedWave::getQuantity)
-                .sum() + " uds."
+                        .mapToInt(SuggestedWave::getQuantity)
+                        .sum() + " uds."
         );
     }
 
@@ -140,5 +165,4 @@ public class GetWaveSuggestion implements UseCase<GetWaveSuggestionInputDto, Sim
         }
         return input.getZoneId();
     }
-
 }
