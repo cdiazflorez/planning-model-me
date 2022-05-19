@@ -36,15 +36,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GetProjectionHeadcount {
 
+  private static final Double NUMBER_TO_ROUND = 100.0;
+
+  private static final String PRODUCTIVITY = "effective_productivity";
+
+  private static final String SEPARATOR = "-";
+
   private final StaffingGateway staffingGateway;
 
   private final PlanningModelGateway planningModelGateway;
 
-  private final static Double NUMBER_TO_ROUND = 100.0;
-
-  private final static String PRODUCTIVITY = "effective_productivity";
-
-  private final static String SEPARATOR = "-";
 
   public Map<Instant, List<HeadCountByArea>> getProjectionHeadcount(final String warehouseId,
                                                                     final Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {

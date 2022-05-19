@@ -24,7 +24,7 @@ public class GCPBigQueryWrapperTest {
   private BigQuery bigQuery;
 
   @InjectMocks
-  GCPBigQueryWrapper gcpBigQueryWrapper;
+  private GCPBigQueryWrapper gcpBigQueryWrapper;
 
   @Test
   public void queryTest() {

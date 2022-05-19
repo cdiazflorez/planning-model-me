@@ -35,6 +35,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class GetProjectionHeadcountTest {
 
+  private static final String WH = "ARTW01";
+
+  private static final String METRIC_NAME = "effective_productivity";
+
+  private static final Instant FROM = Instant.parse("2022-05-08T15:00:00Z");
+
+  private static final Instant TO = Instant.parse("2022-05-08T22:00:00Z");
+
   @InjectMocks
   private GetProjectionHeadcount getProjectionHeadcount;
 
@@ -43,14 +51,6 @@ public class GetProjectionHeadcountTest {
 
   @Mock
   private PlanningModelGateway planningModelGateway;
-
-  private final static String WH = "ARTW01";
-
-  private final static String METRIC_NAME = "effective_productivity";
-
-  private final static Instant FROM = Instant.parse("2022-05-08T15:00:00Z");
-
-  private final static Instant TO = Instant.parse("2022-05-08T22:00:00Z");
 
   @Test
   public void projectionHeadcountTest() {
