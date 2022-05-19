@@ -4,44 +4,35 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.api.gax.paging.Page;
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldValue;
 import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
-import com.google.cloud.bigquery.Schema;
-import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.TableResult;
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 import com.mercadolibre.planning.model.me.gateways.sharedistribution.dto.DistributionElement;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
-/** Tests of ShareDistributionAPI. */
+/**
+ * Tests of ShareDistributionAPI.
+ */
 @ExtendWith(MockitoExtension.class)
 public class ShareDistributionAPITest {
 
   private static final String WH = "ARTW01";
 
   @Mock
-  BigqueryWrapper bigQuery;;
+  private BigqueryWrapper bigQuery;
 
   @InjectMocks
-  ShareDistributionRepository shareDistributionRepository;
+  private ShareDistributionRepository shareDistributionRepository;
 
   @Test
   public void metricsAPITest() throws InterruptedException {

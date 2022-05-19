@@ -80,6 +80,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
   private static final String AREA_KEY = "area";
 
+  private static final String NA_AREA = "NA";
+
   private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
       FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
       FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
@@ -134,7 +136,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     return subareasByArea.entrySet()
         .stream()
         .map(entry -> new AreaName(entry.getKey(), entry.getValue()))
-        .sorted(Comparator.comparing(AreaName::getName))
+        .sorted(comparing(AreaName::getName))
         .collect(Collectors.toList());
 
   }
@@ -359,14 +361,14 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
   private List<NumberOfUnitsInAnArea> toUnitsInArea(final List<ProjectedBacklogForAnAreaAndOperatingHour> projections) {
     final long undefinedAreaQuantity = projections.stream()
-        .filter(projection -> projection.getArea().equals("NA"))
+        .filter(projection -> (NA_AREA).equals(projection.getArea()))
         .mapToLong(ProjectedBacklogForAnAreaAndOperatingHour::getQuantity)
         .sum();
 
     final long totalSubAreas = projections
         .stream()
         .map(ProjectedBacklogForAnAreaAndOperatingHour::getArea)
-        .filter(area -> !area.equals("NA"))
+        .filter(area -> !(NA_AREA).equals(area))
         .distinct()
         .count();
 
@@ -382,8 +384,9 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 projection -> projection.getArea().substring(0, 2),
                 Collectors.mapping(
                     projection -> {
+
                       if(unitsInAllValidAreas == 0) {
-                        return new NumberOfUnitsInASubarea(projection.getArea(), (int)(undefinedAreaQuantity / totalSubAreas));
+                        return new NumberOfUnitsInASubarea(projection.getArea(), (int) (undefinedAreaQuantity / totalSubAreas));
                       }
                       final Long thisAreaBacklog = projection.getQuantity();
                       final float undefinedAreaProportionalBacklog =
@@ -400,7 +403,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     return subareas.entrySet()
         .stream()
         .map(entry -> new NumberOfUnitsInAnArea(entry.getKey(), entry.getValue()))
-        .filter(areaUnits -> !areaUnits.getArea().equals("NA"))
+        .filter(areaUnits -> !NA_AREA.equals(areaUnits.getArea()))
         .collect(Collectors.toList());
   }
 
@@ -463,7 +466,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
 
       List<HeadCountByArea> headCountByAreaList =
-          !suggestedHeadCount.isEmpty() ? suggestedHeadCount.get(entry.getKey()) : Collections.emptyList();
+          !suggestedHeadCount.isEmpty() ? suggestedHeadCount.get(entry.getKey()) : emptyList();
       return entry.getValue()
           .stream()
           .map(value -> {
@@ -474,7 +477,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
             return new NumberOfUnitsInAnArea(value.getArea(),
                 assignSubareas(value.getSubareas(), headCountByArea.getSubAreas() == null
-                    ? Collections.emptyList() : headCountByArea.getSubAreas()),
+                    ? emptyList() : headCountByArea.getSubAreas()),
                 headCountByArea.getReps(),
                 headCountByArea.getRespPercentage());
           })
@@ -691,7 +694,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                           new Headcount(value.getReps() != null ? value.getReps() : 0,
                               value.getRepsPercentage() != null ? value.getRepsPercentage() : 0D))
                   )
-                  .orElseGet(() -> new SubAreaBacklogDetail(subarea, UnitMeasure.emptyMeasure(), new Headcount(0, 0.0)));
+                  .orElseGet(() -> new SubAreaBacklogDetail(subarea, emptyMeasure(), new Headcount(0, 0.0)));
             }
         )
         .collect(Collectors.toList());

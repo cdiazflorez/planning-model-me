@@ -108,7 +108,7 @@ class GetBacklogMonitorDetailsTest {
   private ProjectBacklog projectBacklog;
 
   @Mock
-  GetProjectionHeadcount getProjectionHeadcount;
+  private GetProjectionHeadcount getProjectionHeadcount;
 
   private MockedStatic<DateUtils> mockDt;
 
@@ -157,7 +157,7 @@ class GetBacklogMonitorDetailsTest {
         new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "NA", CARRY_OVER, 100L)
     ));
 
-    when(getProjectionHeadcount.getProjectionHeadcount(any(),any())).thenReturn(new HashMap<>());
+    when(getProjectionHeadcount.getProjectionHeadcount(any(), any())).thenReturn(new HashMap<>());
 
     mockPickingAndWavingPastBacklog(input);
     mockThroughput(FBM_WMS_OUTBOUND, of(WAVING, PICKING));

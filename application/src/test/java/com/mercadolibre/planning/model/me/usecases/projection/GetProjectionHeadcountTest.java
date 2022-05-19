@@ -44,16 +44,19 @@ public class GetProjectionHeadcountTest {
   @Mock
   private PlanningModelGateway planningModelGateway;
 
-  private static final String WH = "ARTW01";
-  private static final String METRIC_NAME = "effective_productivity";
-  private static final Instant FROM = Instant.parse("2022-05-08T15:00:00Z");
-  private static final Instant TO = Instant.parse("2022-05-08T22:00:00Z");
+  private final static String WH = "ARTW01";
+
+  private final static String METRIC_NAME = "effective_productivity";
+
+  private final static Instant FROM = Instant.parse("2022-05-08T15:00:00Z");
+
+  private final static Instant TO = Instant.parse("2022-05-08T22:00:00Z");
 
   @Test
-  public void getProjectionHeadcountTest(){
+  public void projectionHeadcountTest() {
     //GIVEN
-    when(staffingGateway.getMetricsByName(WH,METRIC_NAME,
-        new MetricRequest(ProcessName.PICKING,FROM.minus(1, ChronoUnit.HOURS),FROM))
+    when(staffingGateway.getMetricsByName(WH, METRIC_NAME,
+        new MetricRequest(ProcessName.PICKING, FROM.minus(1, ChronoUnit.HOURS), FROM))
     ).thenReturn(getMetricsByNameMock());
 
     when(planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
@@ -70,13 +73,13 @@ public class GetProjectionHeadcountTest {
 
     //WHEN
 
-    Map<Instant, List<HeadCountByArea>> response = getProjectionHeadcount.getProjectionHeadcount(WH,backlogsMock());
+    Map<Instant, List<HeadCountByArea>> response = getProjectionHeadcount.getProjectionHeadcount(WH, backlogsMock());
 
     //THEN
     Assertions.assertNotNull(response);
   }
 
-  private MetricResponse getMetricsByNameMock(){
+  private MetricResponse getMetricsByNameMock() {
 
     List<AreaResponse> areaResponseList = List.of(new AreaResponse("MZ-1", 99.48),
         new AreaResponse("MZ-2", 104.18),
@@ -94,86 +97,86 @@ public class GetProjectionHeadcountTest {
 
   }
 
-  private List<MagnitudePhoto> getTrajectoriesMock(){
+  private List<MagnitudePhoto> getTrajectoriesMock() {
 
     return List.of(MagnitudePhoto.builder()
-        .processName(ProcessName.PICKING)
-        .workflow(Workflow.FBM_WMS_OUTBOUND)
-        .date(ZonedDateTime.of(2022,5,8,15,0,0,0, ZoneOffset.UTC))
-        .value(80)
-        .metricUnit(MetricUnit.WORKERS).build(),
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 15, 0, 0, 0, ZoneOffset.UTC))
+            .value(80)
+            .metricUnit(MetricUnit.WORKERS).build(),
         MagnitudePhoto.builder()
             .processName(ProcessName.PICKING)
             .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .date(ZonedDateTime.of(2022,5,8,16,0,0,0, ZoneOffset.UTC))
+            .date(ZonedDateTime.of(2022, 5, 8, 16, 0, 0, 0, ZoneOffset.UTC))
             .value(48)
             .metricUnit(MetricUnit.WORKERS).build(),
         MagnitudePhoto.builder()
             .processName(ProcessName.PICKING)
             .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .date(ZonedDateTime.of(2022,5,8,17,0,0,0, ZoneOffset.UTC))
+            .date(ZonedDateTime.of(2022, 5, 8, 17, 0, 0, 0, ZoneOffset.UTC))
             .value(50)
             .metricUnit(MetricUnit.WORKERS).build(),
         MagnitudePhoto.builder()
             .processName(ProcessName.PICKING)
             .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .date(ZonedDateTime.of(2022,5,8,18,0,0,0, ZoneOffset.UTC))
+            .date(ZonedDateTime.of(2022, 5, 8, 18, 0, 0, 0, ZoneOffset.UTC))
             .value(56)
             .metricUnit(MetricUnit.WORKERS).build(),
         MagnitudePhoto.builder()
             .processName(ProcessName.PICKING)
             .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .date(ZonedDateTime.of(2022,5,8,19,0,0,0, ZoneOffset.UTC))
+            .date(ZonedDateTime.of(2022, 5, 8, 19, 0, 0, 0, ZoneOffset.UTC))
             .value(60)
             .metricUnit(MetricUnit.WORKERS).build(),
         MagnitudePhoto.builder()
             .processName(ProcessName.PICKING)
             .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .date(ZonedDateTime.of(2022,5,8,20,0,0,0, ZoneOffset.UTC))
+            .date(ZonedDateTime.of(2022, 5, 8, 20, 0, 0, 0, ZoneOffset.UTC))
             .value(56)
             .metricUnit(MetricUnit.WORKERS).build(),
         MagnitudePhoto.builder()
             .processName(ProcessName.PICKING)
             .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .date(ZonedDateTime.of(2022,5,8,21,0,0,0, ZoneOffset.UTC))
+            .date(ZonedDateTime.of(2022, 5, 8, 21, 0, 0, 0, ZoneOffset.UTC))
             .value(40)
             .metricUnit(MetricUnit.WORKERS).build(),
         MagnitudePhoto.builder()
             .processName(ProcessName.PICKING)
             .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .date(ZonedDateTime.of(2022,5,8,22,0,0,0, ZoneOffset.UTC))
+            .date(ZonedDateTime.of(2022, 5, 8, 22, 0, 0, 0, ZoneOffset.UTC))
             .value(30)
             .metricUnit(MetricUnit.WORKERS).build()
     );
   }
 
-  private Map<Instant, List<NumberOfUnitsInAnArea>> backlogsMock(){
+  private Map<Instant, List<NumberOfUnitsInAnArea>> backlogsMock() {
     Map<Instant, List<NumberOfUnitsInAnArea>> response = new HashMap<>();
-    response.put(Instant.parse("2022-05-08T15:00:00Z"),numberOfUnitsInAnAreas());
-    response.put(Instant.parse("2022-05-08T16:00:00Z"),numberOfUnitsInAnAreas());
-    response.put(Instant.parse("2022-05-08T17:00:00Z"),numberOfUnitsInAnAreas());
-    response.put(Instant.parse("2022-05-08T18:00:00Z"),numberOfUnitsInAnAreas());
-    response.put(Instant.parse("2022-05-08T19:00:00Z"),numberOfUnitsInAnAreas());
-    response.put(Instant.parse("2022-05-08T20:00:00Z"),numberOfUnitsInAnAreas());
-    response.put(Instant.parse("2022-05-08T21:00:00Z"),numberOfUnitsInAnAreas());
-    response.put(Instant.parse("2022-05-08T22:00:00Z"),numberOfUnitsInAnAreas());
+    response.put(Instant.parse("2022-05-08T15:00:00Z"), numberOfUnitsInAnAreas());
+    response.put(Instant.parse("2022-05-08T16:00:00Z"), numberOfUnitsInAnAreas());
+    response.put(Instant.parse("2022-05-08T17:00:00Z"), numberOfUnitsInAnAreas());
+    response.put(Instant.parse("2022-05-08T18:00:00Z"), numberOfUnitsInAnAreas());
+    response.put(Instant.parse("2022-05-08T19:00:00Z"), numberOfUnitsInAnAreas());
+    response.put(Instant.parse("2022-05-08T20:00:00Z"), numberOfUnitsInAnAreas());
+    response.put(Instant.parse("2022-05-08T21:00:00Z"), numberOfUnitsInAnAreas());
+    response.put(Instant.parse("2022-05-08T22:00:00Z"), numberOfUnitsInAnAreas());
 
     return response;
   }
 
-  private List<NumberOfUnitsInAnArea> numberOfUnitsInAnAreas(){
+  private List<NumberOfUnitsInAnArea> numberOfUnitsInAnAreas() {
     return List.of(new NumberOfUnitsInAnArea("MZ",
-        List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-1",100),
-            new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-2",150),
-            new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-0",50),
-            new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-3",80)
+            List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-1", 100),
+                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-2", 150),
+                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-0", 50),
+                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-3", 80)
             )),
-        new NumberOfUnitsInAnArea("RS", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RS-0",70))),
-        new NumberOfUnitsInAnArea("HV", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("HV-0",200))),
-        new NumberOfUnitsInAnArea("BL", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("BL-0",120))),
+        new NumberOfUnitsInAnArea("RS", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RS-0", 70))),
+        new NumberOfUnitsInAnArea("HV", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("HV-0", 200))),
+        new NumberOfUnitsInAnArea("BL", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("BL-0", 120))),
         new NumberOfUnitsInAnArea("RK",
-            List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RK-H",250),
-                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RK-L",300)))
+            List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RK-H", 250),
+                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RK-L", 300)))
     );
   }
 }

@@ -40,9 +40,11 @@ public class GetProjectionHeadcount {
 
   private final PlanningModelGateway planningModelGateway;
 
-  private static final Double NUMBER_TO_ROUND = 100.0;
+  private final static Double NUMBER_TO_ROUND = 100.0;
 
-  private static final String PRODUCTIVITY = "effective_productivity";
+  private final static String PRODUCTIVITY = "effective_productivity";
+
+  private final static String SEPARATOR = "-";
 
   public Map<Instant, List<HeadCountByArea>> getProjectionHeadcount(final String warehouseId,
                                                                     final Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {
@@ -60,7 +62,7 @@ public class GetProjectionHeadcount {
         .get(0)
         .getAreas()
         .stream()
-        .collect(Collectors.toMap(AreaResponse::getName,AreaResponse::getValue));
+        .collect(Collectors.toMap(AreaResponse::getName, AreaResponse::getValue));
 
     List<MagnitudePhoto> headcountList = planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
         .warehouseId(warehouseId)
@@ -117,7 +119,9 @@ public class GetProjectionHeadcount {
 
   }
 
-  private List<HeadcountBySubArea>  getHeadcountBySubArea(final List<NumberOfUnitsInAnArea> backlogs, final Map<String, Double> mapLastHourEffectiveProductivity, final int plannedHeadcount ){
+  private List<HeadcountBySubArea> getHeadcountBySubArea(final List<NumberOfUnitsInAnArea> backlogs,
+                                                         final Map<String, Double> mapLastHourEffectiveProductivity,
+                                                         final int plannedHeadcount) {
     Map<String, Double> calculatedHC = backlogs
         .stream()
         .flatMap(v -> v.getSubareas().stream())
@@ -145,7 +149,7 @@ public class GetProjectionHeadcount {
         .collect(Collectors.toList());
   }
 
-  private void redistributeHeadcount(List<HeadcountBySubArea> headcountProjectionList, final int plannedHeadcount){
+  private void redistributeHeadcount(List<HeadcountBySubArea> headcountProjectionList, final int plannedHeadcount) {
 
     Integer projectedHC = headcountProjectionList.stream()
         .reduce(0, (partialRepsResult, headcountBySubArea) -> partialRepsResult + headcountBySubArea.getReps(), Integer::sum);
@@ -165,13 +169,13 @@ public class GetProjectionHeadcount {
   }
 
   private String getArea(HeadcountBySubArea headcountBySubArea) {
-    return headcountBySubArea.getSubArea().split("-")[0];
+    return headcountBySubArea.getSubArea().split(SEPARATOR)[0];
   }
 
   private double calculateRequiredHeadcountForArea(final NumberOfUnitsInASubarea backlog, final Map<String, Double> effectiveProductivity) {
 
     double productivityByArea = effectiveProductivity.get(backlog.getName()) == null
-        ? effectiveProductivity.getOrDefault(backlog.getName().split("-")[0], 0D) : effectiveProductivity.get(backlog.getName());
+        ? effectiveProductivity.getOrDefault(backlog.getName().split(SEPARATOR)[0], 0D) : effectiveProductivity.get(backlog.getName());
 
     return productivityByArea == 0D ? 0D : backlog.getUnits() / productivityByArea;
   }
