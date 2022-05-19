@@ -2,9 +2,10 @@ package com.mercadolibre.planning.model.me.usecases.projection.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
+@NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter

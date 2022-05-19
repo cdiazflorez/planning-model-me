@@ -71,4 +71,26 @@ public class ShareDistributionAPITest {
 
   }
 
+  @Test
+  public void metricsAPIFilterTest() throws InterruptedException {
+
+    //GIVEN
+    ReflectionTestUtils.setField(shareDistributionRepository, "blacklistAreas", List.of("MU"));
+
+    TableResult table = mock(TableResult.class);
+
+    FieldValueList list = mock(FieldValueList.class);
+    when(list.get("AREA")).thenReturn(FieldValue.of(FieldValue.Attribute.PRIMITIVE, "MU-1"));
+    when(table.iterateAll()).thenReturn(Collections.singleton(list));
+    when(bigQuery.query(any(QueryJobConfiguration.class))).thenReturn(table);
+
+    // WHEN
+    List<DistributionElement> response =
+        shareDistributionRepository.getMetrics(WH, Instant.parse("2022-03-27T00:00:00Z"), Instant.parse("2022-03-29T00:00:00Z"));
+
+    // THEN
+    Assertions.assertTrue(response.isEmpty());
+
+  }
+
 }

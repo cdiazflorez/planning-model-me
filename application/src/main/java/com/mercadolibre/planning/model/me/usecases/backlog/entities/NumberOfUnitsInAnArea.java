@@ -35,7 +35,7 @@ public class NumberOfUnitsInAnArea {
     this.repsPercentage = null;
   }
 
-  public NumberOfUnitsInAnArea(final String area, final List<NumberOfUnitsInASubarea> subareas, Integer reps, Double repsPercentage) {
+  public NumberOfUnitsInAnArea(final String area, final List<NumberOfUnitsInASubarea> subareas, final Integer reps, final Double repsPercentage) {
     this.area = area;
     this.subareas = subareas;
     this.units = subareas.stream()
@@ -55,14 +55,14 @@ public class NumberOfUnitsInAnArea {
 
     Double repsPercentage;
 
-    public NumberOfUnitsInASubarea(String area, int units) {
+    public NumberOfUnitsInASubarea(final String area, final int units) {
       this.name = area;
       this.units = units;
       this.reps = null;
       this.repsPercentage = null;
     }
 
-    public NumberOfUnitsInASubarea(String area, int units, Integer reps, Double repsPercentage) {
+    public NumberOfUnitsInASubarea(final String area, final int units, final Integer reps, final Double repsPercentage) {
       this.name = area;
       this.units = units;
       this.reps = reps;
