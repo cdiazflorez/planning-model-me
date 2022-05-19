@@ -363,6 +363,13 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .mapToLong(ProjectedBacklogForAnAreaAndOperatingHour::getQuantity)
         .sum();
 
+    final long totalSubAreas = projections
+        .stream()
+        .map(ProjectedBacklogForAnAreaAndOperatingHour::getArea)
+        .filter(area -> !area.equals("NA"))
+        .distinct()
+        .count();
+
     final long totalUnitsInAllAreas = projections.stream()
         .mapToLong(ProjectedBacklogForAnAreaAndOperatingHour::getQuantity)
         .sum();
@@ -375,6 +382,9 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 projection -> projection.getArea().substring(0, 2),
                 Collectors.mapping(
                     projection -> {
+                      if(unitsInAllValidAreas == 0) {
+                        return new NumberOfUnitsInASubarea(projection.getArea(), (int)(undefinedAreaQuantity / totalSubAreas));
+                      }
                       final Long thisAreaBacklog = projection.getQuantity();
                       final float undefinedAreaProportionalBacklog =
                           (thisAreaBacklog / (float) unitsInAllValidAreas) * undefinedAreaQuantity;
