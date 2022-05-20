@@ -18,6 +18,7 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Metric
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.ProcessResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountAtArea;
+import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountBySubArea;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -25,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -78,6 +80,21 @@ public class GetProjectionHeadcountTest {
     List<MagnitudePhoto> headcount = getTrajectoriesMock();
 
     Assertions.assertNotNull(response);
+
+    Map<String, Integer> headcountBySubarea = response.get(Instant.parse("2022-05-08T15:00:00Z"))
+        .stream()
+        .flatMap(headcountAtArea -> headcountAtArea.getSubAreas().stream())
+        .collect(Collectors.toMap(HeadcountBySubArea::getSubArea, HeadcountBySubArea::getReps));
+
+    Assertions.assertEquals(headcountBySubarea.get("MZ-0"), 1);
+    Assertions.assertEquals(headcountBySubarea.get("MZ-1"), 2);
+    Assertions.assertEquals(headcountBySubarea.get("MZ-2"), 3);
+    Assertions.assertEquals(headcountBySubarea.get("MZ-3"), 2);
+    Assertions.assertEquals(headcountBySubarea.get("RS-0"), 2);
+    Assertions.assertEquals(headcountBySubarea.get("HV-0"), 2);
+    Assertions.assertEquals(headcountBySubarea.get("BL-0"), 9);
+    Assertions.assertEquals(headcountBySubarea.get("RK-H"), 19);
+    Assertions.assertEquals(headcountBySubarea.get("RK-L"), 40);
 
     headcount.forEach(magnitudePhoto -> {
 

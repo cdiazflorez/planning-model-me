@@ -48,6 +48,7 @@ public class GCPBigQueryWrapperTest {
 
     } catch (InterruptedException e) {
       log.error(e.getMessage(), e);
+      Assertions.fail("Unexpected exception was thrown");
     }
   }
 }

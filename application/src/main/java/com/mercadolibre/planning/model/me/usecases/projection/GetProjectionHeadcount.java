@@ -140,7 +140,8 @@ public class GetProjectionHeadcount {
 
     return repsByAreas.stream()
         .sorted(Comparator.comparing(value -> value.getReps() % 1, Comparator.reverseOrder()))
-        .map(repsByArea -> new HeadcountBySubArea(repsByArea.getArea(),
+        .map(repsByArea -> new HeadcountBySubArea(
+            repsByArea.getArea(),
             repsByArea.getReps().intValue(),
             repsByArea.getReps() / plannedHeadcount))
         .collect(Collectors.toList());
@@ -153,7 +154,7 @@ public class GetProjectionHeadcount {
         .sum();
 
     if (plannedHeadcount > projectedHC && !headcountProjectionList.isEmpty()) {
-      int difHeadcount = plannedHeadcount - projectedHC;
+      final int difHeadcount = plannedHeadcount - projectedHC;
       for (int i = 0; i < difHeadcount; i++) {
         HeadcountBySubArea reps = headcountProjectionList.get(i % headcountProjectionList.size());
         reps.setReps(reps.getReps() + 1);
