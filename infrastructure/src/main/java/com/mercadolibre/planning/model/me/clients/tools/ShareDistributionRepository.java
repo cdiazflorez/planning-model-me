@@ -11,14 +11,19 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
-/** Implements consult to Bigquery. */
+/**
+ * Implements consult to Bigquery.
+ */
 @Slf4j
 @Component
-@AllArgsConstructor
+@RefreshScope
+@RequiredArgsConstructor
 public class ShareDistributionRepository implements ShareDistributionGateway {
 
 
@@ -29,6 +34,10 @@ public class ShareDistributionRepository implements ShareDistributionGateway {
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(PATTERN);
 
   private final BigqueryWrapper bigQuery;
+
+  @Value("${blacklist.areas.share.distributions:MU,CA}")
+  private List<String> blacklistAreas;
+
 
   @Override
   public List<DistributionElement> getMetrics(String wareHouseId, Instant startDate, Instant endDate) {
@@ -80,14 +89,17 @@ public class ShareDistributionRepository implements ShareDistributionGateway {
       TableResult result = bigQuery.query(queryConfig);
 
       result.iterateAll().forEach(rows -> {
-            distributionList.add(
-                DistributionElement.builder().warehouseID(rows.get("WAREHOUSE_ID").getStringValue())
-                    .cptTime(ZonedDateTime.parse(rows.get("CPT_TIMEZONE").getStringValue(),
-                        TIME_FORMATTER).withZoneSameInstant(ZoneOffset.UTC))
-                    .area(rows.get("AREA").getStringValue())
-                    .sis(rows.get("SIs").getLongValue())
-                    .build()
-            );
+            String area = rows.get("AREA").getStringValue().split("-")[0];
+            if (!blacklistAreas.contains(area)) {
+              distributionList.add(
+                  DistributionElement.builder().warehouseID(rows.get("WAREHOUSE_ID").getStringValue())
+                      .cptTime(ZonedDateTime.parse(rows.get("CPT_TIMEZONE").getStringValue(),
+                          TIME_FORMATTER).withZoneSameInstant(ZoneOffset.UTC))
+                      .area(rows.get("AREA").getStringValue())
+                      .sis(rows.get("SIs").getLongValue())
+                      .build()
+              );
+            }
           }
       );
     } catch (BigQueryException | InterruptedException e) {

@@ -1,10 +1,27 @@
 package com.mercadolibre.planning.model.me.entities.monitor;
 
+import java.util.List;
 import lombok.Value;
 
-/** The backlog at some area. */
+/**
+ * The backlog at some area.
+ */
 @Value
 public class AreaBacklogDetail {
-    private String id;
-    private UnitMeasure value;
+  String id;
+
+  UnitMeasure value;
+
+  Headcount headcount;
+
+  List<SubAreaBacklogDetail> subareas;
+
+  @Value
+  public static class SubAreaBacklogDetail {
+    String id;
+
+    UnitMeasure value;
+
+    Headcount headcount;
+  }
 }
