@@ -19,6 +19,7 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.devi
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -94,7 +95,7 @@ class GetMonitorTest {
         assertEquals(2, monitorDataList.size());
 
         final CurrentStatusData currentStatusData = (CurrentStatusData) monitorDataList.get(1);
-        final TreeSet<Process> processes = currentStatusData.getProcesses();
+        final Set<Process> processes = currentStatusData.getProcesses();
         assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
         assertEquals(5, processes.size());
 

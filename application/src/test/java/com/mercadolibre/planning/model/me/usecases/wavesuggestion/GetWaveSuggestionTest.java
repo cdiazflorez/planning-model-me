@@ -1,28 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.wavesuggestion;
 
-import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
-import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TimeZone;
-
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
@@ -32,15 +9,43 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.time.temporal.ChronoUnit.HOURS;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
+import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
+import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 @ExtendWith(MockitoExtension.class)
 class GetWaveSuggestionTest {
 
     private static final TimeZone TIME_ZONE = getDefault();
+
     private static final int NEXT_HOUR_WAVE_SUGGESTION_MINUTES = 40;
 
     @InjectMocks
@@ -58,14 +63,23 @@ class GetWaveSuggestionTest {
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
 
+    @Mock
+    private FeatureSwitches featureSwitches;
+
+    @Mock
+    private BacklogApiGateway backlogApiGateway;
+
     @Test
-    void testExecute() {
+    void testExecuteCallOutboundUnit() {
         // GIVEN
         final ZonedDateTime currentUtcDateTime = getCurrentUtcDateTime();
         final ZonedDateTime utcDateTimeFrom = getDateFrom(currentUtcDateTime);
         final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusHours(1);
 
+        when(featureSwitches.shouldCallBacklogApi()).thenReturn(false);
+
         mockGateways(utcDateTimeFrom, utcDateTimeTo);
+        mockGatewayBacklog(utcDateTimeFrom, false);
 
         // WHEN
         final SimpleTable simpleTable = getWaveSuggestion.execute(
@@ -89,7 +103,11 @@ class GetWaveSuggestionTest {
         final ZonedDateTime utcDateTimeFrom = getDateFrom(currentUtcDateTime);
         final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusHours(1);
 
+        when(featureSwitches.shouldCallBacklogApi()).thenReturn(false);
+
         mockGateways(utcDateTimeFrom, utcDateTimeTo);
+        mockGatewayBacklog(utcDateTimeFrom, false);
+
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(
                 new LogisticCenterConfiguration(TIME_ZONE));
 
@@ -106,6 +124,33 @@ class GetWaveSuggestionTest {
         assertSimpleTable(simpleTable, utcDateTimeFrom, utcDateTimeTo);
     }
 
+    @Test
+    void testExecuteCallBacklogApi() {
+        // GIVEN
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDateTime();
+        final ZonedDateTime utcDateTimeFrom = getDateFrom(currentUtcDateTime);
+        final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusHours(1);
+
+        when(featureSwitches.shouldCallBacklogApi()).thenReturn(true);
+        mockGatewayBacklog(utcDateTimeFrom, true);
+
+        mockGateways(utcDateTimeFrom, utcDateTimeTo);
+
+        // WHEN
+        final SimpleTable simpleTable = getWaveSuggestion.execute(
+                GetWaveSuggestionInputDto.builder()
+                        .zoneId(TIME_ZONE.toZoneId())
+                        .warehouseId(WAREHOUSE_ID)
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .date(utcDateTimeFrom)
+                        .build()
+        );
+
+        // THEN
+        assertSimpleTable(simpleTable, utcDateTimeFrom, utcDateTimeTo);
+        verifyNoInteractions(logisticCenterGateway);
+    }
+
     private void mockGateways(final ZonedDateTime utcDateTimeFrom,
                               final ZonedDateTime utcDateTimeTo) {
 
@@ -119,21 +164,36 @@ class GetWaveSuggestionTest {
                         .applyDeviation(true)
                         .build()
         )).thenReturn(mockSuggestedWaveDistribution());
+    }
 
-        when(backlogGatewayProvider.getBy(FBM_WMS_OUTBOUND))
-                .thenReturn(Optional.of(backlogGateway));
+    private void mockGatewayBacklog(final ZonedDateTime utcDateTimeFrom,
+                                    final boolean isShouldCallBacklogApi) {
 
-        when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(
-                OUTBOUND_PLANNING.getStatus(),
-                WAREHOUSE_ID,
-                utcDateTimeFrom.truncatedTo(HOURS).plusHours(1),
-                utcDateTimeFrom.truncatedTo(HOURS).plusHours(26),
-                null,
-                "order"))
-        ).thenReturn(ProcessBacklog.builder()
-                .process(OUTBOUND_PLANNING.getStatus())
-                .quantity(2232)
-                .build());
+        if (isShouldCallBacklogApi) {
+            when(backlogApiGateway.getCurrentBacklog(
+                    WAREHOUSE_ID,
+                    List.of("outbound-orders"),
+                    List.of(OUTBOUND_PLANNING.getStatus()),
+                    utcDateTimeFrom.truncatedTo(HOURS).plusHours(1).toInstant(),
+                    utcDateTimeFrom.truncatedTo(HOURS).plusHours(26).toInstant(),
+                    emptyList()))
+                    .thenReturn(List.of(new Consolidation(utcDateTimeFrom.toInstant(), emptyMap(), 2232, true)));
+        } else {
+            when(backlogGatewayProvider.getBy(FBM_WMS_OUTBOUND))
+                    .thenReturn(Optional.of(backlogGateway));
+
+            when(backlogGateway.getUnitBacklog(new UnitProcessBacklogInput(
+                    OUTBOUND_PLANNING.getStatus(),
+                    WAREHOUSE_ID,
+                    utcDateTimeFrom.truncatedTo(HOURS).plusHours(1),
+                    utcDateTimeFrom.truncatedTo(HOURS).plusHours(26),
+                    null,
+                    "order"))
+            ).thenReturn(ProcessBacklog.builder()
+                    .process(OUTBOUND_PLANNING.getStatus())
+                    .quantity(2232)
+                    .build());
+        }
     }
 
     private void assertSimpleTable(final SimpleTable simpleTable,
