@@ -36,8 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GetProjectionHeadcount {
 
-  private static final Double NUMBER_TO_ROUND = 100.0;
-
   private static final String PRODUCTIVITY = "effective_productivity";
 
   private static final String SEPARATOR = "-";
@@ -54,18 +52,18 @@ public class GetProjectionHeadcount {
     final Instant dateFrom = backlogs.keySet().stream().min(Comparator.naturalOrder()).orElse(Instant.now());
     final Instant dateTo = backlogs.keySet().stream().max(Comparator.naturalOrder()).orElse(Instant.now());
 
-    MetricResponse lastHourEffectiveProductivity = staffingGateway.getMetricsByName(
+    final MetricResponse lastHourEffectiveProductivity = staffingGateway.getMetricsByName(
         warehouseId,
         PRODUCTIVITY,
         new MetricRequest(ProcessName.PICKING, dateFrom.minus(1, ChronoUnit.HOURS), dateFrom));
 
-    Map<String, Double> mapLastHourEffectiveProductivity = lastHourEffectiveProductivity.getProcesses()
+    final Map<String, Double> mapLastHourEffectiveProductivity = lastHourEffectiveProductivity.getProcesses()
         .get(0)
         .getAreas()
         .stream()
         .collect(Collectors.toMap(AreaResponse::getName, AreaResponse::getValue));
 
-    List<MagnitudePhoto> operatingHoursPlannedHeadcount = planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
+    final List<MagnitudePhoto> operatingHoursPlannedHeadcount = planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
         .warehouseId(warehouseId)
         .dateFrom(ZonedDateTime.ofInstant(dateFrom, ZoneOffset.UTC))
         .dateTo(ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC))
@@ -80,14 +78,14 @@ public class GetProjectionHeadcount {
         .stream()
         .collect(Collectors.toMap(Map.Entry::getKey, backlogArea -> {
 
-          Optional<MagnitudePhoto> headcountOptional = operatingHoursPlannedHeadcount.stream()
+          final Optional<MagnitudePhoto> headcountOptional = operatingHoursPlannedHeadcount.stream()
               .filter(magnitudePhoto -> magnitudePhoto.getDate().toInstant().equals(backlogArea.getKey()))
               .findAny();
+
           if (headcountOptional.isPresent()) {
+            final int plannedHeadcount = headcountOptional.get().getValue();
 
-            int plannedHeadcount = headcountOptional.get().getValue();
-
-            List<HeadcountBySubArea> headcountProjectionList = getHeadcountBySubArea(
+            final List<HeadcountBySubArea> headcountProjectionList = getHeadcountBySubArea(
                 backlogArea.getValue(),
                 mapLastHourEffectiveProductivity,
                 plannedHeadcount
@@ -122,20 +120,20 @@ public class GetProjectionHeadcount {
   private List<HeadcountBySubArea> getHeadcountBySubArea(final List<NumberOfUnitsInAnArea> backlogs,
                                                          final Map<String, Double> mapLastHourEffectiveProductivity,
                                                          final int plannedHeadcount) {
-    Map<String, Double> calculatedHC = backlogs.stream()
+    final Map<String, Double> calculatedHC = backlogs.stream()
         .flatMap(v -> v.getSubareas().stream())
         .collect(Collectors.toMap(
             NumberOfUnitsInASubarea::getName,
             subAreas -> calculateRequiredHeadcountForArea(subAreas, mapLastHourEffectiveProductivity)));
 
-    double totalRequiredHeadcount = calculatedHC.values().stream().reduce(0D, Double::sum);
-    double difHC = plannedHeadcount - totalRequiredHeadcount;
+    final double totalRequiredHeadcount = calculatedHC.values().stream().reduce(0D, Double::sum);
+    final double difHC = plannedHeadcount - totalRequiredHeadcount;
 
-    Map<String, Double> headcountRemainderAssignByArea = calculatedHC.entrySet()
+    final Map<String, Double> headcountRemainderAssignByArea = calculatedHC.entrySet()
         .stream()
         .collect(Collectors.toMap(Map.Entry::getKey, value -> (value.getValue() / totalRequiredHeadcount) * difHC));
 
-    List<RepsByArea> repsByAreas = calculatedHC.entrySet()
+    final List<RepsByArea> repsByAreas = calculatedHC.entrySet()
         .stream()
         .map(value -> new RepsByArea(value.getKey(), value.getValue() + headcountRemainderAssignByArea.get(value.getKey())))
         .collect(Collectors.toList());
@@ -144,27 +142,21 @@ public class GetProjectionHeadcount {
         .sorted(Comparator.comparing(value -> value.getReps() % 1, Comparator.reverseOrder()))
         .map(repsByArea -> new HeadcountBySubArea(repsByArea.getArea(),
             repsByArea.getReps().intValue(),
-            Math.round((repsByArea.getReps() / plannedHeadcount) * NUMBER_TO_ROUND) / NUMBER_TO_ROUND))
+            repsByArea.getReps() / plannedHeadcount))
         .collect(Collectors.toList());
   }
 
-  private void redistributeHeadcount(List<HeadcountBySubArea> headcountProjectionList, final int plannedHeadcount) {
+  private void redistributeHeadcount(final List<HeadcountBySubArea> headcountProjectionList, final int plannedHeadcount) {
 
     final int projectedHC = headcountProjectionList.stream()
         .mapToInt(HeadcountBySubArea::getReps)
         .sum();
 
-
     if (plannedHeadcount > projectedHC && !headcountProjectionList.isEmpty()) {
       int difHeadcount = plannedHeadcount - projectedHC;
-      while (difHeadcount > 0) {
-        for (HeadcountBySubArea headcountBySubArea : headcountProjectionList) {
-          if (difHeadcount == 0) {
-            break;
-          }
-          headcountBySubArea.setReps(headcountBySubArea.getReps() + 1);
-          difHeadcount--;
-        }
+      for (int i = 0; i < difHeadcount; i++) {
+        HeadcountBySubArea reps = headcountProjectionList.get(i % headcountProjectionList.size());
+        reps.setReps(reps.getReps() + 1);
       }
     }
   }

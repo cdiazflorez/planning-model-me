@@ -709,8 +709,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     final UnitMeasure measure = UnitMeasure.fromUnits(totalUnitsInArea, throughput);
 
     Headcount headcountArea = numberOfUnitsInAnArea.map(value -> new Headcount(
-        value.getReps() != null ? value.getReps() : 0,
-        value.getRepsPercentage() != null ? value.getRepsPercentage() : 0D))
+            value.getReps() != null ? value.getReps() : 0,
+            value.getRepsPercentage() != null ? value.getRepsPercentage() : 0D))
         .orElse(new Headcount(0, 0D));
 
     return new AreaBacklogDetail(area.getName(), measure, headcountArea, mappedSubareas.size() == 1 ? null : mappedSubareas);

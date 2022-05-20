@@ -7,6 +7,8 @@ import lombok.Value;
 public class ProcessResponse {
 
   String name;
+
   Double value;
+
   List<AreaResponse> areas;
 }

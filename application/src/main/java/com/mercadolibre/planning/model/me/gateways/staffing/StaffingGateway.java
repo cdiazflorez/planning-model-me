@@ -6,7 +6,7 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Staffi
 
 public interface StaffingGateway {
 
-    StaffingResponse getStaffing(final String logisticCenter);
+  StaffingResponse getStaffing(final String logisticCenter);
 
-    MetricResponse getMetricsByName(String logisticCenter, String metricName, MetricRequest metricRequest);
+  MetricResponse getMetricsByName(String logisticCenter, String metricName, MetricRequest metricRequest);
 }

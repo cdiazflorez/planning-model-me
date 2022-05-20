@@ -4,6 +4,8 @@ import lombok.Value;
 
 @Value
 public class Headcount {
-   int absolute;
-   double percentage;
+
+  int absolute;
+
+  double percentage;
 }

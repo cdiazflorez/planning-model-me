@@ -4,6 +4,8 @@ import lombok.Value;
 
 @Value
 public class AreaResponse {
+
   String name;
+
   Double value;
 }

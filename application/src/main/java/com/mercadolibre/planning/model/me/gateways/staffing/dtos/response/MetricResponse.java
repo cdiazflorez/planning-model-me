@@ -8,7 +8,10 @@ import lombok.Value;
 public class MetricResponse {
 
   String name;
+
   Instant dateFrom;
+
   Instant dateTo;
+
   List<ProcessResponse> processes;
 }
