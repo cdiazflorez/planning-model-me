@@ -23,14 +23,6 @@ public class GetSalesInputDto {
 
     public GetSalesInputDto(final Workflow workflow,
                             final String warehouseId,
-                            final ZonedDateTime dateCreatedFrom) {
-        this.workflow = workflow;
-        this.warehouseId = warehouseId;
-        this.dateCreatedFrom = dateCreatedFrom;
-    }
-
-    public GetSalesInputDto(final Workflow workflow,
-                            final String warehouseId,
                             final ZonedDateTime dateCreatedFrom,
                             final ZonedDateTime dateCreatedTo,
                             final ZonedDateTime dateOutFrom,
