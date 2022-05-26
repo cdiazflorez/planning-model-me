@@ -222,7 +222,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
       if ("column_1".equals(header.getId())) {
         content.put(header.getId(),
             new Content(capitalize(processName.getTitle()), null, null,
-                processName.getName()));
+                processName.getName(),true));
       } else {
         final Map<Source, EntityRow> entityBySource = entitiesByHour.get(header.getValue());
 
@@ -235,15 +235,15 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                   entityBySource.get(FORECAST),
                   polyvalentProductivityByHour.getOrDefault(
                       header.getValue(), NO_VALUE)
-              ), null));
+              ), null, true));
         } else if (entityBySource != null && entityBySource.containsKey(FORECAST)) {
           content.put(header.getId(), new Content(
               valueOf(entityBySource.get(FORECAST).getValue()),
               entityBySource.get(FORECAST).getDate(),
-              null, null));
+              null, null, true));
         } else {
           content.put(header.getId(),
-              new Content(NO_VALUE, null, null, null));
+              new Content(NO_VALUE, null, null, null, true));
         }
       }
     });

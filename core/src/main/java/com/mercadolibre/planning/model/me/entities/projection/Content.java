@@ -15,4 +15,6 @@ public class Content {
     private Map<String, String> tooltip;
 
     private String id;
+
+    private boolean isValid;
 }

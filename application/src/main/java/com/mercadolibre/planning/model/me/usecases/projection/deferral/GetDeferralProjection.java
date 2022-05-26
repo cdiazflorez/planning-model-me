@@ -17,6 +17,7 @@ import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
@@ -34,6 +35,8 @@ import java.util.stream.Collectors;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.MAX_CAPACITY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.*;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
@@ -221,13 +224,33 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                         .build()
         );
 
+        final  List<MagnitudePhoto> throughputOutbound = planningModelGateway.getTrajectories(
+            TrajectoriesRequest.builder()
+                .warehouseId(input.getLogisticCenterId())
+                .workflow(input.getWorkflow())
+                .entityType(THROUGHPUT)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .processName(List.of(PACKING,PACKING_WALL))
+                .processingType(List.of(ProcessingType.THROUGHPUT))
+                .build()
+        );
+
+        final Map<ZonedDateTime, Integer> throughputOutboundByHours = throughputOutbound.stream()
+            .collect(Collectors.groupingBy(MagnitudePhoto::getDate))
+            .entrySet()
+            .stream()
+            .collect(Collectors.toMap(
+                entry -> entry.getKey().withZoneSameInstant(config.getZoneId()),
+                values -> values.getValue().stream().mapToInt(MagnitudePhoto::getValue).sum()));
+
         final List<ColumnHeader> headers = createColumnHeaders(
                 convertToTimeZone(config.getZoneId(), dateFrom), HOURS_TO_SHOW);
 
         return new ComplexTable(
                 headers,
                 List.of(createData(config, THROUGHPUT, throughput.stream()
-                        .map(EntityRow::fromEntity).collect(toList()), headers)
+                        .map(EntityRow::fromEntity).collect(toList()), headers, throughputOutboundByHours)
                 ),
                 action,
                 ""
