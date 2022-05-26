@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.entities.projection;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
 import java.time.ZonedDateTime;
@@ -16,5 +17,6 @@ public class Content {
 
     private String id;
 
-    private boolean isValid;
+    @JsonProperty("is_valid")
+    private boolean valid;
 }
