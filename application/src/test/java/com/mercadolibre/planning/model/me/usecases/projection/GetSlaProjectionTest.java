@@ -79,7 +79,7 @@ public class GetSlaProjectionTest {
 
         final SimpleTable simpleTable = new SimpleTable("", columnHeader, map);
         List<Map<String, Content>> content = List.of(Map.of("",
-                new Content("", ZonedDateTime.now(), Map.of("", ""), "")));
+                new Content("", ZonedDateTime.now(), Map.of("", ""), "", true)));
 
         final ComplexTable complexTable = new ComplexTable(columnHeader,
                 List.of(

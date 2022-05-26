@@ -104,7 +104,7 @@ public class EntitiesControllerTest {
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking",
-                                                        null, null, "picking"),
+                                                        null, null, "picking", true),
                                                 "column_2", new Content(
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
@@ -114,16 +114,16 @@ public class EntitiesControllerTest {
                                                                 "title_2", "Cantidad de reps FCST",
                                                                 "subtitle_2", "30"
                                                         ),
-                                                        null
+                                                        null, true
                                                 )
                                         ),
                                         Map.of(
                                                 "column_1", new Content("Packing",
-                                                        null, null, "packing"),
+                                                        null, null, "packing", true),
                                                 "column_2", new Content(
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
-                                                        null, null)
+                                                        null, null, true)
                                         )
                                 )
                         ),
@@ -131,7 +131,7 @@ public class EntitiesControllerTest {
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking",
-                                                        null, null, "picking"),
+                                                        null, null, "picking", true),
                                                 "column_2", new Content("30", null,
                                                         Map.of(
                                                                 "title_1",
@@ -139,14 +139,14 @@ public class EntitiesControllerTest {
                                                                 "subtitle_1",
                                                                 "30,4 uds/h"
                                                         ),
-                                                        null
+                                                        null, true
                                                 )
                                         ),
                                         Map.of(
                                                 "column_1", new Content("Packing",
-                                                        null, null, "packing"),
+                                                        null, null, "packing", true),
                                                 "column_2", new Content("30",
-                                                        null, null, null)
+                                                        null, null, null, true)
                                         )
                                 )
                         ),
@@ -154,15 +154,15 @@ public class EntitiesControllerTest {
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking",
-                                                        null, null, "picking"),
+                                                        null, null, "picking", true),
                                                 "column_2", new Content("1600",
-                                                        null, null, null)
+                                                        null, null, null, true)
                                         ),
                                         Map.of(
                                                 "column_1", new Content("Packing",
-                                                        null, null, "packing"),
+                                                        null, null, "packing", true),
                                                 "column_2", new Content("1600",
-                                                        null, null, null)
+                                                        null, null, null, true)
                                         )
                                 )
                         )
