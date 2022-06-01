@@ -40,6 +40,7 @@ import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.User
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulation;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -77,6 +78,9 @@ public class SimulationControllerTest {
 
     @MockBean
     private RequestClock requestClock;
+
+    @MockBean
+    private ValidateSimulation validateSimulation;
 
     @Test
     void testRunSimulation() throws Exception {
