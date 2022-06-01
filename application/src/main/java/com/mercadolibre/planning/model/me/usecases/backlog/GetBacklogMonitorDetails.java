@@ -308,7 +308,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     final Map<String, Integer> unitsByArea = consolidations.stream()
         .collect(
             Collectors.groupingBy(
-                consolidation -> consolidation.getKeys().get(AREA_KEY),
+                consolidation -> consolidation.getKeys().getOrDefault(AREA_KEY, NO_AREA),
                 Collectors.collectingAndThen(
                     Collectors.toList(),
                     sameAreaConsolidations -> sameAreaConsolidations.stream()
