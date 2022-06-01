@@ -32,6 +32,8 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.DateValidate;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.MagnitudeValidate;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
@@ -191,6 +193,34 @@ public class SimulationControllerTest {
         verifyNoInteractions(saveSimulation);
     }
 
+    @Test
+    public void testValidateSimulations() throws Exception {
+        //GIVEN
+        when(validateSimulation.execute(any(GetProjectionInputDto.class)))
+                .thenReturn(List.of(
+                        new MagnitudeValidate("throughput",
+                                List.of(new DateValidate(ZonedDateTime.parse("2022-06-01T14:00:00-03:00"),true))
+                        )
+                ));
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/deferral/validate")
+                .param("caller.id", String.valueOf(USER_ID))
+                .content(mockValidateSimulationRequest())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID,
+                List.of(UserPermission.OUTBOUND_SIMULATION)));
+
+        result.andExpect(status().isOk());
+        result.andExpect(content().json("[{\"type\":\"throughput\"," +
+                "\"values\":[{\"date\":\"2022-06-01T14:00:00-03:00\",\"is_valid\":true}]}]"));
+
+    }
+
     private String mockRunSimulationRequest() throws JSONException {
         return new JSONObject()
                 .put("warehouse_id", WAREHOUSE_ID)
@@ -329,5 +359,21 @@ public class SimulationControllerTest {
                 )
         );
         return new SimpleTable(title, columnHeaders, data);
+    }
+
+    private String mockValidateSimulationRequest() throws JSONException {
+        return new JSONObject()
+                .put("warehouse_id", WAREHOUSE_ID)
+                .put("simulations", new JSONArray().put(new JSONObject()
+                        .put("process_name", "global")
+                        .put("entities", new JSONArray().put(new JSONObject()
+                                .put("type", "throughput")
+                                .put("values", new JSONArray().put(new JSONObject()
+                                        .put("date", "2020-07-27T10:00:00Z")
+                                        .put("quantity", 1)
+                                ))
+                        ))
+                ))
+                .toString();
     }
 }
