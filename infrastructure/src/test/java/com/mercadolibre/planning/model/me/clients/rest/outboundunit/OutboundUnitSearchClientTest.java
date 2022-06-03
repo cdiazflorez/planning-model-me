@@ -25,9 +25,9 @@ import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.POST;
 import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.HttpStatus.OK;
 
 
