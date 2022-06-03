@@ -60,6 +60,8 @@ public class GetSlaProjectionInboundTest {
     private static final ZonedDateTime SLA_5 = getCurrentUtcDate().plusHours(5).plusMinutes(30);
     private static final ZonedDateTime SLA_6 = getCurrentUtcDate().plusHours(6);
     private static final ZonedDateTime SLA_7 = getCurrentUtcDate().plusHours(7);
+    private static final ZonedDateTime SLA_8 = getCurrentUtcDate();
+    private static final ZonedDateTime SLA_9 = getCurrentUtcDate().plusDays(2);
 
     @InjectMocks
     private GetSlaProjectionInbound getSlaProjectionInbound;
@@ -119,7 +121,58 @@ public class GetSlaProjectionInboundTest {
         assertEquals("Proyecciones", projection.getTitle());
         assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
         assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
-        assertChart(projection.getData().getChart());
+        assertChart(projection.getData().getChart(), true);
+    }
+
+    @Test
+    void testInboundSecondDayExecute() {
+        // Given
+        final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+        final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.minusDays(1);
+        final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(3);
+
+        final List<Backlog> mockedBacklog = List.of(
+            new Backlog(SLA_8, 50),
+            new Backlog(SLA_2, -30),
+            new Backlog(SLA_3, 150),
+            new Backlog(SLA_4, 235),
+            new Backlog(SLA_5, 300),
+            new Backlog(SLA_6, 120),
+            new Backlog(SLA_9, 60)
+        );
+
+        final GetProjectionInputDto input = GetProjectionInputDto.builder()
+            .workflow(FBM_WMS_INBOUND)
+            .warehouseId(WAREHOUSE_ID)
+            .date(currentUtcDateTime)
+            .requestDate(Instant.now().truncatedTo(ChronoUnit.HOURS).minus(1, ChronoUnit.DAYS))
+            .build();
+
+        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+            .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+
+
+        when(getBacklogByDateInbound.execute(new GetBacklogByDateDto(FBM_WMS_INBOUND, WAREHOUSE_ID,
+            utcDateTimeFrom.toInstant(), utcDateTimeTo.toInstant())))
+            .thenReturn(mockedBacklog);
+
+        when(planningModelGateway.runProjection(any()))
+            .thenReturn(mockProjections(currentUtcDateTime));
+
+        when(getEntities.execute(input)).thenReturn(mockComplexTable());
+
+        when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class))).thenReturn(mockSimpleTable());
+
+        // When
+        final Projection projection = getSlaProjectionInbound.execute(input);
+
+        // Then
+        assertNull(projection.getEmptyStateMessage());
+
+        assertEquals("Proyecciones", projection.getTitle());
+        assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
+        assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
+        assertChart(projection.getData().getChart(), false);
     }
 
     private List<Backlog> mockBacklog() {
@@ -187,11 +240,11 @@ public class GetSlaProjectionInboundTest {
         );
     }
 
-    private void assertChart(final Chart chart) {
+    private void assertChart(final Chart chart, final boolean isFirstDay) {
         final ZoneId zoneId = TIME_ZONE.toZoneId();
         final ZonedDateTime currentDate = getCurrentUtcDate();
         final List<ChartData> chartData = chart.getData();
-        assertEquals(6, chartData.size());
+        assertEquals(isFirstDay ? 6 : 5, chartData.size());
 
         final ChartData chartData1 = chartData.get(0);
         final ZonedDateTime cpt1 = convertToTimeZone(zoneId, SLA_3);
@@ -218,18 +271,20 @@ public class GetSlaProjectionInboundTest {
         final ZonedDateTime projectedEndDate5 = convertToTimeZone(zoneId, currentDate.plusDays(1));
         assertChartData(chartData5, cpt5, projectedEndDate5, "100 uds.", true);
 
-        final ChartData chartData6 = chartData.get(5);
-        final ZonedDateTime cpt6 = convertToTimeZone(zoneId, SLA_1);
-        final ZonedDateTime projectedEndDate6 = convertToTimeZone(zoneId, currentDate.plusMinutes(15));
-        assertEquals(cpt6.format(DATE_ONLY_FORMATTER), chartData6.getTitle());
-        assertEquals(cpt6.format(DATE_FORMATTER), chartData6.getCpt());
-        assertEquals(projectedEndDate6.format(DATE_FORMATTER), chartData6.getProjectedEndTime());
-        assertEquals(0, chartData6.getProcessingTime().getValue());
-        assertChartTooltip(
+        if (isFirstDay) {
+            final ChartData chartData6 = chartData.get(5);
+            final ZonedDateTime cpt6 = convertToTimeZone(zoneId, SLA_1);
+            final ZonedDateTime projectedEndDate6 = convertToTimeZone(zoneId, currentDate.plusMinutes(15));
+            assertEquals(cpt6.format(DATE_ONLY_FORMATTER), chartData6.getTitle());
+            assertEquals(cpt6.format(DATE_FORMATTER), chartData6.getCpt());
+            assertEquals(projectedEndDate6.format(DATE_FORMATTER), chartData6.getProjectedEndTime());
+            assertEquals(0, chartData6.getProcessingTime().getValue());
+            assertChartTooltip(
                 chartData6.getTooltip(),
                 cpt6.format(DATE_ONLY_FORMATTER) + OVERDUE_TAG,
                 "100 uds.",
                 projectedEndDate6.format(TOOLTIP_DATE_FORMATTER));
+        }
     }
 
     private void assertChartData(final ChartData chartData,
