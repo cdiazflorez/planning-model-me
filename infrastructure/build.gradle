@@ -23,17 +23,17 @@ dependencies {
     compile project(':application')
 
     implementation platform('com.fasterxml.jackson:jackson-bom:2.13.3')
-    implementation platform('com.mercadolibre.library:java-melitk-bom:0.2.2')
+    implementation platform('com.mercadolibre.library:java-melitk-bom:1.0.0')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'com.mercadolibre:lockclient'
-    implementation 'com.mercadolibre:spring-boot-starter-config'
+    implementation 'com.mercadolibre:spring-boot-starter-config:3.2.0'
     implementation 'com.mercadolibre.metrics:datadog-metric-wrapper'
-    implementation 'com.mercadolibre.fbm.wms.outbound:commons'
+    implementation 'com.mercadolibre.fbm.wms.outbound:commons:1.2.0'
     implementation 'com.mercadolibre.restclient:meli-restclient-default'
     implementation 'com.mercadolibre.resilience:resilience-core'
-    implementation 'com.mercadolibre.library:kraken-client-java'
+    implementation 'com.mercadolibre.library:kraken-client-java:1.4.0'
 
     // bigquery
     implementation platform('com.google.cloud:libraries-bom:25.0.0')

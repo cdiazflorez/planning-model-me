@@ -9,11 +9,11 @@ sourceCompatibility = 11
 
 dependencies {
     implementation platform('com.fasterxml.jackson:jackson-bom:2.13.3')
-    implementation platform('com.mercadolibre.library:java-melitk-bom:0.2.2')
+    implementation platform('com.mercadolibre.library:java-melitk-bom:1.0.0')
 
     compile project(':core')
     compile 'javax.inject:javax.inject:1'
-    compile 'com.mercadolibre:java-meli-spreadsheet'
+    compile 'com.mercadolibre:java-meli-spreadsheet:2.0.3'
 }
 
 test {
