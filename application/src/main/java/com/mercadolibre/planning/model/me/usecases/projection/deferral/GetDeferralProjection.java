@@ -12,6 +12,7 @@ import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createData;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.toList;
 
@@ -131,7 +132,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                     deferralBaseOutput.getConfiguration(),
                                     dateToToShow))),
                     createOutboundTabs(),
-                    null);
+                    simulationMode);
 
         } catch (RuntimeException ex) {
             return new Projection("Proyección",
@@ -240,12 +241,10 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
         );
 
         final Map<ZonedDateTime, Integer> throughputOutboundByHours = throughputOutbound.stream()
-                .collect(Collectors.groupingBy(MagnitudePhoto::getDate))
-                .entrySet()
-                .stream()
                 .collect(Collectors.toMap(
-                        entry -> entry.getKey().withZoneSameInstant(config.getZoneId()),
-                        values -> values.getValue().stream().mapToInt(MagnitudePhoto::getValue).sum()));
+                        entry -> entry.getDate().withZoneSameInstant(config.getZoneId()),
+                        MagnitudePhoto::getValue,
+                        Integer::sum));
 
         final List<ColumnHeader> headers = createColumnHeaders(
                 convertToTimeZone(config.getZoneId(), dateFrom), HOURS_TO_SHOW);
