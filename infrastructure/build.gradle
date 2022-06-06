@@ -22,14 +22,17 @@ mainClassName = 'com.mercadolibre.planning.model.me.PlanningModelMiddleendApplic
 dependencies {
     compile project(':application')
 
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.13.3')
+    implementation platform('com.mercadolibre.library:java-melitk-bom:1.0.0')
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'com.mercadolibre:lockclient:2.2.2'
-    implementation 'com.mercadolibre:spring-boot-starter-config:3.1.0'
-    implementation 'com.mercadolibre.metrics:datadog-metric-wrapper:0.0.13'
-    implementation 'com.mercadolibre.fbm.wms.outbound:commons:0.1.2'
-    implementation 'com.mercadolibre.restclient:meli-restclient-default:0.5.3'
-    implementation 'com.mercadolibre.resilience:resilience-core:1.1.1'
+    implementation 'com.mercadolibre:lockclient'
+    implementation 'com.mercadolibre:spring-boot-starter-config:3.2.0'
+    implementation 'com.mercadolibre.metrics:datadog-metric-wrapper'
+    implementation 'com.mercadolibre.fbm.wms.outbound:commons:1.2.0'
+    implementation 'com.mercadolibre.restclient:meli-restclient-default'
+    implementation 'com.mercadolibre.resilience:resilience-core'
     implementation 'com.mercadolibre.library:kraken-client-java:1.4.0'
 
     // bigquery
@@ -37,7 +40,7 @@ dependencies {
     implementation 'com.google.cloud:google-cloud-bigquery'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation "com.mercadolibre.restclient:meli-restclient-core:0.5.5:tests"
+    testImplementation "com.mercadolibre.restclient:meli-restclient-core::tests"
 }
 
 configurations {
