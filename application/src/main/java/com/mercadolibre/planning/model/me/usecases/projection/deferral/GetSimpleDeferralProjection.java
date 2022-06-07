@@ -8,6 +8,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
+import com.mercadolibre.planning.model.me.usecases.projection.DeferralBaseProjection;
 import lombok.AllArgsConstructor;
 
 import javax.inject.Named;
@@ -22,34 +23,14 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDa
 import static java.util.stream.Collectors.toList;
 
 @Named
-@AllArgsConstructor
-public class GetSimpleDeferralProjection implements
-        UseCase<GetProjectionInput, GetSimpleDeferralProjectionOutput> {
+public class GetSimpleDeferralProjection extends DeferralBaseProjection {
 
-    private static final List<ProcessName> PROCESS_NAMES = List.of(PICKING, PACKING, PACKING_WALL);
-
-    private static final int DEFERRAL_DAYS_TO_PROJECT = 3;
-
-    private final LogisticCenterGateway logisticCenterGateway;
-
-    private final PlanningModelGateway planningModelGateway;
-
-    public GetSimpleDeferralProjectionOutput execute(final GetProjectionInput input) {
-
-        final ZonedDateTime dateFromToProject = getCurrentUtcDate();
-        final ZonedDateTime dateToToProject = dateFromToProject.plusDays(DEFERRAL_DAYS_TO_PROJECT);
-
-        final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
-                input.getLogisticCenterId());
-
-        List<ProjectionResult> deferralProjections =
-                getSortedDeferralProjections(input, dateFromToProject, dateToToProject,
-                        input.getBacklogToProject(), config.getTimeZone().getID());
-
-        return new GetSimpleDeferralProjectionOutput(deferralProjections, config);
+    public GetSimpleDeferralProjection(LogisticCenterGateway logisticCenterGateway,
+                                       PlanningModelGateway planningModelGateway) {
+        super(logisticCenterGateway, planningModelGateway);
     }
 
-    private List<ProjectionResult> getSortedDeferralProjections(final GetProjectionInput input,
+    public List<ProjectionResult> getSortedDeferralProjections(final GetProjectionInput input,
                                                                 final ZonedDateTime dateFrom,
                                                                 final ZonedDateTime dateTo,
                                                                 final List<Backlog> backlogs,

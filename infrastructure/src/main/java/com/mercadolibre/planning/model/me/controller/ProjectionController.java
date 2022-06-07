@@ -91,7 +91,8 @@ public class ProjectionController {
                 workflow,
                 date,
                 null,
-                cap5ToPack)))
+                cap5ToPack,
+                null)))
         );
     }
 

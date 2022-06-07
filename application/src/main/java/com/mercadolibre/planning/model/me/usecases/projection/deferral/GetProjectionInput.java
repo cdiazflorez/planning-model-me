@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.projection.deferral;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.Value;
 
@@ -19,4 +20,6 @@ public class GetProjectionInput {
     private List<Backlog> backlogToProject;
 
     private boolean wantToSimulate21;
+
+    private List<Simulation> simulations;
 }

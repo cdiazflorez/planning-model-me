@@ -135,7 +135,8 @@ public class RunSimulationOutboundTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         utcCurrentTime,
         mockBacklog(),
-        false)))
+        false,
+            null)))
         .thenReturn(new GetSimpleDeferralProjectionOutput(
             mockProjections(utcCurrentTime),
             new LogisticCenterConfiguration(TIME_ZONE)));

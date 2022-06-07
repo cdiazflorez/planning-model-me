@@ -41,6 +41,7 @@ import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeU
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulationDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulation;
 import java.time.Instant;
@@ -83,6 +84,9 @@ public class SimulationControllerTest {
 
     @MockBean
     private ValidateSimulation validateSimulation;
+
+    @MockBean
+    private RunSimulationDeferralProjection runSimulationDeferralProjection;
 
     @Test
     void testRunSimulation() throws Exception {

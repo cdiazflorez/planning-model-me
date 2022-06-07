@@ -1,7 +1,9 @@
 package com.mercadolibre.planning.model.me.controller.simulation;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
+import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
@@ -16,11 +18,14 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulationDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulation;
 import com.newrelic.api.agent.Trace;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,7 +33,9 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.PropertyEditorRegistry;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,6 +55,7 @@ public class SimulationController {
     private final DatadogMetricService datadogMetricService;
     private final RequestClock requestClock;
     private final ValidateSimulation validateSimulation;
+    private final RunSimulationDeferralProjection runSimulationDeferralProjection;
 
     private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
             Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_SIMULATION),
@@ -107,6 +115,30 @@ public class SimulationController {
                 .warehouseId(request.getWarehouseId())
                 .simulations(fromRequest(request.getSimulations()))
                 .build())));
+    }
+
+    @Trace
+    @PostMapping("/deferral/run")
+    public ResponseEntity<Projection> runSimulationDeferralProjection(
+            @PathVariable final Workflow workflow,
+            @RequestParam("caller.id") @NotNull final Long callerId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
+            final ZonedDateTime date,
+            @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack,
+            @RequestBody final RunSimulationRequest request) {
+
+        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
+
+        datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "deferral");
+
+        return ResponseEntity.of(of(runSimulationDeferralProjection.execute(new GetProjectionInput(
+                request.getWarehouseId(),
+                workflow,
+                date,
+                null,
+                cap5ToPack,
+                fromRequest(request.getSimulations())
+        ))));
     }
 
     private List<Simulation> fromRequest(final List<SimulationRequest> simulationRequests) {

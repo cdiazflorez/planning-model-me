@@ -228,7 +228,21 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
-  @Override
+    @Override
+    public List<ProjectionResult> runSimulationDeferralProjection(
+            ProjectionRequest projectionRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, projectionRequest.getWorkflow())
+                        + SIMULATIONS_PREFIX_URL + "/deferral/delivery_promise")
+                .POST(requestSupplier(projectionRequest))
+                .acceptedHttpStatuses(Set.of(OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {
+        }));
+    }
+
+    @Override
   public Optional<ConfigurationResponse> getConfiguration(
       final ConfigurationRequest configurationRequest) {
     final Map<String, String> params = new LinkedHashMap<>();

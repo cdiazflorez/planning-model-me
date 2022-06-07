@@ -100,7 +100,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate,
         mockBacklog(),
-        false)))
+        false,
+            null)))
         .thenReturn(new GetSimpleDeferralProjectionOutput(
             mockProjections(),
             new LogisticCenterConfiguration(getDefault())));
@@ -110,7 +111,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate.plusHours(1),
         mockBacklog(),
-        false)))
+        false,
+            null)))
         .thenReturn(new GetSimpleDeferralProjectionOutput(
             mockProjections(),
             new LogisticCenterConfiguration(getDefault())));
@@ -120,7 +122,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         null,
         mockBacklog(),
-        false)))
+        false,
+            null)))
         .thenReturn(new GetSimpleDeferralProjectionOutput(
             mockProjections(),
             new LogisticCenterConfiguration(getDefault())));
@@ -130,19 +133,22 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate,
         mockBacklog(),
-        false));
+        false,
+            null));
 
     final Projection projectionFutureInputDate = getDeferralProjection.execute(new GetProjectionInput(
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate.plusHours(1),
         mockBacklog(),
-        false));
+        false,
+            null));
 
     final Projection projectionNullInputDate = getDeferralProjection.execute(new GetProjectionInput(
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         null,
         mockBacklog(),
-        false));
+        false,
+            null));
 
     //THEN
     assertEquals("Proyección", projection.getTitle());
@@ -195,7 +201,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate,
         mockBacklog(),
-        false)))
+        false,
+            null)))
         .thenReturn(new GetSimpleDeferralProjectionOutput(
             emptyList(),
             new LogisticCenterConfiguration(getDefault())));
@@ -205,7 +212,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate,
         mockBacklog(),
-        false));
+        false,
+            null));
 
     //THEN
     verifyNoInteractions(getProjectionSummary);
@@ -236,7 +244,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate,
         mockBacklog(),
-        false)))
+        false,
+            null)))
         .thenReturn(new GetSimpleDeferralProjectionOutput(
             null,
             new LogisticCenterConfiguration(getDefault())));
@@ -246,7 +255,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate,
         mockBacklog(),
-        false));
+        false,
+            null));
 
     //THEN
     verifyNoInteractions(getProjectionSummary);
@@ -263,7 +273,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate,
         mockBacklog(),
-        false)))
+        false,
+            null)))
         .thenReturn(new GetSimpleDeferralProjectionOutput(
             mockProjections(),
             new LogisticCenterConfiguration(getDefault())));
@@ -273,7 +284,8 @@ public class GetDeferralProjectionTest {
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
         currentUtcDate,
         mockBacklog(),
-        false));
+        false,
+            null));
 
     //THEN
     assertEquals("Proyección", projection.getTitle());
