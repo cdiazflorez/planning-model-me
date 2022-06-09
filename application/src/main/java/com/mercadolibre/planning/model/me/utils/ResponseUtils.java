@@ -31,23 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
-import static java.lang.String.format;
-import static java.lang.String.valueOf;
-import static java.time.format.DateTimeFormatter.ofPattern;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang.StringUtils.capitalize;
-
 public class ResponseUtils {
 
     public static final String PROJECTION_TITLE = "Proyección";
 
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
 
-    private ResponseUtils() {}
+    private ResponseUtils() {
+    }
 
     public static List<ColumnHeader> createColumnHeaders(final ZonedDateTime dateFrom,
                                                          final int hoursToShow) {
@@ -100,8 +91,8 @@ public class ResponseUtils {
     public static Data createData(final LogisticCenterConfiguration config,
                                   final MagnitudeType magnitudeType,
                                   final List<EntityRow> entities,
-                                  final List<ColumnHeader> headers,
-                                  final Map<ZonedDateTime, Integer> throughputOutboundByHours) {
+                                  final List<ColumnHeader> headers
+    ) {
 
         final Map<RowName, List<EntityRow>> entitiesByProcess = entities.stream()
                 .collect(groupingBy(EntityRow::getRowName));
@@ -116,8 +107,8 @@ public class ResponseUtils {
                                 config,
                                 entry.getKey(),
                                 headers,
-                                entry.getValue(),
-                                throughputOutboundByHours))
+                                entry.getValue()
+                        ))
                         .collect(toList())
         );
     }
@@ -125,8 +116,7 @@ public class ResponseUtils {
     private static Map<String, Content> createContent(final LogisticCenterConfiguration config,
                                                       final RowName processName,
                                                       final List<ColumnHeader> headers,
-                                                      final List<EntityRow> entities,
-                                                      final Map<ZonedDateTime, Integer> throughputOutboundByHours) {
+                                                      final List<EntityRow> entities) {
 
         final Map<String, EntityRow> entitiesByHour = entities.stream()
                 .map(entity -> entity.convertTimeZone(config.getZoneId()))
@@ -148,22 +138,16 @@ public class ResponseUtils {
                 if (entity == null) {
                     content.put(header.getId(), new Content("-", null, null, null, true));
                 } else {
-                    boolean valid = parseInt(entity.getValue()) >= throughputOutboundByHours.getOrDefault(entity.getDate(), 0);
                     content.put(header.getId(), new Content(
                             valueOf(entity.getValue()),
                             entity.getDate(),
-                            null, null, !entity.getRowName().equals(RowName.GLOBAL) || valid));
+                            null,
+                            null,
+                            entity.isValid()
+                    ));
                 }
             }
         });
         return content;
-    }
-
-    private static int parseInt(String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 }

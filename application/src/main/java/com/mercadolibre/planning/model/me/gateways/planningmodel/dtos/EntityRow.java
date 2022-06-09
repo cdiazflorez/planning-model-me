@@ -1,11 +1,10 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
-import lombok.Builder;
-import lombok.Data;
-
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import lombok.Builder;
+import lombok.Data;
 
 @Builder
 @Data
@@ -19,6 +18,8 @@ public class EntityRow {
 
     private Source source;
 
+    private boolean valid;
+
     public LocalTime getTime() {
         return date.toLocalTime();
     }
@@ -28,10 +29,33 @@ public class EntityRow {
         return this;
     }
 
+    public static EntityRow fromEntity(final MagnitudePhoto response, final boolean valid) {
+        RowName rowName = getName(response.getProcessName());
+
+        return EntityRow.builder()
+                .date(response.getDate())
+                .valid(valid)
+                .rowName(rowName)
+                .value(String.valueOf(response.getValue()))
+                .source(response.getSource())
+                .build();
+    }
+
     public static EntityRow fromEntity(final MagnitudePhoto response) {
+        RowName rowName = getName(response.getProcessName());
+
+        return EntityRow.builder()
+                .date(response.getDate())
+                .rowName(rowName)
+                .value(String.valueOf(response.getValue()))
+                .source(response.getSource())
+                .build();
+    }
+
+    public static RowName getName(ProcessName processName) {
         RowName rowName = null;
 
-        switch (response.getProcessName()) {
+        switch (processName) {
             case PACKING:
                 rowName = RowName.PACKING;
                 break;
@@ -53,11 +77,8 @@ public class EntityRow {
             default:
                 break;
         }
-        return EntityRow.builder()
-                .date(response.getDate())
-                .rowName(rowName)
-                .value(String.valueOf(response.getValue()))
-                .source(response.getSource())
-                .build();
+
+        return rowName;
     }
+
 }

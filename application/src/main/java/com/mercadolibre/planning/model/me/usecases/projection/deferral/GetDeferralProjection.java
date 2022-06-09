@@ -30,6 +30,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
@@ -216,7 +217,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                        final ZonedDateTime dateFrom,
                                        final ZonedDateTime dateTo) {
 
-        final List<MagnitudePhoto> throughput = planningModelGateway.getTrajectories(
+        final List<MagnitudePhoto> maxCapacity = planningModelGateway.getTrajectories(
                 TrajectoriesRequest.builder()
                         .warehouseId(input.getLogisticCenterId())
                         .workflow(input.getWorkflow())
@@ -228,7 +229,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                         .build()
         );
 
-        final List<MagnitudePhoto> throughputOutbound = planningModelGateway.getTrajectories(
+        final List<MagnitudePhoto> throughput = planningModelGateway.getTrajectories(
                 TrajectoriesRequest.builder()
                         .warehouseId(input.getLogisticCenterId())
                         .workflow(input.getWorkflow())
@@ -240,9 +241,9 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                         .build()
         );
 
-        final Map<ZonedDateTime, Integer> throughputOutboundByHours = throughputOutbound.stream()
+        final Map<ZonedDateTime, Integer> throughputOutboundByHours = throughput.stream()
                 .collect(Collectors.toMap(
-                        entry -> entry.getDate().withZoneSameInstant(config.getZoneId()),
+                        MagnitudePhoto::getDate,
                         MagnitudePhoto::getValue,
                         Integer::sum));
 
@@ -251,12 +252,19 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
         return new ComplexTable(
                 headers,
-                List.of(createData(config, THROUGHPUT, throughput.stream()
-                        .map(EntityRow::fromEntity).collect(toList()), headers, throughputOutboundByHours)
+                List.of(createData(config, THROUGHPUT, maxCapacity.stream()
+                        .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughputOutboundByHours)))
+                        .collect(toList()), headers)
                 ),
                 action,
                 ""
         );
+    }
+
+    private boolean validateCapacity(MagnitudePhoto capacity, Map<ZonedDateTime, Integer> throughputOutboundByHours) {
+        boolean valid = capacity.getValue() >= throughputOutboundByHours.getOrDefault(capacity.getDate(), 0);
+
+        return !capacity.getProcessName().equals(ProcessName.GLOBAL) || valid;
     }
 
     private List<ProjectionResult> filterProjectionsInRange(
