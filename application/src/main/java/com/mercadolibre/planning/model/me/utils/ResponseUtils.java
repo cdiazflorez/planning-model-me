@@ -8,7 +8,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang.StringUtils.capitalize;
+import static org.apache.commons.lang3.StringUtils.capitalize;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
@@ -31,14 +31,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
+import static java.lang.String.format;
+import static java.lang.String.valueOf;
+import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang.StringUtils.capitalize;
+
 public class ResponseUtils {
 
     public static final String PROJECTION_TITLE = "Proyección";
 
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
 
-    private ResponseUtils() {
-    }
+    private ResponseUtils() {}
 
     public static List<ColumnHeader> createColumnHeaders(final ZonedDateTime dateFrom,
                                                          final int hoursToShow) {

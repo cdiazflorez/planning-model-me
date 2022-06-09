@@ -170,7 +170,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                               final List<Backlog> backlogs) {
 
     return backlogs.stream()
-        .filter(p -> p.getDate().isAfter(dateFrom) && p.getDate().isBefore(dateTo))
+        .filter(p -> (p.getDate().isAfter(dateFrom) || p.getDate().isEqual(dateFrom)) && p.getDate().isBefore(dateTo))
         .collect(toList());
   }
 
