@@ -8,8 +8,10 @@ version '1.0-SNAPSHOT'
 sourceCompatibility = 11
 
 dependencies {
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.13.3')
+
+    implementation 'com.fasterxml.jackson.core:jackson-annotations'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 
 generateLombokConfig.enabled = false
