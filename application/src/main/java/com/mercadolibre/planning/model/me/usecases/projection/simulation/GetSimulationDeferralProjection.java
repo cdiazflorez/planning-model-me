@@ -37,6 +37,7 @@ public class GetSimulationDeferralProjection extends DeferralBaseProjection {
                         .dateTo(dateTo)
                         .backlog(backlogs)
                         .timeZone(timeZone)
+                        .simulations(input.getSimulations())
                         .build());
 
         return projection.stream()

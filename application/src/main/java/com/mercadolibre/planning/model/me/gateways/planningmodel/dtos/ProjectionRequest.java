@@ -21,4 +21,5 @@ public class ProjectionRequest {
     private long userId;
     private boolean applyDeviation;
     private String timeZone;
+    private List<Simulation> simulations;
 }
