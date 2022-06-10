@@ -9,6 +9,7 @@ import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -154,6 +155,8 @@ public class GetDeferralProjectionTest {
         .get(0).getId());
     assertEquals("Throughput", projection.getData().getComplexTable1().getData()
         .get(0).getTitle());
+    assertTrue(projection.getData().getComplexTable1().getData()
+              .get(0).getContent().get(0).get("column_2").isValid());
 
     //check if the first CPT and the current date are in the same hour and minute, if is the case then the CPT_0 have to be in the projection, otherwise
     //the CPT_0 shouldn't be because there is not in the date range anymore
