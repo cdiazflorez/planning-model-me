@@ -30,7 +30,7 @@ public class EntityRow {
     }
 
     public static EntityRow fromEntity(final MagnitudePhoto response, final boolean valid) {
-        RowName rowName = getName(response.getProcessName());
+        final RowName rowName = getName(response.getProcessName());
 
         return EntityRow.builder()
                 .date(response.getDate())
@@ -42,13 +42,14 @@ public class EntityRow {
     }
 
     public static EntityRow fromEntity(final MagnitudePhoto response) {
-        RowName rowName = getName(response.getProcessName());
+        final RowName rowName = getName(response.getProcessName());
 
         return EntityRow.builder()
                 .date(response.getDate())
                 .rowName(rowName)
                 .value(String.valueOf(response.getValue()))
                 .source(response.getSource())
+                .valid(true)
                 .build();
     }
 
