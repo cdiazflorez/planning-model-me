@@ -33,7 +33,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
@@ -65,6 +64,13 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
     private static final int SELECTOR_DAYS_TO_SHOW = 2;
 
     private static final int HOURS_TO_SHOW = 25;
+
+    private static final Map<MagnitudeType, Map<String, List<String>>> FILTER_CAP_MAX = Map.of(
+            HEADCOUNT, Map.of(
+                    PROCESSING_TYPE.toJson(),
+                    List.of(MAX_CAPACITY.getName())
+            )
+    );
 
     private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "to_route",
             "to_pick", "picked", "to_sort", "sorted", "to_group", "grouping", "grouped", "to_pack");
@@ -220,7 +226,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                        final ZonedDateTime dateFrom,
                                        final ZonedDateTime dateTo) {
 
-        Map<MagnitudeType, List<MagnitudePhoto>> entities = planningModelGateway.searchTrajectories(
+        final Map<MagnitudeType, List<MagnitudePhoto>> entities = planningModelGateway.searchTrajectories(
                 SearchTrajectoriesRequest.builder()
                         .warehouseId(input.getLogisticCenterId())
                         .workflow(FBM_WMS_OUTBOUND)
@@ -228,12 +234,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                         .dateFrom(dateFrom)
                         .dateTo(dateTo)
                         .processName(List.of(GLOBAL, PACKING, PACKING_WALL))
-                        .entityFilters(Map.of(
-                                HEADCOUNT, Map.of(
-                                        PROCESSING_TYPE.toJson(),
-                                        List.of(MAX_CAPACITY.getName())
-                                )
-                        ))
+                        .entityFilters(FILTER_CAP_MAX)
                         .source(Source.SIMULATION)
                         .build()
         );
@@ -263,9 +264,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
     }
 
     private boolean validateCapacity(MagnitudePhoto capacity, Map<ZonedDateTime, Integer> throughputOutboundByHours) {
-        boolean valid = capacity.getValue() >= throughputOutboundByHours.getOrDefault(capacity.getDate(), 0);
-
-        return !capacity.getProcessName().equals(ProcessName.GLOBAL) || valid;
+        return capacity.getValue() >= throughputOutboundByHours.getOrDefault(capacity.getDate(), 0);
     }
 
     private List<ProjectionResult> filterProjectionsInRange(

@@ -42,15 +42,7 @@ public class EntityRow {
     }
 
     public static EntityRow fromEntity(final MagnitudePhoto response) {
-        final RowName rowName = getName(response.getProcessName());
-
-        return EntityRow.builder()
-                .date(response.getDate())
-                .rowName(rowName)
-                .value(String.valueOf(response.getValue()))
-                .source(response.getSource())
-                .valid(true)
-                .build();
+        return fromEntity(response, true);
     }
 
     public static RowName getName(ProcessName processName) {
