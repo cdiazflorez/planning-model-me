@@ -16,6 +16,7 @@ import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createData;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static java.time.ZoneOffset.UTC;
+import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
@@ -243,19 +244,13 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
         final List<MagnitudePhoto> throughput = entities.get(THROUGHPUT);
 
-        final Map<ZonedDateTime, Integer> throughputOutboundByHours = throughput.stream()
-                .collect(Collectors.toMap(
-                        MagnitudePhoto::getDate,
-                        MagnitudePhoto::getValue,
-                        Integer::sum));
-
         final List<ColumnHeader> headers = createColumnHeaders(
                 convertToTimeZone(config.getZoneId(), dateFrom), HOURS_TO_SHOW);
 
         return new ComplexTable(
                 headers,
                 List.of(createData(config, THROUGHPUT, maxCapacity.stream()
-                        .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughputOutboundByHours)))
+                        .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughput)))
                         .collect(toList()), headers)
                 ),
                 action,
@@ -263,8 +258,11 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
         );
     }
 
-    private boolean validateCapacity(MagnitudePhoto capacity, Map<ZonedDateTime, Integer> throughputOutboundByHours) {
-        return capacity.getValue() >= throughputOutboundByHours.getOrDefault(capacity.getDate(), 0);
+    private boolean validateCapacity(MagnitudePhoto capacity, List<MagnitudePhoto> throughput) {
+        return capacity.getValue() >= throughput.stream()
+                .filter(magnitudePhoto -> magnitudePhoto.getDate().isEqual(capacity.getDate()))
+                .mapToInt(MagnitudePhoto::getValue)
+                .sum();
     }
 
     private List<ProjectionResult> filterProjectionsInRange(
