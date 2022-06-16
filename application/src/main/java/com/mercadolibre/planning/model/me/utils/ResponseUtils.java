@@ -1,5 +1,15 @@
 package com.mercadolibre.planning.model.me.utils;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
+import static java.lang.String.format;
+import static java.lang.String.valueOf;
+import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.capitalize;
+
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Tab;
@@ -12,7 +22,6 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
-
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -22,23 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
-import static java.lang.String.format;
-import static java.lang.String.valueOf;
-import static java.time.format.DateTimeFormatter.ofPattern;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.StringUtils.capitalize;
-
 public class ResponseUtils {
 
     public static final String PROJECTION_TITLE = "Proyección";
 
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
 
-    private ResponseUtils() {}
+    private ResponseUtils() {
+    }
 
     public static List<ColumnHeader> createColumnHeaders(final ZonedDateTime dateFrom,
                                                          final int hoursToShow) {
@@ -91,7 +91,8 @@ public class ResponseUtils {
     public static Data createData(final LogisticCenterConfiguration config,
                                   final MagnitudeType magnitudeType,
                                   final List<EntityRow> entities,
-                                  final List<ColumnHeader> headers) {
+                                  final List<ColumnHeader> headers
+    ) {
 
         final Map<RowName, List<EntityRow>> entitiesByProcess = entities.stream()
                 .collect(groupingBy(EntityRow::getRowName));
@@ -106,7 +107,8 @@ public class ResponseUtils {
                                 config,
                                 entry.getKey(),
                                 headers,
-                                entry.getValue()))
+                                entry.getValue()
+                        ))
                         .collect(toList())
         );
     }
@@ -129,17 +131,20 @@ public class ResponseUtils {
             if ("column_1".equals(header.getId())) {
                 content.put(header.getId(),
                         new Content(capitalize(processName.getTitle()), null, null,
-                                processName.getName()));
+                                processName.getName(), true));
             } else {
                 final EntityRow entity = entitiesByHour.get(header.getValue());
 
                 if (entity == null) {
-                    content.put(header.getId(), new Content("-", null, null, null));
+                    content.put(header.getId(), new Content("-", null, null, null, true));
                 } else {
                     content.put(header.getId(), new Content(
                             valueOf(entity.getValue()),
                             entity.getDate(),
-                            null, null));
+                            null,
+                            null,
+                            entity.isValid()
+                    ));
                 }
             }
         });
