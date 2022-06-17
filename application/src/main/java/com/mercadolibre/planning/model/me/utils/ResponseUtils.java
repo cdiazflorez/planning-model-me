@@ -91,8 +91,8 @@ public class ResponseUtils {
     public static Data createData(final LogisticCenterConfiguration config,
                                   final MagnitudeType magnitudeType,
                                   final List<EntityRow> entities,
-                                  final List<ColumnHeader> headers,
-                                  final Map<ZonedDateTime, Integer> throughputOutboundByHours) {
+                                  final List<ColumnHeader> headers
+    ) {
 
         final Map<RowName, List<EntityRow>> entitiesByProcess = entities.stream()
                 .collect(groupingBy(EntityRow::getRowName));
@@ -107,8 +107,8 @@ public class ResponseUtils {
                                 config,
                                 entry.getKey(),
                                 headers,
-                                entry.getValue(),
-                                throughputOutboundByHours))
+                                entry.getValue()
+                        ))
                         .collect(toList())
         );
     }
@@ -116,8 +116,7 @@ public class ResponseUtils {
     private static Map<String, Content> createContent(final LogisticCenterConfiguration config,
                                                       final RowName processName,
                                                       final List<ColumnHeader> headers,
-                                                      final List<EntityRow> entities,
-                                                      final Map<ZonedDateTime, Integer> throughputOutboundByHours) {
+                                                      final List<EntityRow> entities) {
 
         final Map<String, EntityRow> entitiesByHour = entities.stream()
                 .map(entity -> entity.convertTimeZone(config.getZoneId()))
@@ -139,22 +138,16 @@ public class ResponseUtils {
                 if (entity == null) {
                     content.put(header.getId(), new Content("-", null, null, null, true));
                 } else {
-                    boolean valid = parseInt(entity.getValue()) >= throughputOutboundByHours.getOrDefault(entity.getDate(), 0);
                     content.put(header.getId(), new Content(
                             valueOf(entity.getValue()),
                             entity.getDate(),
-                            null, null, !entity.getRowName().equals(RowName.GLOBAL) || valid));
+                            null,
+                            null,
+                            entity.isValid()
+                    ));
                 }
             }
         });
         return content;
-    }
-
-    private static int parseInt(String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 }

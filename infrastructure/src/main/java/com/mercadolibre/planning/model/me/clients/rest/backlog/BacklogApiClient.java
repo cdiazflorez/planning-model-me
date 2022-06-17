@@ -12,8 +12,10 @@ import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.BacklogNotRespondingException;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotoRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.restclient.MeliRestClient;
 import java.time.Instant;
 import java.util.HashMap;
@@ -93,6 +95,10 @@ public class BacklogApiClient extends HttpClient implements BacklogApiGateway {
                 response.getData(new TypeReference<>() {
                 })
         );
+    }
+
+    public List<Photo> getPhotos(final BacklogPhotoRequest request) {
+        return null;
     }
 
     private Map<String, String> getQueryParams(BacklogRequest request) {
