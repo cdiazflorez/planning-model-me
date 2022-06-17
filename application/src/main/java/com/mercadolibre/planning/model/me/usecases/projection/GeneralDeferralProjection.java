@@ -1,11 +1,13 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.MAX_CAPACITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
@@ -31,11 +33,14 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
@@ -66,6 +71,13 @@ public abstract class GeneralDeferralProjection implements UseCase<GetProjection
     private static final int SELECTOR_DAYS_TO_SHOW = 2;
 
     private static final int HOURS_TO_SHOW = 25;
+
+    private static final Map<MagnitudeType, Map<String, List<String>>> FILTER_CAP_MAX = Map.of(
+            HEADCOUNT, Map.of(
+                    PROCESSING_TYPE.toJson(),
+                    List.of(MAX_CAPACITY.getName())
+            )
+    );
 
     private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "to_route",
             "to_pick", "picked", "to_sort", "sorted", "to_group", "grouping", "grouped", "to_pack");
@@ -222,49 +234,44 @@ public abstract class GeneralDeferralProjection implements UseCase<GetProjection
                                        final ZonedDateTime dateFrom,
                                        final ZonedDateTime dateTo) {
 
-        final List<MagnitudePhoto> throughput = planningModelGateway.getTrajectories(
-                TrajectoriesRequest.builder()
+        final Map<MagnitudeType, List<MagnitudePhoto>> entities = planningModelGateway.searchTrajectories(
+                SearchTrajectoriesRequest.builder()
                         .warehouseId(input.getLogisticCenterId())
-                        .workflow(input.getWorkflow())
-                        .entityType(HEADCOUNT)
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .entityTypes(List.of(HEADCOUNT, THROUGHPUT))
                         .dateFrom(dateFrom)
                         .dateTo(dateTo)
-                        .processName(List.of(GLOBAL))
-                        .processingType(List.of(MAX_CAPACITY))
+                        .processName(List.of(GLOBAL, PACKING, PACKING_WALL))
+                        .entityFilters(FILTER_CAP_MAX)
+                        .source(Source.SIMULATION)
                         .build()
         );
 
-        changeThroughputBySimulations(input.getSimulations(), throughput);
+        final List<MagnitudePhoto> maxCapacity = entities.get(HEADCOUNT);
 
-        final List<MagnitudePhoto> throughputOutbound = planningModelGateway.getTrajectories(
-                TrajectoriesRequest.builder()
-                        .warehouseId(input.getLogisticCenterId())
-                        .workflow(input.getWorkflow())
-                        .entityType(THROUGHPUT)
-                        .dateFrom(dateFrom)
-                        .dateTo(dateTo)
-                        .processName(List.of(PACKING, PACKING_WALL))
-                        .processingType(List.of(ProcessingType.THROUGHPUT))
-                        .build()
-        );
+        final List<MagnitudePhoto> throughput = entities.get(THROUGHPUT);
 
-        final Map<ZonedDateTime, Integer> throughputOutboundByHours = throughputOutbound.stream()
-                .collect(Collectors.toMap(
-                        entry -> entry.getDate().withZoneSameInstant(config.getZoneId()),
-                        MagnitudePhoto::getValue,
-                        Integer::sum));
+        changeThroughputBySimulations(input.getSimulations(), maxCapacity);
 
         final List<ColumnHeader> headers = createColumnHeaders(
                 convertToTimeZone(config.getZoneId(), dateFrom), HOURS_TO_SHOW);
 
         return new ComplexTable(
                 headers,
-                List.of(createData(config, THROUGHPUT, throughput.stream()
-                        .map(EntityRow::fromEntity).collect(toList()), headers, throughputOutboundByHours)
+                List.of(createData(config, THROUGHPUT, maxCapacity.stream()
+                        .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughput)))
+                        .collect(toList()), headers)
                 ),
                 action,
                 ""
         );
+    }
+
+    private boolean validateCapacity(MagnitudePhoto capacity, List<MagnitudePhoto> throughput) {
+        return capacity.getValue() >= throughput.stream()
+                .filter(magnitudePhoto -> magnitudePhoto.getDate().isEqual(capacity.getDate()))
+                .mapToInt(MagnitudePhoto::getValue)
+                .sum();
     }
 
     private void changeThroughputBySimulations(List<Simulation> simulations, List<MagnitudePhoto> throughput) {
