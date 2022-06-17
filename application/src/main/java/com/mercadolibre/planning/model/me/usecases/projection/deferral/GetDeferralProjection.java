@@ -1,5 +1,24 @@
 package com.mercadolibre.planning.model.me.usecases.projection.deferral;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.MAX_CAPACITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createData;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
+import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
+import static java.time.ZoneOffset.UTC;
+import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toList;
+
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
@@ -12,15 +31,16 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.clock.RequestClockGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.*;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
-import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -29,19 +49,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.MAX_CAPACITY;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.*;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createColumnHeaders;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createData;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
-import static java.time.ZoneOffset.UTC;
-import static java.util.stream.Collectors.toList;
+import javax.inject.Named;
+import lombok.AllArgsConstructor;
 
 @Named
 @AllArgsConstructor
@@ -54,6 +65,13 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
     private static final int SELECTOR_DAYS_TO_SHOW = 2;
 
     private static final int HOURS_TO_SHOW = 25;
+
+    private static final Map<MagnitudeType, Map<String, List<String>>> FILTER_CAP_MAX = Map.of(
+            HEADCOUNT, Map.of(
+                    PROCESSING_TYPE.toJson(),
+                    List.of(MAX_CAPACITY.getName())
+            )
+    );
 
     private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "to_route",
             "to_pick", "picked", "to_sort", "sorted", "to_group", "grouping", "grouped", "to_pack");
@@ -125,7 +143,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                     deferralBaseOutput.getConfiguration(),
                                     dateToToShow))),
                     createOutboundTabs(),
-                    null);
+                    simulationMode);
 
         } catch (RuntimeException ex) {
             return new Projection("Proyección",
@@ -209,29 +227,42 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                        final ZonedDateTime dateFrom,
                                        final ZonedDateTime dateTo) {
 
-        final  List<MagnitudePhoto> throughput = planningModelGateway.getTrajectories(
-                TrajectoriesRequest.builder()
+        final Map<MagnitudeType, List<MagnitudePhoto>> entities = planningModelGateway.searchTrajectories(
+                SearchTrajectoriesRequest.builder()
                         .warehouseId(input.getLogisticCenterId())
-                        .workflow(input.getWorkflow())
-                        .entityType(HEADCOUNT)
+                        .workflow(FBM_WMS_OUTBOUND)
+                        .entityTypes(List.of(HEADCOUNT, THROUGHPUT))
                         .dateFrom(dateFrom)
                         .dateTo(dateTo)
-                        .processName(List.of(GLOBAL))
-                        .processingType(List.of(MAX_CAPACITY))
+                        .processName(List.of(GLOBAL, PACKING, PACKING_WALL))
+                        .entityFilters(FILTER_CAP_MAX)
+                        .source(Source.SIMULATION)
                         .build()
         );
+
+        final List<MagnitudePhoto> maxCapacity = entities.get(HEADCOUNT);
+
+        final List<MagnitudePhoto> throughput = entities.get(THROUGHPUT);
 
         final List<ColumnHeader> headers = createColumnHeaders(
                 convertToTimeZone(config.getZoneId(), dateFrom), HOURS_TO_SHOW);
 
         return new ComplexTable(
                 headers,
-                List.of(createData(config, THROUGHPUT, throughput.stream()
-                        .map(EntityRow::fromEntity).collect(toList()), headers)
+                List.of(createData(config, THROUGHPUT, maxCapacity.stream()
+                        .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughput)))
+                        .collect(toList()), headers)
                 ),
                 action,
                 ""
         );
+    }
+
+    private boolean validateCapacity(MagnitudePhoto capacity, List<MagnitudePhoto> throughput) {
+        return capacity.getValue() >= throughput.stream()
+                .filter(magnitudePhoto -> magnitudePhoto.getDate().isEqual(capacity.getDate()))
+                .mapToInt(MagnitudePhoto::getValue)
+                .sum();
     }
 
     private List<ProjectionResult> filterProjectionsInRange(

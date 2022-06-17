@@ -1,38 +1,5 @@
 package com.mercadolibre.planning.model.me.controller;
 
-import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import com.mercadolibre.planning.model.me.entities.projection.Content;
-import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
-import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
-import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
-import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
-import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
-import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
-import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
-import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
-import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
-import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
@@ -56,6 +23,37 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.Content;
+import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
+import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
+import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
+import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
+import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
+import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
+import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
+import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import com.mercadolibre.planning.model.me.usecases.projection.GetSlaProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @WebMvcTest(controllers = ProjectionController.class)
 public class ProjectionControllerTest {
@@ -211,7 +209,7 @@ public class ProjectionControllerTest {
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking",
-                                                        null, null, "picking"),
+                                                        null, null, "picking", true),
                                                 "column_2", new Content(
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
@@ -221,16 +219,16 @@ public class ProjectionControllerTest {
                                                                 "title_2", "Cantidad de reps FCST",
                                                                 "subtitle_2", "30"
                                                         ),
-                                                        null
+                                                        null, true
                                                 )
                                         ),
                                         Map.of(
                                                 "column_1", new Content("Packing",
-                                                        null, null, "packing"),
+                                                        null, null, "packing", true),
                                                 "column_2", new Content(
                                                         "30",
                                                         ZonedDateTime.parse("2020-07-27T10:00:00Z"),
-                                                        null, null)
+                                                        null, null, true)
                                         )
                                 )
                         ),
@@ -238,7 +236,7 @@ public class ProjectionControllerTest {
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking",
-                                                        null, null, "picking"),
+                                                        null, null, "picking", true),
                                                 "column_2", new Content("30", null,
                                                         Map.of(
                                                                 "title_1",
@@ -246,14 +244,14 @@ public class ProjectionControllerTest {
                                                                 "subtitle_1",
                                                                 "30,4 uds/h"
                                                         ),
-                                                        null
+                                                        null, true
                                                 )
                                         ),
                                         Map.of(
                                                 "column_1", new Content("Packing",
-                                                        null, null, "packing"),
+                                                        null, null, "packing", true),
                                                 "column_2", new Content("30",
-                                                        null, null, null)
+                                                        null, null, null, true)
                                         )
                                 )
                         ),
@@ -261,15 +259,15 @@ public class ProjectionControllerTest {
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking",
-                                                        null, null, "picking"),
+                                                        null, null, "picking", true),
                                                 "column_2", new Content("1600",
-                                                        null, null, null)
+                                                        null, null, null, true)
                                         ),
                                         Map.of(
                                                 "column_1", new Content("Packing",
-                                                        null, null, "packing"),
+                                                        null, null, "packing", true),
                                                 "column_2", new Content("1600",
-                                                        null, null, null)
+                                                        null, null, null, true)
                                         )
                                 )
                         )

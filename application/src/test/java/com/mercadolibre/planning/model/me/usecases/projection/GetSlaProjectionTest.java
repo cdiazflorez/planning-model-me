@@ -1,5 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Data;
@@ -17,18 +20,14 @@ import com.mercadolibre.planning.model.me.entities.projection.simulationmode.Sim
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.Snackbar;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class GetSlaProjectionTest {
@@ -79,7 +78,7 @@ public class GetSlaProjectionTest {
 
         final SimpleTable simpleTable = new SimpleTable("", columnHeader, map);
         List<Map<String, Content>> content = List.of(Map.of("",
-                new Content("", ZonedDateTime.now(), Map.of("", ""), "")));
+                new Content("", ZonedDateTime.now(), Map.of("", ""), "", true)));
 
         final ComplexTable complexTable = new ComplexTable(columnHeader,
                 List.of(
