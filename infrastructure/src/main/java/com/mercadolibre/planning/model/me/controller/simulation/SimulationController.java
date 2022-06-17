@@ -35,7 +35,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -122,8 +121,7 @@ public class SimulationController {
     public ResponseEntity<Projection> runSimulationDeferralProjection(
             @PathVariable final Workflow workflow,
             @RequestParam("caller.id") @NotNull final Long callerId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date,
             @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack,
             @RequestBody final RunSimulationRequest request) {
 

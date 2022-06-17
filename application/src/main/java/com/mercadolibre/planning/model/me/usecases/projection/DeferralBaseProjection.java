@@ -45,8 +45,8 @@ public abstract class DeferralBaseProjection implements UseCase<GetProjectionInp
     }
 
     public abstract List<ProjectionResult> getSortedDeferralProjections(final GetProjectionInput input,
-                                                                final ZonedDateTime dateFrom,
-                                                                final ZonedDateTime dateTo,
-                                                                final List<Backlog> backlogs,
-                                                                final String timeZone);
+                                                                        final ZonedDateTime dateFrom,
+                                                                        final ZonedDateTime dateTo,
+                                                                        final List<Backlog> backlogs,
+                                                                        final String timeZone);
 }

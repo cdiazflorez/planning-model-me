@@ -34,14 +34,12 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;

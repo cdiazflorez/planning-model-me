@@ -27,10 +27,16 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.GetSimulationDeferralProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulationDeferralProjection;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -58,6 +64,9 @@ public class GetDeferralProjectionTest {
     @InjectMocks
     private GetDeferralProjection getDeferralProjection;
 
+    @InjectMocks
+    private RunSimulationDeferralProjection runSimulationDeferralProjection;
+
     @Mock
     private PlanningModelGateway planningModelGateway;
 
@@ -69,6 +78,9 @@ public class GetDeferralProjectionTest {
 
     @Mock
     private GetSimpleDeferralProjection getSimpleDeferralProjection;
+
+    @Mock
+    private GetSimulationDeferralProjection getSimulationDeferralProjection;
 
     @Mock
     private RequestClockGateway requestClockGateway;
@@ -132,6 +144,16 @@ public class GetDeferralProjectionTest {
                         mockProjections(),
                         new LogisticCenterConfiguration(getDefault())));
 
+        when(getSimulationDeferralProjection.execute(new GetProjectionInput(
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                currentUtcDate,
+                mockBacklog(),
+                false,
+                mockSimulations())))
+                .thenReturn(new GetSimpleDeferralProjectionOutput(
+                        mockProjections(),
+                        new LogisticCenterConfiguration(getDefault())));
+
         // WHEN
         final Projection projection = getDeferralProjection.execute(new GetProjectionInput(
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
@@ -153,6 +175,14 @@ public class GetDeferralProjectionTest {
                 mockBacklog(),
                 false,
                 null));
+
+        final Projection projectionSimulation = runSimulationDeferralProjection.execute(new GetProjectionInput(
+                WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+                currentUtcDate,
+                mockBacklog(),
+                false,
+                mockSimulations()
+        ));
 
         //THEN
         assertEquals("Proyección", projection.getTitle());
@@ -177,6 +207,7 @@ public class GetDeferralProjectionTest {
         assertEquals(expectedCPTs, projection.getData().getChart().getData().size());
         assertEquals(3, projectionFutureInputDate.getData().getChart().getData().size());
         assertEquals(3, projectionNullInputDate.getData().getChart().getData().size());
+        assertEquals(3, projectionSimulation.getData().getChart().getData().size());
     }
 
     @Test
@@ -442,6 +473,22 @@ public class GetDeferralProjectionTest {
                 "title",
                 emptyList(),
                 emptyList()
+        );
+    }
+
+    private List<Simulation> mockSimulations() {
+        return List.of(
+                new Simulation(ProcessName.GLOBAL,
+                        List.of(
+                                new SimulationEntity(
+                                        MagnitudeType.THROUGHPUT,
+                                        List.of(
+                                                new QuantityByDate(CPT_1.truncatedTo(ChronoUnit.SECONDS), 4),
+                                                new QuantityByDate(CPT_1.plusHours(-1).truncatedTo(ChronoUnit.SECONDS), 5)
+                                        )
+                                )
+                        )
+                )
         );
     }
 }

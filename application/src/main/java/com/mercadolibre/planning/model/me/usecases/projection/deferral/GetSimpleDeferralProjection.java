@@ -1,26 +1,16 @@
 package com.mercadolibre.planning.model.me.usecases.projection.deferral;
 
+import static java.util.stream.Collectors.toList;
+
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
-import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.DeferralBaseProjection;
-import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
-
 import java.time.ZonedDateTime;
 import java.util.List;
-
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static java.util.stream.Collectors.toList;
+import javax.inject.Named;
 
 @Named
 public class GetSimpleDeferralProjection extends DeferralBaseProjection {
@@ -31,10 +21,10 @@ public class GetSimpleDeferralProjection extends DeferralBaseProjection {
     }
 
     public List<ProjectionResult> getSortedDeferralProjections(final GetProjectionInput input,
-                                                                final ZonedDateTime dateFrom,
-                                                                final ZonedDateTime dateTo,
-                                                                final List<Backlog> backlogs,
-                                                                final String timeZone) {
+                                                               final ZonedDateTime dateFrom,
+                                                               final ZonedDateTime dateTo,
+                                                               final List<Backlog> backlogs,
+                                                               final String timeZone) {
 
         final List<ProjectionResult> projection = planningModelGateway.runDeferralProjection(
                 ProjectionRequest.builder()

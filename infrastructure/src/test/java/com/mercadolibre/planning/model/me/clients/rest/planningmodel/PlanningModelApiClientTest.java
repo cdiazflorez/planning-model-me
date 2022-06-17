@@ -115,11 +115,13 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   private static final String RUN_PROJECTIONS_URL = "/planning/model/workflows/%s/projections/%s";
 
-  private static final String RUN_SIMULATIONS_URL = "/planning/model/"
-      + "workflows/%s/simulations/run";
+  private static final String BASE_SIMULATIONS_URL = "/planning/model/workflows/%s/simulations";
 
-  private static final String SAVE_SIMULATIONS_URL = "/planning/model/"
-      + "workflows/%s/simulations/save";
+  private static final String RUN_SIMULATIONS_URL = BASE_SIMULATIONS_URL + "/run";
+
+  private static final String SAVE_SIMULATIONS_URL = BASE_SIMULATIONS_URL + "/save";
+
+  private static final String RUN_DEFERRAL_SIMULATIONS_URL = BASE_SIMULATIONS_URL + "/deferral/delivery_promise";
 
   private static final String PLANNING_DISTRIBUTION_URL =
       "/planning/model/workflows/%s/planning_distributions";
@@ -732,6 +734,56 @@ class PlanningModelApiClientTest extends BaseClientTest {
     assertEquals(parse("2020-07-27T06:00:00Z", ISO_OFFSET_DATE_TIME),
         sim4.getProjectedEndDate());
     assertEquals(1700, sim4.getRemainingQuantity());
+  }
+
+  @Test
+  void testRunSimulationDeferralProjection() throws JSONException {
+
+      // GIVEN
+      final ProjectionRequest request = ProjectionRequest.builder()
+              .workflow(FBM_WMS_OUTBOUND)
+              .warehouseId(WAREHOUSE_ID)
+              .type(ProjectionType.CPT)
+              .processName(List.of(PICKING, PACKING))
+              .dateFrom(now())
+              .dateTo(now().plusDays(1))
+              .backlog(List.of(
+                      new Backlog(parse("2022-06-17T10:00:00Z"), 50),
+                      new Backlog(parse("2022-06-17T11:00:00Z"), 100),
+                      new Backlog(parse("2022-06-17T12:00:00Z"), 200)
+              ))
+              .build();
+
+      final JSONArray apiResponse = new JSONArray()
+              .put(new JSONObject()
+                      .put("date", "2022-06-17T10:00:00Z")
+                      .put("projected_end_date", "2022-06-17T08:00:00Z")
+                      .put("remaining_quantity", "0")
+              )
+              .put(new JSONObject()
+                      .put("date", "2022-06-17T11:00:00Z")
+                      .put("projected_end_date", "2022-06-17T10:00:00Z")
+                      .put("remaining_quantity", "0")
+              )
+              .put(new JSONObject()
+                      .put("date", "2022-06-17T12:00:00Z")
+                      .put("projected_end_date", "2022-06-17T14:00:00Z")
+                      .put("remaining_quantity", "70")
+              );
+
+      MockResponse.builder()
+              .withMethod(POST)
+              .withURL(format(BASE_URL + RUN_DEFERRAL_SIMULATIONS_URL, FBM_WMS_OUTBOUND))
+              .withStatusCode(OK.value())
+              .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+              .withResponseBody(apiResponse.toString())
+              .build();
+
+      // When
+      final List<ProjectionResult> projections = client.runSimulationDeferralProjection(request);
+
+      // Then
+      assertEquals(3, projections.size());
   }
 
   @Test

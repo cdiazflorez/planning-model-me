@@ -27,6 +27,7 @@ import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.entities.projection.Tab;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
@@ -39,6 +40,7 @@ import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulationDeferralProjection;
@@ -203,7 +205,7 @@ public class SimulationControllerTest {
         when(validateSimulation.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(List.of(
                         new MagnitudeValidate("throughput",
-                                List.of(new DateValidate(ZonedDateTime.parse("2022-06-01T14:00:00-03:00"),true))
+                                List.of(new DateValidate(ZonedDateTime.parse("2022-06-01T14:00:00-03:00"), true))
                         )
                 ));
 
@@ -222,6 +224,38 @@ public class SimulationControllerTest {
         result.andExpect(status().isOk());
         result.andExpect(content().json("[{\"type\":\"throughput\"," +
                 "\"values\":[{\"date\":\"2022-06-01T14:00:00-03:00\",\"is_valid\":true}]}]"));
+
+    }
+
+    @Test
+    public void testRunSimulationDeferralProjection() throws Exception {
+        //GIVEN
+        when(runSimulationDeferralProjection.execute(any(GetProjectionInput.class)))
+                .thenReturn(new Projection("Projection",
+                        null,
+                        new com.mercadolibre.planning.model.me.entities.projection.Data(null,
+                                null,
+                                null,
+                                null),
+                        List.of(
+                                new Tab("cpt", "Cumplimiento de CPTs")),
+                        null
+
+                ));
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/deferral/run")
+                .param("caller.id", String.valueOf(USER_ID))
+                .content(mockValidateSimulationRequest())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID,
+                List.of(UserPermission.OUTBOUND_SIMULATION)));
+
+        result.andExpect(status().isOk());
 
     }
 
