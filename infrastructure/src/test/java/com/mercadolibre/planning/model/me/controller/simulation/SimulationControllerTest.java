@@ -222,8 +222,8 @@ public class SimulationControllerTest {
                 List.of(UserPermission.OUTBOUND_SIMULATION)));
 
         result.andExpect(status().isOk());
-        result.andExpect(content().json("[{\"type\":\"throughput\"," +
-                "\"values\":[{\"date\":\"2022-06-01T14:00:00-03:00\",\"is_valid\":true}]}]"));
+        result.andExpect(content().json(
+                "[{\"type\":\"throughput\",\"values\":[{\"date\":\"2022-06-01T14:00:00-03:00\",\"is_valid\":true}]}]"));
 
     }
 

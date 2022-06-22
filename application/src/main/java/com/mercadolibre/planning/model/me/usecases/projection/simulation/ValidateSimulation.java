@@ -29,7 +29,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ValidateSimulation {
 
-    private final static long PLUS_DAYS = 3;
+    private static final long PLUS_DAYS = 3;
 
     private final PlanningModelGateway planningModelGateway;
     private final LogisticCenterGateway logisticCenterGateway;

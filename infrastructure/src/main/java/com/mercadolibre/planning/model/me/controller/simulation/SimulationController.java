@@ -109,7 +109,7 @@ public class SimulationController {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-        return ResponseEntity.of(Optional.of(validateSimulation.execute(GetProjectionInputDto.builder()
+        return ResponseEntity.of(of(validateSimulation.execute(GetProjectionInputDto.builder()
                 .workflow(workflow)
                 .warehouseId(request.getWarehouseId())
                 .simulations(fromRequest(request.getSimulations()))
@@ -118,7 +118,7 @@ public class SimulationController {
 
     @Trace
     @PostMapping("/deferral/run")
-    public ResponseEntity<Projection> runSimulationDeferralProjection(
+    public ResponseEntity<Projection> runDeferralProjection(
             @PathVariable final Workflow workflow,
             @RequestParam("caller.id") @NotNull final Long callerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date,

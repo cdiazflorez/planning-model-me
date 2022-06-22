@@ -44,9 +44,9 @@ public abstract class DeferralBaseProjection implements UseCase<GetProjectionInp
         return new GetSimpleDeferralProjectionOutput(deferralProjections, config);
     }
 
-    public abstract List<ProjectionResult> getSortedDeferralProjections(final GetProjectionInput input,
-                                                                        final ZonedDateTime dateFrom,
-                                                                        final ZonedDateTime dateTo,
-                                                                        final List<Backlog> backlogs,
-                                                                        final String timeZone);
+    public abstract List<ProjectionResult> getSortedDeferralProjections(GetProjectionInput input,
+                                                                        ZonedDateTime dateFrom,
+                                                                        ZonedDateTime dateTo,
+                                                                        List<Backlog> backlogs,
+                                                                        String timeZone);
 }

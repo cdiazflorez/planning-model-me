@@ -27,7 +27,6 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -478,7 +477,7 @@ public class GetDeferralProjectionTest {
 
     private List<Simulation> mockSimulations() {
         return List.of(
-                new Simulation(ProcessName.GLOBAL,
+                new Simulation(GLOBAL,
                         List.of(
                                 new SimulationEntity(
                                         MagnitudeType.THROUGHPUT,
