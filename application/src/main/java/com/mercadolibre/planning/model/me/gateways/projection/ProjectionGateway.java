@@ -3,6 +3,8 @@ package com.mercadolibre.planning.model.me.gateways.projection;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
@@ -20,5 +22,7 @@ public interface ProjectionGateway {
                                                                         List<PlanningDistributionResponse> plannedUnits,
                                                                         List<MagnitudePhoto> throughput,
                                                                         List<BacklogAreaDistribution> backlogDistribution);
+
+    List<ProjectionResult> runSimulationDeferralProjection(ProjectionRequest request);
 
 }

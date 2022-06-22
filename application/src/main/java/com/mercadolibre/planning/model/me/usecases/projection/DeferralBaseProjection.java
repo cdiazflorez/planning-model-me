@@ -11,6 +11,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
@@ -28,6 +29,8 @@ public abstract class DeferralBaseProjection implements UseCase<GetProjectionInp
     private final LogisticCenterGateway logisticCenterGateway;
 
     protected final PlanningModelGateway planningModelGateway;
+
+    protected final ProjectionGateway projectionGateway;
 
     public GetSimpleDeferralProjectionOutput execute(final GetProjectionInput input) {
 

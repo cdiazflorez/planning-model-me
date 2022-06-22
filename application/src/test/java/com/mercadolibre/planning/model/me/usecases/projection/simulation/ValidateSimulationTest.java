@@ -3,7 +3,7 @@ package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.mercadolibre.planning.model.me.entities.projection.simulationmode.MagnitudeValidate;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ValidatedMagnitude;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -55,8 +55,8 @@ public class ValidateSimulationTest {
         when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(mockGetTrajectories());
 
         //WHEN
-        List<MagnitudeValidate> response = validateSimulation.execute(mockRequest(Workflow.FBM_WMS_OUTBOUND));
-        List<MagnitudeValidate> responseEmpty = validateSimulation.execute(mockRequest(Workflow.FBM_WMS_INBOUND));
+        List<ValidatedMagnitude> response = validateSimulation.execute(mockRequest(Workflow.FBM_WMS_OUTBOUND));
+        List<ValidatedMagnitude> responseEmpty = validateSimulation.execute(mockRequest(Workflow.FBM_WMS_INBOUND));
 
         Assertions.assertNotNull(response);
         Assertions.assertNotNull(responseEmpty);

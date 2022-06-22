@@ -34,7 +34,7 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTi
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.DateValidate;
-import com.mercadolibre.planning.model.me.entities.projection.simulationmode.MagnitudeValidate;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ValidatedMagnitude;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
@@ -204,7 +204,7 @@ public class SimulationControllerTest {
         //GIVEN
         when(validateSimulation.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(List.of(
-                        new MagnitudeValidate("throughput",
+                        new ValidatedMagnitude("throughput",
                                 List.of(new DateValidate(ZonedDateTime.parse("2022-06-01T14:00:00-03:00"), true))
                         )
                 ));

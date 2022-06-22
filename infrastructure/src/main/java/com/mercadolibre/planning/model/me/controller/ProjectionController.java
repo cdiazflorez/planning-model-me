@@ -14,6 +14,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferr
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.newrelic.api.agent.Trace;
+import java.util.Collections;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -92,7 +93,7 @@ public class ProjectionController {
                 date,
                 null,
                 cap5ToPack,
-                null)))
+                Collections.emptyList())))
         );
     }
 

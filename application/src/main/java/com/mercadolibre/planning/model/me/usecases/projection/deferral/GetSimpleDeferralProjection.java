@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.usecases.projection.DeferralBaseProjection;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -15,9 +16,11 @@ import javax.inject.Named;
 @Named
 public class GetSimpleDeferralProjection extends DeferralBaseProjection {
 
+
     public GetSimpleDeferralProjection(LogisticCenterGateway logisticCenterGateway,
-                                       PlanningModelGateway planningModelGateway) {
-        super(logisticCenterGateway, planningModelGateway);
+                                       PlanningModelGateway planningModelGateway,
+                                       ProjectionGateway projectionGateway) {
+        super(logisticCenterGateway, planningModelGateway, projectionGateway);
     }
 
     public List<ProjectionResult> getSortedDeferralProjections(final GetProjectionInput input,

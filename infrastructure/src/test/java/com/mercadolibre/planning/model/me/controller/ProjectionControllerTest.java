@@ -45,6 +45,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjec
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -172,7 +173,13 @@ public class ProjectionControllerTest {
     void getDeferralProjection21Cap5Logic() throws Exception {
         // GIVEN
         when(getDeferralProjection.execute(
-                new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, null, true, null)))
+                new GetProjectionInput(
+                        WAREHOUSE_ID,
+                        FBM_WMS_OUTBOUND,
+                        null,
+                        null,
+                        true,
+                        Collections.emptyList())))
                 .thenReturn(new Projection(
                         "Test",
                         null,

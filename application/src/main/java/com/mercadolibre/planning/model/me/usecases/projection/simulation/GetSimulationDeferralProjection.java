@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.usecases.projection.DeferralBaseProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import java.time.ZonedDateTime;
@@ -16,10 +17,11 @@ import javax.inject.Named;
 @Named
 public class GetSimulationDeferralProjection extends DeferralBaseProjection {
 
-    public GetSimulationDeferralProjection(
-            LogisticCenterGateway logisticCenterGateway,
-            PlanningModelGateway planningModelGateway) {
-        super(logisticCenterGateway, planningModelGateway);
+
+    public GetSimulationDeferralProjection(LogisticCenterGateway logisticCenterGateway,
+                                           PlanningModelGateway planningModelGateway,
+                                           ProjectionGateway projectionGateway) {
+        super(logisticCenterGateway, planningModelGateway, projectionGateway);
     }
 
     @Override
@@ -28,7 +30,7 @@ public class GetSimulationDeferralProjection extends DeferralBaseProjection {
             ZonedDateTime dateTo, List<Backlog> backlogs,
             String timeZone) {
 
-        final List<ProjectionResult> projection = planningModelGateway.runSimulationDeferralProjection(
+        final List<ProjectionResult> projection = projectionGateway.runSimulationDeferralProjection(
                 ProjectionRequest.builder()
                         .warehouseId(input.getLogisticCenterId())
                         .workflow(input.getWorkflow())

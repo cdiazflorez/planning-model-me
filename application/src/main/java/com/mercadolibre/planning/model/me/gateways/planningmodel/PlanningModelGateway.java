@@ -52,8 +52,6 @@ public interface PlanningModelGateway {
 
     List<ProjectionResult> saveSimulation(final SimulationRequest request);
 
-    List<ProjectionResult> runSimulationDeferralProjection(ProjectionRequest request);
-
     List<BacklogProjectionResponse> getBacklogProjection(final BacklogProjectionRequest request);
 
     Optional<ConfigurationResponse> getConfiguration(final ConfigurationRequest request);

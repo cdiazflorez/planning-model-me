@@ -4,7 +4,7 @@ import java.util.List;
 import lombok.Value;
 
 @Value
-public class MagnitudeValidate {
+public class ValidatedMagnitude {
 
     String type;
 

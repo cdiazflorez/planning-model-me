@@ -11,7 +11,7 @@ import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimul
 import com.mercadolibre.planning.model.me.controller.simulation.request.SaveSimulationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.SimulationRequest;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.simulationmode.MagnitudeValidate;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ValidatedMagnitude;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -103,9 +103,9 @@ public class SimulationController {
 
     @Trace
     @PostMapping("/deferral/validate")
-    public ResponseEntity<List<MagnitudeValidate>> validate(@PathVariable final Workflow workflow,
-                                                            @RequestParam("caller.id") final @NotNull Long callerId,
-                                                            @RequestBody final RunSimulationRequest request) {
+    public ResponseEntity<List<ValidatedMagnitude>> validate(@PathVariable final Workflow workflow,
+                                                             @RequestParam("caller.id") final @NotNull Long callerId,
+                                                             @RequestBody final RunSimulationRequest request) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
@@ -127,7 +127,7 @@ public class SimulationController {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-        datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "deferral");
+        datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "simulation deferral projection");
 
         return ResponseEntity.of(of(runSimulationDeferralProjection.execute(new GetProjectionInput(
                 request.getWarehouseId(),
