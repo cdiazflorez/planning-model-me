@@ -26,11 +26,12 @@ public abstract class DeferralBaseProjection implements UseCase<GetProjectionInp
 
     private static final int DEFERRAL_DAYS_TO_PROJECT = 3;
 
-    private final LogisticCenterGateway logisticCenterGateway;
-
     protected final PlanningModelGateway planningModelGateway;
 
     protected final ProjectionGateway projectionGateway;
+
+    private final LogisticCenterGateway logisticCenterGateway;
+
 
     public GetSimpleDeferralProjectionOutput execute(final GetProjectionInput input) {
 

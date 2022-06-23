@@ -18,10 +18,10 @@ import javax.inject.Named;
 public class GetSimulationDeferralProjection extends DeferralBaseProjection {
 
 
-    public GetSimulationDeferralProjection(LogisticCenterGateway logisticCenterGateway,
-                                           PlanningModelGateway planningModelGateway,
-                                           ProjectionGateway projectionGateway) {
-        super(logisticCenterGateway, planningModelGateway, projectionGateway);
+    public GetSimulationDeferralProjection(PlanningModelGateway planningModelGateway,
+                                           ProjectionGateway projectionGateway,
+                                           LogisticCenterGateway logisticCenterGateway) {
+        super(planningModelGateway, projectionGateway, logisticCenterGateway);
     }
 
     @Override

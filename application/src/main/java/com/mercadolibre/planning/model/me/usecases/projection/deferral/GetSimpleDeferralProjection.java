@@ -17,10 +17,10 @@ import javax.inject.Named;
 public class GetSimpleDeferralProjection extends DeferralBaseProjection {
 
 
-    public GetSimpleDeferralProjection(LogisticCenterGateway logisticCenterGateway,
-                                       PlanningModelGateway planningModelGateway,
-                                       ProjectionGateway projectionGateway) {
-        super(logisticCenterGateway, planningModelGateway, projectionGateway);
+    public GetSimpleDeferralProjection(PlanningModelGateway planningModelGateway,
+                                       ProjectionGateway projectionGateway,
+                                       LogisticCenterGateway logisticCenterGateway) {
+        super(planningModelGateway, projectionGateway, logisticCenterGateway);
     }
 
     public List<ProjectionResult> getSortedDeferralProjections(final GetProjectionInput input,
