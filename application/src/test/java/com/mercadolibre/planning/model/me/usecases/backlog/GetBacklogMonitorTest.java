@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
@@ -12,7 +13,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -73,7 +73,7 @@ class GetBacklogMonitorTest {
   );
 
   private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOW = Map.of(
-      FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
+      FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING, PACKING_WALL),
       FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
   );
 
@@ -365,6 +365,7 @@ class GetBacklogMonitorTest {
         DATES.get(currentDateIndex).toInstant(),
         WAREHOUSE_ID,
         workflow,
+        PROCESS_BY_WORKFLOW.get(workflow),
         DATE_FROM.toInstant(),
         DATES.get(currentDateIndex + 2).toInstant(),
         0L

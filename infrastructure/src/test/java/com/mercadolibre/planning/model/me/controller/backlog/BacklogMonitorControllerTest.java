@@ -1,5 +1,8 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
@@ -68,6 +71,7 @@ class BacklogMonitorControllerTest {
         firstDate,
         WAREHOUSE_ID,
         FBM_WMS_OUTBOUND,
+        List.of(WAVING, PICKING, PACKING),
         firstDate,
         OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
         999L);
@@ -82,6 +86,7 @@ class BacklogMonitorControllerTest {
             .param("date_from", A_DATE)
             .param("date_to", ANOTHER_DATE)
             .param("caller.id", "999")
+            .param("processes", "WAVING, PICKING, PACKING")
     );
 
     // THEN
