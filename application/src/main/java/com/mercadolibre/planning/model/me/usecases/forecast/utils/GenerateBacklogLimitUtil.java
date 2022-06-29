@@ -1,5 +1,19 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.utils;
 
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.BATCH_SORTER;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.WALL_IN;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_LOWER_LIMIT;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_UPPER_LIMIT;
+import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getCellAddress;
+import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDateTimeAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueOrFail;
+import static java.util.stream.Collectors.toList;
+
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
@@ -8,250 +22,132 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.mod
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType;
 import com.mercadolibre.spreadsheet.MeliRow;
 import com.mercadolibre.spreadsheet.MeliSheet;
-
-import java.util.ArrayList;
+import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-
-import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDateTimeAt;
-import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueAt;
-import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueOrFail;
-import static java.util.stream.Collectors.toList;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 public class GenerateBacklogLimitUtil {
 
-    private GenerateBacklogLimitUtil() { }
+  private static final int COLUMN_DATE = 1;
 
-    private static final int STARTING_ROW = 7;
-    private static final int COLUMN_DATE = 1;
+  private static final int STARTING_ROW = 7;
 
-    private static final Double MIN_HOURS_WAVING = 0.0;
-    private static final Double MIN_HOURS_PICKING = 0.0;
-    private static final Double MIN_HOURS_PACKING = 0.0;
+  private static final int MINUTES_IN_HOUR = 60;
 
-    private static final Double MAX_HOURS_WAVING = 24.0;
-    private static final Double MAX_HOURS_PICKING = 5.0;
-    private static final Double MAX_HOURS_PACKING = 5.0;
+  private static final int MAX_ROW = 175;
 
-    private static final Integer WAVING_LOWER_COLUMN_INDEX = 20;
-    private static final Integer PICKING_LOWER_COLUMN_INDEX = 22;
-    private static final Integer PACKING_LOWER_COLUMN_INDEX = 24;
+  private static final String BUFFER_OUT_OF_LIMITS_ERROR_MESSAGE =
+      "No pudimos cargar el forecast. El buffer (%s) para %s debe estar entre %d y %d hr.";
 
-    private static final String WAVING_LOWER_COLUMN_NAME = "U";
-    private static final String WAVING_UPPER_COLUMN_NAME = "V";
-    private static final String PICKING_LOWER_COLUMN_NAME = "W";
-    private static final String PICKING_UPPER_COLUMN_NAME = "X";
-    private static final String PACKING_LOWER_COLUMN_NAME = "Y";
-    private static final String PACKING_UPPER_COLUMN_NAME = "Z";
+  private static final String MIXED_OPTIONAL_VALUES_ERROR_MESSAGE =
+      "No pudimos cargar el forecast. Si el buffer (%s) es “-1” el resto debe ser igual";
 
-    private static final Map<Integer, String> INDEX_TO_COLUMN = Map.of(
-            WAVING_LOWER_COLUMN_INDEX, WAVING_LOWER_COLUMN_NAME,
-            WAVING_LOWER_COLUMN_INDEX + 1, WAVING_UPPER_COLUMN_NAME,
-            PICKING_LOWER_COLUMN_INDEX, PICKING_LOWER_COLUMN_NAME,
-            PICKING_LOWER_COLUMN_INDEX + 1, PICKING_UPPER_COLUMN_NAME,
-            PACKING_LOWER_COLUMN_INDEX, PACKING_LOWER_COLUMN_NAME,
-            PACKING_LOWER_COLUMN_INDEX + 1, PACKING_UPPER_COLUMN_NAME);
+  public static List<BacklogLimit> generateBacklogLimitBody(final LogisticCenterConfiguration config, final MeliSheet sheet) {
+    final ZoneId zoneId = config.getZoneId();
+    return Arrays.stream(BacklogLimitConf.values())
+        .map(conf -> new BacklogLimit(
+                conf.getType(),
+                conf.getType().getMetricUnit(),
+                conf.getProcess(),
+                getBacklogLimitData(sheet, zoneId, conf)
+            )
+        ).collect(toList());
+  }
 
-    public static List<BacklogLimit> generateBacklogLimitBody(
-                            final LogisticCenterConfiguration config,
-                            final MeliSheet sheet) {
+  private static List<BacklogLimitData> getBacklogLimitData(final MeliSheet sheet,
+                                                            final ZoneId zoneId,
+                                                            final BacklogLimitConf conf) {
 
-        return getLimits(config, sheet);
+    return sheet.getRowsStartingFrom(STARTING_ROW).stream()
+        .filter(row -> row.getIndex() < MAX_ROW)
+        .map(row -> createBacklogLimit(sheet, row, zoneId, conf))
+        .collect(toList());
+  }
+
+  private static BacklogLimitData createBacklogLimit(final MeliSheet sheet,
+                                                     final MeliRow row,
+                                                     final ZoneId zoneId,
+                                                     final BacklogLimitConf conf) {
+
+    final int column = conf.getColumn();
+    final int rowIndex = row.getIndex();
+    final double hours = getDoubleValueOrFail(sheet, rowIndex, column);
+
+    validateRange(hours, conf, rowIndex, column);
+
+    if (rowIndex > STARTING_ROW) {
+      final double previousHours = getDoubleValueAt(sheet, (rowIndex - 1), column);
+      validateOptional(hours, previousHours, rowIndex, column);
     }
 
-    private static List<BacklogLimit> getLimits(final LogisticCenterConfiguration config,
-                                                final MeliSheet sheet) {
+    final int minutes = isOptional(hours) ? (int) hours : (int) (hours * MINUTES_IN_HOUR);
+    return BacklogLimitData.builder()
+        .date(getDateTimeAt(sheet, rowIndex, COLUMN_DATE, zoneId))
+        .quantity(minutes)
+        .build();
+  }
 
-        List<BacklogLimit> backlogLimits = new ArrayList<>();
+  private static void validateRange(final double hours,
+                                    final BacklogLimitConf conf,
+                                    final int row,
+                                    final int column) {
 
-        int column = ForecastProcessType.BACKLOG_LOWER_LIMIT.getColumnOrder();
-
-        backlogLimits
-                .add(new BacklogLimit(ForecastProcessType.BACKLOG_LOWER_LIMIT,
-                        ForecastProcessType.BACKLOG_LOWER_LIMIT.getMetricUnit(),
-                        ForecastProcessName.WAVING,
-                        getBacklogLimitData(config,
-                                sheet,
-                                column,
-                                MIN_HOURS_WAVING,
-                                MAX_HOURS_WAVING,
-                                ForecastProcessName.WAVING)));
-
-        backlogLimits
-                .add(new BacklogLimit(ForecastProcessType.BACKLOG_UPPER_LIMIT,
-                        ForecastProcessType.BACKLOG_UPPER_LIMIT.getMetricUnit(),
-                        ForecastProcessName.WAVING,
-                        getBacklogLimitData(config,
-                                sheet,
-                                ++column,
-                                MIN_HOURS_WAVING,
-                                MAX_HOURS_WAVING,
-                                ForecastProcessName.WAVING)));
-
-        backlogLimits
-                .add(new BacklogLimit(ForecastProcessType.BACKLOG_LOWER_LIMIT,
-                        ForecastProcessType.BACKLOG_LOWER_LIMIT.getMetricUnit(),
-                        ForecastProcessName.PICKING,
-                        getBacklogLimitData(config,
-                                sheet,
-                                ++column,
-                                MIN_HOURS_PICKING,
-                                MAX_HOURS_PICKING,
-                                ForecastProcessName.PICKING)));
-
-        backlogLimits
-                .add(new BacklogLimit(ForecastProcessType.BACKLOG_UPPER_LIMIT,
-                        ForecastProcessType.BACKLOG_UPPER_LIMIT.getMetricUnit(),
-                        ForecastProcessName.PICKING,
-                        getBacklogLimitData(config,
-                                sheet,
-                                ++column,
-                                MIN_HOURS_PICKING,
-                                MAX_HOURS_PICKING,
-                                ForecastProcessName.PICKING)));
-
-
-        backlogLimits
-                .add(new BacklogLimit(ForecastProcessType.BACKLOG_LOWER_LIMIT,
-                        ForecastProcessType.BACKLOG_LOWER_LIMIT.getMetricUnit(),
-                        ForecastProcessName.PACKING,
-                        getBacklogLimitData(config,
-                                sheet,
-                                ++column,
-                                MIN_HOURS_PACKING,
-                                MAX_HOURS_PACKING,
-                                ForecastProcessName.PACKING)));
-
-        backlogLimits
-                .add(new BacklogLimit(ForecastProcessType.BACKLOG_UPPER_LIMIT,
-                        ForecastProcessType.BACKLOG_UPPER_LIMIT.getMetricUnit(),
-                        ForecastProcessName.PACKING,
-                        getBacklogLimitData(config,
-                                sheet,
-                                ++column,
-                                MIN_HOURS_PACKING,
-                                MAX_HOURS_PACKING,
-                                ForecastProcessName.PACKING)));
-
-        return backlogLimits;
+    if (!(isOptional(hours) || conf.isInValidRange(hours))) {
+      final String cell = getCellAddress(column, row);
+      final String process = conf.getProcess().toString();
+      throw new ForecastParsingException(
+          String.format(BUFFER_OUT_OF_LIMITS_ERROR_MESSAGE, cell, process, (int) conf.getMinValue(), (int) conf.getMaxValue())
+      );
     }
+  }
 
-    private static List<BacklogLimitData> getBacklogLimitData(
-            final LogisticCenterConfiguration config,
-            final MeliSheet sheet,
-            final int column,
-            final double minHour,
-            final Double maxHour,
-            final ForecastProcessName forecastProcessName) {
+  private static void validateOptional(final double hours, final double previousHours, final int row, final int column) {
+    if (isOptional(hours) && !isOptional(previousHours)) {
+      throw new ForecastParsingException(
+          String.format(MIXED_OPTIONAL_VALUES_ERROR_MESSAGE, getCellAddress(column, row + 1))
+      );
 
-        return sheet.getRowsStartingFrom(STARTING_ROW).stream()
-                .filter(x -> x.getIndex() < 175)
-                .map((row) -> createBacklogLimit(row,
-                        column,
-                        sheet,
-                        config,
-                        minHour,
-                        maxHour,
-                        forecastProcessName))
-                .collect(toList());
+    } else if (isOptional(previousHours) && !isOptional(hours)) {
+      throw new ForecastParsingException(
+          String.format(MIXED_OPTIONAL_VALUES_ERROR_MESSAGE, getCellAddress(column, row))
+      );
     }
+  }
 
+  private static boolean isOptional(final double hours) {
+    return hours == -1.0;
+  }
 
-    private static BacklogLimitData createBacklogLimit(
-            final MeliRow row,
-            final int column,
-            final MeliSheet sheet,
-            final LogisticCenterConfiguration config,
-            final Double minHour,
-            final Double maxHour,
-            final ForecastProcessName forecastProcessName) {
+  @Getter
+  @AllArgsConstructor
+  private enum BacklogLimitConf {
+    WAVING_LOWER_LIMIT(WAVING, BACKLOG_LOWER_LIMIT, 4, 0.0, 24.0),
+    WAVING_UPPER_LIMIT(WAVING, BACKLOG_UPPER_LIMIT, 5, 0.0, 24.0),
+    PICKING_LOWER_LIMIT(PICKING, BACKLOG_LOWER_LIMIT, 9, 0.0, 5.0),
+    PICKING_UPPER_LIMIT(PICKING, BACKLOG_UPPER_LIMIT, 10, 0.0, 5.0),
+    PACKING_LOWER_LIMIT(PACKING, BACKLOG_LOWER_LIMIT, 14, 0.0, 5.0),
+    PACKING_UPPER_LIMIT(PACKING, BACKLOG_UPPER_LIMIT, 15, 0.0, 5.0),
+    BATCH_SORTER_LOWER_LIMIT(BATCH_SORTER, BACKLOG_LOWER_LIMIT, 19, 0.0, 5.0),
+    BATCH_SORTER_UPPER_LIMIT(BATCH_SORTER, BACKLOG_UPPER_LIMIT, 20, 0.0, 5.0),
+    WALL_IN_LOWER_LIMIT(WALL_IN, BACKLOG_LOWER_LIMIT, 24, 0.0, 5.0),
+    WALL_IN_UPPER_LIMIT(WALL_IN, BACKLOG_UPPER_LIMIT, 25, 0.0, 5.0),
+    PACKING_WALL_LOWER_LIMIT(PACKING_WALL, BACKLOG_LOWER_LIMIT, 29, 0.0, 5.0),
+    PACKING_WALL_UPPER_LIMIT(PACKING_WALL, BACKLOG_UPPER_LIMIT, 30, 0.0, 5.0);
 
-        final int minutes;
+    final ForecastProcessName process;
 
-        int rowIndex = row.getIndex();
-        Double hours = getDoubleValueOrFail(sheet, rowIndex, column);
+    final ForecastProcessType type;
 
-        validateRange(hours, minHour, maxHour, forecastProcessName, rowIndex, column);
+    final int column;
 
-        if (rowIndex > STARTING_ROW) {
-            Double previousHours = getDoubleValueAt(sheet, (rowIndex - 1), column);
-            validateExceptionOptional(hours, previousHours, rowIndex, column);
-        }
+    final double minValue;
 
-        minutes = isOptional(hours) ? (int) (hours * 1) : (int) (hours * 60);
+    final double maxValue;
 
-        return BacklogLimitData.builder()
-                .date(getDateTimeAt(sheet, row.getIndex(), COLUMN_DATE, config.getZoneId()))
-                .quantity(minutes)
-                .build();
+    boolean isInValidRange(final Double value) {
+      return minValue <= value && value <= maxValue;
     }
-
-    private static void validateRange(final Double hours,
-                                      final Double minHours,
-                                      final Double maxHours,
-                                      final ForecastProcessName forecastProcessName,
-                                      final int row,
-                                      final int column) {
-
-        if (hours < minHours && hours != -1.0 || hours > maxHours) {
-            throw new ForecastParsingException(
-                    generateExceptionMessage(forecastProcessName, row, column));
-        }
-    }
-
-    private static void validateExceptionOptional(final Double hours,
-                                                  final Double previousHours,
-                                                  final int row,
-                                                  final int column) {
-
-        final String bufferColumn = INDEX_TO_COLUMN.get(column);
-
-        final String message1 = "No pudimos cargar el forecast. "
-                + "Si el buffer (" + bufferColumn;
-
-        final String message2 = ") es “-1” el resto debe ser igual";
-
-        if (isOptional(hours) && !isOptional(previousHours)) {
-            throw new ForecastParsingException(
-                    message1 + (row + 1) + message2);
-
-        } else if (isOptional(previousHours) && !isOptional(hours)) {
-            throw new ForecastParsingException(
-                    message1 + row + message2);
-        }
-
-    }
-
-    private static String generateExceptionMessage(
-            final ForecastProcessName forecastProcessName,
-            final int row,
-            final int column) {
-
-        final String processName;
-        final String messageValidator;
-
-        if (forecastProcessName.toString().equals(ForecastProcessName.WAVING.toString())) {
-            processName = "wave";
-            messageValidator = " debe estar entre 0 y 24 hr";
-
-        } else  if (forecastProcessName.toString().equals(ForecastProcessName.PICKING.toString())) {
-            processName = "pick";
-            messageValidator = " debe estar entre 0 y 5 hr";
-        } else {
-            processName = "pack";
-            messageValidator = " debe estar entre 0 y 5 hr";
-        }
-
-        final String bufferColumn = INDEX_TO_COLUMN.get(column);
-
-        final String buffer = bufferColumn + (row + 1);
-
-        return "No pudimos cargar el forecast. El buffer ("
-                + buffer + ") para Ready to " + processName
-                + messageValidator;
-    }
-
-    private static boolean isOptional(final Double hours) {
-        return  hours == -1.0;
-    }
+  }
 }

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @ExtendWith(MockitoExtension.class)
 public class ParseOutboundForecastFromFileTest {
 
-    private static final String VALID_FILE_PATH = "forecast_example.xlsx";
+    private static final String VALID_FILE_PATH = "outbound_forecast.xlsx";
     private static final LogisticCenterConfiguration CONFIG =
             new LogisticCenterConfiguration(TimeZone.getDefault());
 
@@ -32,7 +32,7 @@ public class ParseOutboundForecastFromFileTest {
         // THEN
         assertNotNull(forecast);
         assertEquals("ARTW01", forecast.getMetadata().get(0).getValue());
-        assertEquals("4-2021", forecast.getMetadata().get(1).getValue());
+        assertEquals("14-2022", forecast.getMetadata().get(1).getValue());
         assertEquals(1234L, forecast.getUserID());
     }
 }
