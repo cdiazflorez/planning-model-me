@@ -1,22 +1,25 @@
 package com.mercadolibre.planning.model.me.usecases.backlog.dtos;
 
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import lombok.Value;
-
 import java.time.Instant;
+import java.util.List;
+import lombok.Value;
 
 @Value
 public class GetBacklogMonitorInputDto {
 
-    Instant requestDate;
+  Instant requestDate;
 
-    String warehouseId;
+  String warehouseId;
 
-    Workflow workflow;
+  Workflow workflow;
 
-    Instant dateFrom;
+  List<ProcessName> processes;
 
-    Instant dateTo;
+  Instant dateFrom;
 
-    Long callerId;
+  Instant dateTo;
+
+  Long callerId;
 }
