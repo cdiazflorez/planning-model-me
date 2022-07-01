@@ -40,10 +40,10 @@ import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
-import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulationDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulation;
 import java.time.Instant;
@@ -88,7 +88,7 @@ public class SimulationControllerTest {
     private ValidateSimulation validateSimulation;
 
     @MockBean
-    private RunSimulationDeferralProjection runSimulationDeferralProjection;
+    private GetDeferralProjection getDeferralProjection;
 
     @Test
     void testRunSimulation() throws Exception {
@@ -230,7 +230,7 @@ public class SimulationControllerTest {
     @Test
     public void testRunSimulationDeferralProjection() throws Exception {
         //GIVEN
-        when(runSimulationDeferralProjection.execute(any(GetProjectionInput.class)))
+        when(getDeferralProjection.execute(any(GetProjectionInput.class)))
                 .thenReturn(new Projection("Projection",
                         null,
                         new com.mercadolibre.planning.model.me.entities.projection.Data(null,

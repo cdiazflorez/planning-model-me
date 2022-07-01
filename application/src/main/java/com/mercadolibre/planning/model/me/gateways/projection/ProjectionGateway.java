@@ -23,6 +23,5 @@ public interface ProjectionGateway {
                                                                         List<MagnitudePhoto> throughput,
                                                                         List<BacklogAreaDistribution> backlogDistribution);
 
-    List<ProjectionResult> runSimulationDeferralProjection(ProjectionRequest request);
 
 }

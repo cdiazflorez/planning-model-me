@@ -18,10 +18,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
-import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulationDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulation;
 import com.newrelic.api.agent.Trace;
@@ -54,7 +54,7 @@ public class SimulationController {
     private final DatadogMetricService datadogMetricService;
     private final RequestClock requestClock;
     private final ValidateSimulation validateSimulation;
-    private final RunSimulationDeferralProjection runSimulationDeferralProjection;
+    private final GetDeferralProjection getDeferralProjection;
 
     private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
             Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_SIMULATION),
@@ -129,7 +129,7 @@ public class SimulationController {
 
         datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "simulation deferral projection");
 
-        return ResponseEntity.of(of(runSimulationDeferralProjection.execute(new GetProjectionInput(
+        return ResponseEntity.of(of(getDeferralProjection.execute(new GetProjectionInput(
                 request.getWarehouseId(),
                 workflow,
                 date,

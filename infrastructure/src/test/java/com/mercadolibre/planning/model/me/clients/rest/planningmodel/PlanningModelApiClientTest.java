@@ -737,56 +737,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
   }
 
   @Test
-  void testRunSimulationDeferralProjection() throws JSONException {
-
-      // GIVEN
-      final ProjectionRequest request = ProjectionRequest.builder()
-              .workflow(FBM_WMS_OUTBOUND)
-              .warehouseId(WAREHOUSE_ID)
-              .type(ProjectionType.CPT)
-              .processName(List.of(PICKING, PACKING))
-              .dateFrom(now())
-              .dateTo(now().plusDays(1))
-              .backlog(List.of(
-                      new Backlog(parse("2022-06-17T10:00:00Z"), 50),
-                      new Backlog(parse("2022-06-17T11:00:00Z"), 100),
-                      new Backlog(parse("2022-06-17T12:00:00Z"), 200)
-              ))
-              .build();
-
-      final JSONArray apiResponse = new JSONArray()
-              .put(new JSONObject()
-                      .put("date", "2022-06-17T10:00:00Z")
-                      .put("projected_end_date", "2022-06-17T08:00:00Z")
-                      .put("remaining_quantity", "0")
-              )
-              .put(new JSONObject()
-                      .put("date", "2022-06-17T11:00:00Z")
-                      .put("projected_end_date", "2022-06-17T10:00:00Z")
-                      .put("remaining_quantity", "0")
-              )
-              .put(new JSONObject()
-                      .put("date", "2022-06-17T12:00:00Z")
-                      .put("projected_end_date", "2022-06-17T14:00:00Z")
-                      .put("remaining_quantity", "70")
-              );
-
-      MockResponse.builder()
-              .withMethod(POST)
-              .withURL(format(BASE_URL + RUN_DEFERRAL_SIMULATIONS_URL, FBM_WMS_OUTBOUND))
-              .withStatusCode(OK.value())
-              .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-              .withResponseBody(apiResponse.toString())
-              .build();
-
-      // When
-      final List<ProjectionResult> projections = client.runSimulationDeferralProjection(request);
-
-      // Then
-      assertEquals(3, projections.size());
-  }
-
-  @Test
   void testGetConfigurationOk() throws JSONException {
     // GIVEN
     final ConfigurationRequest request = ConfigurationRequest.builder()

@@ -25,7 +25,6 @@ import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
-import com.mercadolibre.planning.model.me.usecases.projection.simulation.GetSimulationDeferralProjection;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -47,9 +46,6 @@ public class GetSimpleDeferralProjectionTest {
 
     @InjectMocks
     private GetSimpleDeferralProjection getSimpleDeferralProjection;
-
-    @InjectMocks
-    private GetSimulationDeferralProjection getSimulationDeferralProjection;
 
     @Mock
     private LogisticCenterGateway logisticCenterGateway;
@@ -74,20 +70,8 @@ public class GetSimpleDeferralProjectionTest {
         when(planningModelGateway.runDeferralProjection(any(ProjectionRequest.class)))
                 .thenReturn(p);
 
-        when(projectionGateway.runSimulationDeferralProjection(any(ProjectionRequest.class)))
-                .thenReturn(p);
-
         // WHEN
         final GetSimpleDeferralProjectionOutput results = getSimpleDeferralProjection.execute(
-                new GetProjectionInput(
-                        WAREHOUSE_ID,
-                        FBM_WMS_OUTBOUND,
-                        currentUtcDateTime,
-                        mockBacklog(),
-                        false,
-                        null));
-
-        final GetSimpleDeferralProjectionOutput resultsSimulation = getSimulationDeferralProjection.execute(
                 new GetProjectionInput(
                         WAREHOUSE_ID,
                         FBM_WMS_OUTBOUND,
@@ -98,7 +82,7 @@ public class GetSimpleDeferralProjectionTest {
                                 new Simulation(ProcessName.GLOBAL,
                                         List.of(
                                                 new SimulationEntity(
-                                                        MagnitudeType.THROUGHPUT,
+                                                        MagnitudeType.HEADCOUNT,
                                                         List.of(
                                                                 new QuantityByDate(CPT_DATE_1.truncatedTo(ChronoUnit.SECONDS), 4),
                                                                 new QuantityByDate(CPT_DATE_2.truncatedTo(ChronoUnit.SECONDS), 5)
@@ -107,10 +91,8 @@ public class GetSimpleDeferralProjectionTest {
                                         )
                                 )
                         )));
-
         // THEN
         assertEquals(p, results.getProjections());
-        assertEquals(p, resultsSimulation.getProjections());
     }
 
     private List<ProjectionResult> mockProjections() {
