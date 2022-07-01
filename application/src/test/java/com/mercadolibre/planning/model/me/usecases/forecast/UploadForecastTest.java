@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UploadForecastTest {
-    private static final String VALID_FILE_PATH = "forecast_example.xlsx";
+    private static final String VALID_FILE_PATH = "outbound_forecast.xlsx";
 
     private static final LogisticCenterConfiguration CONFIG =
             new LogisticCenterConfiguration(TimeZone.getDefault());
