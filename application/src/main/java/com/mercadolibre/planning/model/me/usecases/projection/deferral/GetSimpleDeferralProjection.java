@@ -64,6 +64,7 @@ public class GetSimpleDeferralProjection implements
                         .dateTo(dateTo)
                         .backlog(backlogs)
                         .timeZone(timeZone)
+                        .simulations(input.getSimulations())
                         .build());
 
         return projection.stream()
