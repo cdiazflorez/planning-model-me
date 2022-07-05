@@ -4,6 +4,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.DateValidate;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ValidatedMagnitude;
@@ -17,7 +18,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -57,12 +57,10 @@ public class ValidateSimulation {
             );
 
             final Map<ZonedDateTime, Integer> throughputOutboundByHours = throughputOutbound.stream()
-                    .collect(Collectors.groupingBy(MagnitudePhoto::getDate))
-                    .entrySet()
-                    .stream()
                     .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            values -> values.getValue().stream().mapToInt(MagnitudePhoto::getValue).sum()));
+                            MagnitudePhoto::getDate,
+                            MagnitudePhoto::getValue,
+                            Integer::sum));
 
             return input.getSimulations()
                     .stream()
@@ -74,16 +72,25 @@ public class ValidateSimulation {
         }
     }
 
-    private ValidatedMagnitude getValidatedCapacity(Simulation simulation,
-                                                    Map<ZonedDateTime, Integer> throughputOutboundByHours,
-                                                    LogisticCenterConfiguration config) {
+    /**
+     *
+     * @param simulation Simulation to validate.
+     * @param throughputOutboundByHours Map with the reference values to validate the simulations.
+     * @param config Configuration of the logistic center to obtain the time zone.
+     * @return {@link ValidatedMagnitude} Object with validation.
+     *
+     * This method validates simulations for maximum capacity, although the Model API uses as Headcount in the simulationEntity
+     * for the front it is a Throughput
+     */
+    private ValidatedMagnitude getValidatedCapacity(final Simulation simulation,
+                                                    final Map<ZonedDateTime, Integer> throughputOutboundByHours,
+                                                    final LogisticCenterConfiguration config) {
 
-        List<DateValidate> tphValidated = simulation.getEntities().stream()
+        final List<DateValidate> tphValidated = simulation.getEntities().stream()
                 .filter(simulationEntity -> simulationEntity.getType().equals(THROUGHPUT))
                 .flatMap(simulationEntity -> simulationEntity.getValues().stream()
                         .map(values -> {
-                            int tphOutbound = throughputOutboundByHours.getOrDefault(values.getDate().withZoneSameInstant(
-                                    ZoneOffset.UTC), 0);
+                            int tphOutbound = throughputOutboundByHours.getOrDefault(convertToUtc(values.getDate()), 0);
                             return new DateValidate(
                                     values.getDate().withZoneSameInstant(config.getZoneId()),
                                     values.getQuantity() >= tphOutbound

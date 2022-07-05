@@ -127,7 +127,7 @@ public class SimulationController {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-        datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "simulation deferral projection");
+        datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "trackRunSimulation");
 
         return ResponseEntity.of(of(getDeferralProjection.execute(new GetProjectionInput(
                 request.getWarehouseId(),

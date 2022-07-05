@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -76,7 +77,7 @@ public abstract class GetProjectionOutbound extends GetProjection {
                                 input.getDate(),
                                 backlogsToProject,
                                 false,
-                                null));
+                                Collections.emptyList()));
 
         return setIsDeferred(projectionsSla, deferralProjectionOutput.getProjections());
     }
