@@ -53,9 +53,6 @@ public class GetSimpleDeferralProjectionTest {
     @Mock
     private PlanningModelGateway planningModelGateway;
 
-    @Mock
-    private ProjectionGateway projectionGateway;
-
     @Test
     public void textExecute() {
 

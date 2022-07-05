@@ -447,20 +447,4 @@ public class GetDeferralProjectionTest {
                 emptyList()
         );
     }
-
-    private List<Simulation> mockSimulations() {
-        return List.of(
-                new Simulation(GLOBAL,
-                        List.of(
-                                new SimulationEntity(
-                                        MagnitudeType.THROUGHPUT,
-                                        List.of(
-                                                new QuantityByDate(CPT_1.truncatedTo(ChronoUnit.SECONDS), 4),
-                                                new QuantityByDate(CPT_1.plusHours(-1).truncatedTo(ChronoUnit.SECONDS), 5)
-                                        )
-                                )
-                        )
-                )
-        );
-    }
 }

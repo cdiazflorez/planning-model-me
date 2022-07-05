@@ -121,8 +121,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   private static final String SAVE_SIMULATIONS_URL = BASE_SIMULATIONS_URL + "/save";
 
-  private static final String RUN_DEFERRAL_SIMULATIONS_URL = BASE_SIMULATIONS_URL + "/deferral/delivery_promise";
-
   private static final String PLANNING_DISTRIBUTION_URL =
       "/planning/model/workflows/%s/planning_distributions";
 
