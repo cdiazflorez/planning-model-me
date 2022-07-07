@@ -12,14 +12,13 @@ import java.util.List;
 
 public interface ProjectionGateway {
 
-  List<ProjectedBacklogForAnAreaAndOperatingHour> projectBacklogInAreas(Instant dateFrom,
-                                                                        Instant dateTo,
-                                                                        Workflow workflow,
-                                                                        List<ProcessName> processes,
-                                                                        List<BacklogQuantityAtSla> backlog,
-                                                                        List<PlanningDistributionResponse> plannedUnits,
-                                                                        List<MagnitudePhoto> throughput,
-                                                                        List<BacklogAreaDistribution> backlogDistribution);
-
+    List<ProjectedBacklogForAnAreaAndOperatingHour> projectBacklogInAreas(Instant dateFrom,
+                                                                          Instant dateTo,
+                                                                          Workflow workflow,
+                                                                          List<ProcessName> processes,
+                                                                          List<BacklogQuantityAtSla> backlog,
+                                                                          List<PlanningDistributionResponse> plannedUnits,
+                                                                          List<MagnitudePhoto> throughput,
+                                                                          List<BacklogAreaDistribution> backlogDistribution);
 
 }

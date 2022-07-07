@@ -3,8 +3,8 @@ package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.DateValidate;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ValidatedMagnitude;
@@ -73,12 +73,11 @@ public class ValidateSimulation {
     }
 
     /**
-     *
-     * @param simulation Simulation to validate.
+     * @param simulation                Simulation to validate.
      * @param throughputOutboundByHours Map with the reference values to validate the simulations.
-     * @param config Configuration of the logistic center to obtain the time zone.
+     * @param config                    Configuration of the logistic center to obtain the time zone.
      * @return {@link ValidatedMagnitude} Object with validation.
-     *
+     * <p>
      * This method validates simulations for maximum capacity, although the Model API uses as Headcount in the simulationEntity
      * for the front it is a Throughput
      */
