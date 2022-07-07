@@ -138,7 +138,7 @@ public class RunSimulationOutboundTest {
                 utcCurrentTime,
                 mockBacklog(),
                 false,
-                null)))
+                emptyList())))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjections(utcCurrentTime),
                         new LogisticCenterConfiguration(TIME_ZONE)));

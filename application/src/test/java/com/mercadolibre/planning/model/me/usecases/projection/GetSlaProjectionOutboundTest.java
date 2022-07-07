@@ -154,7 +154,8 @@ public class GetSlaProjectionOutboundTest {
                 WAREHOUSE_ID, FBM_WMS_OUTBOUND,
                 currentUtcDateTime,
                 mockBacklog(),
-                false, null)))
+                false,
+                emptyList())))
                 .thenReturn(new GetSimpleDeferralProjectionOutput(
                         mockProjectionsDeferral(currentUtcDateTime),
                         new LogisticCenterConfiguration(TIME_ZONE)));
