@@ -9,9 +9,10 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 public enum ForecastProductivityProcessName {
     PICKING(2),
-    PACKING(3),
-    PACKING_WALL(4),
-    EXPEDITION(5);
+    BATCH_SORTER(3),
+    WALL_IN(4),
+    PACKING(5),
+    PACKING_WALL(6);
 
     private final int columnIndex;
 

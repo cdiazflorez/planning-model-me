@@ -21,11 +21,12 @@ import static java.util.stream.Collectors.toMap;
 @AllArgsConstructor
 public enum ForecastProcessName {
     WAVING(List.of(PERFORMED_PROCESSING), 2),
-    PICKING(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 3),
-    PACKING(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 7),
-    PACKING_WALL(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 11),
-    EXPEDITION(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 15),
-    GLOBAL(List.of(MAX_CAPACITY), 19);
+    PICKING(List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS), 5),
+    PACKING(List.of(WORKERS, ACTIVE_WORKERS), 10),
+    BATCH_SORTER(List.of(WORKERS, ACTIVE_WORKERS), 15),
+    WALL_IN(List.of(WORKERS, ACTIVE_WORKERS), 20),
+    PACKING_WALL(List.of(WORKERS, ACTIVE_WORKERS), 25),
+    GLOBAL(List.of(MAX_CAPACITY), 31);
 
     private final List<ForecastProcessType> processTypes;
     private final int startingColumn;

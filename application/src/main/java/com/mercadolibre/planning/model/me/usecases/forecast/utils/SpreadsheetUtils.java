@@ -261,7 +261,7 @@ public final class SpreadsheetUtils {
         return Duration.parse(parserStringbuilder);
     }
 
-    private static String getCellAddress(final int column, final int row) {
+    public static String getCellAddress(final int column, final int row) {
         final char letter = (char) (CHAR_LETTER_A + column);
         return letter + "" + (row + 1);
     }
