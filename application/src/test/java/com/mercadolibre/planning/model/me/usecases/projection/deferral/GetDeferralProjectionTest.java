@@ -160,7 +160,7 @@ public class GetDeferralProjectionTest {
         assertEquals(false, projection.getData().getChart().getData().get(0).getIsDeferred());
         assertEquals(false, projection.getData().getChart().getData().get(1).getIsDeferred());
         assertEquals(false, projection.getData().getChart().getData().get(2).getIsDeferred());
-        assertEquals("throughput", projection.getData().getComplexTable1().getData()
+        assertEquals("max_capacity", projection.getData().getComplexTable1().getData()
                 .get(0).getId());
         assertEquals("Throughput", projection.getData().getComplexTable1().getData()
                 .get(0).getTitle());
