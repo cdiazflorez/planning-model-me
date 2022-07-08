@@ -62,12 +62,12 @@ public class ValidateSimulationService {
     }
 
     /**
+     * This method validates simulations for maximum capacity, although the Model API uses as Headcount in the simulationEntity
+     * for the front it is a Throughput.
      * @param simulation                Simulation to validate.
      * @param throughputOutboundByHours Map with the reference values to validate the simulations.
      * @param config                    Configuration of the logistic center to obtain the time zone.
      * @return {@link ValidatedMagnitude} Object with validation.
-     * This method validates simulations for maximum capacity, although the Model API uses as Headcount in the simulationEntity
-     * for the front it is a Throughput
      */
     private ValidatedMagnitude getValidatedCapacity(final Simulation simulation,
                                                     final Map<ZonedDateTime, Integer> throughputOutboundByHours,
