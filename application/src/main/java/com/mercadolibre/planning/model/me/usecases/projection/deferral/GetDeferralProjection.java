@@ -249,7 +249,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
         return new ComplexTable(
                 headers,
-                List.of(createData(config, THROUGHPUT, maxCapacity.stream()
+                List.of(createData(config, MagnitudeType.MAX_CAPACITY, maxCapacity.stream()
                         .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughput)))
                         .collect(toList()), headers)
                 ),
