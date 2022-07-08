@@ -28,10 +28,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Tests {@link ValidateSimulation}.
+ * Tests {@link ValidateSimulationService}.
  */
 @ExtendWith(MockitoExtension.class)
-public class ValidateSimulationTest {
+public class ValidateSimulationServiceTest {
 
     private static final String WAREHOUSE_ID = "ARTW01";
 
@@ -40,7 +40,7 @@ public class ValidateSimulationTest {
     private static final ZonedDateTime HOUR = ZonedDateTime.parse("2022-06-01T17:00:00Z");
 
     @InjectMocks
-    private ValidateSimulation validateSimulation;
+    private ValidateSimulationService validateSimulationService;
 
     @Mock
     private PlanningModelGateway planningModelGateway;
@@ -55,8 +55,8 @@ public class ValidateSimulationTest {
         when(planningModelGateway.getTrajectories(any(TrajectoriesRequest.class))).thenReturn(mockGetTrajectories());
 
         //WHEN
-        List<ValidatedMagnitude> response = validateSimulation.execute(mockRequest(Workflow.FBM_WMS_OUTBOUND));
-        List<ValidatedMagnitude> responseEmpty = validateSimulation.execute(mockRequest(Workflow.FBM_WMS_INBOUND));
+        List<ValidatedMagnitude> response = validateSimulationService.execute(mockRequest(Workflow.FBM_WMS_OUTBOUND));
+        List<ValidatedMagnitude> responseEmpty = validateSimulationService.execute(mockRequest(Workflow.FBM_WMS_INBOUND));
 
         Assertions.assertNotNull(response);
         Assertions.assertNotNull(responseEmpty);

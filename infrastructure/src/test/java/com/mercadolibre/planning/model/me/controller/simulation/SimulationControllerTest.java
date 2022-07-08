@@ -45,7 +45,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjec
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
-import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulation;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulationService;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -85,7 +85,7 @@ public class SimulationControllerTest {
     private RequestClock requestClock;
 
     @MockBean
-    private ValidateSimulation validateSimulation;
+    private ValidateSimulationService validateSimulationService;
 
     @MockBean
     private GetDeferralProjection getDeferralProjection;
@@ -202,7 +202,7 @@ public class SimulationControllerTest {
     @Test
     public void testValidateSimulations() throws Exception {
         //GIVEN
-        when(validateSimulation.execute(any(GetProjectionInputDto.class)))
+        when(validateSimulationService.execute(any(GetProjectionInputDto.class)))
                 .thenReturn(List.of(
                         new ValidatedMagnitude("throughput",
                                 List.of(new DateValidate(ZonedDateTime.parse("2022-06-01T14:00:00-03:00"), true))

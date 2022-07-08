@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.MAX_CAPACITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
@@ -28,7 +29,7 @@ import lombok.AllArgsConstructor;
 
 @Named
 @AllArgsConstructor
-public class ValidateSimulation {
+public class ValidateSimulationService {
 
     private static final long PLUS_DAYS = 3;
 
@@ -44,23 +45,11 @@ public class ValidateSimulation {
             final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
                     input.getWarehouseId());
 
-            final List<MagnitudePhoto> throughputOutbound = planningModelGateway.getTrajectories(
-                    TrajectoriesRequest.builder()
-                            .warehouseId(input.getWarehouseId())
-                            .workflow(input.getWorkflow())
-                            .entityType(THROUGHPUT)
-                            .dateFrom(dateFrom)
-                            .dateTo(dateTo)
-                            .processName(List.of(PACKING, PACKING_WALL))
-                            .processingType(List.of(ProcessingType.THROUGHPUT))
-                            .build()
-            );
-
-            final Map<ZonedDateTime, Integer> throughputOutboundByHours = throughputOutbound.stream()
-                    .collect(Collectors.toMap(
-                            MagnitudePhoto::getDate,
-                            MagnitudePhoto::getValue,
-                            Integer::sum));
+            final Map<ZonedDateTime, Integer> throughputOutboundByHours = getThp(
+                    input.getWarehouseId(),
+                    input.getWorkflow(),
+                    dateFrom,
+                    dateTo);
 
             return input.getSimulations()
                     .stream()
@@ -77,7 +66,6 @@ public class ValidateSimulation {
      * @param throughputOutboundByHours Map with the reference values to validate the simulations.
      * @param config                    Configuration of the logistic center to obtain the time zone.
      * @return {@link ValidatedMagnitude} Object with validation.
-     * <p>
      * This method validates simulations for maximum capacity, although the Model API uses as Headcount in the simulationEntity
      * for the front it is a Throughput
      */
@@ -86,7 +74,7 @@ public class ValidateSimulation {
                                                     final LogisticCenterConfiguration config) {
 
         final List<DateValidate> tphValidated = simulation.getEntities().stream()
-                .filter(simulationEntity -> simulationEntity.getType().equals(THROUGHPUT))
+                .filter(simulationEntity -> simulationEntity.getType().equals(MAX_CAPACITY))
                 .flatMap(simulationEntity -> simulationEntity.getValues().stream()
                         .map(values -> {
                             int tphOutbound = throughputOutboundByHours.getOrDefault(convertToUtc(values.getDate()), 0);
@@ -98,5 +86,29 @@ public class ValidateSimulation {
                 .collect(Collectors.toList());
 
         return new ValidatedMagnitude(THROUGHPUT.getName(), tphValidated);
+    }
+
+    private Map<ZonedDateTime, Integer> getThp(final String warehouseId,
+                                               final Workflow workflow,
+                                               final ZonedDateTime dateFrom,
+                                               final ZonedDateTime dateTo) {
+
+        final List<MagnitudePhoto> throughputOutbound = planningModelGateway.getTrajectories(
+                TrajectoriesRequest.builder()
+                        .warehouseId(warehouseId)
+                        .workflow(workflow)
+                        .entityType(THROUGHPUT)
+                        .dateFrom(dateFrom)
+                        .dateTo(dateTo)
+                        .processName(List.of(PACKING, PACKING_WALL))
+                        .processingType(List.of(ProcessingType.THROUGHPUT))
+                        .build()
+        );
+
+        return throughputOutbound.stream()
+                .collect(Collectors.toMap(
+                        MagnitudePhoto::getDate,
+                        MagnitudePhoto::getValue,
+                        Integer::sum));
     }
 }
