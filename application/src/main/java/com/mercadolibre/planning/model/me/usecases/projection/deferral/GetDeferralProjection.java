@@ -16,7 +16,6 @@ import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createData;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.createOutboundTabs;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static java.time.ZoneOffset.UTC;
-import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
@@ -115,7 +114,8 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                                     input.getWorkflow(),
                                     input.getDate(),
                                     backlogsToProject,
-                                    input.isWantToSimulate21()));
+                                    input.isWantToSimulate21(),
+                                    input.getSimulations()));
 
             final List<Backlog> backlogsToShow = filterBacklogsInRange(
                     dateFromToShow,
@@ -249,7 +249,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
 
         return new ComplexTable(
                 headers,
-                List.of(createData(config, THROUGHPUT, maxCapacity.stream()
+                List.of(createData(config, MagnitudeType.MAX_CAPACITY, maxCapacity.stream()
                         .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughput)))
                         .collect(toList()), headers)
                 ),

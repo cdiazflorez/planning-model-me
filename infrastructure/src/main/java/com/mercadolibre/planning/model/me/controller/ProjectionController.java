@@ -1,5 +1,9 @@
 package com.mercadolibre.planning.model.me.controller;
 
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static java.util.Optional.of;
+import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
+
 import com.mercadolibre.planning.model.me.controller.editor.ProcessNameEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
@@ -14,6 +18,11 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferr
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.newrelic.api.agent.Trace;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -24,16 +33,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.validation.constraints.NotNull;
-
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
-import static java.util.Optional.of;
-import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 @RestController
 @AllArgsConstructor
@@ -56,8 +55,7 @@ public class ProjectionController {
             @PathVariable final Workflow workflow,
             @RequestParam("caller.id") @NotNull final Long callerId,
             @RequestParam final String warehouseId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime date) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
@@ -78,8 +76,7 @@ public class ProjectionController {
             @PathVariable final Workflow workflow,
             @RequestParam("caller.id") @NotNull final Long callerId,
             @RequestParam final String warehouseId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME)
-            final ZonedDateTime date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date,
             @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
@@ -91,7 +88,8 @@ public class ProjectionController {
                 workflow,
                 date,
                 null,
-                cap5ToPack)))
+                cap5ToPack,
+                Collections.emptyList())))
         );
     }
 

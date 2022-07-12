@@ -11,6 +11,7 @@ public enum MagnitudeType {
     PRODUCTIVITY("Productividad regular"),
     HEADCOUNT("Headcount"),
     THROUGHPUT("Throughput"),
+    MAX_CAPACITY("Throughput"),
     BACKLOG(null),
     ORDER_DISTRIBUTION(null),
     REMAINING_PROCESSING(null),
