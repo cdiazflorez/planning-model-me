@@ -27,19 +27,25 @@ import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
+import com.mercadolibre.planning.model.me.entities.projection.Tab;
 import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.DateValidate;
+import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ValidatedMagnitude;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetDeferralProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulationService;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -77,6 +83,12 @@ public class SimulationControllerTest {
 
     @MockBean
     private RequestClock requestClock;
+
+    @MockBean
+    private ValidateSimulationService validateSimulationService;
+
+    @MockBean
+    private GetDeferralProjection getDeferralProjection;
 
     @Test
     void testRunSimulation() throws Exception {
@@ -185,6 +197,66 @@ public class SimulationControllerTest {
         // THEN
         result.andExpect(status().isForbidden());
         verifyNoInteractions(saveSimulation);
+    }
+
+    @Test
+    public void testValidateSimulations() throws Exception {
+        //GIVEN
+        when(validateSimulationService.execute(any(GetProjectionInputDto.class)))
+                .thenReturn(List.of(
+                        new ValidatedMagnitude("throughput",
+                                List.of(new DateValidate(ZonedDateTime.parse("2022-06-01T14:00:00-03:00"), true))
+                        )
+                ));
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/deferral/validate")
+                .param("caller.id", String.valueOf(USER_ID))
+                .content(mockValidateSimulationRequest())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID,
+                List.of(UserPermission.OUTBOUND_SIMULATION)));
+
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(
+                "[{\"type\":\"throughput\",\"values\":[{\"date\":\"2022-06-01T14:00:00-03:00\",\"is_valid\":true}]}]"));
+
+    }
+
+    @Test
+    public void testRunSimulationDeferralProjection() throws Exception {
+        //GIVEN
+        when(getDeferralProjection.execute(any(GetProjectionInput.class)))
+                .thenReturn(new Projection("Projection",
+                        null,
+                        new com.mercadolibre.planning.model.me.entities.projection.Data(null,
+                                null,
+                                null,
+                                null),
+                        List.of(
+                                new Tab("cpt", "Cumplimiento de CPTs")),
+                        null
+
+                ));
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/deferral/run")
+                .param("caller.id", String.valueOf(USER_ID))
+                .content(mockValidateSimulationRequest())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID,
+                List.of(UserPermission.OUTBOUND_SIMULATION)));
+
+        result.andExpect(status().isOk());
+
     }
 
     private String mockRunSimulationRequest() throws JSONException {
@@ -325,5 +397,21 @@ public class SimulationControllerTest {
                 )
         );
         return new SimpleTable(title, columnHeaders, data);
+    }
+
+    private String mockValidateSimulationRequest() throws JSONException {
+        return new JSONObject()
+                .put("warehouse_id", WAREHOUSE_ID)
+                .put("simulations", new JSONArray().put(new JSONObject()
+                        .put("process_name", "global")
+                        .put("entities", new JSONArray().put(new JSONObject()
+                                .put("type", "throughput")
+                                .put("values", new JSONArray().put(new JSONObject()
+                                        .put("date", "2020-07-27T10:00:00Z")
+                                        .put("quantity", 1)
+                                ))
+                        ))
+                ))
+                .toString();
     }
 }

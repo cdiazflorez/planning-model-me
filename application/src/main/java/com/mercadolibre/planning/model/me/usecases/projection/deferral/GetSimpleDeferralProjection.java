@@ -1,5 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.projection.deferral;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static java.util.stream.Collectors.toList;
+
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -8,18 +14,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessNam
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
-
 import java.time.ZonedDateTime;
 import java.util.List;
-
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static java.util.stream.Collectors.toList;
+import javax.inject.Named;
+import lombok.AllArgsConstructor;
 
 @Named
 @AllArgsConstructor
@@ -64,6 +62,7 @@ public class GetSimpleDeferralProjection implements
                         .dateTo(dateTo)
                         .backlog(backlogs)
                         .timeZone(timeZone)
+                        .simulations(input.getSimulations())
                         .build());
 
         return projection.stream()
