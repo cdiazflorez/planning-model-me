@@ -240,6 +240,8 @@ class GetStaffingTest {
 
   private static final Integer FORECAST_HEADCOUNT_PACKING = 10;
 
+  private static final Integer FORECAST_HEADCOUNT_BATCH_SORTER = 1;
+
   private static final Integer FORECAST_HEADCOUNT_CHECK_IN = 4;
 
   private static final Integer FORECAST_HEADCOUNT_PUT_AWAY = 7;
@@ -647,21 +649,19 @@ class GetStaffingTest {
     assertEquals(EXPECTED_DELTA_PUT_AWAY, inbound.getProcesses().get(2).getWorkers().getDelta());
 
     // Outbound
-    assertEquals(
-        FORECAST_HEADCOUNT_PICKING, outbound.getProcesses().get(0).getWorkers().getPlanned());
-    assertNull(outbound.getProcesses().get(1).getWorkers().getPlanned());
-    assertNull(outbound.getProcesses().get(2).getWorkers().getPlanned());
-    assertEquals(
-        FORECAST_HEADCOUNT_PACKING, outbound.getProcesses().get(3).getWorkers().getPlanned());
-    assertEquals(
-        FORECAST_HEADCOUNT_PACKING_WALL, outbound.getProcesses().get(4).getWorkers().getPlanned());
+    final var outboundProcesses = outbound.getProcesses();
+    assertEquals(FORECAST_HEADCOUNT_PICKING, outboundProcesses.get(0).getWorkers().getPlanned());
+    assertEquals(FORECAST_HEADCOUNT_BATCH_SORTER, outboundProcesses.get(1).getWorkers().getPlanned());
+    assertNull(outboundProcesses.get(2).getWorkers().getPlanned());
+    assertEquals(FORECAST_HEADCOUNT_PACKING, outboundProcesses.get(3).getWorkers().getPlanned());
+    assertEquals(FORECAST_HEADCOUNT_PACKING_WALL, outboundProcesses.get(4).getWorkers().getPlanned());
 
-    assertEquals(EXPECTED_DELTA_PICKING, outbound.getProcesses().get(0).getWorkers().getDelta());
-    assertNull(outbound.getProcesses().get(1).getWorkers().getDelta());
-    assertNull(outbound.getProcesses().get(2).getWorkers().getDelta());
-    assertEquals(EXPECTED_DELTA_PACKING, outbound.getProcesses().get(3).getWorkers().getDelta());
+    assertEquals(EXPECTED_DELTA_PICKING, outboundProcesses.get(0).getWorkers().getDelta());
+    assertNull(outboundProcesses.get(1).getWorkers().getDelta());
+    assertNull(outboundProcesses.get(2).getWorkers().getDelta());
+    assertEquals(EXPECTED_DELTA_PACKING, outboundProcesses.get(3).getWorkers().getDelta());
     assertEquals(
-        EXPECTED_DELTA_PACKING_WALL, outbound.getProcesses().get(4).getWorkers().getDelta());
+        EXPECTED_DELTA_PACKING_WALL, outboundProcesses.get(4).getWorkers().getDelta());
 
     // withdrawals
     assertNull(withdrawals.getProcesses().get(0).getWorkers().getPlanned());
@@ -966,7 +966,8 @@ class GetStaffingTest {
                     .processName(ProcessName.PUT_AWAY)
                     .source(Source.SIMULATION)
                     .value(SIMULATION_HEADCOUNT_PUT_AWAY)
-                    .build())),
+                    .build())
+        ),
         Map.of(
             HEADCOUNT,
             List.of(
@@ -984,6 +985,13 @@ class GetStaffingTest {
                     .processName(ProcessName.PACKING)
                     .value(FORECAST_HEADCOUNT_PACKING)
                     .source(Source.FORECAST)
-                    .build())));
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.BATCH_SORTER)
+                    .value(FORECAST_HEADCOUNT_BATCH_SORTER)
+                    .source(Source.FORECAST)
+                    .build())
+        )
+    );
   }
 }
