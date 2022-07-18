@@ -36,6 +36,11 @@ import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.DateValidate;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ValidatedMagnitude;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
@@ -46,6 +51,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjection
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulationService;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.WriteSimulation;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -89,6 +95,10 @@ public class SimulationControllerTest {
 
     @MockBean
     private GetDeferralProjection getDeferralProjection;
+
+    @MockBean
+    private WriteSimulation writeSimulation;
+
 
     @Test
     void testRunSimulation() throws Exception {
@@ -259,6 +269,53 @@ public class SimulationControllerTest {
 
     }
 
+    @Test
+    public void testSaveSimulationDeferralProjection() throws Exception {
+        //GIVEN
+        when(getDeferralProjection.execute(any(GetProjectionInput.class)))
+                .thenReturn(new Projection("Projection",
+                        null,
+                        new com.mercadolibre.planning.model.me.entities.projection.Data(null,
+                                null,
+                                null,
+                                null),
+                        List.of(
+                                new Tab("cpt", "Cumplimiento de CPTs")),
+                        null
+
+                ));
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/deferral/save")
+                .param("caller.id", String.valueOf(USER_ID))
+                .content(mockValidateSimulationRequest())
+                .contentType(APPLICATION_JSON)
+        );
+
+        // THEN
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID,
+                List.of(UserPermission.OUTBOUND_SIMULATION)));
+
+        verify(writeSimulation).saveSimulations(
+                FBM_WMS_OUTBOUND,
+                WAREHOUSE_ID,
+                List.of(new Simulation(
+                        ProcessName.GLOBAL,
+                        List.of(new SimulationEntity(
+                                MagnitudeType.MAX_CAPACITY,
+                                List.of(new QuantityByDate(
+                                        ZonedDateTime.parse("2020-07-27T10:00:00Z[UTC]"),
+                                        1
+                                ))
+                        ))
+                )),
+                1234L);
+
+        result.andExpect(status().isOk());
+
+    }
+
     private String mockRunSimulationRequest() throws JSONException {
         return new JSONObject()
                 .put("warehouse_id", WAREHOUSE_ID)
@@ -405,7 +462,7 @@ public class SimulationControllerTest {
                 .put("simulations", new JSONArray().put(new JSONObject()
                         .put("process_name", "global")
                         .put("entities", new JSONArray().put(new JSONObject()
-                                .put("type", "throughput")
+                                .put("type", "max_capacity")
                                 .put("values", new JSONArray().put(new JSONObject()
                                         .put("date", "2020-07-27T10:00:00Z")
                                         .put("quantity", 1)

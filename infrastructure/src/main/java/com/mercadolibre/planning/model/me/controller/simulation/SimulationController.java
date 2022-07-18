@@ -24,6 +24,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjection
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.RunSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.SaveSimulation;
 import com.mercadolibre.planning.model.me.usecases.projection.simulation.ValidateSimulationService;
+import com.mercadolibre.planning.model.me.usecases.projection.simulation.WriteSimulation;
 import com.newrelic.api.agent.Trace;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -55,6 +56,7 @@ public class SimulationController {
     private final RequestClock requestClock;
     private final ValidateSimulationService validateSimulationService;
     private final GetDeferralProjection getDeferralProjection;
+    private final WriteSimulation writeSimulation;
 
     private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
             Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_SIMULATION),
@@ -128,6 +130,31 @@ public class SimulationController {
         authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
         datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "trackRunSimulation");
+
+        return ResponseEntity.of(of(getDeferralProjection.execute(new GetProjectionInput(
+                request.getWarehouseId(),
+                workflow,
+                date,
+                null,
+                cap5ToPack,
+                fromRequest(request.getSimulations())
+        ))));
+    }
+
+    @Trace
+    @PostMapping("/deferral/save")
+    public ResponseEntity<Projection> saveDeferralProjection(
+            @PathVariable final Workflow workflow,
+            @RequestParam("caller.id") @NotNull final Long callerId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date,
+            @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack,
+            @RequestBody final RunSimulationRequest request) {
+
+        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
+
+        datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "trackRunSimulation");
+
+        writeSimulation.saveSimulations(workflow, request.getWarehouseId(), fromRequest(request.getSimulations()), callerId);
 
         return ResponseEntity.of(of(getDeferralProjection.execute(new GetProjectionInput(
                 request.getWarehouseId(),

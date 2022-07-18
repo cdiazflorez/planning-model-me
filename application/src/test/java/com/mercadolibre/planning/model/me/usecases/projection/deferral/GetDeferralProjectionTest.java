@@ -29,6 +29,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeP
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
 import java.time.Instant;
@@ -346,31 +347,49 @@ public class GetDeferralProjectionTest {
                                 .date(CPT_1.plusHours(-4))
                                 .processName(GLOBAL)
                                 .value(10)
+                                .source(Source.FORECAST)
                                 .build(),
                         MagnitudePhoto.builder()
                                 .date(CPT_1.plusHours(-3))
                                 .processName(GLOBAL)
                                 .value(20)
+                                .source(Source.FORECAST)
                                 .build(),
                         MagnitudePhoto.builder()
                                 .date(CPT_1.plusHours(-2))
                                 .processName(GLOBAL)
                                 .value(15)
+                                .source(Source.FORECAST)
                                 .build(),
                         MagnitudePhoto.builder()
                                 .date(CPT_1.plusHours(-1))
                                 .processName(GLOBAL)
                                 .value(30)
+                                .source(Source.FORECAST)
                                 .build(),
                         MagnitudePhoto.builder()
                                 .date(CPT_1)
                                 .processName(GLOBAL)
                                 .value(79)
+                                .source(Source.FORECAST)
                                 .build(),
                         MagnitudePhoto.builder()
                                 .date(CPT_1.plusDays(1))
                                 .processName(GLOBAL)
                                 .value(32)
+                                .source(Source.FORECAST)
+                                .build(),
+                        MagnitudePhoto.builder()
+                                .date(CPT_1.plusDays(1))
+                                .processName(GLOBAL)
+                                .value(35)
+                                .source(Source.SIMULATION)
+                                .build(),
+                        MagnitudePhoto.builder()
+                                .date(CPT_1.plusHours(-4))
+                                .processName(GLOBAL)
+                                .value(10)
+                                .source(Source.SIMULATION)
                                 .build()
                 ),
                 MagnitudeType.THROUGHPUT, List.of(
