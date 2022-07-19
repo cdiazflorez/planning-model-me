@@ -43,6 +43,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveSimulationsRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
@@ -352,6 +353,19 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                 .build();
 
         return send(httpRequest, response -> response.getData(new TypeReference<>() {
+        }));
+    }
+
+    @Override
+    public void deferralSaveSimulation(SaveSimulationsRequest saveSimulationsRequest) {
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, saveSimulationsRequest.getWorkflow())
+                        + SIMULATIONS_PREFIX_URL + "/deferral/save")
+                .POST(requestSupplier(saveSimulationsRequest))
+                .acceptedHttpStatuses(Set.of(OK))
+                .build();
+
+        send(request, response -> response.getData(new TypeReference<>() {
         }));
     }
 

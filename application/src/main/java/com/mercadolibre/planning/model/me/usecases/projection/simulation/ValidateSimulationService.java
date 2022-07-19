@@ -85,7 +85,7 @@ public class ValidateSimulationService {
                         }))
                 .collect(Collectors.toList());
 
-        return new ValidatedMagnitude(THROUGHPUT.getName(), tphValidated);
+        return new ValidatedMagnitude(MAX_CAPACITY.getName(), tphValidated);
     }
 
     private Map<ZonedDateTime, Integer> getThp(final String warehouseId,

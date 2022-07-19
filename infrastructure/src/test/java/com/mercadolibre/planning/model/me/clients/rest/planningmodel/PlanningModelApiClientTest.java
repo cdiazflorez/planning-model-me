@@ -24,6 +24,7 @@ import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
 import static com.mercadolibre.restclient.http.HttpMethod.POST;
+import static java.util.Collections.emptyList;
 import static java.lang.String.format;
 import static java.time.ZonedDateTime.now;
 import static java.time.ZonedDateTime.parse;
@@ -62,6 +63,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveSimulationsRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
@@ -1237,6 +1239,21 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
         //THEN
         assertNotNull(response);
+    }
+
+    @Test
+    public void saveSimulationsTest() {
+        //GIVEN
+        MockResponse.builder()
+                .withMethod(POST)
+                .withURL(BASE_URL + format(BASE_SIMULATIONS_URL, FBM_WMS_OUTBOUND) + "/deferral/save")
+                .withStatusCode(OK.value())
+                .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                .withResponseBody("")
+                .build();
+
+        client.deferralSaveSimulation(new SaveSimulationsRequest(FBM_WMS_OUTBOUND, WAREHOUSE_ID, emptyList(), 1L));
+
     }
 
     @Nested

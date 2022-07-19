@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.utils;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
@@ -22,6 +24,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -33,7 +36,13 @@ import java.util.stream.IntStream;
 
 public class ResponseUtils {
 
+    private static final String FIRST_TITLE = "title_1";
+
+    private static final String FIRST_SUBTITLE = "subtitle_1";
+
     public static final String PROJECTION_TITLE = "Proyección";
+
+    private static final String NO_VALUE = "-";
 
     private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
 
@@ -117,13 +126,11 @@ public class ResponseUtils {
                                                       final RowName processName,
                                                       final List<ColumnHeader> headers,
                                                       final List<EntityRow> entities) {
-
-        final Map<String, EntityRow> entitiesByHour = entities.stream()
+        final Map<String, Map<Source, EntityRow>> entitiesByHour = entities.stream()
                 .map(entity -> entity.convertTimeZone(config.getZoneId()))
-                .collect(toMap(
+                .collect(groupingBy(
                         entity -> getHourAndDay(entity.getDate()),
-                        identity(),
-                        (e1, e2) -> e2));
+                        toMap(EntityRow::getSource, identity(), (e1, e2) -> e2)));
 
         final Map<String, Content> content = new LinkedHashMap<>();
 
@@ -133,21 +140,40 @@ public class ResponseUtils {
                         new Content(capitalize(processName.getTitle()), null, null,
                                 processName.getName(), true));
             } else {
-                final EntityRow entity = entitiesByHour.get(header.getValue());
+                final Map<Source, EntityRow> entityBySource = entitiesByHour.get(header.getValue());
 
-                if (entity == null) {
-                    content.put(header.getId(), new Content("-", null, null, null, true));
-                } else {
+                if (entityBySource != null && entityBySource.containsKey(SIMULATION)) {
                     content.put(header.getId(), new Content(
-                            valueOf(entity.getValue()),
-                            entity.getDate(),
+                            valueOf(entityBySource.get(SIMULATION).getValue()),
+                            entityBySource.get(SIMULATION).getDate(),
+                            createTooltip(entityBySource.get(FORECAST)),
+                            null,
+                            entityBySource.get(SIMULATION).isValid()));
+                } else if (entityBySource != null && entityBySource.containsKey(FORECAST)) {
+                    content.put(header.getId(), new Content(
+                            valueOf(entityBySource.get(FORECAST).getValue()),
+                            entityBySource.get(FORECAST).getDate(),
                             null,
                             null,
-                            entity.isValid()
-                    ));
+                            entityBySource.get(FORECAST).isValid()));
+                } else {
+                    content.put(header.getId(),
+                            new Content(NO_VALUE, null, null, null, true));
                 }
             }
         });
         return content;
+    }
+
+    private static Map<String, String> createTooltip(EntityRow entity) {
+        return Map.of(
+                FIRST_TITLE, "Hora de operación",
+                FIRST_SUBTITLE, format("%s - %s",
+                        entity.getTime().format(COLUMN_HOUR_FORMAT),
+                        entity.getTime().plusHours(1).format(COLUMN_HOUR_FORMAT)),
+                "title_2", "Items por hora",
+                "subtitle_2", valueOf(entity.getValue())
+        );
+
     }
 }

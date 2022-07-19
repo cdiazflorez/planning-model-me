@@ -237,6 +237,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Projec
                         .processName(List.of(GLOBAL, PACKING, PACKING_WALL))
                         .entityFilters(FILTER_CAP_MAX)
                         .source(Source.SIMULATION)
+                        .simulations(input.getSimulations())
                         .build()
         );
 
