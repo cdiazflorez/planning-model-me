@@ -153,18 +153,22 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return Staffing.builder().totalWorkers(totalWorkers).workflows(workflows).build();
   }
 
-  private Integer total(Stream<Integer> values) {
+  private Integer total(final Stream<Integer> values) {
     final List<Integer> validValues = values.filter(Objects::nonNull).collect(toList());
 
     return validValues.isEmpty() ? null : validValues.stream().mapToInt(i -> i).sum();
   }
 
-  private Double getProductivity(String process, ProcessTotals totals) {
+  private Double getProductivity(final String process, final ProcessTotals totals) {
     if (EFFECTIVE_PROCESSES.contains(process)) {
       return totals.getEffProductivity();
     }
 
     return totals.getNetProductivity();
+  }
+
+  private Integer calculateHeadcountDelta(final Integer working, final Integer idle, final Integer planned) {
+    return planned == null || working == null || idle == null ? null : (working + idle) - planned;
   }
 
   private Process toProcess(
@@ -175,18 +179,18 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
     final ProcessTotals totals = processStaffing.getTotals();
 
-    final Double productivity = getProductivity(process, totals);
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
     final Integer nonSystemicWorkers = totals.getWorkingNonSystemic();
-    final Integer delta = planned == null ? null : (working + idle) - planned;
-    final Double throughput = totals.getThroughput();
+    final Integer delta = calculateHeadcountDelta(working, idle, planned);
 
+    final Double productivity = getProductivity(process, totals);
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
+    final Double throughput = totals.getThroughput();
     final Integer realThroughput = throughput == null ? null : throughput.intValue();
 
-    final List<Area> areas =
-        processStaffing.getAreas().stream()
+    final List<Area> areas = Optional.ofNullable(processStaffing.getAreas())
+        .map(staffingAreas -> staffingAreas.stream()
             .map(
                 area -> {
                   final Totals areaTotals = area.getTotals();
@@ -196,8 +200,9 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                       areaProductivity == null ? null : areaProductivity.intValue(),
                       new Worker(areaTotals.getIdle(), areaTotals.getWorkingSystemic()));
                 })
-            .sorted(Comparator.comparing(Area::getArea, Comparator.naturalOrder()))
-            .collect(toList());
+            .sorted(Comparator.comparing(Area::getArea))
+            .collect(toList())
+        ).orElse(Collections.emptyList());
 
     return Process.builder()
         .process(process)
