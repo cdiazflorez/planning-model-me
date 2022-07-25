@@ -96,8 +96,8 @@ public class RunSimulationOutboundTest {
     @Mock
     private GetSimpleDeferralProjection getSimpleDeferralProjection;
 
-    @Mock
-    private BacklogApiGateway backlogGateway;
+  @Mock
+  private BacklogApiGateway backlogGateway;
 
     @Test
     public void testExecute() {

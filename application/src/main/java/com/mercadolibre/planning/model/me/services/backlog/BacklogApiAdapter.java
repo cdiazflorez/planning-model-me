@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 
+@Deprecated
 @Slf4j
 @Named
 @AllArgsConstructor

@@ -108,8 +108,8 @@ public class GetSlaProjectionOutboundTest {
     @Mock
     private GetSimpleDeferralProjection getSimpleDeferralProjection;
 
-    @Mock
-    private BacklogApiGateway backlogGateway;
+  @Mock
+  private BacklogApiGateway backlogGateway;
 
     @Test
     void testOutboundExecute() {

@@ -98,8 +98,8 @@ public class SaveSimulationOutboundTest {
     @Mock
     private GetSimpleDeferralProjection getSimpleDeferralProjection;
 
-    @Mock
-    private BacklogApiGateway backlogGateway;
+  @Mock
+  private BacklogApiGateway backlogGateway;
 
     @Test
     @DisplayName("Execute the case when all the data is correctly generated")
