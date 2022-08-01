@@ -25,9 +25,13 @@ public class Photo {
 
     int total;
 
+    // Also Known As accumulated immigration
+    int accumulatedTotal;
+
     public Optional<String> getGroupValue(final BacklogGrouper grouper) {
       return Optional.ofNullable(key.get(grouper));
     }
+
   }
 }
 
