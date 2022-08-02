@@ -3,7 +3,6 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest.fromInput;
 import static java.time.temporal.ChronoUnit.HOURS;
 
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
@@ -11,7 +10,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
@@ -33,10 +31,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ProjectBacklog {
 
-  private static final String PROCESS_KEY = "process";
-
-  private static final String DATE_OUT_KEY = "date_out";
-
   private final PlanningModelGateway planningModel;
 
   private final ProjectionGateway projectionGateway;
@@ -44,8 +38,7 @@ public class ProjectBacklog {
   private final EntityGateway entityGateway;
 
   public ProjectedBacklog execute(final BacklogProjectionInput input) {
-    final List<CurrentBacklog> backlogs = mapBacklogByProcesses(input.getCurrentBacklog(), input.getProcessName());
-    return new ProjectedBacklog(planningModel.getBacklogProjection(fromInput(input, backlogs)));
+    return new ProjectedBacklog(planningModel.getBacklogProjection(fromInput(input)));
   }
 
   public List<ProjectedBacklogForAnAreaAndOperatingHour> projectBacklogInAreas(final Instant dateFrom,
@@ -53,11 +46,10 @@ public class ProjectBacklog {
                                                                                final String warehouseId,
                                                                                final Workflow workflow,
                                                                                final List<ProcessName> processes,
-                                                                               final List<Consolidation> currentBacklog,
+                                                                               final List<BacklogQuantityAtSla> backlog,
                                                                                final List<MagnitudePhoto> throughput) {
 
     final Instant dateToInclusive = dateTo.plus(1, HOURS);
-    final List<BacklogQuantityAtSla> backlog = getBacklog(currentBacklog);
     final List<PlanningDistributionResponse> plannedUnits = getPlannedUnits(dateFrom, dateToInclusive, warehouseId, workflow);
 
     final Instant lastSla = calculateLastSla(backlog, plannedUnits, dateToInclusive);
@@ -73,28 +65,6 @@ public class ProjectBacklog {
         throughput,
         shareDistributions
     );
-  }
-
-  private List<CurrentBacklog> mapBacklogByProcesses(final List<Consolidation> currentBacklog, final List<ProcessName> processes) {
-
-    return processes.stream()
-        .map(process -> new CurrentBacklog(process, currentBacklog.stream()
-            .filter(item -> process.getName().equals(item.getKeys().get(PROCESS_KEY)))
-            .findFirst()
-            .map(Consolidation::getTotal)
-            .orElse(0)))
-        .collect(Collectors.toList());
-  }
-
-  private List<BacklogQuantityAtSla> getBacklog(final List<Consolidation> currentBacklog) {
-    return currentBacklog.stream()
-        .map(consolidation -> {
-              final ProcessName process = ProcessName.valueOf(consolidation.getKeys().get(PROCESS_KEY).toUpperCase(Locale.ENGLISH));
-              final Instant dateOut = Instant.parse(consolidation.getKeys().get(DATE_OUT_KEY));
-              return new BacklogQuantityAtSla(process, dateOut, consolidation.getTotal());
-            }
-        )
-        .collect(Collectors.toList());
   }
 
   private List<PlanningDistributionResponse> getPlannedUnits(final Instant dateFrom,

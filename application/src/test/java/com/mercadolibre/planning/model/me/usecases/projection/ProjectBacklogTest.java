@@ -21,7 +21,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetUnitsResponse;
@@ -43,7 +42,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -106,10 +104,10 @@ public class ProjectBacklogTest {
         .dateFrom(A_DATE)
         .dateTo(A_DATE.plusHours(25))
         .groupType(ORDER_GROUP_TYPE)
-        .currentBacklog(List.of(
-            new Consolidation(null, Map.of("process", "waving"), 0, true),
-            new Consolidation(null, Map.of("process", "picking"), 2232, true),
-            new Consolidation(null, Map.of("process", "packing"), 1442, true)
+        .backlogs(List.of(
+            new CurrentBacklog(WAVING, 0),
+            new CurrentBacklog(PICKING, 2232),
+            new CurrentBacklog(PACKING, 1442)
         ))
         .build();
 
@@ -164,11 +162,11 @@ public class ProjectBacklogTest {
         .userId(1L)
         .dateFrom(A_DATE)
         .dateTo(A_DATE.plusHours(25))
-        .currentBacklog(List.of(
-            new Consolidation(Instant.from(firstDate), Map.of("process", "check_in"), 100, true),
-            new Consolidation(Instant.from(firstDate.plusHours(1)), Map.of("process", "check_in"), 200, true),
-            new Consolidation(Instant.from(firstDate), Map.of("process", "put_away"), 120, true),
-            new Consolidation(Instant.from(firstDate.plusHours(1)), Map.of("process", "put_away"), 220, true)))
+        .backlogs(List.of(
+                new CurrentBacklog(CHECK_IN, 100),
+                new CurrentBacklog(PUT_AWAY, 120)
+            )
+        )
         .build();
 
     // WHEN
@@ -194,15 +192,14 @@ public class ProjectBacklogTest {
     final var zonedDateFrom = ZonedDateTime.ofInstant(dateFrom, ZoneOffset.UTC);
     final var dateTo = Instant.parse("2022-05-05T20:00:00Z");
     final var zonedDateTo = ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC);
-    final var maxSla = ZonedDateTime.parse("2022-05-06T14:00:00Z");
 
     final var processes = List.of(WAVING, PICKING);
 
     final var backlog = List.of(
-        new Consolidation(dateFrom, Map.of("process", "waving", "date_out", "2022-05-06T11:00:00Z"), 100, false),
-        new Consolidation(dateFrom, Map.of("process", "waving", "date_out", "2022-05-06T12:00:00Z"), 2000, false),
-        new Consolidation(dateFrom, Map.of("process", "picking", "date_out", "2022-05-06T13:00:00Z"), 150, false),
-        new Consolidation(dateFrom, Map.of("process", "picking", "date_out", "2022-05-06T14:00:00Z"), 70, false)
+        new BacklogQuantityAtSla(WAVING, Instant.parse("2022-05-06T11:00:00Z"), 100),
+        new BacklogQuantityAtSla(WAVING, Instant.parse("2022-05-06T12:00:00Z"), 2000),
+        new BacklogQuantityAtSla(PICKING, Instant.parse("2022-05-06T13:00:00Z"), 150),
+        new BacklogQuantityAtSla(PICKING, Instant.parse("2022-05-06T14:00:00Z"), 70)
     );
 
     final var throughput = List.of(
@@ -247,13 +244,6 @@ public class ProjectBacklogTest {
         new GetUnitsResponse(0, WAREHOUSE_ID, zonedDateTo, "picking", "MZ-2", 0.5, UNITS)
     ));
 
-    final var mappedBacklog = List.of(
-        new BacklogQuantityAtSla(WAVING, Instant.parse("2022-05-06T11:00:00Z"), 100),
-        new BacklogQuantityAtSla(WAVING, Instant.parse("2022-05-06T12:00:00Z"), 2000),
-        new BacklogQuantityAtSla(PICKING, Instant.parse("2022-05-06T13:00:00Z"), 150),
-        new BacklogQuantityAtSla(PICKING, Instant.parse("2022-05-06T14:00:00Z"), 70)
-    );
-
     final var mappedShare = List.of(
         new BacklogAreaDistribution(PICKING, dateFrom, "BL-0", 0.15),
         new BacklogAreaDistribution(PICKING, dateFrom, "MZ-1", 0.85),
@@ -266,7 +256,7 @@ public class ProjectBacklogTest {
         dateTo.plusSeconds(60L * 60L),
         FBM_WMS_OUTBOUND,
         processes,
-        mappedBacklog,
+        backlog,
         planned,
         throughput,
         mappedShare

@@ -1,17 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.CARRY_OVER;
-import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.PROCESSED;
-import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
-import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
-import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
@@ -20,42 +14,35 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.mercadolibre.planning.model.me.entities.monitor.DetailedBacklogPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
-import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
-import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
-import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionHeadcount;
-import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
+import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
+import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea.NumberOfUnitsInASubarea;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +50,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,27 +58,19 @@ class GetBacklogMonitorDetailsTest {
   private static final List<ZonedDateTime> DATES = of(
       parse("2021-08-12T01:00:00Z", ISO_OFFSET_DATE_TIME),
       parse("2021-08-12T02:00:00Z", ISO_OFFSET_DATE_TIME),
+      parse("2021-08-12T02:25:00Z", ISO_OFFSET_DATE_TIME),
       parse("2021-08-12T03:00:00Z", ISO_OFFSET_DATE_TIME),
-      parse("2021-08-12T04:00:00Z", ISO_OFFSET_DATE_TIME),
-      parse("2021-08-12T02:15:00Z", ISO_OFFSET_DATE_TIME)
+      parse("2021-08-12T04:00:00Z", ISO_OFFSET_DATE_TIME)
   );
 
-  private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
-      FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
-      FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
-  );
-
-  private static final ZonedDateTime DATE_CURRENT = DATES.get(1);
+  private static final ZonedDateTime DATE_CURRENT = DATES.get(2);
 
   private static final ZonedDateTime DATE_FROM = DATES.get(0);
 
-  private static final ZonedDateTime DATE_TO = DATES.get(3);
+  private static final ZonedDateTime DATE_TO = DATES.get(4);
 
   @InjectMocks
   private GetBacklogMonitorDetails getBacklogMonitor;
-
-  @Mock
-  private BacklogApiAdapter backlogApiAdapter;
 
   @Mock
   private PlanningModelGateway planningModelGateway;
@@ -105,15 +85,29 @@ class GetBacklogMonitorDetailsTest {
   private GetBacklogLimits getBacklogLimits;
 
   @Mock
-  private ProjectBacklog projectBacklog;
+  private List<GetBacklogMonitorDetails.BacklogProvider> backlogProviders;
 
   @Mock
-  private GetProjectionHeadcount getProjectionHeadcount;
+  private GetBacklogMonitorDetails.BacklogProvider backlogProvider;
 
   private MockedStatic<DateUtils> mockDt;
 
+  private static GetBacklogMonitorDetailsInput input(final ProcessName processName) {
+    return new GetBacklogMonitorDetailsInput(
+        DATE_CURRENT.toInstant(),
+        WAREHOUSE_ID,
+        FBM_WMS_OUTBOUND,
+        processName,
+        DATE_FROM.toInstant(),
+        DATE_TO.toInstant(),
+        999L
+    );
+  }
+
   @BeforeEach
   void setUp() {
+    when(backlogProvider.canProvide(Mockito.any())).thenReturn(true);
+    when(backlogProviders.stream()).thenReturn(Stream.of(backlogProvider));
     mockDt = mockStatic(DateUtils.class);
   }
 
@@ -127,39 +121,9 @@ class GetBacklogMonitorDetailsTest {
     // GIVEN
     mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
 
-    GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
-        DATE_CURRENT.toInstant(),
-        WAREHOUSE_ID,
-        FBM_WMS_OUTBOUND,
-        PICKING,
-        DATE_FROM.toInstant(),
-        DATE_TO.toInstant(),
-        999L
-    );
+    final GetBacklogMonitorDetailsInput input = input(PICKING);
 
-    when(projectBacklog.projectBacklogInAreas(
-        eq(DATE_CURRENT.toInstant()),
-        eq(DATE_TO.toInstant()),
-        eq(WAREHOUSE_ID),
-        eq(FBM_WMS_OUTBOUND),
-        eq(of(WAVING, PICKING)),
-        any(),
-        any()
-    )).thenReturn(of(
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), WAVING, "global", PROCESSED, 10L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), WAVING, "global", CARRY_OVER, 10L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "MZ-1", PROCESSED, 30L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "MZ-2", PROCESSED, 50L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "BL-0", PROCESSED, 50L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "MZ-1", CARRY_OVER, 25L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "MZ-2", CARRY_OVER, 40L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "BL-0", CARRY_OVER, 40L),
-        new ProjectedBacklogForAnAreaAndOperatingHour(DATE_TO.toInstant(), PICKING, "NA", CARRY_OVER, 100L)
-    ));
-
-    when(getProjectionHeadcount.getProjectionHeadcount(any(), any())).thenReturn(new HashMap<>());
-
-    mockPickingAndWavingPastBacklog(input);
+    mockPickingBacklog(input);
     mockThroughput(FBM_WMS_OUTBOUND, of(WAVING, PICKING));
     mockHistoricalBacklog(FBM_WMS_OUTBOUND, PICKING);
     mockBacklogLimits(FBM_WMS_OUTBOUND, PICKING);
@@ -169,39 +133,43 @@ class GetBacklogMonitorDetailsTest {
 
     // THEN
     assertNotNull(result);
-    assertEquals(4, result.getDates().size());
+    assertEquals(5, result.getDates().size());
 
-    final var lastHourDetails = result.getDates().get(3);
-    final var areas = lastHourDetails.getAreas();
-    assertEquals(5, areas.size());
-    assertEquals(78, areas.get(0).getValue().getUnits());
-    assertEquals(0, areas.get(1).getValue().getUnits());
+    final var lastHourDetails = result.getDates().get(4);
+    assertEquals(215, lastHourDetails.getTotal().getUnits());
+    assertEquals(109, lastHourDetails.getTotal().getMinutes());
+    assertEquals(18, lastHourDetails.getHeadcount().getAbsolute());
+    assertEquals(5, lastHourDetails.getAreas().size());
 
-    final var mz = areas.get(2);
-    assertEquals(126, mz.getValue().getUnits());
+    final var mz = lastHourDetails.getAreas().get(2);
+    assertEquals(180, mz.getValue().getUnits());
+    assertEquals(92, mz.getValue().getMinutes());
+    assertEquals(12, mz.getHeadcount().getAbsolute());
+    assertEquals(0.66, mz.getHeadcount().getPercentage());
+
     assertEquals(2, mz.getSubareas().size());
+
     assertEquals("MZ-1", mz.getSubareas().get(0).getId());
-    assertEquals(48, mz.getSubareas().get(0).getValue().getUnits());
+    assertEquals(80, mz.getSubareas().get(0).getValue().getUnits());
+    assertEquals(41, mz.getSubareas().get(0).getValue().getMinutes());
+    assertEquals(2, mz.getSubareas().get(0).getHeadcount().getAbsolute());
+    assertEquals(0.11, mz.getSubareas().get(0).getHeadcount().getPercentage());
+
     assertEquals("MZ-2", mz.getSubareas().get(1).getId());
-    assertEquals(78, mz.getSubareas().get(1).getValue().getUnits());
+    assertEquals(100, mz.getSubareas().get(1).getValue().getUnits());
+    assertEquals(51, mz.getSubareas().get(1).getValue().getMinutes());
+    assertEquals(10, mz.getSubareas().get(1).getHeadcount().getAbsolute());
+    assertEquals(0.55, mz.getSubareas().get(1).getHeadcount().getPercentage());
   }
 
   @Test
   void testGetBacklogDetailsWithoutTargets() {
     // GIVEN
-    GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
-        DATE_CURRENT.toInstant(),
-        WAREHOUSE_ID,
-        FBM_WMS_OUTBOUND,
-        PACKING,
-        DATE_FROM.toInstant(),
-        DATE_TO.toInstant(),
-        999L
-    );
-
     mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
-    mockPastBacklogWithoutAreas(input);
-    mockProjectedBacklog(input);
+
+    GetBacklogMonitorDetailsInput input = input(PACKING);
+
+    mockBacklogWithoutAreas(input);
     mockThroughput(FBM_WMS_OUTBOUND, of(PACKING));
     mockHistoricalBacklog(FBM_WMS_OUTBOUND, PACKING);
     mockBacklogLimits(FBM_WMS_OUTBOUND, PACKING);
@@ -211,7 +179,7 @@ class GetBacklogMonitorDetailsTest {
 
     // THEN
     var results = response.getDates();
-    assertEquals(4, results.size());
+    assertEquals(5, results.size());
 
     verify(planningModelGateway, never()).getPerformedProcessing(any());
   }
@@ -219,165 +187,136 @@ class GetBacklogMonitorDetailsTest {
   @Test
   void testGetBacklogDetailsWithoutAreas() {
     // GIVEN
-    final GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
-        DATE_CURRENT.toInstant(),
-        WAREHOUSE_ID,
-        FBM_WMS_OUTBOUND,
-        WAVING,
-        DATE_FROM.toInstant(),
-        DATE_TO.toInstant(),
-        999L
-    );
-
     mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
-    mockPastBacklogWithoutAreas(input);
-    mockProjectedBacklog(input);
+
+    final GetBacklogMonitorDetailsInput input = input(WAVING);
+
+    mockBacklogWithoutAreas(input);
     mockTargetBacklog();
     mockThroughput(FBM_WMS_OUTBOUND, of(WAVING));
     mockHistoricalBacklog(FBM_WMS_OUTBOUND, WAVING);
     mockBacklogLimits(FBM_WMS_OUTBOUND, WAVING);
 
     // WHEN
-    var response = getBacklogMonitor.execute(input);
+    final var response = getBacklogMonitor.execute(input);
 
     // THEN
-    var results = response.getDates();
-    assertEquals(4, results.size());
+    final var results = response.getDates();
+    assertEquals(5, results.size());
 
-    var firstResult = results.get(0);
-    assertEquals(DATE_FROM.toInstant(), firstResult.getDate());
-    assertNull(firstResult.getAreas());
+    assertResultWithoutArea(results.get(0), DATES.get(0).toInstant(), 28, 103, 10, 38);
+    assertResultWithoutArea(results.get(1), DATES.get(1).toInstant(), 30, 80, 15, 41);
+    assertResultWithoutArea(results.get(2), DATES.get(2).toInstant(), 50, 120, 15, 36);
+    assertResultWithoutArea(results.get(3), DATES.get(3).toInstant(), 60, 114, 30, 59);
+    assertResultWithoutArea(results.get(4), DATES.get(4).toInstant(), 100, 75, 60, 45);
 
-    var firstTotals = firstResult.getTotal();
-    assertEquals(28, firstTotals.getUnits());
-    assertEquals(103, firstTotals.getMinutes());
-
-    var firstTargets = firstResult.getTarget();
-    assertEquals(10, firstTargets.getUnits());
-    assertEquals(38, firstTargets.getMinutes());
-
-    var lastResults = results.get(3);
-    assertEquals(DATE_TO.toInstant(), lastResults.getDate());
-    assertNull(lastResults.getAreas());
-
-    assertEquals(60, lastResults.getTarget().getUnits());
-    assertEquals(180, lastResults.getTarget().getMinutes());
-
-    assertEquals(500, lastResults.getTotal().getUnits());
-    assertEquals(1440, lastResults.getTotal().getMinutes());
-
-    var graph = response.getProcess();
+    final var graph = response.getProcess();
     assertEquals("waving", graph.getProcess());
     assertEquals(50, graph.getTotal().getUnits());
-    assertEquals(240, graph.getTotal().getMinutes());
-    assertEquals(4, graph.getBacklogs().size());
+    assertEquals(120, graph.getTotal().getMinutes());
+    assertEquals(5, graph.getBacklogs().size());
   }
 
-  private void mockPickingAndWavingPastBacklog(final GetBacklogMonitorDetailsInput input) {
-    Instant firstDate = DATES.get(0).toInstant();
-    Instant secondDate = DATES.get(1).toInstant();
-    Instant dateWithMinutes = DATES.get(4).toInstant();
+  private void assertResultWithoutArea(final DetailedBacklogPhoto photo,
+                                       final Instant date,
+                                       final Integer totalUnits,
+                                       final Integer totalMinutes,
+                                       final Integer targetUnits,
+                                       final Integer targetMinutes) {
 
-    var rkH = Map.of(
-        "process", "picking",
-        "area", "RK"
-    );
-    var rkL = Map.of(
-        "process", "picking",
-        "area", "HV"
-    );
-    var rs = Map.of(
-        "process", "picking",
-        "area", "RS"
-    );
-    var waving = Map.of(
-        "process", "waving",
-        "area", "N/A"
-    );
+    assertEquals(date, photo.getDate());
+    assertNull(photo.getAreas());
 
-    when(backlogApiAdapter.getCurrentBacklog(
-        input.getRequestDate(),
-        input.getWarehouseId(),
-        of(input.getWorkflow()),
-        of(WAVING, PICKING),
-        of(PROCESS, AREA, DATE_OUT),
-        input.getDateFrom(),
-        input.getDateTo(),
-        input.getRequestDate(),
-        input.getRequestDate().plus(24, ChronoUnit.HOURS))
-    ).thenReturn(List.of(
-        new Consolidation(firstDate, rkH, 15, true),
-        new Consolidation(secondDate, rkH, 50, true),
-        new Consolidation(firstDate, rkL, 75, true),
-        new Consolidation(dateWithMinutes, rs, 130, false),
-        new Consolidation(dateWithMinutes, waving, 550, false)
-    ));
+    var totals = photo.getTotal();
+    assertEquals(totalUnits, totals.getUnits());
+    assertEquals(totalMinutes, totals.getMinutes());
+
+    var targets = photo.getTarget();
+    assertEquals(targetUnits, targets.getUnits());
+    assertEquals(targetMinutes, targets.getMinutes());
   }
 
-  private void mockPastBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input) {
-    var na = Map.of("area", "N/A");
-    when(backlogApiAdapter.getCurrentBacklog(
-        input.getRequestDate(),
-        input.getWarehouseId(),
-        of(input.getWorkflow()),
-        of(input.getProcess()),
-        of(input.getProcess().hasAreas() ? AREA : PROCESS),
-        input.getDateFrom(),
-        input.getDateTo(),
-        input.getRequestDate(),
-        input.getRequestDate().plus(24, ChronoUnit.HOURS))
-    ).thenReturn(List.of(
-        new Consolidation(DATES.get(0).toInstant(), na, 28, true),
-        new Consolidation(DATES.get(1).toInstant(), na, 50, true)
-    ));
+  private void mockPickingBacklog(final GetBacklogMonitorDetailsInput input) {
+
+    when(backlogProvider.getMonitorBacklog(Mockito.any()))
+        .thenReturn(
+            Map.of(
+                DATES.get(0).toInstant(), of(
+                    new NumberOfUnitsInAnArea("RK", 15),
+                    new NumberOfUnitsInAnArea("HV", 75)
+                ),
+                DATES.get(1).toInstant(), of(
+                    new NumberOfUnitsInAnArea("RK", 50),
+                    new NumberOfUnitsInAnArea("HV", 0)
+                ),
+                DATES.get(2).toInstant(), of(
+                    new NumberOfUnitsInAnArea("RK", 50),
+                    new NumberOfUnitsInAnArea("HV", 0)
+                ),
+                DATES.get(3).toInstant(), of(
+                    new NumberOfUnitsInAnArea(
+                        "BL", of(new NumberOfUnitsInASubarea("BL-0", 40, 3, 0.17)), 3, 0.17
+                    ),
+                    new NumberOfUnitsInAnArea(
+                        "MZ",
+                        of(
+                            new NumberOfUnitsInASubarea("MZ-1", 30, 4, 0.23),
+                            new NumberOfUnitsInASubarea("MZ-2", 10, 2, 0.11)
+                        ),
+                        6,
+                        0.34
+                    ),
+                    new NumberOfUnitsInAnArea(
+                        "NA", of(new NumberOfUnitsInASubarea("NA", 60, 8, 0.47)), 8, 0.47
+                    )
+                ),
+                DATES.get(4).toInstant(), of(
+                    new NumberOfUnitsInAnArea(
+                        "BL", of(new NumberOfUnitsInASubarea("BL-0", 20, 3, 0.16)), 3, 0.16
+                    ),
+                    new NumberOfUnitsInAnArea(
+                        "MZ",
+                        of(
+                            new NumberOfUnitsInASubarea("MZ-1", 80, 2, 0.11),
+                            new NumberOfUnitsInASubarea("MZ-2", 100, 10, 0.55)
+                        ),
+                        12,
+                        0.66
+                    ),
+                    new NumberOfUnitsInAnArea(
+                        "NA", of(new NumberOfUnitsInASubarea("NA", 15, 3, 0.16)), 3, 0.16
+                    )
+                )
+            )
+        );
   }
 
-  private void mockProjectedBacklog(final GetBacklogMonitorDetailsInput input) {
-    Instant secondDate = DATES.get(1).toInstant();
-    Instant dateWithMinutes = DATES.get(4).toInstant();
-
-    final Instant dateFrom = input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
-
-    final Instant dateTo = input.getDateTo()
-        .truncatedTo(ChronoUnit.HOURS)
-        .minus(1L, ChronoUnit.HOURS);
-
-    var na = Map.of("area", "N/A");
-    var rs = Map.of("area", "RS");
-
-    final var consolidations = input.getProcess() == PUT_AWAY
-        ? of(new Consolidation(dateWithMinutes, rs, 130, false))
-        : of(new Consolidation(secondDate, na, 50, true));
-
-    when(
-        backlogApiAdapter.getProjectedBacklog(input.getWarehouseId(),
-            input.getWorkflow(),
-            PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
-            dateFrom.atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
-            dateTo.atZone(ZoneId.of("UTC")).withFixedOffsetZone(),
-            input.getCallerId(),
-            consolidations)
-    ).thenReturn(
-        List.of(
-            new BacklogProjectionResponse(WAVING, of(
-                new ProjectionValue(DATES.get(2), 300),
-                new ProjectionValue(DATES.get(3), 500)
-            )),
-            new BacklogProjectionResponse(PICKING, of(
-                new ProjectionValue(DATES.get(2), 300),
-                new ProjectionValue(DATES.get(3), 500)
-            )),
-            new BacklogProjectionResponse(PACKING, of(
-                new ProjectionValue(DATES.get(2), 300),
-                new ProjectionValue(DATES.get(3), 500)
-            ))
-        )
-    );
+  private void mockBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input) {
+    when(backlogProvider.getMonitorBacklog(Mockito.any()))
+        .thenReturn(
+            Map.of(
+                DATES.get(0).toInstant(), of(
+                    new NumberOfUnitsInAnArea("N/A", 28)
+                ),
+                DATES.get(1).toInstant(), of(
+                    new NumberOfUnitsInAnArea("N/A", 30)
+                ),
+                DATES.get(2).toInstant(), of(
+                    new NumberOfUnitsInAnArea("N/A", 50)
+                ),
+                DATES.get(3).toInstant(), of(
+                    new NumberOfUnitsInAnArea("N/A", 60)
+                ),
+                DATES.get(4).toInstant(), of(
+                    new NumberOfUnitsInAnArea("N/A", 100)
+                )
+            )
+        );
   }
 
   private void mockTargetBacklog() {
     when(planningModelGateway.getPerformedProcessing(any()))
-        .thenReturn(List.of(
+        .thenReturn(of(
             MagnitudePhoto.builder()
                 .date(DATES.get(0))
                 .value(10)
@@ -387,11 +326,11 @@ class GetBacklogMonitorDetailsTest {
                 .value(15)
                 .build(),
             MagnitudePhoto.builder()
-                .date(DATES.get(2))
+                .date(DATES.get(3))
                 .value(30)
                 .build(),
             MagnitudePhoto.builder()
-                .date(DATES.get(3))
+                .date(DATES.get(4))
                 .value(60)
                 .build()
         ));
@@ -412,8 +351,9 @@ class GetBacklogMonitorDetailsTest {
                 process -> Map.of(
                     DATES.get(0), 10,
                     DATES.get(1), 25,
-                    DATES.get(2), 15,
-                    DATES.get(3), 5)
+                    DATES.get(3), 15,
+                    DATES.get(4), 50,
+                    DATES.get(4).plusHours(1L), 200)
             )
         );
 
@@ -494,19 +434,6 @@ class GetBacklogMonitorDetailsTest {
     );
 
     when(getBacklogLimits.execute(input)).thenReturn(Map.of(process, result));
-  }
-
-  private void mockDateUtils(MockedStatic<DateUtils> mockDt) {
-    mockDt.when(DateUtils::getCurrentUtcDateTime).thenReturn(DATES.get(1));
-
-    mockDt.when(() -> DateUtils.minutesFromWeekStart(
-        DATES.get(0).toInstant())).thenReturn(5820);
-    mockDt.when(() -> DateUtils.minutesFromWeekStart(
-        DATES.get(1).toInstant())).thenReturn(5880);
-    mockDt.when(() -> DateUtils.minutesFromWeekStart(
-        DATES.get(2).toInstant())).thenReturn(5940);
-    mockDt.when(() -> DateUtils.minutesFromWeekStart(
-        DATES.get(3).toInstant())).thenReturn(6000);
   }
 
 }

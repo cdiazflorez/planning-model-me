@@ -98,7 +98,7 @@ public class BacklogApiAdapterTest {
                 .dateTo(NOW)
                 .groupType("order")
                 .userId(1234L)
-                .currentBacklog(emptyList())
+                .backlogs(null)
                 .build();
 
         // WHEN

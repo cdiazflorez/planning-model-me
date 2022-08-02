@@ -70,6 +70,7 @@ public class BacklogApiAdapter {
         return backlogApiGateway.getBacklog(adapterRequest);
     }
 
+    @Deprecated
     public List<BacklogProjectionResponse> getProjectedBacklog(final String warehouseId,
                                                                final Workflow workflow,
                                                                final List<ProcessName> processes,
@@ -87,7 +88,6 @@ public class BacklogApiAdapter {
                                 .dateTo(dateTo)
                                 .groupType(GROUP_TYPE_BY_WORKFLOW.get(workflow))
                                 .userId(userId)
-                                .currentBacklog(currentBacklog)
                                 .build())
                 .getProjections();
     }

@@ -45,6 +45,6 @@ public enum Step {
 
   @JsonValue
   public String getName() {
-    return this.toString().toLowerCase();
+    return this.toString();
   }
 }

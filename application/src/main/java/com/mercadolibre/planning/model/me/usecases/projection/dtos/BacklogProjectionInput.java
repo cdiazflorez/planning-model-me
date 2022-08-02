@@ -1,8 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.projection.dtos;
 
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import lombok.Builder;
 import lombok.Value;
 
@@ -27,5 +27,5 @@ public class BacklogProjectionInput {
 
     String groupType;
 
-    List<Consolidation> currentBacklog;
+    List<CurrentBacklog> backlogs;
 }

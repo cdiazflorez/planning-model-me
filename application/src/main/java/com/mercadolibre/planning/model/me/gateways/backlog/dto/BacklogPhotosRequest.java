@@ -69,7 +69,7 @@ public class BacklogPhotosRequest extends PhotoRequest {
     addAsQueryParam(params, STEPS.getName(), parametersByType.get(STEPS.getName()));
     addAsQueryParam(params, DATE_FROM.getName(), dateFrom);
     addAsQueryParam(params, DATE_TO.getName(), dateTo);
-    addAsQueryParam(params, DATE_IN_FROM.getName(), dateFrom);
+    addAsQueryParam(params, DATE_IN_FROM.getName(), dateInFrom);
     addAsQueryParam(params, DATE_IN_TO.getName(), dateInTo);
     addAsQueryParam(params, DATE_OUT_FROM.getName(), slaFrom);
     addAsQueryParam(params, DATE_OUT_TO.getName(), slaTo);

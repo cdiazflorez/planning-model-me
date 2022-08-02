@@ -2,17 +2,8 @@ package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
-import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
-import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea.NumberOfUnitsInASubarea;
 import static java.lang.Math.max;
 import static java.time.ZoneOffset.UTC;
@@ -27,17 +18,11 @@ import com.mercadolibre.planning.model.me.entities.monitor.DetailedBacklogPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.Headcount;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
-import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus;
-import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
-import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
-import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
@@ -46,10 +31,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonito
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
-import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionHeadcount;
-import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
-import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountAtArea;
-import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountBySubArea;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
@@ -66,7 +47,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -76,20 +56,8 @@ import lombok.extern.slf4j.Slf4j;
 @Named
 @AllArgsConstructor
 public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
-  private static final String NO_AREA = "N/A";
-
-  private static final String AREA_KEY = "area";
-
-  private static final String NA_AREA = "NA";
-
-  private static final Map<Workflow, List<ProcessName>> PROCESS_BY_WORKFLOWS = Map.of(
-      FBM_WMS_OUTBOUND, of(WAVING, PICKING, PACKING),
-      FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
-  );
 
   private static final int HOUR_TPH_FUTURE = 24;
-
-  private final BacklogApiAdapter backlogApiAdapter;
 
   private final PlanningModelGateway planningModelGateway;
 
@@ -99,9 +67,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
   private final GetBacklogLimits getBacklogLimits;
 
-  private final ProjectBacklog projectBacklog;
-
-  private final GetProjectionHeadcount getProjectionHeadcount;
+  private final List<BacklogProvider> backlogProviders;
 
   public GetBacklogMonitorDetailsResponse execute(final GetBacklogMonitorDetailsInput input) {
     final List<VariablesPhoto> backlog = getData(input);
@@ -149,70 +115,61 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .orElse(requestInstant);
   }
 
-  private List<BacklogGrouper> getBacklogGroupers(final ProcessName process) {
-    // only picking has areas enabled
-    return process.hasAreas() ? of(PROCESS, AREA, DATE_OUT) : of(PROCESS);
-  }
+  private Map<Instant, List<NumberOfUnitsInAnArea>> getBacklog(final GetBacklogMonitorDetailsInput input,
+                                                               final GetThroughputResult throughput) {
+    final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
+    final var slaFrom = input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS);
+    final var slaTo = input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS);
 
-  private List<ProcessName> getQueryProcesses(final ProcessName process) {
-    // to apply the new backlog projection we need to retrieve both waving and picking tph and backlogs
-    return process == PICKING ? of(WAVING, PICKING) : of(process);
+    final var providerInput = new BacklogProvider.BacklogProviderInput(
+        input.getRequestDate(),
+        input.getWarehouseId(),
+        input.getWorkflow(),
+        input.getProcess(),
+        throughput.asMagnitudePhotos(),
+        input.getDateFrom(),
+        input.getDateTo(),
+        slaFrom,
+        slaTo,
+        input.getCallerId()
+    );
+
+    return backlogProviders.stream()
+        .filter(provider -> provider.canProvide(input.getProcess()))
+        .findFirst()
+        .map(provider -> provider.getMonitorBacklog(providerInput))
+        .orElseThrow();
   }
 
   private List<VariablesPhoto> getData(final GetBacklogMonitorDetailsInput input) {
-    final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
-
-    final List<Consolidation> currentBacklog = backlogApiAdapter.getCurrentBacklog(
-        input.getRequestDate(),
-        input.getWarehouseId(),
-        of(input.getWorkflow()),
-        getQueryProcesses(input.getProcess()),
-        getBacklogGroupers(input.getProcess()),
-        input.getDateFrom(),
-        input.getDateTo(),
-        input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS),
-        input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS));
-
     final GetThroughputResult throughput = getThroughput(input);
     final Map<Instant, Integer> throughputByDate = getProcessThroughputByDate(throughput, input.getProcess());
+
     final Map<Instant, BacklogLimit> limits = getBacklogLimits(input);
     final Map<Instant, Integer> targetBacklog = getTargetBacklog(input);
+
+    final Map<Instant, List<NumberOfUnitsInAnArea>> backlog = getBacklog(input, throughput);
     final HistoricalBacklog historicalBacklog = getHistoricalBacklog(input);
-    final Map<Instant, List<NumberOfUnitsInAnArea>> historicBacklog = getPastBacklog(input, currentBacklog);
-    final Map<Instant, List<NumberOfUnitsInAnArea>> projectedBacklog =
-        getProjectedBacklog(input, currentBacklog, throughput.asMagnitudePhotos());
 
-    final Map<Instant, UnitMeasure> currentBacklogMeasuredInHours =
-        convertBacklogTrajectoryFromUnitToTime(toTotaledBacklogPhoto(historicBacklog), throughputByDate);
-    final Map<Instant, UnitMeasure> projectedBacklogMeasuredInHours =
-        convertBacklogTrajectoryFromUnitToTime(toTotaledBacklogPhoto(projectedBacklog), throughputByDate);
+    final Map<Instant, UnitMeasure> backlogMeasuredInHours =
+        convertBacklogTrajectoryFromUnitToTime(toTotaledBacklogPhoto(backlog), throughputByDate);
 
-    return Stream.concat(
-        historicBacklog.entrySet()
-            .stream()
-            .map(entry ->
-                toProcessStats(
-                    false,
-                    entry.getKey(),
-                    entry.getValue(),
-                    targetBacklog,
-                    historicalBacklog,
-                    throughputByDate,
-                    limits,
-                    currentBacklogMeasuredInHours)),
-        projectedBacklog.entrySet()
-            .stream()
-            .map(entry ->
-                toProcessStats(
-                    true,
-                    entry.getKey(),
-                    entry.getValue(),
-                    targetBacklog,
-                    historicalBacklog,
-                    throughputByDate,
-                    limits,
-                    projectedBacklogMeasuredInHours))
-    ).collect(Collectors.toList());
+    final var viewDate = input.getRequestDate();
+
+    return backlog.entrySet()
+        .stream()
+        .map(entry -> toProcessStats(
+                entry.getKey().isAfter(viewDate),
+                entry.getKey(),
+                entry.getValue(),
+                targetBacklog,
+                historicalBacklog,
+                throughputByDate,
+                limits,
+                backlogMeasuredInHours
+            )
+        )
+        .collect(Collectors.toList());
   }
 
   private VariablesPhoto toProcessStats(final boolean isProjection,
@@ -270,277 +227,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         areasByName);
   }
 
-  private boolean isCurrentProcessBacklog(final Consolidation consolidation, final ProcessName processName) {
-    return Optional.of(consolidation)
-        .map(Consolidation::getKeys)
-        .map(keys -> keys.get("process"))
-        .map(process -> process.equals(processName.getName()))
-        .orElse(true);
-  }
-
-  private Map<Instant, List<NumberOfUnitsInAnArea>> getPastBacklog(final GetBacklogMonitorDetailsInput input,
-                                                                   final List<Consolidation> currentBacklog) {
-
-    final List<Consolidation> filteredConsolidations = currentBacklog.stream()
-        .filter(consolidation -> isCurrentProcessBacklog(consolidation, input.getProcess()))
-        .collect(Collectors.toList());
-
-    final List<Consolidation> fixedConsolidation = fixBacklog(
-        input.getRequestDate(),
-        filteredConsolidations,
-        input.getDateFrom(),
-        date -> new Consolidation(date, Map.of(AREA_KEY, NO_AREA), 0, true)
-    );
-
-    return fixedConsolidation.stream()
-        .collect(
-            Collectors.groupingBy(
-                Consolidation::getDate,
-                Collectors.collectingAndThen(
-                    Collectors.toList(),
-                    this::reduceConsolidations
-                )
-            )
-        );
-  }
-
-  private List<NumberOfUnitsInAnArea> reduceConsolidations(final List<Consolidation> consolidations) {
-    final Map<String, Integer> unitsByArea = consolidations.stream()
-        .collect(
-            Collectors.groupingBy(
-                consolidation -> consolidation.getKeys().getOrDefault(AREA_KEY, NO_AREA),
-                Collectors.collectingAndThen(
-                    Collectors.toList(),
-                    sameAreaConsolidations -> sameAreaConsolidations.stream()
-                        .mapToInt(Consolidation::getTotal)
-                        .sum()
-                )
-            )
-        );
-
-    return unitsByArea.entrySet()
-        .stream()
-        .map(areaUnits -> new NumberOfUnitsInAnArea(areaUnits.getKey(), areaUnits.getValue()))
-        .collect(Collectors.toList());
-  }
-
-  private List<Consolidation> fixBacklog(final Instant requestDate,
-                                         final List<Consolidation> consolidation,
-                                         final Instant dateFrom,
-                                         final Function<Instant, Consolidation> backlogSupplier) {
-
-    final List<Consolidation> sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot =
-        filterSumsOfCellByTakenOnTheDot(consolidation);
-    final Instant latestPhotoDate = getDateWhenLatestPhotoWasTaken(sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot, requestDate);
-    final List<Consolidation> truncatedConsolidations = truncateToHoursTheTakenOnDate(sumsOfCellsGroupedByTakenOnDateAndProcessOnTheDot);
-    return fillMissing(truncatedConsolidations, dateFrom, latestPhotoDate, backlogSupplier);
-  }
-
-  private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklog(final GetBacklogMonitorDetailsInput input,
-                                                                        final List<Consolidation> backlog,
-                                                                        final List<MagnitudePhoto> throughput) {
-
-    final Instant lastConsolidationDate = getDateWhenLatestPhotoWasTaken(backlog, input.getRequestDate());
-
-    final List<Consolidation> currentBacklog = backlog.stream()
-        .filter(consolidation -> consolidation.getDate().equals(lastConsolidationDate))
-        .collect(Collectors.toList());
-
-    try {
-      if (input.getProcess() == PICKING) {
-        return getProjectedBacklogByArea(input, currentBacklog, throughput);
-      } else {
-        return getProjectedBacklogWithoutAreas(input, currentBacklog);
-      }
-    } catch (RuntimeException e) {
-      log.error("could not retrieve backlog projections", e);
-    }
-
-    return emptyMap();
-  }
-
-  private List<NumberOfUnitsInAnArea> toUnitsInArea(final List<ProjectedBacklogForAnAreaAndOperatingHour> projections) {
-    final long undefinedAreaQuantity = projections.stream()
-        .filter(projection -> (NA_AREA).equals(projection.getArea()))
-        .mapToLong(ProjectedBacklogForAnAreaAndOperatingHour::getQuantity)
-        .sum();
-
-    final long totalSubAreas = projections.stream()
-        .map(ProjectedBacklogForAnAreaAndOperatingHour::getArea)
-        .filter(area -> !(NA_AREA).equals(area))
-        .distinct()
-        .count();
-
-    final long totalUnitsInAllAreas = projections.stream()
-        .mapToLong(ProjectedBacklogForAnAreaAndOperatingHour::getQuantity)
-        .sum();
-
-    final long unitsInAllValidAreas = totalUnitsInAllAreas - undefinedAreaQuantity;
-
-    final Map<String, List<NumberOfUnitsInASubarea>> subareas = projections.stream()
-        .collect(
-            Collectors.groupingBy(
-                projection -> projection.getArea().substring(0, 2),
-                Collectors.mapping(
-                    projection -> getNumberOfUnitsInASubarea(projection, unitsInAllValidAreas, undefinedAreaQuantity, totalSubAreas),
-                    Collectors.toList()
-                )
-            )
-        );
-
-    return subareas.entrySet()
-        .stream()
-        .map(entry -> new NumberOfUnitsInAnArea(entry.getKey(), entry.getValue()))
-        .filter(areaUnits -> !NA_AREA.equals(areaUnits.getArea()))
-        .collect(Collectors.toList());
-  }
-
-  private NumberOfUnitsInASubarea getNumberOfUnitsInASubarea(ProjectedBacklogForAnAreaAndOperatingHour projection,
-                                                             long unitsInAllValidAreas,
-                                                             long undefinedAreaQuantity,
-                                                             long totalSubAreas) {
-
-    if (unitsInAllValidAreas == 0) {
-      return new NumberOfUnitsInASubarea(projection.getArea(), (int) (undefinedAreaQuantity / totalSubAreas));
-    }
-
-    final Long thisAreaBacklog = projection.getQuantity();
-    final float undefinedAreaProportionalBacklog =
-        (thisAreaBacklog / (float) unitsInAllValidAreas) * undefinedAreaQuantity;
-    final long thisAreaAssignedBacklog = thisAreaBacklog + (long) undefinedAreaProportionalBacklog;
-
-    return new NumberOfUnitsInASubarea(projection.getArea(), (int) thisAreaAssignedBacklog);
-  }
-
-  private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklogByArea(final GetBacklogMonitorDetailsInput input,
-                                                                              final List<Consolidation> currentBacklog,
-                                                                              final List<MagnitudePhoto> throughput) {
-
-    final List<ProjectedBacklogForAnAreaAndOperatingHour> projections = projectBacklog.projectBacklogInAreas(
-        input.getRequestDate(),
-        input.getDateTo(),
-        input.getWarehouseId(),
-        input.getWorkflow(),
-        List.of(WAVING, PICKING),
-        currentBacklog,
-        throughput
-    );
-
-    final Map<Instant, List<NumberOfUnitsInAnArea>> pickingCarriedOverBacklog =
-        groupPickingBacklogByStatus(projections, BacklogProcessStatus.CARRY_OVER, input.getRequestDate());
-
-    final Map<Instant, List<NumberOfUnitsInAnArea>> pickingProcessedBacklog =
-        groupPickingBacklogByStatus(projections, BacklogProcessStatus.PROCESSED, input.getRequestDate());
-
-    final Map<Instant, List<HeadcountAtArea>> projectionHeadcount =
-        getProjectionHeadcount.getProjectionHeadcount(input.getWarehouseId(), pickingProcessedBacklog);
-
-    return assignHeadcount(pickingCarriedOverBacklog, projectionHeadcount);
-  }
-
-  private Map<Instant, List<NumberOfUnitsInAnArea>> groupPickingBacklogByStatus(
-      final List<ProjectedBacklogForAnAreaAndOperatingHour> projections,
-      final BacklogProcessStatus backlogProcessStatus,
-      final Instant requestDate) {
-
-    final Map<Instant, List<ProjectedBacklogForAnAreaAndOperatingHour>> groupedProjections = projections.stream()
-        .filter(projection -> projection.getStatus() == backlogProcessStatus
-            && projection.getProcess() == PICKING
-            && projection.getOperatingHour().isAfter(requestDate)
-        )
-        .collect(
-            Collectors.groupingBy(
-                ProjectedBacklogForAnAreaAndOperatingHour::getOperatingHour,
-                Collectors.toList()
-            )
-        );
-
-    return groupedProjections.entrySet()
-        .stream()
-        .collect(Collectors.toMap(
-            Map.Entry::getKey,
-            entry -> toUnitsInArea(entry.getValue())
-        ));
-  }
-
-  private Map<Instant, List<NumberOfUnitsInAnArea>> assignHeadcount(final Map<Instant, List<NumberOfUnitsInAnArea>> backlogs,
-                                                                    final Map<Instant, List<HeadcountAtArea>> suggestedHeadCount) {
-
-    return backlogs.entrySet()
-        .stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
-
-          List<HeadcountAtArea> headcountAtAreaList = !suggestedHeadCount.isEmpty()
-              ? suggestedHeadCount.get(entry.getKey())
-              : emptyList();
-          return entry.getValue()
-              .stream()
-              .map(value -> {
-                Optional<HeadcountAtArea> headcountAtArea = headcountAtAreaList.stream()
-                    .filter(headCount -> headCount.getArea().equals(value.getArea()))
-                    .findAny();
-
-                return new NumberOfUnitsInAnArea(
-                    value.getArea(),
-                    assignSubareas(value.getSubareas(), headcountAtArea.map(HeadcountAtArea::getSubAreas).orElse(emptyList())),
-                    headcountAtArea.map(HeadcountAtArea::getReps).orElse(null),
-                    headcountAtArea.map(HeadcountAtArea::getRespPercentage).orElse(null));
-              })
-              .collect(Collectors.toList());
-        }));
-
-  }
-
-  private List<NumberOfUnitsInASubarea> assignSubareas(List<NumberOfUnitsInASubarea> subareas,
-                                                       List<HeadcountBySubArea> subAreasHeadcount) {
-    return subareas.stream()
-        .map(value -> {
-          Optional<HeadcountBySubArea> headcountBySubArea = subAreasHeadcount
-              .stream()
-              .filter(subArea -> subArea.getSubArea().equals(value.getName()))
-              .findAny();
-
-          return new NumberOfUnitsInASubarea(
-              value.getName(),
-              value.getUnits(),
-              headcountBySubArea.map(HeadcountBySubArea::getReps).orElse(null),
-              headcountBySubArea.map(HeadcountBySubArea::getRespPercentage).orElse(null));
-        })
-        .collect(Collectors.toList());
-  }
-
-  private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input,
-                                                                                    final List<Consolidation> currentBacklog) {
-
-    final Instant dateFrom = input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
-
-    final Instant dateTo = input.getDateTo()
-        .truncatedTo(ChronoUnit.HOURS)
-        .minus(1L, ChronoUnit.HOURS);
-
-    final List<BacklogProjectionResponse> projectedBacklog = backlogApiAdapter
-        .getProjectedBacklog(
-            input.getWarehouseId(),
-            input.getWorkflow(),
-            PROCESS_BY_WORKFLOWS.get(input.getWorkflow()),
-            dateFrom.atZone(UTC),
-            dateTo.atZone(UTC),
-            input.getCallerId(),
-            currentBacklog);
-
-    return projectedBacklog.stream()
-        .filter(projection -> projection.getProcessName().equals(input.getProcess()))
-        .findFirst()
-        .map(projection -> projection.getValues()
-            .stream()
-            .collect(Collectors.toMap(
-                projectionValue -> projectionValue.getDate().toInstant(),
-                projectionValue -> of(
-                    new NumberOfUnitsInAnArea(
-                        NO_AREA,
-                        projectionValue.getQuantity()))))).orElseGet(Collections::emptyMap);
-  }
-
   private Map<Instant, Integer> getTargetBacklog(final GetBacklogMonitorDetailsInput input) {
 
     if (!input.getProcess().hasTargetBacklog()) {
@@ -566,10 +252,11 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   }
 
   private GetThroughputResult getThroughput(final GetBacklogMonitorDetailsInput input) {
+    final var processes = input.getProcess() == PICKING ? of(ProcessName.WAVING, PICKING) : of(input.getProcess());
     final GetThroughputInput request = GetThroughputInput.builder()
         .warehouseId(input.getWarehouseId())
         .workflow(input.getWorkflow())
-        .processes(getQueryProcesses(input.getProcess()))
+        .processes(processes)
         .dateFrom(input.getDateFrom().atZone(UTC))
         .dateTo(input.getDateTo().atZone(UTC).plusHours(HOUR_TPH_FUTURE))
         .build();
@@ -726,7 +413,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   }
 
   private List<TotaledBacklogPhoto> toTotaledBacklogPhoto(final Map<Instant, List<NumberOfUnitsInAnArea>> totaledBacklogByArea) {
-
     return totaledBacklogByArea.entrySet().stream()
         .map(entry -> new TotaledBacklogPhoto(entry.getKey(), entry.getValue().stream().map(NumberOfUnitsInAnArea::getUnits)
             .reduce(0, Integer::sum))).collect(Collectors.toList());
@@ -735,6 +421,35 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   private int getTphAverage(final UnitMeasure backlogMeasuredInHour) {
     double avgByHour = (double) backlogMeasuredInHour.getMinutes() / 60;
     return avgByHour > 0 ? (int) ((double) backlogMeasuredInHour.getUnits() / avgByHour) : 0;
+  }
+
+  public interface BacklogProvider {
+    boolean canProvide(ProcessName process);
+
+    Map<Instant, List<NumberOfUnitsInAnArea>> getMonitorBacklog(BacklogProviderInput input);
+
+    @Value
+    class BacklogProviderInput {
+      Instant requestDate;
+
+      String warehouseId;
+
+      Workflow workflow;
+
+      ProcessName process;
+
+      List<MagnitudePhoto> throughput;
+
+      Instant dateFrom;
+
+      Instant dateTo;
+
+      Instant slaFrom;
+
+      Instant slaTo;
+
+      Long callerId;
+    }
   }
 
   /**

@@ -19,9 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Named;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
+@Named
 @AllArgsConstructor
 public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
 
