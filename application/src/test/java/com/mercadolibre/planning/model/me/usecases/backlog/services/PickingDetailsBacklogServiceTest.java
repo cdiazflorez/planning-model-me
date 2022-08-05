@@ -443,6 +443,7 @@ public class PickingDetailsBacklogServiceTest {
   private Photo.Group group(final int total, final String dateOut, final String area) {
     return new Photo.Group(
         Map.of(BacklogGrouper.DATE_OUT, dateOut, BacklogGrouper.AREA, area),
+        total,
         total
     );
   }
