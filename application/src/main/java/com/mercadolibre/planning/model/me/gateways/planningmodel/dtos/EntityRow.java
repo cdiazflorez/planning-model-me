@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;

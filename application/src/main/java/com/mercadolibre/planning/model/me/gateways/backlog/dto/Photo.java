@@ -1,8 +1,10 @@
 package com.mercadolibre.planning.model.me.gateways.backlog.dto;
 
+import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.Value;
 
 /**
@@ -19,9 +21,17 @@ public class Photo {
    */
   @Value
   public static class Group {
-    Map<String, String> key;
+    Map<BacklogGrouper, String> key;
 
     int total;
+
+    // Also Known As accumulated immigration
+    int accumulatedTotal;
+
+    public Optional<String> getGroupValue(final BacklogGrouper grouper) {
+      return Optional.ofNullable(key.get(grouper));
+    }
+
   }
 }
 

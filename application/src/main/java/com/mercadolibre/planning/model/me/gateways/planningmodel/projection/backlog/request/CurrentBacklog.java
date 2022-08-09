@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import lombok.Value;
 
 @Value

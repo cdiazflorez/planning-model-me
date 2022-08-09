@@ -1,7 +1,8 @@
 package com.mercadolibre.planning.model.me.gateways.backlog;
 
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotoRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotosRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
@@ -9,8 +10,8 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * BacklogApiGateway.
- * gateway de los clientes de BA
+ * Interface of backlogApiClient.
+ * gateway de los clients de BA
  */
 public interface BacklogApiGateway {
 
@@ -25,5 +26,7 @@ public interface BacklogApiGateway {
 
   List<Consolidation> getCurrentBacklog(BacklogCurrentRequest request);
 
-  List<Photo> getPhotos(BacklogPhotoRequest request);
+  List<Photo> getPhotos(BacklogPhotosRequest request);
+
+  Photo getLastPhoto(BacklogLastPhotoRequest request);
 }

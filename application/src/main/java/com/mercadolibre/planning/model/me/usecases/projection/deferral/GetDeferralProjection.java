@@ -1,11 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.projection.deferral;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.GLOBAL;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.GLOBAL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.MAX_CAPACITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
@@ -57,255 +57,258 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetDeferralProjection implements UseCase<GetProjectionInput, Projection> {
 
-    private static final int DEFERRAL_DAYS_TO_PROJECT = 3;
+  private static final int DEFERRAL_DAYS_TO_PROJECT = 3;
 
-    private static final int DEFERRAL_DAYS_TO_SHOW = 1;
+  private static final int DEFERRAL_DAYS_TO_SHOW = 1;
 
-    private static final int SELECTOR_DAYS_TO_SHOW = 2;
+  private static final int SELECTOR_DAYS_TO_SHOW = 2;
 
-    private static final int HOURS_TO_SHOW = 25;
+  private static final int HOURS_TO_SHOW = 25;
 
-    private static final Map<MagnitudeType, Map<String, List<String>>> FILTER_CAP_MAX = Map.of(
-            HEADCOUNT, Map.of(
-                    PROCESSING_TYPE.toJson(),
-                    List.of(MAX_CAPACITY.getName())
-            )
-    );
+  private static final String PROJECTION = "Proyección";
 
-    private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "to_route",
-            "to_pick", "picked", "to_sort", "sorted", "to_group", "grouping", "grouped", "to_pack");
+  private static final Map<MagnitudeType, Map<String, List<String>>> FILTER_CAP_MAX = Map.of(
+      HEADCOUNT, Map.of(
+          PROCESSING_TYPE.toJson(),
+          List.of(MAX_CAPACITY.getName())
+      )
+  );
 
-    private final PlanningModelGateway planningModelGateway;
+  private static final List<String> CAP5_TO_PACK_STATUSES = List.of("pending", "to_route",
+                                                                    "to_pick", "picked", "to_sort", "sorted", "to_group", "grouping",
+                                                                    "grouped", "to_pack");
 
-    private final GetProjectionSummary getProjectionSummary;
+  private final PlanningModelGateway planningModelGateway;
 
-    private final GetSimpleDeferralProjection getSimpleDeferralProjection;
+  private final GetProjectionSummary projectionSummary;
 
-    private final BacklogApiGateway backlogGateway;
+  private final GetSimpleDeferralProjection getSimpleDeferralProjection;
 
-    private final RequestClockGateway requestClockGateway;
+  private final BacklogApiGateway backlogGateway;
 
-    @Override
-    public Projection execute(final GetProjectionInput input) {
+  private final RequestClockGateway requestClockGateway;
 
-        final ZonedDateTime requestDateTime = ZonedDateTime.ofInstant(requestClockGateway.now(), UTC);
-        final ZonedDateTime dateFromToProject = requestDateTime.truncatedTo(ChronoUnit.HOURS);
-        final ZonedDateTime dateToToProject = dateFromToProject.plusDays(DEFERRAL_DAYS_TO_PROJECT);
-        final Instant requestDate = requestDateTime.truncatedTo(ChronoUnit.MINUTES).toInstant();
+  @Override
+  public Projection execute(final GetProjectionInput input) {
 
-        try {
+    final ZonedDateTime requestDateTime = ZonedDateTime.ofInstant(requestClockGateway.now(), UTC);
+    final ZonedDateTime dateFromToProject = requestDateTime.truncatedTo(ChronoUnit.HOURS);
+    final ZonedDateTime dateToToProject = dateFromToProject.plusDays(DEFERRAL_DAYS_TO_PROJECT);
+    final Instant requestDate = requestDateTime.truncatedTo(ChronoUnit.MINUTES).toInstant();
 
-            final boolean isSameDayHour = isSameDayHour(input.getDate(), requestDate);
-            final ZonedDateTime dateFromToShow = isSameDayHour
-                    ? ZonedDateTime.ofInstant(requestDate, UTC)
-                    : input.getDate();
+    try {
 
-            final ZonedDateTime dateToToShow = dateFromToShow.plusDays(DEFERRAL_DAYS_TO_SHOW);
+      final boolean isSameDayHour = isSameDayHour(input.getDate(), requestDate);
+      final ZonedDateTime dateFromToShow = isSameDayHour
+          ? ZonedDateTime.ofInstant(requestDate, UTC)
+          : input.getDate();
 
-            final List<Backlog> backlogsToProject = getBacklog(
-                    input.getLogisticCenterId(),
-                    dateFromToProject,
-                    dateToToProject);
+      final ZonedDateTime dateToToShow = dateFromToShow.plusDays(DEFERRAL_DAYS_TO_SHOW);
 
-            final GetSimpleDeferralProjectionOutput deferralBaseOutput =
-                    getSimpleDeferralProjection.execute(
-                            new GetProjectionInput(
-                                    input.getLogisticCenterId(),
-                                    input.getWorkflow(),
-                                    input.getDate(),
-                                    backlogsToProject,
-                                    input.isWantToSimulate21(),
-                                    input.getSimulations()));
+      final List<Backlog> backlogsToProject = getBacklog(
+          input.getLogisticCenterId(),
+          dateFromToProject,
+          dateToToProject);
 
-            final List<Backlog> backlogsToShow = filterBacklogsInRange(
-                    dateFromToShow,
-                    dateToToShow,
-                    backlogsToProject);
+      final GetSimpleDeferralProjectionOutput deferralBaseOutput =
+          getSimpleDeferralProjection.execute(
+              new GetProjectionInput(
+                  input.getLogisticCenterId(),
+                  input.getWorkflow(),
+                  input.getDate(),
+                  backlogsToProject,
+                  input.isWantToSimulate21(),
+                  input.getSimulations()));
 
-            final List<ProjectionResult> projectionsToShow =
-                    filterProjectionsInRange(dateFromToShow, dateToToShow,
-                            deferralBaseOutput.getProjections());
+      final List<Backlog> backlogsToShow = filterBacklogsInRange(
+          dateFromToShow,
+          dateToToShow,
+          backlogsToProject);
 
-            return new Projection(
-                    "Proyección",
-                    getDateSelector(dateFromToProject, dateFromToShow, SELECTOR_DAYS_TO_SHOW),
-                    new Data(null,
-                            getThroughput(deferralBaseOutput.getConfiguration(),
-                                    input,
-                                    dateFromToShow.truncatedTo(ChronoUnit.HOURS),
-                                    dateToToShow),
-                            getProjectionSummary(input,
-                                    dateFromToShow,
-                                    dateToToShow,
-                                    backlogsToShow,
-                                    projectionsToShow),
-                            new Chart(toChartData(projectionsToShow,
-                                    deferralBaseOutput.getConfiguration(),
-                                    dateToToShow))),
-                    createOutboundTabs(),
-                    simulationMode);
+      final List<ProjectionResult> projectionsToShow =
+          filterProjectionsInRange(dateFromToShow, dateToToShow,
+                                   deferralBaseOutput.getProjections());
 
-        } catch (RuntimeException ex) {
-            return new Projection("Proyección",
-                    getDateSelector(
-                            requestDateTime,
-                            input.getDate() != null
+      return new Projection(
+          PROJECTION,
+          getDateSelector(dateFromToProject, dateFromToShow, SELECTOR_DAYS_TO_SHOW),
+          new Data(null,
+                   getThroughput(deferralBaseOutput.getConfiguration(),
+                                 input,
+                                 dateFromToShow.truncatedTo(ChronoUnit.HOURS),
+                                 dateToToShow),
+                   getProjectionSummary(input,
+                                        dateFromToShow,
+                                        dateToToShow,
+                                        backlogsToShow,
+                                        projectionsToShow),
+                   new Chart(toChartData(projectionsToShow,
+                                         deferralBaseOutput.getConfiguration(),
+                                         dateToToShow))),
+          createOutboundTabs(),
+          simulationMode);
+
+    } catch (RuntimeException ex) {
+      return new Projection(PROJECTION,
+                            getDateSelector(
+                                requestDateTime,
+                                input.getDate() != null
                                     ? input.getDate()
                                     : requestDateTime,
-                            SELECTOR_DAYS_TO_SHOW),
-                    ex.getMessage(),
-                    createOutboundTabs(),
-                    null);
-        }
+                                SELECTOR_DAYS_TO_SHOW),
+                            ex.getMessage(),
+                            createOutboundTabs(),
+                            null);
+    }
+  }
+
+  private boolean isSameDayHour(final ZonedDateTime inputDate, final Instant requestDate) {
+    if (inputDate == null) {
+      return true;
+    } else {
+      final Instant selectedDate = inputDate.truncatedTo(ChronoUnit.HOURS).toInstant();
+      final Instant currentDate = requestDate.truncatedTo(ChronoUnit.HOURS);
+      return selectedDate.equals(currentDate);
+    }
+  }
+
+  private List<ChartData> toChartData(final List<ProjectionResult> projections,
+                                      final LogisticCenterConfiguration config,
+                                      final ZonedDateTime dateTo) {
+
+    final List<ChartData> chart = new ArrayList<>();
+    final ZoneId zoneId = config.getZoneId();
+
+    for (ProjectionResult p : projections) {
+
+      chart.add(ChartData.fromProjection(
+          convertToTimeZone(zoneId, p.getDate()),
+          p.getProjectedEndDate() == null
+              ? null : convertToTimeZone(zoneId, p.getProjectedEndDate()),
+          convertToTimeZone(zoneId, dateTo),
+          p.getRemainingQuantity(),
+          p.getProcessingTime(),
+          p.isDeferred(),
+          p.isExpired()
+      ));
     }
 
-    private boolean isSameDayHour(final ZonedDateTime inputDate, final Instant requestDate) {
-        if (inputDate == null) {
-            return true;
-        } else {
-            final Instant selectedDate = inputDate.truncatedTo(ChronoUnit.HOURS).toInstant();
-            final Instant currentDate = requestDate.truncatedTo(ChronoUnit.HOURS);
-            return selectedDate.equals(currentDate);
-        }
+    return chart.stream().sorted(Comparator.comparing(ChartData::getCpt)).collect(toList());
+  }
+
+  private SimpleTable getProjectionSummary(final GetProjectionInput input,
+                                           final ZonedDateTime dateFrom,
+                                           final ZonedDateTime dateTo,
+                                           final List<Backlog> backlogs,
+                                           final List<ProjectionResult> projection) {
+
+    if (projection.isEmpty()) {
+      return new SimpleTable(
+          "Resumen de Proyección",
+          new ArrayList<>(List.of(
+              new ColumnHeader("column_1", "CPT's", null),
+              new ColumnHeader("column_2", "Backlog actual", null),
+              new ColumnHeader("column_3", "Cierre proyectado", null)
+          )),
+          Collections.emptyList()
+      );
+    } else {
+      return projectionSummary.execute(GetProjectionSummaryInput.builder()
+                                           .workflow(input.getWorkflow())
+                                           .warehouseId(input.getLogisticCenterId())
+                                           .dateFrom(dateFrom)
+                                           .dateTo(dateTo)
+                                           .projections(projection)
+                                           .backlogs(backlogs)
+                                           .showDeviation(false)
+                                           .build());
     }
+  }
 
-    private List<ChartData> toChartData(final List<ProjectionResult> projections,
-                                        final LogisticCenterConfiguration config,
-                                        final ZonedDateTime dateTo) {
-
-        final List<ChartData> chart = new ArrayList<>();
-        final ZoneId zoneId = config.getZoneId();
-
-        for (ProjectionResult p : projections) {
-
-            chart.add(ChartData.fromProjection(
-                    convertToTimeZone(zoneId, p.getDate()),
-                    p.getProjectedEndDate() == null
-                            ? null : convertToTimeZone(zoneId, p.getProjectedEndDate()),
-                    convertToTimeZone(zoneId, dateTo),
-                    p.getRemainingQuantity(),
-                    p.getProcessingTime(),
-                    p.isDeferred(),
-                    p.isExpired()
-            ));
-        }
-
-        return chart.stream().sorted(Comparator.comparing(ChartData::getCpt)).collect(toList());
-    }
-
-    private SimpleTable getProjectionSummary(final GetProjectionInput input,
-                                             final ZonedDateTime dateFrom,
-                                             final ZonedDateTime dateTo,
-                                             final List<Backlog> backlogs,
-                                             final List<ProjectionResult> projection) {
-
-        if (projection.isEmpty()) {
-            return new SimpleTable(
-                    "Resumen de Proyección",
-                    new ArrayList<>(List.of(
-                            new ColumnHeader("column_1", "CPT's", null),
-                            new ColumnHeader("column_2", "Backlog actual", null),
-                            new ColumnHeader("column_3", "Cierre proyectado", null)
-                    )),
-                    Collections.emptyList()
-            );
-        } else {
-            return getProjectionSummary.execute(GetProjectionSummaryInput.builder()
-                    .workflow(input.getWorkflow())
-                    .warehouseId(input.getLogisticCenterId())
-                    .dateFrom(dateFrom)
-                    .dateTo(dateTo)
-                    .projections(projection)
-                    .backlogs(backlogs)
-                    .showDeviation(false)
-                    .build());
-        }
-    }
-
-    private ComplexTable getThroughput(final LogisticCenterConfiguration config,
-                                       final GetProjectionInput input,
-                                       final ZonedDateTime dateFrom,
-                                       final ZonedDateTime dateTo) {
-
-        final Map<MagnitudeType, List<MagnitudePhoto>> entities = planningModelGateway.searchTrajectories(
-                SearchTrajectoriesRequest.builder()
-                        .warehouseId(input.getLogisticCenterId())
-                        .workflow(FBM_WMS_OUTBOUND)
-                        .entityTypes(List.of(HEADCOUNT, THROUGHPUT))
-                        .dateFrom(dateFrom)
-                        .dateTo(dateTo)
-                        .processName(List.of(GLOBAL, PACKING, PACKING_WALL))
-                        .entityFilters(FILTER_CAP_MAX)
-                        .source(Source.SIMULATION)
-                        .simulations(input.getSimulations())
-                        .build()
-        );
-
-        final List<MagnitudePhoto> maxCapacity = entities.get(HEADCOUNT);
-
-        final List<MagnitudePhoto> throughput = entities.get(THROUGHPUT);
-
-        final List<ColumnHeader> headers = createColumnHeaders(
-                convertToTimeZone(config.getZoneId(), dateFrom), HOURS_TO_SHOW);
-
-        return new ComplexTable(
-                headers,
-                List.of(createData(config, MagnitudeType.MAX_CAPACITY, maxCapacity.stream()
-                        .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughput)))
-                        .collect(toList()), headers)
-                ),
-                action,
-                ""
-        );
-    }
-
-    private boolean validateCapacity(MagnitudePhoto capacity, List<MagnitudePhoto> throughput) {
-        return capacity.getValue() >= throughput.stream()
-                .filter(magnitudePhoto -> magnitudePhoto.getDate().isEqual(capacity.getDate()))
-                .mapToInt(MagnitudePhoto::getValue)
-                .sum();
-    }
-
-    private List<ProjectionResult> filterProjectionsInRange(
-            final ZonedDateTime dateFrom,
-            final ZonedDateTime dateTo,
-            final List<ProjectionResult> projections) {
-
-        return projections.stream().filter(p ->
-                        (p.getDate().isEqual(dateFrom) || p.getDate().isAfter(dateFrom))
-                                && (p.getDate().isEqual(dateTo) || p.getDate().isBefore(dateTo)))
-                .collect(toList());
-    }
-
-    private List<Backlog> filterBacklogsInRange(final ZonedDateTime dateFrom,
-                                                final ZonedDateTime dateTo,
-                                                final List<Backlog> backlogs) {
-
-        return backlogs.stream().filter(p ->
-                        (p.getDate().isEqual(dateFrom) || p.getDate().isAfter(dateFrom))
-                                && p.getDate().isBefore(dateTo))
-                .collect(toList());
-    }
-
-    private List<Backlog> getBacklog(final String logisticCenterId,
+  private ComplexTable getThroughput(final LogisticCenterConfiguration config,
+                                     final GetProjectionInput input,
                                      final ZonedDateTime dateFrom,
                                      final ZonedDateTime dateTo) {
 
-        final String groupingKey = BacklogGrouper.DATE_OUT.getName();
+    final Map<MagnitudeType, List<MagnitudePhoto>> entities = planningModelGateway.searchTrajectories(
+        SearchTrajectoriesRequest.builder()
+            .warehouseId(input.getLogisticCenterId())
+            .workflow(FBM_WMS_OUTBOUND)
+            .entityTypes(List.of(HEADCOUNT, THROUGHPUT))
+            .dateFrom(dateFrom)
+            .dateTo(dateTo)
+            .processName(List.of(GLOBAL, PACKING, PACKING_WALL))
+            .entityFilters(FILTER_CAP_MAX)
+            .source(Source.SIMULATION)
+            .simulations(input.getSimulations())
+            .build()
+    );
 
-        var backlogBySla = backlogGateway.getCurrentBacklog(
-                logisticCenterId,
-                List.of("outbound-orders"),
-                CAP5_TO_PACK_STATUSES,
-                dateFrom.toInstant(),
-                dateTo.toInstant(),
-                List.of(groupingKey));
+    final List<MagnitudePhoto> maxCapacity = entities.get(HEADCOUNT);
 
-        return backlogBySla.stream()
-                .map(backlog -> new Backlog(
-                        ZonedDateTime.parse(backlog.getKeys().get(groupingKey)),
-                        backlog.getTotal()))
-                .collect(Collectors.toList());
-    }
+    final List<MagnitudePhoto> throughput = entities.get(THROUGHPUT);
+
+    final List<ColumnHeader> headers = createColumnHeaders(
+        convertToTimeZone(config.getZoneId(), dateFrom), HOURS_TO_SHOW);
+
+    return new ComplexTable(
+        headers,
+        List.of(createData(config, MagnitudeType.MAX_CAPACITY, maxCapacity.stream()
+            .map(entity -> EntityRow.fromEntity(entity, validateCapacity(entity, throughput)))
+            .collect(toList()), headers)
+        ),
+        action,
+        ""
+    );
+  }
+
+  private boolean validateCapacity(MagnitudePhoto capacity, List<MagnitudePhoto> throughput) {
+    return capacity.getValue() >= throughput.stream()
+        .filter(magnitudePhoto -> magnitudePhoto.getDate().isEqual(capacity.getDate()))
+        .mapToInt(MagnitudePhoto::getValue)
+        .sum();
+  }
+
+  private List<ProjectionResult> filterProjectionsInRange(
+      final ZonedDateTime dateFrom,
+      final ZonedDateTime dateTo,
+      final List<ProjectionResult> projections) {
+
+    return projections.stream().filter(p ->
+                                           (p.getDate().isEqual(dateFrom) || p.getDate().isAfter(dateFrom))
+                                               && (p.getDate().isEqual(dateTo) || p.getDate().isBefore(dateTo)))
+        .collect(toList());
+  }
+
+  private List<Backlog> filterBacklogsInRange(final ZonedDateTime dateFrom,
+                                              final ZonedDateTime dateTo,
+                                              final List<Backlog> backlogs) {
+
+    return backlogs.stream().filter(p ->
+                                        (p.getDate().isEqual(dateFrom) || p.getDate().isAfter(dateFrom))
+                                            && p.getDate().isBefore(dateTo))
+        .collect(toList());
+  }
+
+  private List<Backlog> getBacklog(final String logisticCenterId,
+                                   final ZonedDateTime dateFrom,
+                                   final ZonedDateTime dateTo) {
+
+    final String groupingKey = BacklogGrouper.DATE_OUT.getName();
+
+    var backlogBySla = backlogGateway.getCurrentBacklog(
+        logisticCenterId,
+        List.of("outbound-orders"),
+        CAP5_TO_PACK_STATUSES,
+        dateFrom.toInstant(),
+        dateTo.toInstant(),
+        List.of(groupingKey));
+
+    return backlogBySla.stream()
+        .map(backlog -> new Backlog(
+            ZonedDateTime.parse(backlog.getKeys().get(groupingKey)),
+            backlog.getTotal()))
+        .collect(toList());
+  }
 
 }

@@ -45,17 +45,17 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
     private final GetSimpleDeferralProjection getSimpleDeferralProjection;
 
-    private final BacklogApiGateway backlogGateway;
+  private final BacklogApiGateway backlogGateway;
 
     private final GetWaveSuggestion getWaveSuggestion;
 
-    protected GetProjectionOutbound(final PlanningModelGateway planningModelGateway,
-                                    final LogisticCenterGateway logisticCenterGateway,
-                                    final GetWaveSuggestion getWaveSuggestion,
-                                    final GetEntities getEntities,
-                                    final GetProjectionSummary getProjectionSummary,
-                                    final GetSimpleDeferralProjection getSimpleDeferralProjection,
-                                    final BacklogApiGateway backlogGateway) {
+  protected GetProjectionOutbound(final PlanningModelGateway planningModelGateway,
+                                  final LogisticCenterGateway logisticCenterGateway,
+                                  final GetWaveSuggestion getWaveSuggestion,
+                                  final GetEntities getEntities,
+                                  final GetProjectionSummary getProjectionSummary,
+                                  final GetSimpleDeferralProjection getSimpleDeferralProjection,
+                                  final BacklogApiGateway backlogGateway) {
 
         super(planningModelGateway, logisticCenterGateway, getEntities, getProjectionSummary);
 

@@ -1,9 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
@@ -63,16 +63,17 @@ public class GetProjectionHeadcount {
         .stream()
         .collect(Collectors.toMap(AreaResponse::getName, AreaResponse::getValue));
 
-    final List<MagnitudePhoto> operatingHoursPlannedHeadcount = planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
-        .warehouseId(warehouseId)
-        .dateFrom(ZonedDateTime.ofInstant(dateFrom, ZoneOffset.UTC))
-        .dateTo(ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC))
-        .source(Source.SIMULATION)
-        .processName(List.of(ProcessName.PICKING))
-        .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
-        .workflow(Workflow.FBM_WMS_OUTBOUND)
-        .entityType(MagnitudeType.HEADCOUNT)
-        .build());
+    final List<MagnitudePhoto> operatingHoursPlannedHeadcount = planningModelGateway
+        .getTrajectories(TrajectoriesRequest.builder()
+                             .warehouseId(warehouseId)
+                             .dateFrom(ZonedDateTime.ofInstant(dateFrom, ZoneOffset.UTC))
+                             .dateTo(ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC))
+                             .source(Source.SIMULATION)
+                             .processName(List.of(ProcessName.PICKING))
+                             .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
+                             .workflow(Workflow.FBM_WMS_OUTBOUND)
+                             .entityType(MagnitudeType.HEADCOUNT)
+                             .build());
 
     return backlogs.entrySet()
         .stream()
