@@ -1,8 +1,8 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
@@ -18,7 +18,6 @@ import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitor;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
@@ -63,7 +62,7 @@ class BacklogMonitorControllerTest {
   private RequestClock requestClock;
 
   @Test
-  void testGetMonitor() throws Exception {
+  void testGetMonitorWithProcess() throws Exception {
     // GIVEN
 
     var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
@@ -74,7 +73,8 @@ class BacklogMonitorControllerTest {
         List.of(WAVING, PICKING, PACKING),
         firstDate,
         OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
-        999L);
+        999L,
+        false);
 
     when(requestClock.now()).thenReturn(firstDate);
     when(getBacklogMonitor.execute(input)).thenReturn(getMockedResponse());
@@ -96,6 +96,73 @@ class BacklogMonitorControllerTest {
   }
 
   @Test
+  void testGetMonitorWithoutProcesses() throws Exception {
+    // GIVEN
+
+    var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
+    GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
+        firstDate,
+        WAREHOUSE_ID,
+        FBM_WMS_OUTBOUND,
+        List.of(WAVING, PICKING, PACKING),
+        firstDate,
+        OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
+        999L,
+        false);
+
+    when(requestClock.now()).thenReturn(firstDate);
+    when(getBacklogMonitor.execute(input)).thenReturn(getMockedResponse());
+
+    // WHEN
+    final ResultActions result = mockMvc.perform(
+        MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
+            .param("workflow", OUTBOUND)
+            .param("date_from", A_DATE)
+            .param("date_to", ANOTHER_DATE)
+            .param("caller.id", "999")
+            .param("processes", "")
+    );
+
+    // THEN
+    result.andExpect(status().isOk());
+    result.andExpect(content().json(
+        getResourceAsString("get_backlog_monitor_response.json")));
+  }
+
+  @Test
+  void testGetMonitorEmptyProcesses() throws Exception {
+    // GIVEN
+
+    var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
+    GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
+        firstDate,
+        WAREHOUSE_ID,
+        FBM_WMS_OUTBOUND,
+        List.of(WAVING, PICKING, PACKING),
+        firstDate,
+        OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
+        999L,
+        false);
+
+    when(requestClock.now()).thenReturn(firstDate);
+    when(getBacklogMonitor.execute(input)).thenReturn(getMockedResponse());
+
+    // WHEN
+    final ResultActions result = mockMvc.perform(
+        MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
+            .param("workflow", OUTBOUND)
+            .param("date_from", A_DATE)
+            .param("date_to", ANOTHER_DATE)
+            .param("caller.id", "999")
+    );
+
+    // THEN
+    result.andExpect(status().isOk());
+    result.andExpect(content().json(
+        getResourceAsString("get_backlog_monitor_response.json")));
+  }
+
+  @Test
   void testGetDetails() throws Exception {
     // GIVEN
     var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
@@ -103,10 +170,11 @@ class BacklogMonitorControllerTest {
         firstDate,
         WAREHOUSE_ID,
         FBM_WMS_OUTBOUND,
-        ProcessName.PICKING,
+        PICKING,
         firstDate,
         OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
-        999L
+        999L,
+        false
     );
 
     when(requestClock.now()).thenReturn(firstDate);

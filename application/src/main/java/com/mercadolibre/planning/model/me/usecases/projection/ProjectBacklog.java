@@ -2,20 +2,23 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest.fromInput;
 import static java.time.temporal.ChronoUnit.HOURS;
+import static java.util.Collections.emptyMap;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
+import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
+import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
-import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -23,6 +26,7 @@ import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
@@ -37,8 +41,18 @@ public class ProjectBacklog {
 
   private final EntityGateway entityGateway;
 
-  public ProjectedBacklog execute(final BacklogProjectionInput input) {
-    return new ProjectedBacklog(planningModel.getBacklogProjection(fromInput(input)));
+  private final RatioService ratioService;
+
+  public List<BacklogProjectionResponse> execute(final BacklogProjectionInput input) {
+
+    final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatios = input.isHasWall()
+        ? ratioService.getPackingRatio(input.getWarehouseId(), input.getDateFrom().toInstant(), input.getDateTo().toInstant())
+        : emptyMap();
+
+    final Map<Instant, Double> packingWallRatios =
+        packingRatios.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, item -> item.getValue().getPackingWallRatio()));
+
+    return planningModel.getBacklogProjection(fromInput(input, packingWallRatios));
   }
 
   public List<ProjectedBacklogForAnAreaAndOperatingHour> projectBacklogInAreas(final Instant dateFrom,
@@ -101,12 +115,12 @@ public class ProjectBacklog {
     return entityGateway.getShareDistribution(input, workflow)
         .stream()
         .map(share ->
-            new BacklogAreaDistribution(
-                ProcessName.valueOf(share.getProcessName().toUpperCase(Locale.ENGLISH)),
-                share.getDate().toInstant(),
-                share.getArea(),
-                share.getQuantity()
-            )
+                 new BacklogAreaDistribution(
+                     ProcessName.from(share.getProcessName().toUpperCase(Locale.ENGLISH)),
+                     share.getDate().toInstant(),
+                     share.getArea(),
+                     share.getQuantity()
+                 )
         ).collect(Collectors.toList());
   }
 

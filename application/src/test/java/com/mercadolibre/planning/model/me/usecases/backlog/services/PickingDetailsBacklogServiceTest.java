@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.backlog.services;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.CARRY_OVER;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.PROCESSED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Process;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
@@ -94,7 +93,8 @@ public class PickingDetailsBacklogServiceTest {
         DATE_TO,
         slaFrom,
         slaTo,
-        TestUtils.USER_ID
+        TestUtils.USER_ID,
+        false
     );
   }
 
@@ -202,7 +202,7 @@ public class PickingDetailsBacklogServiceTest {
     return new BacklogRequest(
         TestUtils.WAREHOUSE_ID,
         Set.of(Workflow.FBM_WMS_OUTBOUND),
-        Set.of(Process.WAVING, Process.PICKING),
+        Set.of(WAVING, PICKING),
         DATE_FROM,
         DATE_TO,
         null,
@@ -272,7 +272,7 @@ public class PickingDetailsBacklogServiceTest {
     );
 
     Mockito.when(backlogGateway.getBacklogDetails(backlogRequest()))
-        .thenReturn(Map.of(Process.WAVING, waving, Process.PICKING, picking));
+        .thenReturn(Map.of(WAVING, waving, PICKING, picking));
   }
 
   private void mockMissingBacklog() {
@@ -311,7 +311,7 @@ public class PickingDetailsBacklogServiceTest {
     );
 
     Mockito.when(backlogGateway.getBacklogDetails(backlogRequest()))
-        .thenReturn(Map.of(Process.WAVING, waving, Process.PICKING, picking));
+        .thenReturn(Map.of(WAVING, waving, PICKING, picking));
   }
 
   private void mockProjection(final List<MagnitudePhoto> throughput, final boolean isMissingBacklog) {

@@ -1,13 +1,13 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
@@ -65,23 +65,23 @@ public class GetEntitiesTest {
         .thenReturn(new LogisticCenterConfiguration(getDefault()));
 
     when(planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
-        .warehouseId(WAREHOUSE_ID)
-        .workflow(FBM_WMS_OUTBOUND)
-        .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
-        .dateFrom(utcCurrentTime)
-        .dateTo(utcCurrentTime.plusDays(1))
-        .processName(List.of(PICKING, PACKING, PACKING_WALL))
-        .entityFilters(Map.of(
-            HEADCOUNT, Map.of(
-                PROCESSING_TYPE.toJson(),
-                List.of(ACTIVE_WORKERS.getName())
-            ),
-            PRODUCTIVITY, Map.of(
-                ABILITY_LEVEL.toJson(),
-                List.of("1", "2")
-            ))
-        )
-        .build())
+                                                     .warehouseId(WAREHOUSE_ID)
+                                                     .workflow(FBM_WMS_OUTBOUND)
+                                                     .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
+                                                     .dateFrom(utcCurrentTime)
+                                                     .dateTo(utcCurrentTime.plusDays(1))
+                                                     .processName(List.of(PICKING, PACKING, PACKING_WALL))
+                                                     .entityFilters(Map.of(
+                                                         HEADCOUNT, Map.of(
+                                                             PROCESSING_TYPE.toJson(),
+                                                             List.of(ACTIVE_WORKERS.getName())
+                                                         ),
+                                                         PRODUCTIVITY, Map.of(
+                                                             ABILITY_LEVEL.toJson(),
+                                                             List.of("1", "2")
+                                                         ))
+                                                     )
+                                                     .build())
     ).thenReturn(
         Map.of(
             HEADCOUNT, mockHeadcountEntities(utcCurrentTime),
@@ -93,9 +93,9 @@ public class GetEntitiesTest {
 
     //WHEN
     final ComplexTable response = getEntities.execute(GetProjectionInputDto.builder()
-        .workflow(FBM_WMS_OUTBOUND)
-        .warehouseId(WAREHOUSE_ID)
-        .build());
+                                                          .workflow(FBM_WMS_OUTBOUND)
+                                                          .warehouseId(WAREHOUSE_ID)
+                                                          .build());
 
     //THEN
     assertComplexTable(response);
@@ -226,7 +226,7 @@ public class GetEntitiesTest {
     IntStream.range(0, 24).forEach(index -> {
       assertEquals("column_" + (index + 2), columns.get(index + 1).getId());
       assertEquals(currentTime.plusHours(index).format(HOUR_FORMAT),
-          columns.get(index + 1).getTitle());
+                   columns.get(index + 1).getTitle());
     });
     assertEquals(3, data.size());
 

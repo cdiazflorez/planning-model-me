@@ -1,12 +1,12 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.CHECK_IN;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
 import static java.util.List.of;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import java.util.List;
 import lombok.AllArgsConstructor;

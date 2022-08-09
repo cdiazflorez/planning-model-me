@@ -1,10 +1,12 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.parse;
@@ -14,9 +16,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
+import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
@@ -28,6 +32,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -57,7 +62,7 @@ class GetHistoricalBacklogTest {
   private GetHistoricalBacklog getHistoricalBacklog;
 
   @Mock
-  private BacklogApiAdapter backlogApiAdapter;
+  BacklogPhotoApiGateway backlogPhotoApiGateway;
 
   @Mock
   private GetProcessThroughput getProcessThroughput;
@@ -91,11 +96,11 @@ class GetHistoricalBacklogTest {
 
     // waving
     final var waving = backlogs.get(WAVING);
-    assertEquals(232, waving.get(DATE_FROM.toInstant()).getUnits()); // 239, 232, 225
-    assertEquals(181, waving.get(DATE_FROM.toInstant()).getMinutes()); // 77, 79, 82
+    assertEquals(239, waving.get(DATE_FROM.toInstant()).getUnits()); // 239, 232, 225
+    assertEquals(184, waving.get(DATE_FROM.toInstant()).getMinutes()); // 77, 79, 82
 
-    assertEquals(910, waving.get(DATE_TO.toInstant()).getUnits()); // 938, 910, 882
-    assertEquals(181, waving.get(DATE_TO.toInstant()).getMinutes()); // 303, 312, 322
+    assertEquals(938, waving.get(DATE_TO.toInstant()).getUnits()); // 938, 910, 882
+    assertEquals(183, waving.get(DATE_TO.toInstant()).getMinutes()); // 303, 312, 322
   }
 
   private void mockThroughput(ZonedDateTime dateFrom, ZonedDateTime dateTo) {
@@ -124,37 +129,37 @@ class GetHistoricalBacklogTest {
   }
 
   private void mockHistoricalBacklog(final long shift) {
-    final List<String> processes = of("waving", "packing", "picking");
 
     final Instant mockFromDate = DATE_FROM.minusWeeks(shift).toInstant();
     final Instant mockToDate = DATE_TO.minusWeeks(shift).toInstant();
 
-    final long hours = ChronoUnit.HOURS.between(mockFromDate, mockToDate);
+    when(backlogPhotoApiGateway.getTotalBacklogPerProcessAndInstantDate(
+        new BacklogRequest(
+            WAREHOUSE_ID,
+            Set.copyOf(of(FBM_WMS_OUTBOUND)),
+            Set.copyOf(of(WAVING, PICKING, PACKING)),
+            mockFromDate,
+            mockToDate.plus(5, ChronoUnit.MINUTES),
+            null,
+            null,
+            REQUEST_DATE.minusWeeks(shift).toInstant(),
+            REQUEST_DATE.minusWeeks(shift).plusHours(24).toInstant(),
+            Set.copyOf(of(STEP, AREA)))
+    )).thenReturn(Map.of(
+        WAVING, of(new BacklogPhoto(mockFromDate.plus(0, ChronoUnit.HOURS), 239),
+                        new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 472),
+                        new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 705),
+                        new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 938)),
+        PICKING, of(new BacklogPhoto(mockFromDate.plus(0, ChronoUnit.HOURS), 717),
+                         new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 1416),
+                         new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 2115),
+                         new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 2814)),
+        PACKING, of(new BacklogPhoto(mockFromDate.plus(0, ChronoUnit.HOURS), 478),
+                         new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 944),
+                         new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 1410),
+                         new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 1876))
+        ));
 
-    final List<Consolidation> consolidations = processes.stream()
-        .flatMap(process -> LongStream.rangeClosed(0, hours)
-            .mapToObj(hour -> mockFromDate.plus(hour, ChronoUnit.HOURS))
-            .map(date -> new Consolidation(
-                date,
-                Map.of("process", process),
-                dateValue(date) * (processes.indexOf(process) + 1),
-                true
-
-            ))
-        )
-        .collect(Collectors.toList());
-
-    when(backlogApiAdapter.getCurrentBacklog(
-        REQUEST_DATE.toInstant(),
-        WAREHOUSE_ID,
-        of(FBM_WMS_OUTBOUND),
-        of(WAVING, PICKING, PACKING),
-        of(PROCESS),
-        mockFromDate,
-        mockToDate.plus(5, ChronoUnit.MINUTES),
-        REQUEST_DATE.minusWeeks(shift).toInstant(),
-        REQUEST_DATE.minusWeeks(shift).plusHours(24).toInstant())
-    ).thenReturn(consolidations);
   }
 
   private List<ZonedDateTime> dates(final ZonedDateTime dateFrom,

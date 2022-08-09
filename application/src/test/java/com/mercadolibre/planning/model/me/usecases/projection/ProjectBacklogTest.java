@@ -1,12 +1,14 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.BATCH_SORTER;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.CHECK_IN;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WALL_IN;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.CARRY_OVER;
@@ -15,6 +17,7 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.ORDER_GROUP_TYPE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,8 +38,8 @@ import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
+import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
-import com.mercadolibre.planning.model.me.usecases.projection.entities.ProjectedBacklog;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -63,16 +66,21 @@ public class ProjectBacklogTest {
   @Mock
   private EntityGateway entityGateway;
 
+  @Mock
+  private RatioService ratioService;
+
   @Test
   public void testExecuteOutbound() {
     // GIVEN
     final ZonedDateTime firstDate = getNextHour(A_DATE);
 
+    when(ratioService.getPackingRatio(WAREHOUSE_ID, A_DATE.toInstant(), A_DATE.plusHours(25).toInstant())).thenReturn(emptyMap());
+
     when(planningModel.getBacklogProjection(
         BacklogProjectionRequest.builder()
             .warehouseId(WAREHOUSE_ID)
             .workflow(FBM_WMS_OUTBOUND)
-            .processName(List.of(WAVING, PICKING, PACKING, PACKING_WALL))
+            .processName(List.of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL))
             .dateFrom(A_DATE)
             .dateTo(firstDate.plusHours(25))
             .currentBacklog(List.of(
@@ -80,6 +88,7 @@ public class ProjectBacklogTest {
                 new CurrentBacklog(PICKING, 2232),
                 new CurrentBacklog(PACKING, 1442)))
             .applyDeviation(true)
+            .packingWallRatios(emptyMap())
             .build()))
         .thenReturn(List.of(
             new BacklogProjectionResponse(WAVING, List.of(
@@ -109,15 +118,15 @@ public class ProjectBacklogTest {
             new CurrentBacklog(PICKING, 2232),
             new CurrentBacklog(PACKING, 1442)
         ))
+        .hasWall(true)
         .build();
 
     // WHEN
-    final ProjectedBacklog response = projectBacklog.execute(input);
+    final List<BacklogProjectionResponse> projections = projectBacklog.execute(input);
 
     // THEN
-    assertNotNull(response);
+    assertNotNull(projections);
 
-    List<BacklogProjectionResponse> projections = response.getProjections();
     assertEquals(3, projections.size());
 
     BacklogProjectionResponse wavingProjections = projections.get(0);
@@ -143,6 +152,7 @@ public class ProjectBacklogTest {
                 new CurrentBacklog(CHECK_IN, 100),
                 new CurrentBacklog(PUT_AWAY, 120)))
             .applyDeviation(true)
+            .packingWallRatios(emptyMap())
             .build()))
         .thenReturn(List.of(
             new BacklogProjectionResponse(CHECK_IN, List.of(
@@ -163,19 +173,18 @@ public class ProjectBacklogTest {
         .dateFrom(A_DATE)
         .dateTo(A_DATE.plusHours(25))
         .backlogs(List.of(
-                new CurrentBacklog(CHECK_IN, 100),
-                new CurrentBacklog(PUT_AWAY, 120)
-            )
+                      new CurrentBacklog(CHECK_IN, 100),
+                      new CurrentBacklog(PUT_AWAY, 120)
+                  )
         )
         .build();
 
     // WHEN
-    final ProjectedBacklog response = projectBacklog.execute(input);
+    final List<BacklogProjectionResponse> projections = projectBacklog.execute(input);
 
     // THEN
-    assertNotNull(response);
+    assertNotNull(projections);
 
-    List<BacklogProjectionResponse> projections = response.getProjections();
     assertEquals(2, projections.size());
 
     BacklogProjectionResponse checkinProjections = projections.get(0);

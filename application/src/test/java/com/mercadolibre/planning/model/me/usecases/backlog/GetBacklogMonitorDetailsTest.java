@@ -1,9 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -21,9 +21,9 @@ import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.monitor.DetailedBacklogPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
@@ -100,7 +100,8 @@ class GetBacklogMonitorDetailsTest {
         processName,
         DATE_FROM.toInstant(),
         DATE_TO.toInstant(),
-        999L
+        999L,
+        false
     );
   }
 
@@ -347,14 +348,14 @@ class GetBacklogMonitorDetailsTest {
 
     final Map<ProcessName, Map<ZonedDateTime, Integer>> result = processes.stream()
         .collect(Collectors.toMap(
-                Function.identity(),
-                process -> Map.of(
-                    DATES.get(0), 10,
-                    DATES.get(1), 25,
-                    DATES.get(3), 15,
-                    DATES.get(4), 50,
-                    DATES.get(4).plusHours(1L), 200)
-            )
+                     Function.identity(),
+                     process -> Map.of(
+                         DATES.get(0), 10,
+                         DATES.get(1), 25,
+                         DATES.get(3), 15,
+                         DATES.get(4), 50,
+                         DATES.get(4).plusHours(1L), 200)
+                 )
         );
 
     when(getProcessThroughput.execute(request)).thenReturn(new GetThroughputResult(result));

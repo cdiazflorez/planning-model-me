@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.gateways.backlog;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Process;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
 import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
 import java.util.List;
@@ -20,7 +20,7 @@ public interface BacklogPhotoApiGateway {
    * @param request parameter for call client of backlog api
    * @return map of process by list of BacklogPhoto
    */
-  Map<Process, List<BacklogPhoto>> getTotalBacklogPerProcessAndInstantDate(BacklogRequest request);
+  Map<ProcessName, List<BacklogPhoto>> getTotalBacklogPerProcessAndInstantDate(BacklogRequest request);
 
   /**
    * Get backlog details.
@@ -30,7 +30,7 @@ public interface BacklogPhotoApiGateway {
    * @param request parameter for call client of backlog api
    * @return map of process by backlog like "takenOn, total"
    */
-  Map<Process, List<Photo>> getBacklogDetails(BacklogRequest request);
+  Map<ProcessName, List<Photo>> getBacklogDetails(BacklogRequest request);
 
 
 }
