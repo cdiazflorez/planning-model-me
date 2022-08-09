@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest.fromInput;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyMap;
@@ -45,7 +46,7 @@ public class ProjectBacklog {
 
   public List<BacklogProjectionResponse> execute(final BacklogProjectionInput input) {
 
-    final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatios = input.isHasWall()
+    final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatios = input.isHasWall() && input.getWorkflow() == FBM_WMS_OUTBOUND
         ? ratioService.getPackingRatio(input.getWarehouseId(), input.getDateFrom().toInstant(), input.getDateTo().toInstant())
         : emptyMap();
 
