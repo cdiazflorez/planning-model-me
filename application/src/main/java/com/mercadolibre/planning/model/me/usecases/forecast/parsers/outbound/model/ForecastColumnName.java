@@ -16,11 +16,11 @@ public enum ForecastColumnName implements ForecastColumn {
     SERVICE_ID,
     CANALIZATION,
     BACKLOG_LIMITS,
-    POLYVALENT_PICKING,
-    POLYVALENT_BATCH_SORTER,
-    POLYVALENT_WALL_IN,
-    POLYVALENT_PACKING,
-    POLYVALENT_PACKING_WALL;
+    OUTBOUND_PICKING,
+    OUTBOUND_BATCH_SORTER,
+    OUTBOUND_WALL_IN,
+    OUTBOUND_PACKING,
+    OUTBOUND_PACKING_WALL;
 
     public String getName() {
         return name().toLowerCase();

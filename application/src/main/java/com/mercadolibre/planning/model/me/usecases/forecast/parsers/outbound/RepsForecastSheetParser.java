@@ -7,12 +7,12 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_BATCH_SORTER;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PACKING;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PACKING_WALL;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PICKING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_BATCH_SORTER;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_WALL;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_WALL_IN;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueAt;
@@ -102,24 +102,24 @@ public class RepsForecastSheetParser implements SheetParser {
                 MULTI_ORDER_DISTRIBUTION,
                 getDoubleValueAt(sheet, WAREHOUSE_ID_ROW, MULTI_ORDER_COLUMN)),
             Map.entry(
-                POLYVALENT_PICKING,
+                OUTBOUND_PICKING,
                 getProductivityPolyvalenceByProcessName(
                     polyvalentProductivities, ForecastProductivityProcessName.PICKING.getName())),
             Map.entry(
-                POLYVALENT_BATCH_SORTER,
+                OUTBOUND_BATCH_SORTER,
                 getProductivityPolyvalenceByProcessName(
                     polyvalentProductivities,
                     ForecastProductivityProcessName.BATCH_SORTER.getName())),
             Map.entry(
-                POLYVALENT_WALL_IN,
+                OUTBOUND_WALL_IN,
                 getProductivityPolyvalenceByProcessName(
                     polyvalentProductivities, ForecastProductivityProcessName.WALL_IN.getName())),
             Map.entry(
-                POLYVALENT_PACKING,
+                OUTBOUND_PACKING,
                 getProductivityPolyvalenceByProcessName(
                     polyvalentProductivities, ForecastProductivityProcessName.PACKING.getName())),
             Map.entry(
-                POLYVALENT_PACKING_WALL,
+                OUTBOUND_PACKING_WALL,
                 getProductivityPolyvalenceByProcessName(
                     polyvalentProductivities,
                     ForecastProductivityProcessName.PACKING_WALL.getName())),

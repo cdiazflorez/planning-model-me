@@ -9,12 +9,12 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PLANNING_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_BATCH_SORTER;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PACKING;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PACKING_WALL;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PICKING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_BATCH_SORTER;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_WALL;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_WALL_IN;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 
@@ -74,11 +74,11 @@ public final class ParseOutboundForecastFromFile {
     final String monoOrder = String.valueOf(parsedValues.get(MONO_ORDER_DISTRIBUTION));
     final String multiOrder = String.valueOf(parsedValues.get(MULTI_ORDER_DISTRIBUTION));
     final String multiBatch = String.valueOf(parsedValues.get(MULTI_BATCH_DISTRIBUTION));
-    final String pickingPolyvalence = String.valueOf(parsedValues.get(POLYVALENT_PICKING));
-    final String batchPolyvalence = String.valueOf(parsedValues.get(POLYVALENT_BATCH_SORTER));
-    final String wallInPolivalence = String.valueOf(parsedValues.get(POLYVALENT_WALL_IN));
-    final String packingPolivalence = String.valueOf(parsedValues.get(POLYVALENT_PACKING));
-    final String packingWallPolivalence = String.valueOf(parsedValues.get(POLYVALENT_PACKING_WALL));
+    final String pickingPolyvalence = String.valueOf(parsedValues.get(OUTBOUND_PICKING));
+    final String batchPolyvalence = String.valueOf(parsedValues.get(OUTBOUND_BATCH_SORTER));
+    final String wallInPolivalence = String.valueOf(parsedValues.get(OUTBOUND_WALL_IN));
+    final String packingPolivalence = String.valueOf(parsedValues.get(OUTBOUND_PACKING));
+    final String packingWallPolivalence = String.valueOf(parsedValues.get(OUTBOUND_PACKING_WALL));
 
     return List.of(
         new Metadata(WAREHOUSE_ID, warehouseId),
@@ -86,10 +86,10 @@ public final class ParseOutboundForecastFromFile {
         new Metadata(MONO_ORDER_DISTRIBUTION.getName(), monoOrder),
         new Metadata(MULTI_ORDER_DISTRIBUTION.getName(), multiOrder),
         new Metadata(MULTI_BATCH_DISTRIBUTION.getName(), multiBatch),
-        new Metadata(POLYVALENT_PICKING.getName(), pickingPolyvalence),
-        new Metadata(POLYVALENT_BATCH_SORTER.getName(), batchPolyvalence),
-        new Metadata(POLYVALENT_WALL_IN.getName(), wallInPolivalence),
-        new Metadata(POLYVALENT_PACKING.getName(), packingPolivalence),
-        new Metadata(POLYVALENT_PACKING_WALL.getName(), packingWallPolivalence));
+        new Metadata(OUTBOUND_PICKING.getName(), pickingPolyvalence),
+        new Metadata(OUTBOUND_BATCH_SORTER.getName(), batchPolyvalence),
+        new Metadata(OUTBOUND_WALL_IN.getName(), wallInPolivalence),
+        new Metadata(OUTBOUND_PACKING.getName(), packingPolivalence),
+        new Metadata(OUTBOUND_PACKING_WALL.getName(), packingWallPolivalence));
   }
 }
