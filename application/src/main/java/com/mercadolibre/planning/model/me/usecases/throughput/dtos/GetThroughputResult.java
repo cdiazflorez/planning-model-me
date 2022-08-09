@@ -2,8 +2,8 @@ package com.mercadolibre.planning.model.me.usecases.throughput.dtos;
 
 import static java.util.Collections.emptyMap;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -33,10 +33,10 @@ public class GetThroughputResult {
   public Optional<Map<Instant, Integer>> find(final ProcessName process) {
     return Optional.ofNullable(throughputByProcess.get(process))
         .map(throughputByHour ->
-            throughputByHour.entrySet().stream().collect(Collectors.toMap(
-                entry -> entry.getKey().toInstant(),
-                Map.Entry::getValue
-            ))
+                 throughputByHour.entrySet().stream().collect(Collectors.toMap(
+                     entry -> entry.getKey().toInstant(),
+                     Map.Entry::getValue
+                 ))
         );
   }
 

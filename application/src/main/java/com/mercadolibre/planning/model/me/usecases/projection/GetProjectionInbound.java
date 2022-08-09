@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.CHECK_IN;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PUT_AWAY;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.CHECK_IN;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static java.util.stream.Collectors.toList;
 
@@ -10,9 +10,9 @@ import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.Tab;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateInbound;
@@ -98,14 +98,14 @@ public abstract class GetProjectionInbound extends GetProjection {
                                                         final List<ProjectionResult> projectionsToShow,
                                                         final List<Backlog> backlogsToShow) {
     return getProjectionSummary.execute(GetProjectionSummaryInput.builder()
-        .workflow(input.getWorkflow())
-        .warehouseId(input.getWarehouseId())
-        .dateFrom(dateFromToShow)
-        .dateTo(dateToToShow)
-        .projections(projectionsToShow)
-        .backlogs(backlogsToShow)
-        .showDeviation(false)
-        .build());
+                                            .workflow(input.getWorkflow())
+                                            .warehouseId(input.getWarehouseId())
+                                            .dateFrom(dateFromToShow)
+                                            .dateTo(dateToToShow)
+                                            .projections(projectionsToShow)
+                                            .backlogs(backlogsToShow)
+                                            .showDeviation(false)
+                                            .build());
   }
 
   @Override

@@ -1,8 +1,8 @@
 package com.mercadolibre.planning.model.me.controller.staffing;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_MZ1;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.CALLER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.CHECK_IN_PROCESS;
@@ -54,7 +54,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-/** This class tests the behavior of "/current" and "/plan" endpoints for the StaffingController. */
+/**
+ * This class tests the behavior of "/current" and "/plan" endpoints for the StaffingController.
+ */
 @WebMvcTest(controllers = StaffingController.class)
 public class StaffingControllerTest {
 
@@ -123,13 +125,17 @@ public class StaffingControllerTest {
 
   private static final String HEADCOUNT_HOUR_2 = "13:00";
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-  @MockBean private AuthorizeUser authorizeUser;
+  @MockBean
+  private AuthorizeUser authorizeUser;
 
-  @MockBean private GetStaffing getStaffing;
+  @MockBean
+  private GetStaffing getStaffing;
 
-  @MockBean private GetPlannedHeadcount getPlannedHeadcount;
+  @MockBean
+  private GetPlannedHeadcount getPlannedHeadcount;
 
   @Test
   public void testGetStaffing() throws Exception {
@@ -260,8 +266,8 @@ public class StaffingControllerTest {
     Integer delta = null;
     if ((workflow.equals(INBOUND_WORKFLOW) || workflow.equals(OUTBOUND_WORKFLOW))
         && (process.equals(CHECK_IN_PROCESS)
-            || process.equals(PICKING_PROCESS)
-            || process.equals(PACKING_PROCESS))) {
+        || process.equals(PICKING_PROCESS)
+        || process.equals(PACKING_PROCESS))) {
       FORECAST_PLANNED_WORKERS = 15;
       delta = (PROCESS_BUSY_WORKERS + PROCESS_IDLE_WORKERS) - FORECAST_PLANNED_WORKERS;
     }
@@ -281,10 +287,10 @@ public class StaffingControllerTest {
         .areas(
             AREA_PROCESSES.contains(process)
                 ? List.of(
-                    new Area(
-                        AREA_MZ1,
-                        AREA_NET_PRODUCTIVITY,
-                        new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS)))
+                new Area(
+                    AREA_MZ1,
+                    AREA_NET_PRODUCTIVITY,
+                    new Worker(AREA_IDLE_WORKERS, AREA_BUSY_WORKERS)))
                 : Collections.emptyList())
         .build();
   }

@@ -1,10 +1,10 @@
 package com.mercadolibre.planning.model.me.utils;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-/** Build methods and constants to be used in testing. */
+/**
+ * Build methods and constants to be used in testing.
+ */
 public class TestUtils {
 
   public static final String WAREHOUSE_ID = "ARTW01";
@@ -309,7 +311,7 @@ public class TestUtils {
   /**
    * Creates a MeliSheet based on a filepath and a sheet name.
    *
-   * @param name sheet's name
+   * @param name     sheet's name
    * @param filePath to search the sheet by name
    * @return a {@link MeliSheet} or null
    */

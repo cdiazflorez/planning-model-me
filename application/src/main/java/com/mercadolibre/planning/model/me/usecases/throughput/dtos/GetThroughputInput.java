@@ -1,35 +1,34 @@
 package com.mercadolibre.planning.model.me.usecases.throughput.dtos;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import lombok.Builder;
-import lombok.ToString;
-import lombok.Value;
-
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import lombok.Builder;
+import lombok.ToString;
+import lombok.Value;
 
 @Value
 @Builder
 @ToString
 public class GetThroughputInput {
-    private String warehouseId;
+  String warehouseId;
 
-    private Workflow workflow;
+  Workflow workflow;
 
-    private List<ProcessName> processes;
+  List<ProcessName> processes;
 
-    private ZonedDateTime dateFrom;
+  ZonedDateTime dateFrom;
 
-    private ZonedDateTime dateTo;
+  ZonedDateTime dateTo;
 
-    private Source source;
+  Source source;
 
-    private List<Simulation> simulations;
+  List<Simulation> simulations;
 
-    private Map<MagnitudeType, Map<String, List<String>>> entityFilters;
+  Map<MagnitudeType, Map<String, List<String>>> entityFilters;
 }

@@ -14,7 +14,7 @@ enum BacklogWorkflow {
 
   private final int slaToOffsetInHours;
 
-  static BacklogWorkflow from(final Workflow globalWorkflow) {
+  public static BacklogWorkflow from(final Workflow globalWorkflow) {
     return BacklogWorkflow.valueOf(globalWorkflow.name());
   }
 }

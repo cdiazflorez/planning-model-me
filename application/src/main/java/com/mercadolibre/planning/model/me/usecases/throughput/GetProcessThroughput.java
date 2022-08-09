@@ -4,9 +4,9 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
 import static java.util.List.of;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
