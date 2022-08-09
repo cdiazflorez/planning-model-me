@@ -2,7 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea.NumberOfUnitsInASubarea;
 import static java.lang.Math.max;
@@ -18,9 +18,9 @@ import com.mercadolibre.planning.model.me.entities.monitor.DetailedBacklogPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.Headcount;
 import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
@@ -131,7 +131,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         input.getDateTo(),
         slaFrom,
         slaTo,
-        input.getCallerId()
+        input.getCallerId(),
+        input.isHasWall()
     );
 
     return backlogProviders.stream()
@@ -152,22 +153,22 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     final HistoricalBacklog historicalBacklog = getHistoricalBacklog(input);
 
     final Map<Instant, UnitMeasure> backlogMeasuredInHours =
-        convertBacklogTrajectoryFromUnitToTime(toTotaledBacklogPhoto(backlog), throughputByDate);
+        convertBacklogTrajectoryFromUnitToTime(toTotaledBacklogPhoto(backlog), null, throughputByDate);
 
     final var viewDate = input.getRequestDate();
 
     return backlog.entrySet()
         .stream()
         .map(entry -> toProcessStats(
-                entry.getKey().isAfter(viewDate),
-                entry.getKey(),
-                entry.getValue(),
-                targetBacklog,
-                historicalBacklog,
-                throughputByDate,
-                limits,
-                backlogMeasuredInHours
-            )
+                 entry.getKey().isAfter(viewDate),
+                 entry.getKey(),
+                 entry.getValue(),
+                 targetBacklog,
+                 historicalBacklog,
+                 throughputByDate,
+                 limits,
+                 backlogMeasuredInHours
+             )
         )
         .collect(Collectors.toList());
   }
@@ -373,21 +374,21 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     final List<SubAreaBacklogDetail> mappedSubareas = area.getSubareas()
         .stream()
         .map(subarea -> {
-              final Optional<NumberOfUnitsInASubarea> unitsInSubArea = numberOfUnitsInAnArea.flatMap(subareas -> subareas.getSubareas()
-                  .stream()
-                  .filter(s -> s.getName().equals(subarea))
-                  .findFirst()
-              );
+               final Optional<NumberOfUnitsInASubarea> unitsInSubArea = numberOfUnitsInAnArea.flatMap(subareas -> subareas.getSubareas()
+                   .stream()
+                   .filter(s -> s.getName().equals(subarea))
+                   .findFirst()
+               );
 
-              return unitsInSubArea.map(value ->
-                      new SubAreaBacklogDetail(
-                          subarea,
-                          UnitMeasure.fromUnits(value.getUnits(), throughput),
-                          new Headcount(value.getReps() != null ? value.getReps() : 0,
-                              value.getRepsPercentage() != null ? value.getRepsPercentage() : 0D))
-                  )
-                  .orElseGet(() -> new SubAreaBacklogDetail(subarea, emptyMeasure(), new Headcount(0, 0.0)));
-            }
+               return unitsInSubArea.map(value ->
+                                             new SubAreaBacklogDetail(
+                                                 subarea,
+                                                 UnitMeasure.fromUnits(value.getUnits(), throughput),
+                                                 new Headcount(value.getReps() != null ? value.getReps() : 0,
+                                                               value.getRepsPercentage() != null ? value.getRepsPercentage() : 0D))
+                   )
+                   .orElseGet(() -> new SubAreaBacklogDetail(subarea, emptyMeasure(), new Headcount(0, 0.0)));
+             }
         )
         .collect(Collectors.toList());
 
@@ -449,6 +450,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
       Instant slaTo;
 
       Long callerId;
+
+      boolean hasWall;
     }
   }
 

@@ -37,8 +37,9 @@ public class StaffingController {
 
   /**
    * Get the last hour metrics from workflows, processes, and areas for the given warehouse.
+   *
    * @param warehouseId to get metrics for
-   * @param callerId for authorization
+   * @param callerId    for authorization
    * @return a {@link ResponseEntity} of {@link Staffing}
    */
   @Trace
@@ -56,8 +57,9 @@ public class StaffingController {
 
   /**
    * Get the planned metrics Processes for the day.
+   *
    * @param warehouseId to get metrics for
-   * @param callerId for authorization
+   * @param callerId    for authorization
    * @return a {@link ResponseEntity} of {@link PlannedHeadcount}
    */
   @Trace

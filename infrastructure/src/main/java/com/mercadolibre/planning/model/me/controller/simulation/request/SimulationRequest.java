@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.simulation.request;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import lombok.Builder;
 import lombok.Value;

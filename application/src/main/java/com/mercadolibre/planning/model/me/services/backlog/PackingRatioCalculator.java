@@ -118,7 +118,7 @@ public final class PackingRatioCalculator {
   }
 
   @Value
-  static class PackingRatio {
+  public static class PackingRatio {
     Double packingToteRatio;
 
     Double packingWallRatio;

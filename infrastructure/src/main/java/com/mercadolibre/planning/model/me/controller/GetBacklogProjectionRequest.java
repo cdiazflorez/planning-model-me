@@ -1,8 +1,6 @@
 package com.mercadolibre.planning.model.me.controller;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,7 +32,7 @@ public class GetBacklogProjectionRequest {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private ZonedDateTime dateTo;
 
-    public BacklogProjectionInput getBacklogProjectionInput(final Workflow workflow,
+  /*  public BacklogProjectionInput getBacklogProjectionInput(final Workflow workflow,
                                                             final long callerId) {
         return BacklogProjectionInput.builder()
                 .warehouseId(warehouseId)
@@ -45,5 +43,5 @@ public class GetBacklogProjectionRequest {
                 .processName(processName)
                 .groupType("order")
                 .build();
-    }
+    }*/
 }

@@ -15,6 +15,7 @@ import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,17 +29,18 @@ public class BacklogPhotosRequest extends PhotoRequest {
 
   /**
    * Constructor BacklogPhotosRequest.
+   *
    * @param logisticCenterId logisticCenter
-   * @param workflows set of workflows
-   * @param steps set of workflows
-   * @param dateInFrom date in from
-   * @param dateInTo date in to
-   * @param slaFrom sla from
-   * @param slaTo sla to
-   * @param groupBy group by
-   * @param dateFrom date from
-   * @param dateTo date to
-   * */
+   * @param workflows        set of workflows
+   * @param steps            set of workflows
+   * @param dateInFrom       date in from
+   * @param dateInTo         date in to
+   * @param slaFrom          sla from
+   * @param slaTo            sla to
+   * @param groupBy          group by
+   * @param dateFrom         date from
+   * @param dateTo           date to
+   */
   public BacklogPhotosRequest(final String logisticCenterId,
                               final Set<BacklogWorkflow> workflows,
                               final Set<Step> steps,
@@ -72,7 +74,7 @@ public class BacklogPhotosRequest extends PhotoRequest {
     addAsQueryParam(params, DATE_IN_FROM.getName(), dateInFrom);
     addAsQueryParam(params, DATE_IN_TO.getName(), dateInTo);
     addAsQueryParam(params, DATE_OUT_FROM.getName(), slaFrom);
-    addAsQueryParam(params, DATE_OUT_TO.getName(), slaTo);
+    addAsQueryParam(params, DATE_OUT_TO.getName(), slaTo != null ? slaTo.truncatedTo(ChronoUnit.SECONDS) : null);
     addAsQueryParam(params, GROUP_BY.getName(), parametersByType.get(GROUP_BY.getName()));
 
     return params;

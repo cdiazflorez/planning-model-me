@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.backlog.services;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PICKING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
@@ -12,11 +12,10 @@ import static com.mercadolibre.planning.model.me.usecases.backlog.services.Detai
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Process;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
@@ -65,7 +64,7 @@ public class PickingDetailsBacklogService implements BacklogProvider {
   @Override
   public Map<Instant, List<NumberOfUnitsInAnArea>> getMonitorBacklog(final BacklogProviderInput input) {
     final var currentBacklog = getCurrentBacklog(input);
-    final var mappedBacklog = mapPhotosToNumberOfUnitsInAnAreaByTakenOn(currentBacklog.get(Process.PICKING));
+    final var mappedBacklog = mapPhotosToNumberOfUnitsInAnAreaByTakenOn(currentBacklog.get(PICKING));
 
     final var pastBacklog = selectPhotos(mappedBacklog, input.getDateFrom(), input.getRequestDate());
     final var projectedBacklog = getProjectedBacklog(input, currentBacklog, input.getThroughput(), input.getRequestDate());
@@ -73,14 +72,13 @@ public class PickingDetailsBacklogService implements BacklogProvider {
     return mergeMaps(pastBacklog, projectedBacklog);
   }
 
-  private Map<Process, List<Photo>> getCurrentBacklog(final BacklogProviderInput input) {
-
+  private Map<ProcessName, List<Photo>> getCurrentBacklog(final BacklogProviderInput input) {
 
     return backlogPhotoApiGateway.getBacklogDetails(
         new BacklogRequest(
             input.getWarehouseId(),
             Set.of(input.getWorkflow()),
-            Set.of(Process.WAVING, Process.PICKING),
+            Set.of(WAVING, PICKING),
             input.getDateFrom(),
             input.getDateTo(),
             null,
@@ -121,7 +119,7 @@ public class PickingDetailsBacklogService implements BacklogProvider {
   }
 
   private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklog(final BacklogProviderInput input,
-                                                                        final Map<Process, List<Photo>> backlog,
+                                                                        final Map<ProcessName, List<Photo>> backlog,
                                                                         final List<MagnitudePhoto> throughput,
                                                                         final Instant viewDate) {
 
@@ -136,7 +134,7 @@ public class PickingDetailsBacklogService implements BacklogProvider {
     return emptyMap();
   }
 
-  private List<BacklogQuantityAtSla> getCurrentBacklogAsQuantityAtSla(final Map<Process, List<Photo>> backlog, final Instant viewDate) {
+  private List<BacklogQuantityAtSla> getCurrentBacklogAsQuantityAtSla(final Map<ProcessName, List<Photo>> backlog, final Instant viewDate) {
     final var currentPhotoDate = backlog.values()
         .stream()
         .flatMap(List::stream)

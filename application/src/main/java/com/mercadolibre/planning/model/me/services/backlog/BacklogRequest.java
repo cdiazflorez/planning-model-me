@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.services.backlog;
 
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Process;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import java.time.Instant;
 import java.util.Set;
@@ -12,7 +12,7 @@ public class BacklogRequest {
 
   Set<Workflow> workflows;
 
-  Set<Process> processes;
+  Set<ProcessName> processes;
 
   Instant dateFrom;
 

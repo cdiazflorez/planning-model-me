@@ -1,11 +1,14 @@
 package com.mercadolibre.planning.model.me.controller.backlog;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
 import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.NotImplementWorkflowException;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitor;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails;
@@ -42,70 +45,76 @@ public class BacklogMonitorController {
 
   @GetMapping("/monitor")
   public ResponseEntity<WorkflowBacklogDetail> monitor(
-          @PathVariable final String warehouseId,
-          @RequestParam final String workflow,
-          @RequestParam final List<ProcessName> processes,
-          @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateFrom,
-          @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
-          @RequestParam("caller.id") final long callerId) {
+      @PathVariable final String warehouseId,
+      @RequestParam final String workflow,
+      @RequestParam(required = false) final List<ProcessName> processes,
+      @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateFrom,
+      @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
+      @RequestParam("caller.id") final long callerId,
+      @RequestParam(required = false, defaultValue = "false") final boolean hasWall) {
+
+    var updatedProcesses = processes == null || processes.isEmpty() ? List.of(WAVING, PICKING, PACKING) : processes;
 
     final Instant requestDate = requestClock.now();
     final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
     final WorkflowBacklogDetail response = getBacklogMonitor.execute(
-            new GetBacklogMonitorInputDto(
-                    requestDate,
-                    warehouseId,
-                    getWorkflow(workflow),
-                    processes,
-                    dateFrom(dateFrom, startOfCurrentHour),
-                    dateTo(dateTo, startOfCurrentHour),
-                    callerId)
+        new GetBacklogMonitorInputDto(
+            requestDate,
+            warehouseId,
+            getWorkflow(workflow),
+            updatedProcesses,
+            dateFrom(dateFrom, startOfCurrentHour),
+            dateTo(dateTo, startOfCurrentHour),
+            callerId,
+            hasWall)
     );
 
     return ResponseEntity.ok(
-            new WorkflowBacklogDetail(
-                    getWorkflow(workflow).getName(),
-                    response.getCurrentDatetime(),
-                    response.getProcesses())
+        new WorkflowBacklogDetail(
+            getWorkflow(workflow).getName(),
+            response.getCurrentDatetime(),
+            response.getProcesses())
     );
   }
 
   @GetMapping("/details")
   public ResponseEntity<GetBacklogMonitorDetailsResponse> details(
-          @PathVariable final String warehouseId,
-          @RequestParam final String workflow,
-          @RequestParam final String process,
-          @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateFrom,
-          @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
-          @RequestParam("caller.id") final long callerId) {
+      @PathVariable final String warehouseId,
+      @RequestParam final String workflow,
+      @RequestParam final String process,
+      @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateFrom,
+      @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final OffsetDateTime dateTo,
+      @RequestParam("caller.id") final long callerId,
+      @RequestParam(required = false, defaultValue = "false") final Boolean hasWall) {
 
     final Instant requestDate = requestClock.now();
     final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
     return ResponseEntity.ok(
-            getBacklogMonitorDetails.execute(new GetBacklogMonitorDetailsInput(
-                    requestDate,
-                    warehouseId,
-                    getWorkflow(workflow),
-                    ProcessName.from(process),
-                    dateFrom(dateFrom, startOfCurrentHour),
-                    dateTo(dateTo, startOfCurrentHour),
-                    callerId
-            ))
+        getBacklogMonitorDetails.execute(new GetBacklogMonitorDetailsInput(
+            requestDate,
+            warehouseId,
+            getWorkflow(workflow),
+            ProcessName.from(process),
+            dateFrom(dateFrom, startOfCurrentHour),
+            dateTo(dateTo, startOfCurrentHour),
+            callerId,
+            hasWall)
+        )
     );
   }
 
   private Instant dateFrom(final OffsetDateTime date, final Instant startOfCurrentHour) {
     return date == null
-            ? startOfCurrentHour.minus(DEFAULT_HOURS_LOOKBACK)
-            : date.toInstant();
+        ? startOfCurrentHour.minus(DEFAULT_HOURS_LOOKBACK)
+        : date.toInstant();
   }
 
   private Instant dateTo(final OffsetDateTime date, final Instant startOfCurrentHour) {
     return date == null
-            ? startOfCurrentHour.plus(DEFAULT_HOURS_LOOKAHEAD)
-            : date.toInstant();
+        ? startOfCurrentHour.plus(DEFAULT_HOURS_LOOKAHEAD)
+        : date.toInstant();
   }
 
   private Workflow getWorkflow(final String workflowParam) {

@@ -6,12 +6,16 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -19,14 +23,13 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
+import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
-import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails.BacklogProvider.BacklogProviderInput;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
-import com.mercadolibre.planning.model.me.utils.TestUtils;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,8 +41,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class DetailsBacklogServiceTest {
-
+public class DetailsBacklogRatioServiceTest {
   private static final Instant DATE_FROM = Instant.parse("2022-07-26T08:00:00Z");
 
   private static final Instant REQUEST_DATE = Instant.parse("2022-07-26T10:20:30Z");
@@ -47,7 +49,7 @@ public class DetailsBacklogServiceTest {
   private static final Instant DATE_TO = Instant.parse("2022-07-26T12:00:00Z");
 
   @InjectMocks
-  private DetailsBacklogService service;
+  private DetailsBacklogRatioService detailsBacklogRatioService;
 
   @Mock
   private BacklogPhotoApiGateway backlogGateway;
@@ -55,22 +57,25 @@ public class DetailsBacklogServiceTest {
   @Mock
   private ProjectionGateway projectionGateway;
 
-  private BacklogProviderInput input() {
+  @Mock
+  private RatioService ratioService;
+
+  private GetBacklogMonitorDetails.BacklogProvider.BacklogProviderInput input(final boolean hasWall) {
     final var slaFrom = REQUEST_DATE.minus(0, ChronoUnit.HOURS);
     final var slaTo = REQUEST_DATE.plus(24, ChronoUnit.HOURS);
 
-    return new BacklogProviderInput(
+    return new GetBacklogMonitorDetails.BacklogProvider.BacklogProviderInput(
         REQUEST_DATE,
-        TestUtils.WAREHOUSE_ID,
-        Workflow.FBM_WMS_OUTBOUND,
+        WAREHOUSE_ID,
+        FBM_WMS_OUTBOUND,
         WAVING,
-        Collections.emptyList(),
+        emptyList(),
         DATE_FROM,
         DATE_TO,
         slaFrom,
         slaTo,
-        TestUtils.USER_ID,
-        false
+        USER_ID,
+        hasWall
     );
   }
 
@@ -79,9 +84,31 @@ public class DetailsBacklogServiceTest {
     // GIVEN
     mockBacklog();
     mockProjection(650);
+    when(ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO)).thenReturn(emptyMap());
 
     // WHEN
-    final var results = service.getMonitorBacklog(input());
+    final var results = detailsBacklogRatioService.getMonitorBacklog(input(true));
+
+    // THEN
+    assertNotNull(results);
+    assertEquals(6, results.size());
+
+    assertResult(results, "2022-07-26T08:00:00Z", 700);
+    assertResult(results, "2022-07-26T09:00:00Z", 850);
+    assertResult(results, "2022-07-26T10:00:00Z", 600);
+    assertResult(results, "2022-07-26T10:20:30Z", 650);
+    assertResult(results, "2022-07-26T11:00:00Z", 150);
+    assertResult(results, "2022-07-26T12:00:00Z", 330);
+  }
+
+  @Test
+  void testExecuteOkHasWallFalse() {
+    // GIVEN
+    mockBacklog();
+    mockProjection(650);
+
+    // WHEN
+    final var results = detailsBacklogRatioService.getMonitorBacklog(input(false));
 
     // THEN
     assertNotNull(results);
@@ -100,9 +127,10 @@ public class DetailsBacklogServiceTest {
     // GIVEN
     mockMissingBacklog();
     mockProjection(0);
+    when(ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO)).thenReturn(emptyMap());
 
     // WHEN
-    final var results = service.getMonitorBacklog(input());
+    final var results = detailsBacklogRatioService.getMonitorBacklog(input(true));
 
     // THEN
     assertNotNull(results);
@@ -121,9 +149,10 @@ public class DetailsBacklogServiceTest {
     // GIVEN
     mockBacklog();
     mockFailedProjections();
+    when(ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO)).thenReturn(emptyMap());
 
     // WHEN
-    final var results = service.getMonitorBacklog(input());
+    final var results = detailsBacklogRatioService.getMonitorBacklog(input(true));
 
     // THEN
     assertNotNull(results);
@@ -148,8 +177,8 @@ public class DetailsBacklogServiceTest {
     final var slaTo = REQUEST_DATE.plus(24, ChronoUnit.HOURS);
 
     return new BacklogRequest(
-        TestUtils.WAREHOUSE_ID,
-        Set.of(Workflow.FBM_WMS_OUTBOUND),
+        WAREHOUSE_ID,
+        Set.of(FBM_WMS_OUTBOUND),
         Set.of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL),
         DATE_FROM,
         REQUEST_DATE,
@@ -167,7 +196,7 @@ public class DetailsBacklogServiceTest {
     final var thirdDate = DATE_FROM.plus(2, ChronoUnit.HOURS);
     final var fourthDate = REQUEST_DATE;
 
-    Mockito.when(
+    when(
         backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest())
     ).thenReturn(
         Map.of(
@@ -188,7 +217,7 @@ public class DetailsBacklogServiceTest {
     final var secondDate = DATE_FROM.plus(1, ChronoUnit.HOURS);
     final var thirdDate = DATE_FROM.plus(2, ChronoUnit.HOURS);
 
-    Mockito.when(
+    when(
         backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest())
     ).thenReturn(
         Map.of(
@@ -206,11 +235,11 @@ public class DetailsBacklogServiceTest {
     final var dateFrom = REQUEST_DATE.atZone(ZoneOffset.UTC).truncatedTo(ChronoUnit.HOURS);
     final var dateTo = DATE_TO.atZone(ZoneOffset.UTC);
 
-    Mockito.when(
+    when(
         projectionGateway.getBacklogProjection(
             BacklogProjectionRequest.builder()
-                .warehouseId(TestUtils.WAREHOUSE_ID)
-                .workflow(Workflow.FBM_WMS_OUTBOUND)
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(FBM_WMS_OUTBOUND)
                 .processName(List.of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL))
                 .currentBacklog(List.of(
                     new CurrentBacklog(WAVING, currentBacklog),
@@ -245,7 +274,7 @@ public class DetailsBacklogServiceTest {
   }
 
   private void mockFailedProjections() {
-    Mockito.when(
+    when(
         projectionGateway.getBacklogProjection(Mockito.any(BacklogProjectionRequest.class))
     ).thenThrow(RuntimeException.class);
   }

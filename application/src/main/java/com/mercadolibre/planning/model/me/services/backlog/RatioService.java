@@ -1,17 +1,17 @@
 package com.mercadolibre.planning.model.me.services.backlog;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.BATCH_SORTER;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.BATCH_SORTER;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
 import static java.util.Collections.emptyList;
 
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.entities.workflows.Step;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotosRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessName;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.PackingRatio;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.RatioInputGroup;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.RatioWeightsSource;
@@ -207,11 +207,12 @@ public class RatioService {
       final var currentHourTotal = totalUnitsProcessed.get(i);
       final var nextHourTotal = totalUnitsProcessed.get(i + 1);
 
+      final var quantity = nextHourTotal.getQuantity() - currentHourTotal.getQuantity();
       results.add(
           new ProcessedUnitsAtHourAndProcess(
               currentHourTotal.getDate(),
               currentHourTotal.getProcess(),
-              nextHourTotal.getQuantity() - currentHourTotal.getQuantity()
+              Math.max(quantity, 0)
           )
       );
     }

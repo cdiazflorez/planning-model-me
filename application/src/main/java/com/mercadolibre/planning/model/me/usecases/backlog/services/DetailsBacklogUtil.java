@@ -64,16 +64,20 @@ final class DetailsBacklogUtil {
   private static Map<Instant, List<NumberOfUnitsInAnArea>> calculateLastPhoto(final Map<Instant, List<NumberOfUnitsInAnArea>> photos,
                                                                               final Instant viewDate) {
 
-    final var lastPhotoDate = photos.keySet()
-        .stream()
-        .max(Comparator.naturalOrder())
-        .orElseThrow();
+    if (!photos.isEmpty()) {
+      final var lastPhotoDate = photos.keySet()
+          .stream()
+          .max(Comparator.naturalOrder())
+          .orElseThrow();
 
-    final var isRecentPhoto = ChronoUnit.MINUTES.between(lastPhotoDate, viewDate) <= MAX_CURRENT_PHOTO_AGE_IN_MINUTES;
-    final var isOClock = lastPhotoDate.atZone(UTC).getMinute() == 0;
+      final var isRecentPhoto = ChronoUnit.MINUTES.between(lastPhotoDate, viewDate) <= MAX_CURRENT_PHOTO_AGE_IN_MINUTES;
+      final var isOClock = lastPhotoDate.atZone(UTC).getMinute() == 0;
 
-    if (isRecentPhoto || !isOClock) {
-      return Map.of(lastPhotoDate, photos.get(lastPhotoDate));
+      if (isRecentPhoto || !isOClock) {
+        return Map.of(lastPhotoDate, photos.get(lastPhotoDate));
+      } else {
+        return Map.of(viewDate, DEFAULT_PHOTO);
+      }
     } else {
       return Map.of(viewDate, DEFAULT_PHOTO);
     }

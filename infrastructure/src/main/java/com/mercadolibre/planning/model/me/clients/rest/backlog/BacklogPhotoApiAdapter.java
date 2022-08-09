@@ -1,23 +1,30 @@
 package com.mercadolibre.planning.model.me.clients.rest.backlog;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
+import static java.time.ZoneOffset.UTC;
+import static java.util.Collections.emptyList;
 
 import com.mercadolibre.planning.model.me.entities.workflows.Area;
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.entities.workflows.Step;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotosRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Process;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
 import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
@@ -30,10 +37,13 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
   private final BacklogApiGateway backlogApiGateway;
 
   @Override
-  public Map<Process, List<BacklogPhoto>> getTotalBacklogPerProcessAndInstantDate(final BacklogRequest request) {
+  public Map<ProcessName, List<BacklogPhoto>> getTotalBacklogPerProcessAndInstantDate(final BacklogRequest request) {
     final List<Photo> photos = backlogApiGateway.getPhotos(toBacklogPhotosRequest(request));
 
-    return photos.stream()
+    final Instant lastTakenOn = photos.stream().max(Comparator.comparing(Photo::getTakenOn)).map(Photo::getTakenOn).orElse(Instant.now());
+
+    var totalBacklog = photos.stream()
+        .filter(photo -> photo.getTakenOn().atZone(UTC).getMinute() == 0 || photo.getTakenOn().equals(lastTakenOn))
         .flatMap(photo -> photo.getGroups()
             .stream()
             .collect(Collectors.toMap(this::mapGroupToProcess, Photo.Group::getTotal, Integer::sum))
@@ -50,13 +60,18 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
                 )
             )
         );
+
+    return request
+        .getProcesses().stream().collect(Collectors.toMap(Function.identity(), item -> totalBacklog.getOrDefault(item, emptyList())));
   }
 
   @Override
-  public Map<Process, List<Photo>> getBacklogDetails(final BacklogRequest request) {
+  public Map<ProcessName, List<Photo>> getBacklogDetails(final BacklogRequest request) {
     final List<Photo> photos = backlogApiGateway.getPhotos(toBacklogPhotosRequest(request));
 
     return photos.stream()
+        .sorted(Comparator.comparing(Photo::getTakenOn, Comparator.reverseOrder()))
+        .filter(photo -> photo.getTakenOn().atZone(UTC).getMinute() == 0 || photos.get(0).equals(photo))
         .map(this::mappingToProcessByPhoto)
         .map(Map::entrySet).flatMap(Set::stream)
         .collect(
@@ -66,7 +81,7 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
         );
   }
 
-  private Map<Process, Photo> mappingToProcessByPhoto(final Photo photo) {
+  private Map<ProcessName, Photo> mappingToProcessByPhoto(final Photo photo) {
     return photo.getGroups()
         .stream()
         .collect(
@@ -82,16 +97,16 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
         );
   }
 
-  private Process mappingToProcess(final Step step, final String area) {
-    Process process;
+  private ProcessName mappingToProcess(final Step step, final String area) {
+    ProcessName process;
     if (Step.TO_PACK == step) {
       if (Area.PW.getName().equalsIgnoreCase(area)) {
-        process = Process.PACKING_WALL;
+        process = PACKING_WALL;
       } else {
-        process = Process.PACKING;
+        process = PACKING;
       }
     } else {
-      process = Process.getProcessByStep(step);
+      process = ProcessName.getProcessByStep(step);
     }
 
     return process;
@@ -110,21 +125,21 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
         steps,
         request.getDateInFrom(),
         request.getDateInTo(),
-        request.getSlaFrom(),
-        request.getSlaTo(),
+        request.getSlaFrom() != null ? request.getSlaFrom().truncatedTo(ChronoUnit.SECONDS) : request.getSlaFrom(),
+        request.getSlaTo() != null ? request.getSlaTo().truncatedTo(ChronoUnit.SECONDS) : request.getSlaTo(),
         request.getGroupBy(),
         request.getDateFrom(),
         request.getDateTo()
     );
   }
 
-  private Set<Step> processesToSteps(final Set<Process> processes) {
+  private Set<Step> processesToSteps(final Set<ProcessName> processes) {
     return processes.stream()
-        .map(Process::getStep)
+        .map(ProcessName::getStep)
         .collect(Collectors.toSet());
   }
 
-  private Process mapGroupToProcess(final Photo.Group group) {
+  private ProcessName mapGroupToProcess(final Photo.Group group) {
     final Step step = group.getGroupValue(STEP).map(Step::valueOf).orElse(null);
     final String area = group.getGroupValue(AREA).orElse(null);
     return mappingToProcess(step, area);
@@ -132,7 +147,7 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
 
   @Value
   private static class QuantityAtProcessPhoto {
-    Process process;
+    ProcessName process;
 
     Instant takenOn;
 
