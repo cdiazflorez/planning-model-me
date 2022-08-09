@@ -448,12 +448,18 @@ public class SimulationControllerTest {
   }
 
   private String mockValidateSimulationRequest() throws JSONException {
-    return new JSONObject().put("warehouse_id", WAREHOUSE_ID).put("simulations", new JSONArray().put(
-        new JSONObject().put("process_name", "global")
-            .put("entities", new JSONArray().put(new JSONObject().put("type", "max_capacity")
-                                                     .put("values", new JSONArray().put(
-                                                         new JSONObject().put("date",
-                                                                              "2020-07-27T10:00:00Z")
-                                                             .put("quantity", 1))))))).toString();
+        return new JSONObject()
+                .put("warehouse_id", WAREHOUSE_ID)
+                .put("simulations", new JSONArray().put(new JSONObject()
+                        .put("process_name", "global")
+                        .put("entities", new JSONArray().put(new JSONObject()
+                                .put("type", "max_capacity")
+                                .put("values", new JSONArray().put(new JSONObject()
+                                        .put("date", "2020-07-27T10:00:00Z")
+                                        .put("quantity", 1)
+                                ))
+                        ))
+                ))
+                .toString();
   }
 }
