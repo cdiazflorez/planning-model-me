@@ -4,11 +4,11 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_BATCH_SORTER;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_WALL;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_BATCH_SORTER_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_WALL_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.BATCH_SORTER;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PACKING;
@@ -100,11 +100,11 @@ class RepsForecastSheetParserTest {
     assertEquals(42.00, forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
     assertEquals(33.69, forecastSheetDtoMap.get(MULTI_BATCH_DISTRIBUTION));
     assertEquals(24.31, forecastSheetDtoMap.get(MULTI_ORDER_DISTRIBUTION));
-    assertEquals(80.00, forecastSheetDtoMap.get(OUTBOUND_PICKING));
-    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_BATCH_SORTER));
-    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_WALL_IN));
-    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_PACKING));
-    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_PACKING_WALL));
+    assertEquals(80.00, forecastSheetDtoMap.get(OUTBOUND_PICKING_PRODUCTIVITY));
+    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_BATCH_SORTER_PRODUCTIVITY));
+    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_WALL_IN_PRODUCTIVITY));
+    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_PACKING_PRODUCTIVITY));
+    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_PACKING_WALL_PRODUCTIVITY));
   }
 
   private void assertBacklogLimits(final ForecastSheetDto forecastSheetDto) {

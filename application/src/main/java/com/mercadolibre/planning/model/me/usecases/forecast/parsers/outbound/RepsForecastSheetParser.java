@@ -7,11 +7,11 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_BATCH_SORTER;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_WALL;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_BATCH_SORTER_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_WALL_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
@@ -86,7 +86,12 @@ public class RepsForecastSheetParser implements SheetParser {
 
     final RepsDistributionDto repsDistributionDto = getProcessingDistribution(config, sheet);
 
-    final List<PolyvalentProductivity> polyvalentProductivities = getPolyvalentProductivity(sheet);
+    final Map<String, Double> productivityPolyvalenceByProcessName =
+        getPolyvalentProductivity(sheet).stream()
+            .collect(
+                Collectors.toMap(
+                    PolyvalentProductivity::getProcessName,
+                    PolyvalentProductivity::getProductivity));
 
     return new ForecastSheetDto(
         sheet.getSheetName(),
@@ -102,42 +107,31 @@ public class RepsForecastSheetParser implements SheetParser {
                 MULTI_ORDER_DISTRIBUTION,
                 getDoubleValueAt(sheet, WAREHOUSE_ID_ROW, MULTI_ORDER_COLUMN)),
             Map.entry(
-                OUTBOUND_PICKING,
-                getProductivityPolyvalenceByProcessName(
-                    polyvalentProductivities, ForecastProductivityProcessName.PICKING.getName())),
+                OUTBOUND_PICKING_PRODUCTIVITY,
+                productivityPolyvalenceByProcessName.get(
+                    ForecastProductivityProcessName.PICKING.getName())),
             Map.entry(
-                OUTBOUND_BATCH_SORTER,
-                getProductivityPolyvalenceByProcessName(
-                    polyvalentProductivities,
+                OUTBOUND_BATCH_SORTER_PRODUCTIVITY,
+                productivityPolyvalenceByProcessName.get(
                     ForecastProductivityProcessName.BATCH_SORTER.getName())),
             Map.entry(
-                OUTBOUND_WALL_IN,
-                getProductivityPolyvalenceByProcessName(
-                    polyvalentProductivities, ForecastProductivityProcessName.WALL_IN.getName())),
+                OUTBOUND_WALL_IN_PRODUCTIVITY,
+                productivityPolyvalenceByProcessName.get(
+                    ForecastProductivityProcessName.WALL_IN.getName())),
             Map.entry(
-                OUTBOUND_PACKING,
-                getProductivityPolyvalenceByProcessName(
-                    polyvalentProductivities, ForecastProductivityProcessName.PACKING.getName())),
+                OUTBOUND_PACKING_PRODUCTIVITY,
+                productivityPolyvalenceByProcessName.get(
+                    ForecastProductivityProcessName.PACKING.getName())),
             Map.entry(
-                OUTBOUND_PACKING_WALL,
-                getProductivityPolyvalenceByProcessName(
-                    polyvalentProductivities,
+                OUTBOUND_PACKING_WALL_PRODUCTIVITY,
+                productivityPolyvalenceByProcessName.get(
                     ForecastProductivityProcessName.PACKING_WALL.getName())),
             Map.entry(PROCESSING_DISTRIBUTION, repsDistributionDto.getProcessingDistributions()),
             Map.entry(HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet)),
-            Map.entry(POLYVALENT_PRODUCTIVITY, polyvalentProductivities),
+            Map.entry(POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet)),
             Map.entry(HEADCOUNT_PRODUCTIVITY, repsDistributionDto.getHeadcountProductivities()),
             Map.entry(
                 BACKLOG_LIMITS, GenerateBacklogLimitUtil.generateBacklogLimitBody(config, sheet))));
-  }
-
-  private double getProductivityPolyvalenceByProcessName(
-      final List<PolyvalentProductivity> polyvalentProductivities, final String name) {
-    return polyvalentProductivities.stream()
-        .filter(polyvalentProductivity -> polyvalentProductivity.getProcessName().equals(name))
-        .mapToDouble(PolyvalentProductivity::getProductivity)
-        .findFirst()
-        .orElse(0.0);
   }
 
   private void validateIfWarehouseIdIsCorrect(String warehouseId, MeliSheet sheet) {
