@@ -158,31 +158,30 @@ public class RepsForecastSheetParser implements SheetParser {
   private RepsDistributionDto getProcessingDistribution(
       final LogisticCenterConfiguration config, final MeliSheet sheet) {
     // Columns
-    final List<ProcessingDistribution> processingDistributions = new ArrayList<>();
-    ForecastProcessName.stream()
-        .forEach(
-            forecastProcessName ->
-                forecastProcessName
-                    .getProcessTypes()
-                    .forEach(
-                        forecastProcessType ->
-                            processingDistributions.add(
+    final List<ProcessingDistribution> processingDistributions =
+        ForecastProcessName.stream()
+            .flatMap(
+                forecastProcessName ->
+                    forecastProcessName.getProcessTypes().stream()
+                        .map(
+                            forecastProcessType ->
                                 new ProcessingDistribution(
                                     forecastProcessType.toString(),
                                     forecastProcessType.getMetricUnit().getName(),
                                     forecastProcessName.toString(),
-                                    new ArrayList<>()))));
+                                    new ArrayList<>())))
+            .collect(Collectors.toList());
 
-    final List<HeadcountProductivity> headcountProductivities = new ArrayList<>();
-    ForecastProductivityProcessName.stream()
-        .forEach(
-            processName ->
-                headcountProductivities.add(
+    final List<HeadcountProductivity> headcountProductivities =
+        ForecastProductivityProcessName.stream()
+            .map(
+                processName ->
                     new HeadcountProductivity(
                         processName.name(),
                         MetricUnit.UNITS_PER_HOUR.getName(),
                         DEFAULT_ABILITY_LEVEL,
-                        new ArrayList<>())));
+                        new ArrayList<>()))
+            .collect(Collectors.toList());
 
     final ZoneId zoneId = config.getZoneId();
 
