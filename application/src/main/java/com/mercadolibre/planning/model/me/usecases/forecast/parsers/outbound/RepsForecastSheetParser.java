@@ -11,8 +11,8 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_WALL;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueAt;
@@ -194,7 +194,6 @@ public class RepsForecastSheetParser implements SheetParser {
       processingDistributions.forEach(
           processingDistribution -> {
             final int columnIndex = getColumnIndex(processingDistribution);
-
             processingDistribution
                 .getData()
                 .add(
@@ -208,7 +207,6 @@ public class RepsForecastSheetParser implements SheetParser {
             final int columnIndex =
                 ForecastProcessName.from(headcountProductivity.getProcessName()).getStartingColumn()
                     + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET;
-
             headcountProductivity
                 .getData()
                 .add(
