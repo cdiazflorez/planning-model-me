@@ -5,8 +5,11 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.CARRY_OVER;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.PROCESSED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
@@ -37,6 +40,8 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -96,6 +101,20 @@ public class PickingDetailsBacklogServiceTest {
         TestUtils.USER_ID,
         false
     );
+  }
+
+  @ParameterizedTest
+  @EnumSource(names = {"PICKING"})
+  void testCanProvider(final ProcessName processName) {
+    var result = service.canProvide(processName);
+    assertTrue(result);
+  }
+
+  @ParameterizedTest
+  @EnumSource(names = {"PACKING", "PACKING_WALL"})
+  void testCantProvider(final ProcessName processName) {
+    var result = service.canProvide(processName);
+    assertFalse(result);
   }
 
   @Test
