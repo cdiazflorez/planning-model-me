@@ -4,6 +4,11 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MONO_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.MULTI_ORDER_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_BATCH_SORTER_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PACKING_WALL_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.BATCH_SORTER;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PACKING;
@@ -44,15 +49,18 @@ class RepsForecastSheetParserTest {
 
   private static final String VALID_FILE_PATH = "outbound_forecast.xlsx";
 
-  private static final String VALID_FILE_WITH_UNUSED_CONTENT_PATH = "outbound_forecast_invalid_content_in_unused_columns.xlsx";
+  private static final String VALID_FILE_WITH_UNUSED_CONTENT_PATH =
+      "outbound_forecast_invalid_content_in_unused_columns.xlsx";
 
   private static final String INVALID_DATE_PATH = "outbound_forecast_invalid_date.xlsx";
 
   private static final String INVALID_WEEK_PATH = "outbound_forecast_invalid_week.xlsx";
 
-  private static final String LIMITS_OUT_OF_BOUND_PATH = "outbound_forecast_backlog_limits_out_of_bound.xlsx";
+  private static final String LIMITS_OUT_OF_BOUND_PATH =
+      "outbound_forecast_backlog_limits_out_of_bound.xlsx";
 
-  private static final LogisticCenterConfiguration CONF = new LogisticCenterConfiguration(TimeZone.getDefault());
+  private static final LogisticCenterConfiguration CONF =
+      new LogisticCenterConfiguration(TimeZone.getDefault());
 
   private final RepsForecastSheetParser repsForecastSheetParser = new RepsForecastSheetParser();
 
@@ -92,6 +100,11 @@ class RepsForecastSheetParserTest {
     assertEquals(42.00, forecastSheetDtoMap.get(MONO_ORDER_DISTRIBUTION));
     assertEquals(33.69, forecastSheetDtoMap.get(MULTI_BATCH_DISTRIBUTION));
     assertEquals(24.31, forecastSheetDtoMap.get(MULTI_ORDER_DISTRIBUTION));
+    assertEquals(80.00, forecastSheetDtoMap.get(OUTBOUND_PICKING_PRODUCTIVITY));
+    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_BATCH_SORTER_PRODUCTIVITY));
+    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_WALL_IN_PRODUCTIVITY));
+    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_PACKING_PRODUCTIVITY));
+    assertEquals(100.00, forecastSheetDtoMap.get(OUTBOUND_PACKING_WALL_PRODUCTIVITY));
   }
 
   private void assertBacklogLimits(final ForecastSheetDto forecastSheetDto) {
@@ -116,15 +129,15 @@ class RepsForecastSheetParserTest {
     assertBacklogLimitValues(limits.get(11), BACKLOG_UPPER_LIMIT, PACKING_WALL, -1);
   }
 
-  private void assertBacklogLimitValues(final BacklogLimit limit,
-                                        final ForecastProcessType type,
-                                        final ForecastProcessName process,
-                                        final int quantity) {
+  private void assertBacklogLimitValues(
+      final BacklogLimit limit,
+      final ForecastProcessType type,
+      final ForecastProcessName process,
+      final int quantity) {
 
     assertEquals(type, limit.getType());
     assertEquals(process, limit.getProcessName());
-    limit.getData()
-        .forEach(data -> assertEquals(quantity, data.getQuantity()));
+    limit.getData().forEach(data -> assertEquals(quantity, data.getQuantity()));
   }
 
   @Test
@@ -134,11 +147,11 @@ class RepsForecastSheetParserTest {
     // a sheet with waving upper limit out of bounds (F12)
     final var sheet = getMeliSheetFrom(WORKERS.getName(), LIMITS_OUT_OF_BOUND_PATH);
 
-    //WHEN
-    final var exception = assertThrows(
-        ForecastParsingException.class,
-        () -> repsForecastSheetParser.parse(WAREHOUSE_ID, sheet, CONF)
-    );
+    // WHEN
+    final var exception =
+        assertThrows(
+            ForecastParsingException.class,
+            () -> repsForecastSheetParser.parse(WAREHOUSE_ID, sheet, CONF));
 
     // THEN
     final var message = exception.getMessage();
@@ -154,9 +167,9 @@ class RepsForecastSheetParserTest {
     final var sheet = getMeliSheetFrom(WORKERS.getName(), VALID_FILE_PATH);
 
     // WHEN - THEN
-    assertThrows(UnmatchedWarehouseException.class,
-        () -> repsForecastSheetParser.parse(INCORRECT_WAREHOUSE_ID, sheet, CONF)
-    );
+    assertThrows(
+        UnmatchedWarehouseException.class,
+        () -> repsForecastSheetParser.parse(INCORRECT_WAREHOUSE_ID, sheet, CONF));
   }
 
   @Test
@@ -167,10 +180,10 @@ class RepsForecastSheetParserTest {
     final var sheet = getMeliSheetFrom(WORKERS.getName(), INVALID_DATE_PATH);
 
     // WHEN - THEN
-    final var exception = assertThrows(
-        ForecastParsingException.class,
-        () -> repsForecastSheetParser.parse(WAREHOUSE_ID, sheet, CONF)
-    );
+    final var exception =
+        assertThrows(
+            ForecastParsingException.class,
+            () -> repsForecastSheetParser.parse(WAREHOUSE_ID, sheet, CONF));
 
     // THEN
     final var message = exception.getMessage();
@@ -185,15 +198,14 @@ class RepsForecastSheetParserTest {
     final var sheet = getMeliSheetFrom(WORKERS.getName(), INVALID_WEEK_PATH);
 
     // WHEN - THEN
-    final var exception = assertThrows(
-        ForecastParsingException.class,
-        () -> repsForecastSheetParser.parse(WAREHOUSE_ID, sheet, CONF)
-    );
+    final var exception =
+        assertThrows(
+            ForecastParsingException.class,
+            () -> repsForecastSheetParser.parse(WAREHOUSE_ID, sheet, CONF));
 
     // THEN
     final var message = exception.getMessage();
     assertNotNull(exception.getMessage());
     assertTrue(message.contains("Week"));
   }
-
 }

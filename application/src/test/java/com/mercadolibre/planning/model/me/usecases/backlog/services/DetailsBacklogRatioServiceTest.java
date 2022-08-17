@@ -12,9 +12,12 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
@@ -35,6 +38,8 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -77,6 +82,20 @@ public class DetailsBacklogRatioServiceTest {
         USER_ID,
         hasWall
     );
+  }
+
+  @ParameterizedTest
+  @EnumSource(names = {"BATCH_SORTER", "PACKING"})
+  void testCanProvider(final ProcessName processName) {
+    var result = detailsBacklogRatioService.canProvide(processName);
+    assertTrue(result);
+  }
+
+  @ParameterizedTest
+  @EnumSource(names = {"PICKING", "PACKING_WALL"})
+  void testCantProvider(final ProcessName processName) {
+    var result = detailsBacklogRatioService.canProvide(processName);
+    assertFalse(result);
   }
 
   @Test
