@@ -47,6 +47,7 @@ public class OutboundUnitClient extends HttpClient implements BacklogGateway {
         return Workflow.FBM_WMS_OUTBOUND == workflow;
     }
 
+    @Trace
     @Override
     public ProcessBacklog getUnitBacklog(final UnitProcessBacklogInput input) {
         final Map<String, String> defaultParams = defaultParams();

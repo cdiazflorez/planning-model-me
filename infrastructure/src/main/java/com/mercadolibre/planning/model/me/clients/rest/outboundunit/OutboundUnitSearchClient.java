@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.gateways.outboundunit.UnitSearchGateway;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
+import com.newrelic.api.agent.Trace;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -50,6 +51,7 @@ public class OutboundUnitSearchClient extends HttpClient implements UnitSearchGa
         this.objectMapper = objectMapper;
     }
 
+    @Trace
     @Override
     public List<Backlog> getSalesByCpt(final BacklogFilters filters) {
         final UnitSearchReportAggregationRequest request =
