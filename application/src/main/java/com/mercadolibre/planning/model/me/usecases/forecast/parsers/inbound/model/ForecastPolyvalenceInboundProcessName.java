@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model;
 
+import java.util.Locale;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,7 +15,7 @@ public enum ForecastPolyvalenceInboundProcessName {
   private final int columnIndex;
 
   public String getName() {
-    return name().toLowerCase();
+    return name().toLowerCase(Locale.ENGLISH);
   }
 
   public static Stream<ForecastPolyvalenceInboundProcessName> stream() {
