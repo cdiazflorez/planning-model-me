@@ -12,6 +12,7 @@ import com.mercadolibre.planning.model.me.gateways.staffing.dtos.request.MetricR
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.MetricResponse;
 import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingResponse;
 import com.mercadolibre.restclient.MeliRestClient;
+import com.newrelic.api.agent.Trace;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +27,7 @@ public class StaffingApiClient extends HttpClient implements StaffingGateway {
     super(client, STAFFING.name());
   }
 
+  @Trace
   @Override
   public StaffingResponse getStaffing(final String logisticCenter) {
     final HttpRequest request = HttpRequest.builder()
@@ -38,6 +40,7 @@ public class StaffingApiClient extends HttpClient implements StaffingGateway {
     }));
   }
 
+  @Trace
   @Override
   public MetricResponse getMetricsByName(String logisticCenter, String metricName, MetricRequest metricRequest) {
     final Map<String, String> params = new LinkedHashMap<>();

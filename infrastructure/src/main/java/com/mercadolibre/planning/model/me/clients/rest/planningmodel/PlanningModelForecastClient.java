@@ -12,6 +12,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PostForeca
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
+import com.newrelic.api.agent.Trace;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +33,7 @@ public class PlanningModelForecastClient extends HttpClient
         this.objectMapper = objectMapper;
     }
 
+    @Trace
     @Override
     public PostForecastResponse postForecast(final Workflow workflow, final Forecast forecastDto) {
         final HttpRequest request = HttpRequest.builder()

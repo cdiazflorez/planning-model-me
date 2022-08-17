@@ -8,6 +8,7 @@ import com.mercadolibre.planning.model.me.clients.rest.logisticcenter.response.L
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.restclient.MeliRestClient;
+import com.newrelic.api.agent.Trace;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,7 @@ public class LogisticCenterClient extends HttpClient implements LogisticCenterGa
         super(restClient, RestPool.LOGISTIC_CENTER.name());
     }
 
+    @Trace
     public LogisticCenterConfiguration getConfiguration(final String warehouseId) {
         final HttpRequest request = HttpRequest.builder()
                 .url(String.format(URL, warehouseId))
