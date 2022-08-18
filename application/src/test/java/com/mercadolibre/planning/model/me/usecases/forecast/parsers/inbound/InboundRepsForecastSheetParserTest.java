@@ -99,7 +99,7 @@ class InboundRepsForecastSheetParserTest {
   }
 
   @Test
-  @DisplayName("Excel With Errors")
+  @DisplayName("Excel With Errors in cells")
   void errors() {
     // GIVEN
     final MeliSheet repsSheet = getMeliSheetFrom(parser.name(), ERRONEOUS_FILE_PATH);
@@ -108,8 +108,12 @@ class InboundRepsForecastSheetParserTest {
     final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
         () -> parser.parse("ARBA01", repsSheet, CONF));
 
+    final ForecastParsingException exceptionWarehouse = assertThrows(ForecastParsingException.class,
+        () -> parser.parse("ARTW01", repsSheet, CONF));
+
     // THEN
     assertNotNull(exception.getMessage());
+    assertNotNull(exceptionWarehouse.getMessage());
 
     final String expectedMessage =
         "Error while trying to parse cell (D15) for sheet: Plan de staffing.\n"
@@ -117,6 +121,6 @@ class InboundRepsForecastSheetParserTest {
             + "Error while trying to parse cell (J32) for sheet: Plan de staffing";
 
     assertEquals(expectedMessage, exception.getMessage());
+    assertTrue(exceptionWarehouse.getMessage().contains("Warehouse id ARTW01 is different from warehouse id ARBA01 from file.\n"));
   }
-
 }

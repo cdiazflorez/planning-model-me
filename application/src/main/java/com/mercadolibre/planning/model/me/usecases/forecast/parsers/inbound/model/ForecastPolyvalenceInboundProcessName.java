@@ -14,11 +14,11 @@ public enum ForecastPolyvalenceInboundProcessName {
 
   private final int columnIndex;
 
-  public String getName() {
-    return name().toLowerCase(Locale.ENGLISH);
-  }
-
   public static Stream<ForecastPolyvalenceInboundProcessName> stream() {
     return Stream.of(ForecastPolyvalenceInboundProcessName.values());
+  }
+
+  public String getName() {
+    return name().toLowerCase(Locale.ENGLISH);
   }
 }
