@@ -21,4 +21,4 @@ public enum ForecastPolyvalenceInboundProcessName {
   public static Stream<ForecastPolyvalenceInboundProcessName> stream() {
     return Stream.of(ForecastPolyvalenceInboundProcessName.values());
   }
-  }
+}

@@ -101,12 +101,12 @@ public class InboundRepsForecastSheetParser implements SheetParser {
 
     checkForErrors(requestWarehouseId, warehouseId, week, rows);
 
-    final Map<String, Double> productivityPolyvalences =
-        getProductivityPolyvalences(sheet).stream()
-            .collect(
-                Collectors.toMap(
-                    PolyvalentProductivity::getProcessName,
-                    PolyvalentProductivity::getProductivity));
+    final Map<String, Double> productivityPolyvalences = getProductivityPolyvalences(sheet).stream()
+        .collect(
+            Collectors.toMap(
+                PolyvalentProductivity::getProcessName,
+                PolyvalentProductivity::getProductivity)
+        );
 
     return new ForecastSheetDto(sheet.getSheetName(), Map.of(
         WEEK, week,
@@ -125,9 +125,9 @@ public class InboundRepsForecastSheetParser implements SheetParser {
                               final List<RepsRow> rows) {
 
     final List<String> errorMessages = Stream.of(
-        hasInvalidWarehouseId(requestWarehouseId, warehouseId),
-        hasInvalidWeek(week),
-        hasMissingValues(rows)
+        getInvalidWarehouseId(requestWarehouseId, warehouseId),
+        getInvalidWeek(week),
+        getMissingValues(rows)
     )
         .filter(Optional::isPresent)
         .map(Optional::get)
@@ -140,7 +140,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
     }
   }
 
-  private Optional<String> hasMissingValues(final List<RepsRow> rows) {
+  private Optional<String> getMissingValues(final List<RepsRow> rows) {
     final List<String> errors = rows.stream()
         .flatMap(row -> Stream.of(
             row.getDate(),
@@ -169,13 +169,13 @@ public class InboundRepsForecastSheetParser implements SheetParser {
     return errors.isEmpty() ? Optional.empty() : Optional.of(String.join(DELIMITER, errors));
   }
 
-  private Optional<String> hasInvalidWeek(final String week) {
+  private Optional<String> getInvalidWeek(final String week) {
     return week.matches(WEEK_FORMAT_REGEX)
         ? Optional.empty()
         : Optional.of("week value is malformed or missing");
   }
 
-  private Optional<String> hasInvalidWarehouseId(final String expected, final String actual) {
+  private Optional<String> getInvalidWarehouseId(final String expected, final String actual) {
     return expected.equals(actual)
         ? Optional.empty()
         : Optional.of(String.format(
