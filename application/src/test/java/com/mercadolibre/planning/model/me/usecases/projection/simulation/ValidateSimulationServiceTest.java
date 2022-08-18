@@ -63,8 +63,8 @@ public class ValidateSimulationServiceTest {
     Assertions.assertEquals(0, responseEmpty.size());
 
     response.forEach(magnitudeValidate ->
-                         magnitudeValidate.getValues()
-                             .forEach(value -> Assertions.assertFalse(value.isValid()))
+        magnitudeValidate.getValues()
+            .forEach(value -> Assertions.assertFalse(value.isValid()))
     );
   }
 
@@ -74,13 +74,13 @@ public class ValidateSimulationServiceTest {
 
   private List<MagnitudePhoto> mockGetTrajectories() {
     return List.of(MagnitudePhoto.builder().date(HOUR)
-                       .value(2000)
-                       .processName(ProcessName.PACKING)
-                       .build(),
-                   MagnitudePhoto.builder().date(HOUR)
-                       .value(2000)
-                       .processName(ProcessName.PACKING_WALL)
-                       .build()
+            .value(2000)
+            .processName(ProcessName.PACKING)
+            .build(),
+        MagnitudePhoto.builder().date(HOUR)
+            .value(2000)
+            .processName(ProcessName.PACKING_WALL)
+            .build()
     );
 
   }
@@ -91,11 +91,11 @@ public class ValidateSimulationServiceTest {
         .workflow(workflow)
         .simulations(List.of(
             new Simulation(ProcessName.GLOBAL,
-                           List.of(
-                               new SimulationEntity(MagnitudeType.THROUGHPUT,
-                                                    List.of(new QuantityByDate(HOUR, 3000))
-                               )
-                           )
+                List.of(
+                    new SimulationEntity(MagnitudeType.MAX_CAPACITY,
+                        List.of(new QuantityByDate(HOUR, 3000))
+                    )
+                )
             )
         )).build();
   }

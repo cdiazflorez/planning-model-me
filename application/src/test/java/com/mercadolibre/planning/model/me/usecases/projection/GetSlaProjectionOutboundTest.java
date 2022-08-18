@@ -8,26 +8,21 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.TOOLTIP_DATE_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.now;
-import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
@@ -44,12 +39,12 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjec
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
+import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
-import java.time.ZoneId;
+import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -67,13 +62,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class GetSlaProjectionOutboundTest {
 
   private static final List<String> STATUSES = List.of("pending", "to_route", "to_pick", "picked", "to_sort",
-                                                       "sorted", "to_group", "grouping", "grouped", "to_pack");
+      "sorted", "to_group", "grouping", "grouped", "to_pack");
 
   private static final String BA_ZONE = "America/Argentina/Buenos_Aires";
-
-  private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
-
-  private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 
   private static final TimeZone TIME_ZONE = TimeZone.getTimeZone(BA_ZONE);
 
@@ -103,7 +94,7 @@ public class GetSlaProjectionOutboundTest {
   private GetEntities getEntities;
 
   @Mock
-  private GetProjectionSummary getProjectionSummary;
+  private GetSales getSales;
 
   @Mock
   private GetSimpleDeferralProjection getSimpleDeferralProjection;
@@ -118,8 +109,7 @@ public class GetSlaProjectionOutboundTest {
     final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
 
     final List<ProcessName> processes = List.of(PACKING, PACKING_WALL);
-    final List<Integer> processingTimes = List.of(45, 240, 240, 250, 300);
-    final List<String> subtitles = List.of("45 minutos", "4 horas", "4 horas", "4 horas y 10 minutos", "5 horas");
+    final List<Integer> processingTimes = List.of(300, 250, 240, 240, 45);
 
     final GetProjectionInputDto input = GetProjectionInputDto.builder()
         .workflow(FBM_WMS_OUTBOUND)
@@ -137,25 +127,12 @@ public class GetSlaProjectionOutboundTest {
         createProjectionRequestOutbound(mockedBacklog, processes, currentUtcDateTime, utcDateTimeTo))
     ).thenReturn(mockProjections(currentUtcDateTime));
 
-    when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
-        .warehouseId(WAREHOUSE_ID)
-        .workflow(FBM_WMS_OUTBOUND)
-        .zoneId(TIME_ZONE.toZoneId())
-        .date(currentUtcDateTime)
-        .build()
-                                   )
-    )).thenReturn(mockSuggestedWaves(currentUtcDateTime, utcDateTimeTo));
+    when(getWaveSuggestion.execute(any(GetWaveSuggestionInputDto.class)))
+        .thenReturn(mockSuggestedWaves(currentUtcDateTime, utcDateTimeTo));
 
-    when(getEntities.execute(input)).thenReturn(mockComplexTable());
-    when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
-        .thenReturn(mockSimpleTable());
+    when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
 
-    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-        currentUtcDateTime,
-        mockBacklog(),
-        false,
-        emptyList())))
+    when(getSimpleDeferralProjection.execute(any(GetProjectionInput.class)))
         .thenReturn(new GetSimpleDeferralProjectionOutput(
             mockProjectionsDeferral(currentUtcDateTime),
             new LogisticCenterConfiguration(TIME_ZONE)));
@@ -174,16 +151,16 @@ public class GetSlaProjectionOutboundTest {
         new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120, true)
     ));
 
+    when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedBacklog);
+
     // When
-    final Projection projection = getSlaProjectionOutbound.execute(input);
+    final PlanningView planningView = getSlaProjectionOutbound.execute(input);
 
     // Then
-    assertEquals("Proyecciones", projection.getTitle());
-
-    assertSimpleTable(projection.getData().getSimpleTable1(), currentUtcDateTime, utcDateTimeTo);
-    assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
-    assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
-    assertChart(projection.getData().getChart(), processingTimes, subtitles);
+    assertNull(planningView.getEmptyStateMessage());
+    assertProjection(planningView.getData().getProjections(), processingTimes);
+    assertEquals(mockComplexTable(), planningView.getData().getComplexTable1());
+    assertSimpleTable(planningView.getData().getSimpleTable1(), currentUtcDateTime, utcDateTimeTo);
   }
 
   @Test
@@ -192,7 +169,6 @@ public class GetSlaProjectionOutboundTest {
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
     final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
     final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(4);
-
     final GetProjectionInputDto input = GetProjectionInputDto.builder()
         .workflow(FBM_WMS_OUTBOUND)
         .warehouseId(WAREHOUSE_ID)
@@ -221,16 +197,56 @@ public class GetSlaProjectionOutboundTest {
         new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
         new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
         new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true),
-        new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120, true)
-    ));
+        new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120, true)));
 
     // When
-    final Projection projection = getSlaProjectionOutbound.execute(input);
+    final PlanningView planningView = getSlaProjectionOutbound.execute(input);
 
     // Then
-    assertEquals("Proyecciones", projection.getTitle());
-    assertEquals(1, projection.getTabs().size());
-    assertNull(projection.getData());
+    assertNull(planningView.getData());
+  }
+
+  private void assertProjection(final List<Projection> projections,
+                                final List<Integer> processingTimes) {
+    final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
+
+    assertEquals(5, projections.size());
+
+    final Projection projection1 = projections.get(0);
+    final ZonedDateTime cpt1 = CPT_1.plusHours(3);
+    assertProjectionData(projection1, cpt1, null, processingTimes.get(0), 100);
+
+    final Projection projection2 = projections.get(1);
+    final ZonedDateTime cpt2 = CPT_2.plusHours(1);
+    final ZonedDateTime projectedEndDate2 = utcCurrentTime.plusHours(8).plusMinutes(10);
+    assertProjectionData(projection2, cpt2, projectedEndDate2, processingTimes.get(1), 180);
+
+    final Projection projection3 = projections.get(2);
+    final ZonedDateTime projectedEndDate3 = utcCurrentTime.plusHours(3).plusMinutes(25);
+    assertProjectionData(projection3, CPT_3, projectedEndDate3, processingTimes.get(2), 100);
+
+    final Projection projection4 = projections.get(3);
+    final ZonedDateTime cpt4 = CPT_4.minusHours(1);
+    final ZonedDateTime projectedEndDate4 = utcCurrentTime.plusHours(3);
+    assertProjectionData(projection4, cpt4, projectedEndDate4, processingTimes.get(3), 0);
+
+    final Projection projection5 = projections.get(4);
+    final ZonedDateTime cpt5 = CPT_5.minusHours(3);
+    final ZonedDateTime projectedEndDate5 = utcCurrentTime.plusHours(3).plusMinutes(30);
+    assertProjectionData(projection5, cpt5, projectedEndDate5, processingTimes.get(4), 0);
+  }
+
+  private void assertProjectionData(final Projection projection,
+                                    final ZonedDateTime cpt,
+                                    final ZonedDateTime projectedEndDate,
+                                    final int processingTime,
+                                    final int remainingQuantity) {
+    final Instant endDate = projectedEndDate != null ? projectedEndDate.toInstant() : null;
+
+    assertEquals(cpt.toInstant(), projection.getCpt());
+    assertEquals(processingTime, projection.getCycleTime());
+    assertEquals(remainingQuantity, projection.getRemainingQuantity());
+    assertEquals(endDate, projection.getProjectedEndDate());
   }
 
   private void assertSimpleTable(final SimpleTable simpleTable,
@@ -257,113 +273,6 @@ public class GetSlaProjectionOutboundTest {
         .format(HOUR_MINUTES_FORMATTER);
     final String expectedTitle = "Sig. hora " + nextHour;
     assertEquals(title, expectedTitle);
-  }
-
-  private void assertChart(final Chart chart,
-                           final List<Integer> processingTimes,
-                           final List<String> subtitles) {
-
-    final ZoneId zoneId = TIME_ZONE.toZoneId();
-    final List<ChartData> chartData = chart.getData();
-    final ChartData chartData1 = chartData.get(0);
-    final ChartData chartData2 = chartData.get(1);
-    final ChartData chartData3 = chartData.get(2);
-    final ChartData chartData4 = chartData.get(3);
-    final ChartData chartData5 = chartData.get(4);
-
-    assertEquals(5, chartData.size());
-    final ZonedDateTime cpt1 = convertToTimeZone(zoneId, CPT_1);
-    final ZonedDateTime projectedEndDate1 = convertToTimeZone(zoneId,
-                                                              getCurrentUtcDate()).plusHours(3).plusMinutes(30);
-
-    assertEquals(cpt1.format(DATE_SHORT_FORMATTER), chartData1.getTitle());
-    assertEquals(cpt1.format(DATE_FORMATTER), chartData1.getCpt());
-    assertEquals(projectedEndDate1.format(DATE_FORMATTER), chartData1.getProjectedEndTime());
-    assertEquals(processingTimes.get(0), chartData1.getProcessingTime().getValue());
-    assertChartTooltip(
-        chartData1.getTooltip(),
-        cpt1.format(HOUR_MINUTES_FORMATTER),
-        "-",
-        projectedEndDate1.format(TOOLTIP_DATE_FORMATTER),
-        subtitles.get(0),
-        null);
-
-    final ZonedDateTime cpt2 = convertToTimeZone(zoneId, CPT_2);
-    final ZonedDateTime projectedEndDate2 = convertToTimeZone(zoneId,
-                                                              getCurrentUtcDate()).plusHours(3);
-    assertEquals(cpt2.format(DATE_SHORT_FORMATTER), chartData2.getTitle());
-    assertEquals(cpt2.format(DATE_FORMATTER), chartData2.getCpt());
-    assertEquals(projectedEndDate2.format(DATE_FORMATTER), chartData2.getProjectedEndTime());
-    assertEquals(processingTimes.get(1), chartData2.getProcessingTime().getValue());
-    assertChartTooltip(
-        chartData2.getTooltip(),
-        cpt2.format(HOUR_MINUTES_FORMATTER),
-        "-",
-        projectedEndDate2.format(TOOLTIP_DATE_FORMATTER),
-        subtitles.get(1),
-        null);
-
-    final ZonedDateTime cpt3 = convertToTimeZone(zoneId, CPT_3);
-    final ZonedDateTime projectedEndDate3 = convertToTimeZone(zoneId,
-                                                              getCurrentUtcDate()).plusHours(3).plusMinutes(25);
-    assertEquals(cpt3.format(DATE_SHORT_FORMATTER), chartData3.getTitle());
-    assertEquals(cpt3.format(DATE_FORMATTER), chartData3.getCpt());
-    assertEquals(projectedEndDate3.format(DATE_FORMATTER), chartData3.getProjectedEndTime());
-    assertEquals(processingTimes.get(2), chartData3.getProcessingTime().getValue());
-    assertChartTooltip(
-        chartData3.getTooltip(),
-        cpt3.format(HOUR_MINUTES_FORMATTER),
-        "100",
-        projectedEndDate3.format(TOOLTIP_DATE_FORMATTER),
-        subtitles.get(2),
-        null);
-
-    final ZonedDateTime cpt4 = convertToTimeZone(zoneId, CPT_4);
-    final ZonedDateTime projectedEndDate4 = convertToTimeZone(zoneId,
-                                                              getCurrentUtcDate()).plusHours(8).plusMinutes(10);
-    assertEquals(cpt4.format(DATE_SHORT_FORMATTER), chartData4.getTitle());
-    assertEquals(cpt4.format(DATE_FORMATTER), chartData4.getCpt());
-    assertEquals(projectedEndDate4.format(DATE_FORMATTER), chartData4.getProjectedEndTime());
-    assertEquals(processingTimes.get(3), chartData4.getProcessingTime().getValue());
-    assertChartTooltip(
-        chartData4.getTooltip(),
-        cpt4.format(HOUR_MINUTES_FORMATTER),
-        "180",
-        projectedEndDate4.format(TOOLTIP_DATE_FORMATTER),
-        subtitles.get(3),
-        null);
-
-    final ZonedDateTime cpt5 = convertToTimeZone(zoneId, CPT_5);
-    final ZonedDateTime projectedEndDate5 = convertToTimeZone(zoneId,
-                                                              getCurrentUtcDate().plusDays(1));
-    assertEquals(cpt5.format(DATE_SHORT_FORMATTER), chartData5.getTitle());
-    assertEquals(cpt5.format(DATE_FORMATTER), chartData5.getCpt());
-    assertEquals(projectedEndDate5.format(DATE_FORMATTER), chartData5.getProjectedEndTime());
-    assertEquals(processingTimes.get(4), chartData5.getProcessingTime().getValue());
-    assertChartTooltip(
-        chartData5.getTooltip(),
-        cpt5.format(HOUR_MINUTES_FORMATTER),
-        "100",
-        "Excede las 24hs",
-        subtitles.get(4),
-        "Diferido");
-  }
-
-  private void assertChartTooltip(final ChartTooltip tooltip,
-                                  final String subtitle1,
-                                  final String subtitle2,
-                                  final String subtitle3,
-                                  final String subtitle4,
-                                  final String title5) {
-    assertEquals("CPT:", tooltip.getTitle1());
-    assertEquals(subtitle1, tooltip.getSubtitle1());
-    assertEquals("Desviación:", tooltip.getTitle2());
-    assertEquals(subtitle2, tooltip.getSubtitle2());
-    assertEquals("Cierre proyectado:", tooltip.getTitle3());
-    assertEquals(subtitle3, tooltip.getSubtitle3());
-    assertEquals("Cycle time:", tooltip.getTitle4());
-    assertEquals(subtitle4, tooltip.getSubtitle4());
-    assertEquals(title5, tooltip.getTitle5());
   }
 
   private ProjectionRequest createProjectionRequestOutbound(final List<Backlog> backlogs,
@@ -479,19 +388,19 @@ public class GetSlaProjectionOutboundTest {
     );
     final List<Map<String, Object>> data = List.of(
         Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MONO_ORDER_DISTRIBUTION.getTitle()),
-               "column_2", "0 uds."
+            Map.of("title", "Unidades por onda", "subtitle",
+                MONO_ORDER_DISTRIBUTION.getTitle()),
+            "column_2", "0 uds."
         ),
         Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MULTI_BATCH_DISTRIBUTION.getTitle()),
-               "column_2", "100 uds."
+            Map.of("title", "Unidades por onda", "subtitle",
+                MULTI_BATCH_DISTRIBUTION.getTitle()),
+            "column_2", "100 uds."
         ),
         Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MULTI_ORDER_DISTRIBUTION.getTitle()),
-               "column_2", "100 uds."
+            Map.of("title", "Unidades por onda", "subtitle",
+                MULTI_ORDER_DISTRIBUTION.getTitle()),
+            "column_2", "100 uds."
         )
     );
     return new SimpleTable(title, columnHeaders, data);
@@ -505,13 +414,4 @@ public class GetSlaProjectionOutboundTest {
         "title"
     );
   }
-
-  private SimpleTable mockSimpleTable() {
-    return new SimpleTable(
-        "title",
-        emptyList(),
-        emptyList()
-    );
-  }
 }
-

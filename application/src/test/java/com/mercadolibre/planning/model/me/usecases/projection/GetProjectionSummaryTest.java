@@ -23,7 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -195,7 +194,7 @@ public class GetProjectionSummaryTest {
         final ZonedDateTime currentTime = convertToTimeZone(zoneId, getCurrentUtcDate());
 
         assertEquals("Resumen de Proyección", projectionDetailsTable.getTitle());
-        assertEquals(4, projectionDetailsTable.getColumns().size());
+        assertEquals(7, projectionDetailsTable.getColumns().size());
         assertEquals(7, projectionDetailsTable.getData().size());
 
         final Map<String, Object> cpt0 = projectionDetailsTable.getData().get(6);

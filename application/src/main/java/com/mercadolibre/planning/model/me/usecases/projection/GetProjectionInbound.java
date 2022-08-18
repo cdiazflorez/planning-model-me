@@ -7,19 +7,13 @@ import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.entities.projection.Tab;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateInbound;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
-import com.mercadolibre.planning.model.me.utils.ResponseUtils;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -29,7 +23,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class GetProjectionInbound extends GetProjection {
-
   protected static final List<ProcessName> PROCESS_NAMES_INBOUND = List.of(CHECK_IN, PUT_AWAY);
 
   private static final long DAYS_TO_SHOW_LOOKBACK = 7L;
@@ -39,10 +32,10 @@ public abstract class GetProjectionInbound extends GetProjection {
   protected GetProjectionInbound(final PlanningModelGateway planningModelGateway,
                                  final LogisticCenterGateway logisticCenterGateway,
                                  final GetEntities getEntities,
-                                 final GetProjectionSummary getProjectionSummary,
-                                 final GetBacklogByDateInbound getBacklogByDateInbound) {
+                                 final GetBacklogByDateInbound getBacklogByDateInbound,
+                                 final GetSales getSales) {
 
-    super(planningModelGateway, logisticCenterGateway, getEntities, getProjectionSummary);
+    super(getSales, planningModelGateway, logisticCenterGateway, getEntities);
     this.getBacklogByDateInbound = getBacklogByDateInbound;
   }
 
@@ -92,23 +85,6 @@ public abstract class GetProjectionInbound extends GetProjection {
   }
 
   @Override
-  protected final SimpleTable getProjectionSummaryTable(final ZonedDateTime dateFromToShow,
-                                                        final ZonedDateTime dateToToShow,
-                                                        final GetProjectionInputDto input,
-                                                        final List<ProjectionResult> projectionsToShow,
-                                                        final List<Backlog> backlogsToShow) {
-    return getProjectionSummary.execute(GetProjectionSummaryInput.builder()
-                                            .workflow(input.getWorkflow())
-                                            .warehouseId(input.getWarehouseId())
-                                            .dateFrom(dateFromToShow)
-                                            .dateTo(dateToToShow)
-                                            .projections(projectionsToShow)
-                                            .backlogs(backlogsToShow)
-                                            .showDeviation(false)
-                                            .build());
-  }
-
-  @Override
   protected final SimpleTable getWaveSuggestionTable(final String warehouseID,
                                                      final Workflow workflow,
                                                      final ZoneId zoneId,
@@ -117,37 +93,7 @@ public abstract class GetProjectionInbound extends GetProjection {
   }
 
   @Override
-  protected final List<ChartData> toChartData(final List<ProjectionResult> projectionResult,
-                                              final ZoneId zoneId,
-                                              final ZonedDateTime dateTo) {
-    final boolean hasSimulatedResults = hasSimulatedResults(projectionResult);
-
-    return projectionResult.stream()
-        .map(projection -> {
-          final ZonedDateTime projectedEndDate = hasSimulatedResults
-              ? projection.getSimulatedEndDate()
-              : projection.getProjectedEndDate();
-
-          return ChartData.fromProjectionInbound(
-              convertToTimeZone(zoneId, projection.getDate()),
-              projectedEndDate == null
-                  ? null : convertToTimeZone(zoneId, projectedEndDate),
-              convertToTimeZone(zoneId, dateTo),
-              projection.getRemainingQuantity(),
-              new ProcessingTime(0, null),
-              projection.isDeferred(),
-              projection.isExpired());
-        })
-        .collect(toList());
-  }
-
-  @Override
   protected long getDatesToShowShift() {
     return DAYS_TO_SHOW_LOOKBACK;
-  }
-
-  @Override
-  protected List<Tab> createTabs() {
-    return ResponseUtils.createInboundTabs();
   }
 }

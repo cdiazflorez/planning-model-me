@@ -5,21 +5,18 @@ import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
+import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.ResultData;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.entities.projection.Tab;
-import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
 import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
 import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
-import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ErrorMessage;
-import com.mercadolibre.planning.model.me.entities.projection.simulationmode.SimulationMode;
-import com.mercadolibre.planning.model.me.entities.projection.simulationmode.Snackbar;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -31,71 +28,85 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class GetSlaProjectionTest {
+  private static final Boolean PROJECTIONS_VERSION = true;
 
-    @InjectMocks
-    private GetSlaProjection getSlaProjection;
+  private static final ZonedDateTime CURRENT_DATE = Instant.parse("2022-07-13T13:00:00Z").atZone(ZoneId.of("UTC"));
 
-    @Mock
-    private GetSlaProjectionInbound getSlaProjectionInbound;
+  @InjectMocks
+  private GetSlaProjection getSlaProjection;
 
-    @Mock
-    private GetSlaProjectionOutbound getSlaProjectionOutbound;
+  @Mock
+  private GetSlaProjectionInbound getSlaProjectionInbound;
 
-    @Test
-    public void testGetSla() {
+  @Mock
+  private GetSlaProjectionOutbound getSlaProjectionOutbound;
 
-        final GetProjectionInputDto getProjectionInputDtoInbound = GetProjectionInputDto.builder()
-                .workflow(Workflow.FBM_WMS_INBOUND)
-                .build();
+  @Test
+  public void testGetSla() {
 
-        final GetProjectionInputDto getProjectionInputDtoOutbound = GetProjectionInputDto.builder()
-                .workflow(Workflow.FBM_WMS_OUTBOUND)
-                .build();
+    final GetProjectionInputDto getProjectionInputDtoInbound = GetProjectionInputDto.builder()
+        .workflow(Workflow.FBM_WMS_INBOUND)
+        .build();
 
-        final Projection projectionMock = mockProjection();
+    final GetProjectionInputDto getProjectionInputDtoOutbound = GetProjectionInputDto.builder()
+        .workflow(Workflow.FBM_WMS_OUTBOUND)
+        .build();
 
-        when(getSlaProjectionInbound.execute(getProjectionInputDtoInbound))
-                .thenReturn(projectionMock);
+    final PlanningView planningViewMock = mockPlanningView();
 
-        when(getSlaProjectionOutbound.execute(getProjectionInputDtoOutbound))
-                .thenReturn(projectionMock);
+    when(getSlaProjectionInbound.execute(getProjectionInputDtoInbound))
+        .thenReturn(planningViewMock);
 
-        final Projection projectionInbound = getSlaProjection.execute(getProjectionInputDtoInbound);
-        final Projection projectionOutbound = getSlaProjection.execute(getProjectionInputDtoOutbound);
+    when(getSlaProjectionOutbound.execute(getProjectionInputDtoOutbound))
+        .thenReturn(planningViewMock);
 
-        assertEquals(projectionMock, projectionInbound);
-        assertEquals(projectionMock, projectionOutbound);
+    final PlanningView planningViewInbound = getSlaProjection.execute(getProjectionInputDtoInbound);
+    final PlanningView planningViewOutbound = getSlaProjection.execute(getProjectionInputDtoOutbound);
+
+    assertEquals(planningViewMock, planningViewInbound);
+    assertEquals(planningViewMock, planningViewOutbound);
 
 
-    }
+  }
 
+  private PlanningView mockPlanningView() {
+    final Date[] dates = {new Date("", "", true)};
 
-    private Projection mockProjection() {
-        final Date[] dates = {new Date("", "", true)};
+    final List<Map<String, Object>> map = List.of(Map.of("", new Object()));
+    final List<ColumnHeader> columnHeader = List.of(new ColumnHeader("", "", ""));
 
-        final List<Map<String, Object>> map = List.of(Map.of("", new Object()));
-        final List<ColumnHeader> columnHeader = List.of(new ColumnHeader("", "", ""));
+    final SimpleTable simpleTable = new SimpleTable("", columnHeader, map);
+    List<Map<String, Content>> content = List.of(Map.of("",
+        new Content("", ZonedDateTime.now(), Map.of("", ""), "", true)));
 
-        final SimpleTable simpleTable = new SimpleTable("", columnHeader, map);
-        List<Map<String, Content>> content = List.of(Map.of("",
-                new Content("", ZonedDateTime.now(), Map.of("", ""), "", true)));
+    final ComplexTable complexTable = new ComplexTable(columnHeader,
+        List.of(
+            new com.mercadolibre.planning.model.me.entities.projection.complextable.Data(
+                "", "", true, content)),
+        new ComplexTableAction(",", "", ""), "");
 
-        final ComplexTable complexTable = new ComplexTable(columnHeader,
-                List.of(
-                        new com.mercadolibre.planning.model.me.entities.projection.complextable.Data(
-                                "", "", true, content)),
-                new ComplexTableAction(",", "", ""), "");
+    final List<Projection> projections = List.of(
+        new Projection(
+            Instant.parse("2022-07-13T13:00:00Z"),
+            Instant.parse("2022-07-12T14:00:00Z"),
+            21,
+            0L,
+            0,
+            0,
+            false,
+            false,
+            0.0,
+            null,
+            null,
+            0,
+            null)
+    );
 
-        final Chart chart = new Chart(List.of(
-                ChartData.builder().build()
-        ));
-
-        return new Projection("title",
-                new DateSelector("title Date", dates),
-                new Data(simpleTable, complexTable, simpleTable, chart),
-                List.of(new Tab("", "")),
-                new SimulationMode("", new Snackbar("", "", ""),
-                        new ErrorMessage("", ""))
-        );
-    }
+    return PlanningView.builder()
+        .isNewVersion(PROJECTIONS_VERSION)
+        .currentDate(CURRENT_DATE)
+        .dateSelector(new DateSelector("title Date", dates))
+        .data(new ResultData(simpleTable, complexTable, projections))
+        .build();
+  }
 }

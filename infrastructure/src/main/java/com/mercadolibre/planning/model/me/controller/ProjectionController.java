@@ -6,7 +6,7 @@ import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
 
 import com.mercadolibre.planning.model.me.controller.editor.ProcessNameEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
-import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -38,20 +38,23 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 @RequestMapping("/planning/model/middleend/workflows/{workflow}")
 public class ProjectionController {
-
   private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
       Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_PROJECTION),
       Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_PROJECTION));
 
   private final AuthorizeUser authorizeUser;
-  private final GetSlaProjection slaProjection;
-  private final GetDeferralProjection deferralProjection;
+
+  private final GetSlaProjection getSlaProjection;
+
+  private final GetDeferralProjection getDeferralProjections;
+
   private final DatadogMetricService datadogMetricService;
+
   private final RequestClock requestClock;
 
   @Trace
   @GetMapping("/projections/cpt")
-  public ResponseEntity<Projection> getCptProjection(
+  public ResponseEntity<PlanningView> getCptProjection(
       @PathVariable final Workflow workflow,
       @RequestParam("caller.id") @NotNull final Long callerId,
       @RequestParam final String warehouseId,
@@ -61,18 +64,18 @@ public class ProjectionController {
 
     datadogMetricService.trackProjection(warehouseId, workflow, "CPT");
 
-    return ResponseEntity.of(of(slaProjection.execute(GetProjectionInputDto.builder()
-                                                             .workflow(workflow)
-                                                             .warehouseId(warehouseId)
-                                                             .date(date)
-                                                             .requestDate(requestClock.now())
-                                                             .build()))
+        return ResponseEntity.of(of(getSlaProjection.execute(GetProjectionInputDto.builder()
+        .workflow(workflow)
+        .warehouseId(warehouseId)
+        .date(date)
+        .requestDate(requestClock.now())
+        .build()))
     );
   }
 
   @Trace
   @GetMapping("/projections/deferral")
-  public ResponseEntity<Projection> getDeferralProjection(
+  public ResponseEntity<PlanningView> getDeferralProjection(
       @PathVariable final Workflow workflow,
       @RequestParam("caller.id") @NotNull final Long callerId,
       @RequestParam final String warehouseId,
@@ -83,7 +86,7 @@ public class ProjectionController {
 
     datadogMetricService.trackProjection(warehouseId, workflow, "deferral");
 
-    return ResponseEntity.of(of(deferralProjection.execute(new GetProjectionInput(
+    return ResponseEntity.of(of(getDeferralProjections.execute(new GetProjectionInput(
         warehouseId,
         workflow,
         date,

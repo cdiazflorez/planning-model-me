@@ -5,13 +5,10 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
-import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.DATE_FORMATTER;
-import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.DATE_SHORT_FORMATTER;
 import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.TIME_ZONE;
 import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.mockBacklog;
 import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.mockComplexTable;
 import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.mockPlanningBacklog;
-import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.mockSimpleTable;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.util.stream.Collectors.toList;
@@ -21,9 +18,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -36,9 +32,9 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateInbound;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
-import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
+import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -64,7 +60,7 @@ public class RunSimulationInboundTest {
   private GetEntities getEntities;
 
   @Mock
-  private GetProjectionSummary getProjectionSummary;
+  private GetSales getSales;
 
   @Mock
   private GetBacklogByDateInbound getBacklog;
@@ -73,13 +69,17 @@ public class RunSimulationInboundTest {
   public void testExecuteInbound() {
     // Given
     final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
-    final ZonedDateTime currentTime = utcCurrentTime.withZoneSameInstant(TIME_ZONE.toZoneId());
 
     final List<Backlog> mockedBacklog = mockBacklog(utcCurrentTime);
     final List<Backlog> mockedPlanningBacklog = mockPlanningBacklog(utcCurrentTime);
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+
+    when(planningModelGateway.runSimulation(createSimulationRequest(mockedPlanningBacklog, utcCurrentTime)))
+        .thenReturn(mockProjections(utcCurrentTime));
+
+    when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
 
     when(getBacklog.execute(
         new GetBacklogByDateDto(
@@ -90,80 +90,65 @@ public class RunSimulationInboundTest {
         )))
         .thenReturn(mockedBacklog);
 
-    when(planningModelGateway.runSimulation(createSimulationRequest(mockedPlanningBacklog, utcCurrentTime)))
-        .thenReturn(mockProjections(utcCurrentTime));
-
-    when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
-
-    when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
-        .thenReturn(mockSimpleTable());
+    when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedPlanningBacklog);
 
     // When
-    final Projection projection = runSimulationInbound.execute(GetProjectionInputDto.builder()
-                                                                   .date(utcCurrentTime)
-                                                                   .workflow(FBM_WMS_INBOUND)
-                                                                   .warehouseId(WAREHOUSE_ID)
-                                                                   .simulations(
-                                                                       List.of(new Simulation(PUT_AWAY, List.of(new SimulationEntity(
-                                                                           HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
-                                                                       )))))
-                                                                   .requestDate(Instant.now())
-                                                                   .build()
+    final PlanningView planningView = runSimulationInbound.execute(GetProjectionInputDto.builder()
+        .date(utcCurrentTime)
+        .workflow(FBM_WMS_INBOUND)
+        .warehouseId(WAREHOUSE_ID)
+        .simulations(List.of(new Simulation(PUT_AWAY, List.of(new SimulationEntity(
+            HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
+        )))))
+        .requestDate(Instant.now())
+        .build()
     );
+
 
     // Then
-    assertNull(projection.getEmptyStateMessage());
+    assertNull(planningView.getEmptyStateMessage());
 
-    assertEquals("Proyecciones", projection.getTitle());
+    assertEquals(5, planningView.getData().getProjections().size());
+    assertEquals(mockComplexTable(), planningView.getData().getComplexTable1());
+    assertProjection(planningView.getData().getProjections());
 
-    final Chart chart = projection.getData().getChart();
-    final List<ChartData> chartData = chart.getData();
+  }
 
-    assertEquals(5, chartData.size());
+  private void assertProjection(final List<Projection> projections) {
+    final ZonedDateTime currentTime = getCurrentUtcDate();
 
-    final ChartData chartData1 = chartData.get(0);
-    assertEquals(currentTime.plusHours(4).format(DATE_SHORT_FORMATTER),
-                 chartData1.getTitle());
-    assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
-    assertEquals(currentTime.plusHours(2).plusMinutes(35).format(DATE_FORMATTER),
-                 chartData1.getProjectedEndTime());
+    final Projection projection1 = projections.get(0);
+    final ZonedDateTime cpt1 = currentTime.plusHours(7);
+    assertProjectionData(projection1, cpt1, null);
 
-    final ChartData chartData2 = chartData.get(1);
-    assertEquals(currentTime.plusHours(5).format(DATE_SHORT_FORMATTER),
-                 chartData2.getTitle());
-    assertEquals(currentTime.plusHours(5).format(DATE_FORMATTER), chartData2.getCpt());
-    assertEquals(currentTime.plusHours(3).format(DATE_FORMATTER),
-                 chartData2.getProjectedEndTime());
+    final Projection projection2 = projections.get(1);
+    final ZonedDateTime cpt2 = currentTime.plusHours(6);
+    final ZonedDateTime projectedEndDate2 = currentTime.plusHours(8).plusMinutes(10);
+    assertProjectionData(projection2, cpt2, projectedEndDate2);
 
-    final ChartData chartData3 = chartData.get(2);
-    assertEquals(
-        currentTime.plusHours(5).plusMinutes(30)
-            .format(DATE_SHORT_FORMATTER),
-        chartData3.getTitle()
-    );
-    assertEquals(currentTime.plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
-                 chartData3.getCpt());
-    assertEquals(currentTime.plusHours(3).plusMinutes(20).format(DATE_FORMATTER),
-                 chartData3.getProjectedEndTime());
+    final Projection projection3 = projections.get(2);
+    final ZonedDateTime cpt3 = currentTime.plusHours(5).plusMinutes(30);
+    final ZonedDateTime projectedEndDate3 = currentTime.plusHours(3).plusMinutes(25);
+    assertProjectionData(projection3, cpt3, projectedEndDate3);
 
-    final ChartData chartData4 = chartData.get(3);
-    assertEquals(currentTime.plusHours(6).format(DATE_SHORT_FORMATTER),
-                 chartData4.getTitle()
-    );
-    assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
-    assertEquals(currentTime.plusHours(8).plusMinutes(11).format(DATE_FORMATTER),
-                 chartData4.getProjectedEndTime());
+    final Projection projection4 = projections.get(3);
+    final ZonedDateTime cpt4 = currentTime.plusHours(5);
+    final ZonedDateTime projectedEndDate4 = currentTime.plusHours(3);
+    assertProjectionData(projection4, cpt4, projectedEndDate4);
 
-    final ChartData chartData5 = chartData.get(4);
-    assertEquals(currentTime.plusHours(7).format(DATE_SHORT_FORMATTER),
-                 chartData5.getTitle()
-    );
-    assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData5.getCpt());
-    assertEquals(currentTime.plusDays(1).format(DATE_FORMATTER),
-                 chartData5.getProjectedEndTime());
+    final Projection projection5 = projections.get(4);
+    final ZonedDateTime cpt5 = currentTime.plusHours(4);
+    final ZonedDateTime projectedEndDate5 = currentTime.plusHours(2).plusMinutes(30);
+    assertProjectionData(projection5, cpt5, projectedEndDate5);
+  }
 
-    assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
-    assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
+  private void assertProjectionData(final Projection projection,
+                                    final ZonedDateTime cpt,
+                                    final ZonedDateTime projectedEndDate) {
+    final Instant projectEnd = projectedEndDate != null ? projectedEndDate.toInstant() : null;
+
+    assertEquals(cpt.toInstant(), projection.getCpt());
+    assertEquals(projectEnd, projection.getProjectedEndDate());
   }
 
   private List<ProjectionResult> mockProjections(final ZonedDateTime utcCurrentTime) {
@@ -213,10 +198,10 @@ public class RunSimulationInboundTest {
         .dateFrom(currentTime)
         .dateTo(currentTime.plusDays(4))
         .backlog(backlogs.stream()
-                     .map(backlog -> new QuantityByDate(
-                         backlog.getDate(),
-                         backlog.getQuantity()))
-                     .collect(toList()))
+            .map(backlog -> new QuantityByDate(
+                backlog.getDate(),
+                backlog.getQuantity()))
+            .collect(toList()))
         .simulations(List.of(new Simulation(PUT_AWAY, List.of(new SimulationEntity(
             HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
         )))))

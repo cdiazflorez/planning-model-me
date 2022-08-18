@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
+
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -7,52 +9,48 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateInbound;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-
-import javax.inject.Named;
-
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import java.time.ZonedDateTime;
 import java.util.List;
-
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
+import javax.inject.Named;
 
 @Named
 public class GetSlaProjectionInbound extends GetProjectionInbound {
+  protected GetSlaProjectionInbound(final PlanningModelGateway planningModelGateway,
+                                    final LogisticCenterGateway logisticCenterGateway,
+                                    final GetEntities getEntities,
+                                    final GetBacklogByDateInbound getBacklogByDateInbound,
+                                    final GetSales getSales) {
 
-    protected GetSlaProjectionInbound(final PlanningModelGateway planningModelGateway,
-                                      final LogisticCenterGateway logisticCenterGateway,
-                                      final GetEntities getEntities,
-                                      final GetProjectionSummary getProjectionSummary,
-                                      final GetBacklogByDateInbound getBacklogByDateInbound) {
+    super(planningModelGateway, logisticCenterGateway, getEntities, getBacklogByDateInbound, getSales);
+  }
 
-        super(planningModelGateway, logisticCenterGateway, getEntities, getProjectionSummary, getBacklogByDateInbound);
-    }
+  @Override
+  protected List<ProjectionResult> getProjection(final GetProjectionInputDto input,
+                                                 final ZonedDateTime dateFrom,
+                                                 final ZonedDateTime dateTo,
+                                                 final List<Backlog> backlogs,
+                                                 final String timeZone) {
 
-    @Override
-    protected List<ProjectionResult> getProjection(final GetProjectionInputDto input,
-                                                   final ZonedDateTime dateFrom,
-                                                   final ZonedDateTime dateTo,
-                                                   final List<Backlog> backlogs,
-                                                   final String timeZone) {
+    List<ProjectionResult> projectionResults = planningModelGateway.runProjection(ProjectionRequest.builder()
+        .warehouseId(input.getWarehouseId())
+        .workflow(input.getWorkflow())
+        .processName(PROCESS_NAMES_INBOUND)
+        .type(CPT)
+        .dateFrom(dateFrom)
+        .dateTo(dateTo)
+        .backlog(backlogs)
+        .userId(input.getUserId())
+        .applyDeviation(true)
+        .timeZone(timeZone)
+        .build());
 
-        List<ProjectionResult> projectionResults = planningModelGateway.runProjection(ProjectionRequest.builder()
-                .warehouseId(input.getWarehouseId())
-                .workflow(input.getWorkflow())
-                .processName(PROCESS_NAMES_INBOUND)
-                .type(CPT)
-                .dateFrom(dateFrom)
-                .dateTo(dateTo)
-                .backlog(backlogs)
-                .userId(input.getUserId())
-                .applyDeviation(true)
-                .timeZone(timeZone)
-                .build());
+    projectionResults.forEach(projectionResult ->
+        projectionResult.setExpired(
+            projectionResult.getDate()
+                .isBefore(ZonedDateTime.now()
+                    .withZoneSameInstant(projectionResult.getDate().getZone()))));
 
-        projectionResults.forEach(projectionResult ->
-                projectionResult.setExpired(
-                        projectionResult.getDate()
-                                .isBefore(ZonedDateTime.now()
-                                        .withZoneSameInstant(projectionResult.getDate().getZone()))));
-
-        return projectionResults;
-    }
+    return projectionResults;
+  }
 }
