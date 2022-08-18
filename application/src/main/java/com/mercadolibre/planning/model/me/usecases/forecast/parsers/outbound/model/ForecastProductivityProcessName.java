@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model;
 
+import java.util.Locale;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +21,6 @@ public enum ForecastProductivityProcessName {
   }
 
   public String getName() {
-    return name().toLowerCase();
+    return name().toLowerCase(Locale.ENGLISH);
   }
 }

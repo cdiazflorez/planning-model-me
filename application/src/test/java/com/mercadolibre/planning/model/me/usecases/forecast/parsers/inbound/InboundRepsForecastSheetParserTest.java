@@ -99,7 +99,7 @@ class InboundRepsForecastSheetParserTest {
   }
 
   @Test
-  @DisplayName("Excel With Errors in cells")
+  @DisplayName("Excel With Errors")
   void errors() {
     // GIVEN
     final MeliSheet repsSheet = getMeliSheetFrom(parser.name(), ERRONEOUS_FILE_PATH);
