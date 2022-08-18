@@ -278,7 +278,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
   }
 
   private List<PolyvalentProductivity> getProductivityPolyvalences(final MeliSheet sheet) {
-    return Arrays.stream(ForecastPolyvalenceInboundProcessName.values())
+    return ForecastPolyvalenceInboundProcessName.stream()
         .map(
             productivityProcess ->
                 PolyvalentProductivity.builder()
