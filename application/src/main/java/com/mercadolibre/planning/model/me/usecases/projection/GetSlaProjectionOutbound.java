@@ -11,6 +11,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -20,23 +21,21 @@ import javax.inject.Named;
  * Implements method for outbound SLAs projection.
  *
  * <p>
- *   Its responsibility is to call the run simulation method on planning gateway.
+ * Its responsibility is to call the run simulation method on planning gateway.
  * </p>
  */
 @Named
 public class GetSlaProjectionOutbound extends GetProjectionOutbound {
-
-
   protected GetSlaProjectionOutbound(final PlanningModelGateway planningModelGateway,
                                      final LogisticCenterGateway logisticCenterGateway,
                                      final GetWaveSuggestion getWaveSuggestion,
                                      final GetEntities getEntities,
-                                     final GetProjectionSummary getProjectionSummary,
                                      final GetSimpleDeferralProjection getSimpleDeferralProjection,
-                                     final BacklogApiGateway backlogGateway) {
+                                     final BacklogApiGateway backlogGateway,
+                                     final GetSales getSales) {
 
-    super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities, getProjectionSummary,
-        getSimpleDeferralProjection, backlogGateway);
+    super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities, getSimpleDeferralProjection, backlogGateway,
+        getSales);
   }
 
 

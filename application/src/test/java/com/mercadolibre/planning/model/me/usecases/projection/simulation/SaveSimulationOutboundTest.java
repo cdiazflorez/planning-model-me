@@ -9,24 +9,24 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Car
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.mockPlanningBacklog;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
-import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
@@ -42,16 +42,16 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
-import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionSummary;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionSummaryInput;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
+import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
+import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -71,10 +71,6 @@ public class SaveSimulationOutboundTest {
 
   private static final String BA_ZONE = "America/Argentina/Buenos_Aires";
 
-  private static final DateTimeFormatter DATE_SHORT_FORMATTER = ofPattern("dd/MM HH:mm");
-
-  private static final DateTimeFormatter DATE_FORMATTER = ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-
   private static final TimeZone TIME_ZONE = TimeZone.getTimeZone(BA_ZONE);
 
   @InjectMocks
@@ -93,7 +89,7 @@ public class SaveSimulationOutboundTest {
   private GetEntities getEntities;
 
   @Mock
-  private GetProjectionSummary getProjectionSummary;
+  private GetSales getSales;
 
   @Mock
   private GetSimpleDeferralProjection getSimpleDeferralProjection;
@@ -111,9 +107,10 @@ public class SaveSimulationOutboundTest {
     final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
 
     final List<Backlog> mockedBacklog = mockBacklog();
+    final List<Backlog> mockedPlanningBacklog = mockPlanningBacklog(utcCurrentTime);
 
     final List<String> steps = List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
-                                       "grouping", "grouped", "to_pack");
+        "grouping", "grouped", "to_pack");
 
     final List<ProcessName> processes = List.of(PACKING, PACKING_WALL);
 
@@ -125,17 +122,15 @@ public class SaveSimulationOutboundTest {
         .thenReturn(mockProjections(utcCurrentTime));
 
     when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
-        .warehouseId(WAREHOUSE_ID)
-        .workflow(FBM_WMS_OUTBOUND)
-        .zoneId(TIME_ZONE.toZoneId())
-        .date(utcDateTimeFrom)
-        .build()
-                                   )
+            .warehouseId(WAREHOUSE_ID)
+            .workflow(FBM_WMS_OUTBOUND)
+            .zoneId(TIME_ZONE.toZoneId())
+            .date(utcDateTimeFrom)
+            .build()
+        )
     )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
 
     when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
-    when(getProjectionSummary.execute(any(GetProjectionSummaryInput.class)))
-        .thenReturn(mockSimpleTable());
 
     when(getSimpleDeferralProjection.execute(new GetProjectionInput(
         WAREHOUSE_ID, FBM_WMS_OUTBOUND,
@@ -160,84 +155,63 @@ public class SaveSimulationOutboundTest {
         new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(3).toString()), 300, true)
     ));
 
+    when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedPlanningBacklog);
+
     // When
-    final Projection projection = saveSimulationOutbound.execute(GetProjectionInputDto.builder()
-                                                                     .date(utcDateTimeFrom)
-                                                                     .workflow(FBM_WMS_OUTBOUND)
-                                                                     .warehouseId(WAREHOUSE_ID)
-                                                                     .simulations(List.of(new Simulation(PICKING,
-                                                                                                         List.of(new SimulationEntity(
-                                                                                                             HEADCOUNT, List.of(
-                                                                                                             new QuantityByDate(
-                                                                                                                 utcCurrentTime, 20))
-                                                                                                         )))))
-                                                                     .requestDate(utcCurrentTime.toInstant())
-                                                                     .build()
+    final PlanningView planningView = saveSimulationOutbound.execute(GetProjectionInputDto.builder()
+        .date(utcDateTimeFrom)
+        .workflow(FBM_WMS_OUTBOUND)
+        .warehouseId(WAREHOUSE_ID)
+        .simulations(List.of(new Simulation(PICKING,
+            List.of(new SimulationEntity(
+                HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
+            )))))
+        .requestDate(utcCurrentTime.toInstant())
+        .build()
     );
+
 
     // Then
-    final ZonedDateTime currentTime = utcCurrentTime.withZoneSameInstant(TIME_ZONE.toZoneId());
-    assertEquals("Proyecciones", projection.getTitle());
-
-    final Chart chart = projection.getData().getChart();
-    final List<ChartData> chartData = chart.getData();
-
-    thenTestCharDataIsOk(currentTime, chartData);
-
-    assertEquals(mockComplexTable(), projection.getData().getComplexTable1());
-    assertEquals(mockSimpleTable(), projection.getData().getSimpleTable2());
+    assertNull(planningView.getEmptyStateMessage());
+    assertEquals(mockComplexTable(), planningView.getData().getComplexTable1());
+    assertProjection(planningView.getData().getProjections());
   }
 
-  private void thenTestCharDataIsOk(final ZonedDateTime currentTime,
-                                    final List<ChartData> chartData) {
-    assertEquals(5, chartData.size());
+  private void assertProjection(final List<Projection> projections) {
+    final ZonedDateTime currentTime = getCurrentUtcDate();
 
-    final ChartData chartData1 = chartData.get(0);
-    assertEquals(currentTime.plusHours(4).format(DATE_SHORT_FORMATTER),
-                 chartData1.getTitle());
-    assertEquals(currentTime.plusHours(4).format(DATE_FORMATTER), chartData1.getCpt());
-    assertEquals(currentTime.plusHours(2).plusMinutes(35).format(DATE_FORMATTER),
-                 chartData1.getProjectedEndTime());
-    assertEquals(240, chartData1.getProcessingTime().getValue());
+    final Projection projection1 = projections.get(0);
+    final ZonedDateTime cpt1 = currentTime.plusHours(8);
+    assertProjectionData(projection1, cpt1, null);
 
-    final ChartData chartData2 = chartData.get(1);
-    assertEquals(currentTime.plusHours(7).format(DATE_SHORT_FORMATTER),
-                 chartData2.getTitle());
-    assertEquals(currentTime.plusHours(7).format(DATE_FORMATTER), chartData2.getCpt());
-    assertEquals(currentTime.plusHours(3).format(DATE_FORMATTER),
-                 chartData2.getProjectedEndTime());
-    assertEquals(240, chartData2.getProcessingTime().getValue());
+    final Projection projection2 = projections.get(1);
+    final ZonedDateTime cpt2 = currentTime.plusHours(7);
+    final ZonedDateTime projectedEndDate2 = currentTime.plusHours(3);
+    assertProjectionData(projection2, cpt2, projectedEndDate2);
 
-    final ChartData chartData3 = chartData.get(2);
-    assertEquals(
-        currentTime.plusHours(5).plusMinutes(30)
-            .format(DATE_SHORT_FORMATTER),
-        chartData3.getTitle()
-    );
-    assertEquals(currentTime.plusHours(5).plusMinutes(30).format(DATE_FORMATTER),
-                 chartData3.getCpt());
-    assertEquals(currentTime.plusHours(3).plusMinutes(20).format(DATE_FORMATTER),
-                 chartData3.getProjectedEndTime());
-    assertEquals(240, chartData3.getProcessingTime().getValue());
+    final Projection projection3 = projections.get(2);
+    final ZonedDateTime cpt3 = currentTime.plusHours(6);
+    final ZonedDateTime projectedEndDate3 = currentTime.plusHours(8).plusMinutes(10);
+    assertProjectionData(projection3, cpt3, projectedEndDate3);
 
-    final ChartData chartData4 = chartData.get(3);
-    assertEquals(currentTime.plusHours(6).format(DATE_SHORT_FORMATTER),
-                 chartData4.getTitle()
-    );
-    assertEquals(currentTime.plusHours(6).format(DATE_FORMATTER), chartData4.getCpt());
-    assertEquals(currentTime.plusHours(8).plusMinutes(11).format(DATE_FORMATTER),
-                 chartData4.getProjectedEndTime());
-    assertEquals(240, chartData4.getProcessingTime().getValue());
+    final Projection projection4 = projections.get(3);
+    final ZonedDateTime cpt4 = currentTime.plusHours(5).plusMinutes(30);
+    final ZonedDateTime projectedEndDate4 = currentTime.plusHours(3).plusMinutes(25);
+    assertProjectionData(projection4, cpt4, projectedEndDate4);
 
-    final ChartData chartData5 = chartData.get(4);
-    assertEquals(currentTime.plusHours(8).format(DATE_SHORT_FORMATTER),
-                 chartData5.getTitle()
-    );
-    assertEquals(currentTime.plusHours(8).format(DATE_FORMATTER), chartData5.getCpt());
-    assertEquals(currentTime.plusDays(1).plusHours(1).format(DATE_FORMATTER),
-                 chartData5.getProjectedEndTime());
+    final Projection projection5 = projections.get(4);
+    final ZonedDateTime cpt5 = currentTime.plusHours(4);
+    final ZonedDateTime projectedEndDate5 = currentTime.plusHours(2).plusMinutes(30);
+    assertProjectionData(projection5, cpt5, projectedEndDate5);
+  }
 
-    assertEquals(300, chartData5.getProcessingTime().getValue());
+  private void assertProjectionData(final Projection projection,
+                                    final ZonedDateTime cpt,
+                                    final ZonedDateTime projectedEndDate) {
+    final Instant projectEnd = projectedEndDate != null ? projectedEndDate.toInstant() : null;
+
+    assertEquals(cpt.toInstant(), projection.getCpt());
+    assertEquals(projectEnd, projection.getProjectedEndDate());
   }
 
   private List<ProjectionResult> mockProjections(ZonedDateTime utcCurrentTime) {
@@ -288,14 +262,14 @@ public class SaveSimulationOutboundTest {
         .dateFrom(currentTime)
         .dateTo(currentTime.plusDays(4))
         .backlog(backlogs.stream()
-                     .map(backlog -> new QuantityByDate(
-                         backlog.getDate(),
-                         backlog.getQuantity()))
-                     .collect(toList()))
+            .map(backlog -> new QuantityByDate(
+                backlog.getDate(),
+                backlog.getQuantity()))
+            .collect(toList()))
         .simulations(List.of(new Simulation(PICKING,
-                                            List.of(new SimulationEntity(
-                                                HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
-                                            )))))
+            List.of(new SimulationEntity(
+                HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
+            )))))
         .applyDeviation(true)
         .timeZone("America/Argentina/Buenos_Aires")
         .build();
@@ -329,19 +303,19 @@ public class SaveSimulationOutboundTest {
     );
     final List<Map<String, Object>> data = List.of(
         Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MONO_ORDER_DISTRIBUTION.getTitle()),
-               "column_2", "0 uds."
+            Map.of("title", "Unidades por onda", "subtitle",
+                MONO_ORDER_DISTRIBUTION.getTitle()),
+            "column_2", "0 uds."
         ),
         Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MULTI_BATCH_DISTRIBUTION.getTitle()),
-               "column_2", "100 uds."
+            Map.of("title", "Unidades por onda", "subtitle",
+                MULTI_BATCH_DISTRIBUTION.getTitle()),
+            "column_2", "100 uds."
         ),
         Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MULTI_ORDER_DISTRIBUTION.getTitle()),
-               "column_2", "100 uds."
+            Map.of("title", "Unidades por onda", "subtitle",
+                MULTI_ORDER_DISTRIBUTION.getTitle()),
+            "column_2", "100 uds."
         )
     );
     return new SimpleTable(title, columnHeaders, data);
@@ -353,14 +327,6 @@ public class SaveSimulationOutboundTest {
         emptyList(),
         new ComplexTableAction("applyLabel", "cancelLabel", "editLabel"),
         "title"
-    );
-  }
-
-  private SimpleTable mockSimpleTable() {
-    return new SimpleTable(
-        "title",
-        emptyList(),
-        emptyList()
     );
   }
 }

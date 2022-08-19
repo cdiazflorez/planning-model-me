@@ -78,7 +78,9 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
+import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantity;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
+import com.mercadolibre.planning.model.me.gateways.projection.deferral.DeferralProjectionStatus;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
@@ -1255,6 +1257,42 @@ class PlanningModelApiClientTest extends BaseClientTest {
     client.deferralSaveSimulation(new SaveSimulationsRequest(FBM_WMS_OUTBOUND, WAREHOUSE_ID, emptyList(), 1L));
 
   }
+
+    @Test
+    public void deferralStatusProjectionTest() throws JSONException {
+
+        //GIVEN
+        final JSONArray apiResponse = new JSONArray()
+            .put(new JSONObject()
+                .put("sla", "2022-07-27T09:00:00Z")
+                .put("deferred_at", "2022-07-27T08:00:00Z")
+                .put("deferred_units", "5")
+                .put("deferral_status", "deferred_cap_max")
+            );
+
+        MockResponse.builder()
+            .withMethod(POST)
+            .withURL(BASE_URL + format(RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND, "cpts/deferral_time"))
+            .withStatusCode(OK.value())
+            .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+            .withResponseBody(apiResponse.toString())
+            .build();
+
+        List<DeferralProjectionStatus> response = client.getDeferralProjectionStatus(
+            Instant.parse("2022-07-27T00:00:00Z"),
+            Instant.parse("2022-07-27T23:00:00Z"),
+            FBM_WMS_OUTBOUND,
+            List.of(PICKING, PACKING),
+            List.of(new BacklogQuantity(Instant.parse("2022-07-27T09:00:00Z"), 3000)),
+            WAREHOUSE_ID,
+            "America/Buenos_Aires",
+            true,
+            emptyList());
+
+        assertNotNull(response);
+        assertEquals(1, response.size());
+
+    }
 
   @Nested
   @DisplayName("Test save deviation")

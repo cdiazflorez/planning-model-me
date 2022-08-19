@@ -1,25 +1,28 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
-import static com.mercadolibre.planning.model.me.utils.ResponseUtils.simulationMode;
 import static java.time.ZoneOffset.UTC;
+import static java.time.ZonedDateTime.now;
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.Data;
+import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.ResultData;
 import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
-import com.mercadolibre.planning.model.me.entities.projection.Tab;
-import com.mercadolibre.planning.model.me.entities.projection.chart.Chart;
-import com.mercadolibre.planning.model.me.entities.projection.chart.ChartData;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionDataInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
+import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
+import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -29,11 +32,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Implements template method for SLA projection and simulation use cases. */
+/**
+ * Implements template method for SLA projection and simulation use cases.
+ */
 @Slf4j
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class GetProjection implements UseCase<GetProjectionInputDto, Projection> {
-
+public abstract class GetProjection implements UseCase<GetProjectionInputDto, PlanningView> {
   protected static final int PROJECTION_DAYS = 4;
 
   protected static final int PROJECTION_DAYS_TO_SHOW = 1;
@@ -42,7 +46,11 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
   private static final long DAYS_TO_SHOW_LOOKBACK = 0L;
 
-  private static final String PROJECTIONS_TITLE = "Proyecciones";
+  private static final Boolean PROJECTIONS_VERSION = true;
+
+  private static final int SELLING_PERIOD_HOURS = 28;
+
+  protected final GetSales getSales;
 
   protected final PlanningModelGateway planningModelGateway;
 
@@ -50,18 +58,18 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
   protected final GetEntities getEntities;
 
-  protected final GetProjectionSummary getProjectionSummary;
-
   @Override
-  public Projection execute(final GetProjectionInputDto input) {
-
+  public PlanningView execute(final GetProjectionInputDto input) {
     final Instant requestDate = input.getRequestDate();
+
     final Instant dateFromToProject = requestDate.truncatedTo(ChronoUnit.HOURS);
+
     final Instant dateToToProject = dateFromToProject.plus(PROJECTION_DAYS, ChronoUnit.DAYS);
 
     final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(input.getWarehouseId());
 
     final boolean isFirstDate = isFirstDate(input.getDate(), requestDate);
+
     final ZonedDateTime dateFromToShow = isFirstDate
         ? ZonedDateTime.ofInstant(requestDate, UTC).minusDays(getDatesToShowShift())
         : input.getDate();
@@ -97,13 +105,14 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
       final List<ProjectionResult> projectionsToShow =
           filterProjectionsInRange(dateFromToShow, dateToToShow, projectionsSla);
 
-      return new Projection(
-          PROJECTIONS_TITLE,
-          getDateSelector(
+      return PlanningView.builder()
+          .isNewVersion(PROJECTIONS_VERSION)
+          .currentDate(now().withZoneSameInstant(UTC).truncatedTo(ChronoUnit.SECONDS))
+          .dateSelector(getDateSelector(
               ZonedDateTime.ofInstant(requestDate, config.getZoneId()),
               dateFromToShow,
-              SELECTOR_DAYS_TO_SHOW),
-          new Data(
+              SELECTOR_DAYS_TO_SHOW))
+          .data(new ResultData(
               getWaveSuggestionTable(
                   input.getWarehouseId(),
                   input.getWorkflow(),
@@ -111,28 +120,23 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                   dateFromToShow
               ),
               getEntitiesTable(input),
-              getProjectionSummaryTable(
+              getProjectionData(input,
                   dateFromToShow,
                   dateToToShow,
-                  input,
-                  projectionsToShow,
-                  backlogsToShow
-              ),
-              getChart(projectionsToShow, config.getZoneId(), dateToToShow)),
-          createTabs(),
-          simulationMode);
+                  backlogsToShow,
+                  projectionsToShow)))
+          .build();
 
     } catch (RuntimeException ex) {
-      return new Projection(
-          PROJECTIONS_TITLE,
-          getDateSelector(
+      return PlanningView.builder()
+          .isNewVersion(PROJECTIONS_VERSION)
+          .currentDate(now().withZoneSameInstant(UTC).truncatedTo(ChronoUnit.SECONDS))
+          .dateSelector(getDateSelector(
               ZonedDateTime.ofInstant(requestDate, config.getZoneId()),
               dateFromToShow,
-              SELECTOR_DAYS_TO_SHOW),
-          ex.getMessage(),
-          createTabs(),
-          simulationMode
-      );
+              SELECTOR_DAYS_TO_SHOW))
+          .emptyStateMessage(ex.getMessage())
+          .build();
     }
   }
 
@@ -148,12 +152,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
 
   protected ComplexTable getEntitiesTable(final GetProjectionInputDto input) {
     return getEntities.execute(input);
-  }
-
-  protected Chart getChart(final List<ProjectionResult> projectionResult,
-                           final ZoneId zoneId,
-                           final ZonedDateTime dateTo) {
-    return new Chart(toChartData(projectionResult, zoneId, dateTo));
   }
 
   private List<ProjectionResult> filterProjectionsInRange(final ZonedDateTime dateFrom,
@@ -180,27 +178,69 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
     return projectionsSla;
   }
 
-  protected final boolean hasSimulatedResults(final List<ProjectionResult> projectionResults) {
-    return projectionResults.stream()
-        .anyMatch(p -> p.getSimulatedEndDate() != null);
+  private List<Projection> getProjectionData(final GetProjectionInputDto input,
+                                             final ZonedDateTime dateFrom,
+                                             final ZonedDateTime dateTo,
+                                             final List<Backlog> backlogs,
+                                             final List<ProjectionResult> projection) {
+
+    final List<Backlog> sales = getRealBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
+
+    final List<PlanningDistributionResponse> planningDistribution = getForecastedBacklog(input.getWarehouseId(),
+        input.getWorkflow(), dateFrom, dateTo);
+
+    return ProjectionDataMapper.map(GetProjectionDataInput.builder()
+        .workflow(input.getWorkflow())
+        .warehouseId(input.getWarehouseId())
+        .dateFrom(dateFrom)
+        .dateTo(dateTo)
+        .sales(sales)
+        .planningDistribution(planningDistribution)
+        .projections(projection)
+        .backlogs(backlogs)
+        .showDeviation(true)
+        .build());
+  }
+
+  private List<PlanningDistributionResponse> getForecastedBacklog(final String warehouseId,
+                                                                  final Workflow workflow,
+                                                                  final ZonedDateTime dateFrom,
+                                                                  final ZonedDateTime dateTo) {
+
+    return planningModelGateway.getPlanningDistribution(PlanningDistributionRequest.builder()
+        .warehouseId(warehouseId)
+        .workflow(workflow)
+        .dateInFrom(dateFrom.minusHours(SELLING_PERIOD_HOURS))
+        .dateInTo(dateFrom)
+        .dateOutFrom(dateFrom)
+        .dateOutTo(dateTo)
+        .applyDeviation(true)
+        .build());
+  }
+
+  private List<Backlog> getRealBacklog(final String warehouseId,
+                                       final Workflow workflow,
+                                       final ZonedDateTime dateFrom,
+                                       final ZonedDateTime dateTo) {
+    return getSales.execute(GetSalesInputDto.builder()
+        .dateCreatedFrom(dateFrom.minusHours(SELLING_PERIOD_HOURS))
+        .dateCreatedTo(dateFrom)
+        .dateOutFrom(dateFrom)
+        .dateOutTo(dateTo)
+        .workflow(workflow)
+        .warehouseId(warehouseId)
+        .fromDS(true)
+        .build());
   }
 
   protected long getDatesToShowShift() {
     return DAYS_TO_SHOW_LOOKBACK;
   }
 
-  protected abstract List<Tab> createTabs();
-
   protected abstract SimpleTable getWaveSuggestionTable(String warehouseID,
                                                         Workflow workflow,
                                                         ZoneId zoneId,
                                                         ZonedDateTime date);
-
-  protected abstract SimpleTable getProjectionSummaryTable(ZonedDateTime dateFromToShow,
-                                                           ZonedDateTime dateToToShow,
-                                                           GetProjectionInputDto input,
-                                                           List<ProjectionResult> projectionsToShow,
-                                                           List<Backlog> backlogsToShow);
 
   protected abstract List<ProjectionResult> getProjection(GetProjectionInputDto input,
                                                           ZonedDateTime dateFrom,
@@ -214,10 +254,4 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pr
                                               Instant dateToToProject,
                                               ZoneId zoneId,
                                               Instant requestDate);
-
-
-  protected abstract List<ChartData> toChartData(List<ProjectionResult> projectionResult,
-                                                 ZoneId zoneId,
-                                                 ZonedDateTime dateTo);
-
 }

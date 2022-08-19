@@ -21,6 +21,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.request.BacklogProjectionInAreasRequest;
+import com.mercadolibre.planning.model.me.clients.rest.planningmodel.request.DeferralProjectionStatusRequest;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.EntityResponse;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.ProductivityResponse;
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
@@ -46,6 +47,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveSimulationsRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
@@ -56,8 +58,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
+import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantity;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
+import com.mercadolibre.planning.model.me.gateways.projection.deferral.DeferralProjectionStatus;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
@@ -386,6 +390,40 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     send(request, response -> response.getData(new TypeReference<>() {
     }));
   }
+
+  @Trace
+  @Override
+  public List<DeferralProjectionStatus> getDeferralProjectionStatus(
+      Instant dateFrom,
+      Instant dateTo,
+      Workflow workflow,
+      List<ProcessName> processes,
+      List<BacklogQuantity> backlogs,
+      String wareHouseId,
+      String timeZone,
+      boolean applyDeviation,
+      List<Simulation> simulations) {
+
+    final var deferralProjectionStatusRequest = new DeferralProjectionStatusRequest(
+        dateFrom,
+        dateTo,
+        processes,
+        backlogs,
+        wareHouseId,
+        timeZone,
+        applyDeviation,
+        simulations);
+
+
+    final HttpRequest request = HttpRequest.builder()
+        .url(format(PROJECTION_URL, workflow, "cpts/deferral_time"))
+        .POST(requestSupplier(deferralProjectionStatusRequest))
+        .acceptedHttpStatuses(Set.of(OK))
+        .build();
+
+    return send(request, response -> response.getData(new TypeReference<>() {
+        }));
+    }
 
   @Trace
   @Override

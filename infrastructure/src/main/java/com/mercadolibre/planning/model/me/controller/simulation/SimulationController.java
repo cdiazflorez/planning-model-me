@@ -10,7 +10,7 @@ import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimulationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.SaveSimulationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.SimulationRequest;
-import com.mercadolibre.planning.model.me.entities.projection.Projection;
+import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.ValidatedMagnitude;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
@@ -29,7 +29,6 @@ import com.newrelic.api.agent.Trace;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -48,132 +47,131 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 @RequestMapping("/planning/model/middleend/workflows/{workflow}/simulations")
 public class SimulationController {
+  private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
+      Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_SIMULATION),
+      Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_SIMULATION));
+  private static final String CALLER_ID = "caller.id";
+  private final RunSimulation runSimulation;
+  private final SaveSimulation saveSimulation;
+  private final AuthorizeUser authorizeUser;
+  private final DatadogMetricService datadogMetricService;
+  private final RequestClock requestClock;
+  private final ValidateSimulationService validateSimulationService;
+  private final GetDeferralProjection getDeferralProjection;
+  private final WriteSimulation writeSimulation;
 
-    private final RunSimulation runSimulation;
-    private final SaveSimulation saveSimulation;
-    private final AuthorizeUser authorizeUser;
-    private final DatadogMetricService datadogMetricService;
-    private final RequestClock requestClock;
-    private final ValidateSimulationService validateSimulationService;
-    private final GetDeferralProjection getDeferralProjection;
-    private final WriteSimulation writeSimulation;
+  @Trace
+  @PostMapping("/run")
+  public ResponseEntity<PlanningView> run(
+      @PathVariable final Workflow workflow,
+      @RequestParam(CALLER_ID) final @NotNull Long callerId,
+      @RequestBody @Valid final RunSimulationRequest request) {
 
-    private static final Map<Workflow, List<UserPermission>> USER_PERMISSION = Map.of(
-            Workflow.FBM_WMS_INBOUND, List.of(OUTBOUND_SIMULATION),
-            Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_SIMULATION));
+    authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-    @Trace
-    @PostMapping("/run")
-    public ResponseEntity<Projection> run(
-            @PathVariable final Workflow workflow,
-            @RequestParam("caller.id") final @NotNull Long callerId,
-            @RequestBody @Valid final RunSimulationRequest request) {
+    datadogMetricService.trackRunSimulation(request);
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
+    return ResponseEntity.of(of(runSimulation.execute(GetProjectionInputDto.builder()
+        .workflow(workflow)
+        .userId(callerId)
+        .warehouseId(request.getWarehouseId())
+        .simulations(fromRequest(request.getSimulations()))
+        .requestDate(requestClock.now())
+        .build()))
+    );
+  }
 
-        datadogMetricService.trackRunSimulation(request);
+  @Trace
+  @PostMapping("/save")
+  public ResponseEntity<PlanningView> save(
+      @PathVariable final Workflow workflow,
+      @RequestParam(CALLER_ID) final @NotNull Long callerId,
+      @RequestBody final SaveSimulationRequest request) {
 
-        return ResponseEntity.of(Optional.of(runSimulation.execute(GetProjectionInputDto.builder()
-                .workflow(workflow)
-                .userId(callerId)
-                .warehouseId(request.getWarehouseId())
-                .simulations(fromRequest(request.getSimulations()))
-                .requestDate(requestClock.now())
-                .build()))
-        );
-    }
+    authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-    @Trace
-    @PostMapping("/save")
-    public ResponseEntity<Projection> save(
-            @PathVariable final Workflow workflow,
-            @RequestParam("caller.id") final @NotNull Long callerId,
-            @RequestBody final SaveSimulationRequest request) {
+    datadogMetricService.trackSaveSimulation(request);
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
+    return ResponseEntity.of(of(saveSimulation.execute(GetProjectionInputDto.builder()
+        .workflow(workflow)
+        .warehouseId(request.getWarehouseId())
+        .userId(callerId)
+        .simulations(fromRequest(request.getSimulations()))
+        .requestDate(requestClock.now())
+        .build())));
+  }
 
-        datadogMetricService.trackSaveSimulation(request);
+  @Trace
+  @PostMapping("/deferral/validate")
+  public ResponseEntity<List<ValidatedMagnitude>> validate(@PathVariable final Workflow workflow,
+                                                           @RequestParam(CALLER_ID) final @NotNull Long callerId,
+                                                           @RequestBody final RunSimulationRequest request) {
 
-        return ResponseEntity.of(Optional.of(saveSimulation.execute(GetProjectionInputDto.builder()
-                .workflow(workflow)
-                .warehouseId(request.getWarehouseId())
-                .userId(callerId)
-                .simulations(fromRequest(request.getSimulations()))
-                .requestDate(requestClock.now())
-                .build())));
-    }
+    authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-    @Trace
-    @PostMapping("/deferral/validate")
-    public ResponseEntity<List<ValidatedMagnitude>> validate(@PathVariable final Workflow workflow,
-                                                             @RequestParam("caller.id") final @NotNull Long callerId,
-                                                             @RequestBody final RunSimulationRequest request) {
+    return ResponseEntity.of(of(validateSimulationService.execute(GetProjectionInputDto.builder()
+        .workflow(workflow)
+        .warehouseId(request.getWarehouseId())
+        .simulations(fromRequest(request.getSimulations()))
+        .build())));
+  }
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
+  @Trace
+  @PostMapping("/deferral/run")
+  public ResponseEntity<PlanningView> runDeferralProjection(
+      @PathVariable final Workflow workflow,
+      @RequestParam(CALLER_ID) @NotNull final Long callerId,
+      @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date,
+      @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack,
+      @RequestBody final RunSimulationRequest request) {
 
-        return ResponseEntity.of(of(validateSimulationService.execute(GetProjectionInputDto.builder()
-                .workflow(workflow)
-                .warehouseId(request.getWarehouseId())
-                .simulations(fromRequest(request.getSimulations()))
-                .build())));
-    }
+    authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-    @Trace
-    @PostMapping("/deferral/run")
-    public ResponseEntity<Projection> runDeferralProjection(
-            @PathVariable final Workflow workflow,
-            @RequestParam("caller.id") @NotNull final Long callerId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date,
-            @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack,
-            @RequestBody final RunSimulationRequest request) {
+    datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "trackRunSimulation");
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
+    return ResponseEntity.of(of(getDeferralProjection.execute(new GetProjectionInput(
+        request.getWarehouseId(),
+        workflow,
+        date,
+        null,
+        cap5ToPack,
+        fromRequest(request.getSimulations())
+    ))));
+  }
 
-        datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "trackRunSimulation");
+  @Trace
+  @PostMapping("/deferral/save")
+  public ResponseEntity<PlanningView> saveDeferralProjection(
+      @PathVariable final Workflow workflow,
+      @RequestParam(CALLER_ID) @NotNull final Long callerId,
+      @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date,
+      @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack,
+      @RequestBody final RunSimulationRequest request) {
 
-        return ResponseEntity.of(of(getDeferralProjection.execute(new GetProjectionInput(
-                request.getWarehouseId(),
-                workflow,
-                date,
-                null,
-                cap5ToPack,
-                fromRequest(request.getSimulations())
-        ))));
-    }
+    authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-    @Trace
-    @PostMapping("/deferral/save")
-    public ResponseEntity<Projection> saveDeferralProjection(
-            @PathVariable final Workflow workflow,
-            @RequestParam("caller.id") @NotNull final Long callerId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DATE_TIME) final ZonedDateTime date,
-            @RequestParam(required = false, defaultValue = "false") boolean cap5ToPack,
-            @RequestBody final RunSimulationRequest request) {
+    datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "trackSaveSimulation");
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
+    writeSimulation.saveSimulations(workflow, request.getWarehouseId(), fromRequest(request.getSimulations()), callerId);
 
-        datadogMetricService.trackProjection(request.getWarehouseId(), workflow, "trackRunSimulation");
+    return ResponseEntity.of(of(getDeferralProjection.execute(new GetProjectionInput(
+        request.getWarehouseId(),
+        workflow,
+        date,
+        null,
+        cap5ToPack,
+        fromRequest(request.getSimulations())
+    ))));
+  }
 
-        writeSimulation.saveSimulations(workflow, request.getWarehouseId(), fromRequest(request.getSimulations()), callerId);
+  private List<Simulation> fromRequest(final List<SimulationRequest> simulationRequests) {
+    return simulationRequests.stream()
+        .map(SimulationRequest::toSimulation)
+        .collect(toList());
+  }
 
-        return ResponseEntity.of(of(getDeferralProjection.execute(new GetProjectionInput(
-                request.getWarehouseId(),
-                workflow,
-                date,
-                null,
-                cap5ToPack,
-                fromRequest(request.getSimulations())
-        ))));
-    }
-
-    private List<Simulation> fromRequest(final List<SimulationRequest> simulationRequests) {
-        return simulationRequests.stream()
-                .map(SimulationRequest::toSimulation)
-                .collect(toList());
-    }
-
-    @InitBinder
-    public void initBinder(final PropertyEditorRegistry dataBinder) {
-        dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
-    }
+  @InitBinder
+  public void initBinder(final PropertyEditorRegistry dataBinder) {
+    dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
+  }
 }
