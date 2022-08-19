@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME;
 
@@ -19,7 +20,6 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjec
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.newrelic.api.agent.Trace;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -43,13 +43,9 @@ public class ProjectionController {
       Workflow.FBM_WMS_OUTBOUND, List.of(OUTBOUND_PROJECTION));
 
   private final AuthorizeUser authorizeUser;
-
   private final GetSlaProjection getSlaProjection;
-
   private final GetDeferralProjection getDeferralProjections;
-
   private final DatadogMetricService datadogMetricService;
-
   private final RequestClock requestClock;
 
   @Trace
@@ -64,13 +60,12 @@ public class ProjectionController {
 
     datadogMetricService.trackProjection(warehouseId, workflow, "CPT");
 
-        return ResponseEntity.of(of(getSlaProjection.execute(GetProjectionInputDto.builder()
-        .workflow(workflow)
-        .warehouseId(warehouseId)
-        .date(date)
-        .requestDate(requestClock.now())
-        .build()))
-    );
+    return ResponseEntity.of(of(getSlaProjection.execute(GetProjectionInputDto.builder()
+                                                             .workflow(workflow)
+                                                             .warehouseId(warehouseId)
+                                                             .date(date)
+                                                             .requestDate(requestClock.now())
+                                                             .build())));
   }
 
   @Trace
@@ -92,7 +87,7 @@ public class ProjectionController {
         date,
         null,
         cap5ToPack,
-        Collections.emptyList())))
+        emptyList())))
     );
   }
 
