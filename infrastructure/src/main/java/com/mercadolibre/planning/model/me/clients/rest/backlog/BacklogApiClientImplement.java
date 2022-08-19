@@ -34,6 +34,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.PhotoRequest;
 import com.mercadolibre.restclient.MeliRestClient;
+import com.newrelic.api.agent.Trace;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +59,7 @@ public class BacklogApiClientImplement extends HttpClient implements BacklogApiG
    * @throws BacklogNotRespondingException error call backlog api
    * @deprecated will be used getPhoto
    */
+  @Trace
   @Deprecated
   public List<Consolidation> getBacklog(final BacklogRequest request) {
     try {
@@ -89,6 +91,7 @@ public class BacklogApiClientImplement extends HttpClient implements BacklogApiG
    * @return list of consolidation
    * @deprecated will be used getLastPhoto
    */
+  @Trace
   @Deprecated
   public List<Consolidation> getCurrentBacklog(final String logisticCenterId,
                                                final List<String> workflows,
@@ -125,6 +128,7 @@ public class BacklogApiClientImplement extends HttpClient implements BacklogApiG
    * @return list of consolidation
    * @deprecated will be used getLastPhoto
    */
+  @Trace
   @Deprecated
   public List<Consolidation> getCurrentBacklog(final BacklogCurrentRequest request) {
     final HttpRequest httpRequest = HttpRequest.builder()
@@ -148,6 +152,7 @@ public class BacklogApiClientImplement extends HttpClient implements BacklogApiG
    * @return list of photos obtain for client.
    * @throws BacklogNotRespondingException error call backlogs api.
    */
+  @Trace
   public List<Photo> getPhotos(final BacklogPhotosRequest request) {
     try {
       final HttpRequest httpRequest = HttpRequest.builder()
@@ -175,6 +180,7 @@ public class BacklogApiClientImplement extends HttpClient implements BacklogApiG
    * @return photo obtain for client.
    * @throws BacklogNotRespondingException error call backlogs api.
    */
+  @Trace
   public Photo getLastPhoto(final BacklogLastPhotoRequest request) {
     try {
       final HttpRequest httpRequest = HttpRequest.builder()

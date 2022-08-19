@@ -63,6 +63,7 @@ import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationI
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
+import com.newrelic.api.agent.Trace;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -105,6 +106,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     this.objectMapper = objectMapper;
   }
 
+  @Trace
   @Override
   public List<MagnitudePhoto> getTrajectories(final TrajectoriesRequest trajectoriesRequest) {
     final HttpRequest request = HttpRequest.builder()
@@ -119,6 +121,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     return executeGetEntities(request);
   }
 
+  @Trace
   @Override
   public List<Metadata> getForecastMetadata(final Workflow workflow,
                                             final ForecastMetadataRequest forecastMetadataRequest) {
@@ -138,6 +141,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     return getBaseParam(request.getWarehouseId(), request.getDateFrom(), request.getDateTo());
   }
 
+  @Trace
   @Override
   public List<Productivity> getProductivity(final ProductivityRequest productivityRequest) {
     final HttpRequest request = HttpRequest.builder()
@@ -155,6 +159,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     return apiResponse.stream().map(this::toProductivity).collect(toList());
   }
 
+  @Trace
   @Override
   public List<MagnitudePhoto> getPerformedProcessing(final TrajectoriesRequest request) {
     final HttpRequest httpRequest = HttpRequest.builder()
@@ -168,6 +173,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     return executeGetEntities(httpRequest);
   }
 
+  @Trace
   @Override
   public Map<MagnitudeType, List<MagnitudePhoto>> searchTrajectories(
       final SearchTrajectoriesRequest request
@@ -218,16 +224,19 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
   }
 
+  @Trace
   @Override
   public List<ProjectionResult> runProjection(final ProjectionRequest projectionRequest) {
     return callProjection(projectionRequest, "cpts");
   }
 
+  @Trace
   @Override
   public List<ProjectionResult> runDeferralProjection(final ProjectionRequest projectionRequest) {
     return callProjection(projectionRequest, "cpts/delivery_promise");
   }
 
+  @Trace
   @Override
   public List<ProjectionResult> runSimulation(final SimulationRequest simulationRequest) {
     final HttpRequest request = HttpRequest.builder()
@@ -241,6 +250,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public List<ProjectionResult> saveSimulation(final SimulationRequest simulationRequest) {
     final HttpRequest request = HttpRequest.builder()
@@ -254,6 +264,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public Optional<ConfigurationResponse> getConfiguration(
       final ConfigurationRequest configurationRequest) {
@@ -274,6 +285,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     return ofNullable(configurationResponse);
   }
 
+  @Trace
   @Override
   public List<PlanningDistributionResponse> getPlanningDistribution(
       final PlanningDistributionRequest planningDistributionRequest) {
@@ -297,6 +309,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }
   }
 
+  @Trace
   @Override
   public List<SuggestedWave> getSuggestedWaves(final SuggestedWavesRequest input) {
     final Map<String, String> params =
@@ -314,6 +327,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public List<BacklogProjectionResponse> getBacklogProjection(
       final BacklogProjectionRequest request) {
@@ -328,6 +342,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public List<ProjectedBacklogForAnAreaAndOperatingHour> projectBacklogInAreas(final Instant dateFrom,
                                                                                final Instant dateTo,
@@ -358,6 +373,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public void deferralSaveSimulation(SaveSimulationsRequest saveSimulationsRequest) {
     final HttpRequest request = HttpRequest.builder()
@@ -371,6 +387,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public GetDeviationResponse getDeviation(final Workflow workflow,
                                            final String warehouseId,
@@ -391,6 +408,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public SaveUnitsResponse saveShareDistribution(final List<ShareDistribution> shareDistributionList, final Workflow workflow) {
     final HttpRequest request = HttpRequest.builder()
@@ -403,6 +421,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public List<GetUnitsResponse> getShareDistribution(final GetShareDistributionInput getShareDistributionInput, final Workflow workflow) {
 
@@ -421,6 +440,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
     final HttpRequest request = HttpRequest.builder()
@@ -434,6 +454,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
   @Override
   public DeviationResponse disableDeviation(DisableDeviationInput disableDeviationInput) {
     final HttpRequest request = HttpRequest.builder()
