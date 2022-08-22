@@ -1,6 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
 import com.mercadolibre.planning.model.me.enums.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.outboundsettings.SettingsGateway;
+import com.mercadolibre.planning.model.me.gateways.outboundsettings.dtos.AreaConfiguration;
+import com.mercadolibre.planning.model.me.gateways.outboundsettings.dtos.SettingsAtWarehouse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
@@ -40,10 +43,17 @@ public class GetProjectionHeadcount {
 
   private static final String SEPARATOR = "-";
 
+  private static final String RK_AREA_ID = "RK";
+
+  private static final int EFFECTIVE_PRODUCTIVITY_LOOKBACK_IN_DAYS = 20;
+
+  private static final int MINIMUM_RKH_VALUE = 2;
+
   private final StaffingGateway staffingGateway;
 
   private final PlanningModelGateway planningModelGateway;
 
+  private final SettingsGateway settingsGateway;
 
   public Map<Instant, List<HeadcountAtArea>> getProjectionHeadcount(final String warehouseId,
                                                                     final Map<Instant, List<NumberOfUnitsInAnArea>> backlogs) {
@@ -52,10 +62,12 @@ public class GetProjectionHeadcount {
     final Instant dateFrom = backlogs.keySet().stream().min(Comparator.naturalOrder()).orElse(Instant.now());
     final Instant dateTo = backlogs.keySet().stream().max(Comparator.naturalOrder()).orElse(Instant.now());
 
+    final SettingsAtWarehouse areaConfiguration = getSettings(warehouseId);
+
     final MetricResponse lastHourEffectiveProductivity = staffingGateway.getMetricsByName(
         warehouseId,
         PRODUCTIVITY,
-        new MetricRequest(ProcessName.PICKING, dateFrom.minus(1, ChronoUnit.HOURS), dateFrom));
+        new MetricRequest(ProcessName.PICKING, dateFrom.minus(EFFECTIVE_PRODUCTIVITY_LOOKBACK_IN_DAYS, ChronoUnit.DAYS), dateFrom));
 
     final Map<String, Double> mapLastHourEffectiveProductivity = lastHourEffectiveProductivity.getProcesses()
         .get(0)
@@ -65,67 +77,82 @@ public class GetProjectionHeadcount {
 
     final List<MagnitudePhoto> operatingHoursPlannedHeadcount = planningModelGateway
         .getTrajectories(TrajectoriesRequest.builder()
-                             .warehouseId(warehouseId)
-                             .dateFrom(ZonedDateTime.ofInstant(dateFrom, ZoneOffset.UTC))
-                             .dateTo(ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC))
-                             .source(Source.SIMULATION)
-                             .processName(List.of(ProcessName.PICKING))
-                             .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
-                             .workflow(Workflow.FBM_WMS_OUTBOUND)
-                             .entityType(MagnitudeType.HEADCOUNT)
-                             .build());
+            .warehouseId(warehouseId)
+            .dateFrom(ZonedDateTime.ofInstant(dateFrom, ZoneOffset.UTC))
+            .dateTo(ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC))
+            .source(Source.SIMULATION)
+            .processName(List.of(ProcessName.PICKING))
+            .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .entityType(MagnitudeType.HEADCOUNT)
+            .build());
 
-    return backlogs.entrySet()
+    return backlogs.entrySet().stream().collect(Collectors.toMap(
+        Map.Entry::getKey,
+        backlogArea -> getHeadcount(operatingHoursPlannedHeadcount, backlogArea.getKey())
+            .map(headcount -> getHeadcountAtArea(backlogArea.getValue(), mapLastHourEffectiveProductivity, headcount, areaConfiguration))
+            .orElse(Collections.emptyList())
+    ));
+
+  }
+
+  private List<HeadcountAtArea> getHeadcountAtArea(final List<NumberOfUnitsInAnArea> backlogs,
+                                                   final Map<String, Double> mapLastHourEffectiveProductivity,
+                                                   final Integer plannedHeadcount,
+                                                   final SettingsAtWarehouse areaConfiguration) {
+
+    final List<HeadcountBySubArea> headcountProjectionList = getHeadcountBySubArea(
+        backlogs,
+        mapLastHourEffectiveProductivity,
+        plannedHeadcount,
+        areaConfiguration
+    );
+
+    redistributeHeadcount(headcountProjectionList, plannedHeadcount);
+
+    return headcountProjectionList.stream().collect(Collectors.groupingBy(this::getArea))
+        .entrySet()
         .stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, backlogArea -> {
+        .map(value -> {
+          Integer reps = value.getValue()
+              .stream()
+              .mapToInt(HeadcountBySubArea::getReps)
+              .sum();
+          Double repsPercentage = value.getValue()
+              .stream()
+              .mapToDouble(HeadcountBySubArea::getRespPercentage)
+              .sum();
+          return new HeadcountAtArea(value.getKey(), reps, repsPercentage, value.getValue());
 
-          final Optional<MagnitudePhoto> headcountOptional = operatingHoursPlannedHeadcount.stream()
-              .filter(magnitudePhoto -> magnitudePhoto.getDate().toInstant().equals(backlogArea.getKey()))
-              .findAny();
+        })
+        .collect(Collectors.toList());
 
-          if (headcountOptional.isPresent()) {
-            final int plannedHeadcount = headcountOptional.get().getValue();
 
-            final List<HeadcountBySubArea> headcountProjectionList = getHeadcountBySubArea(
-                backlogArea.getValue(),
-                mapLastHourEffectiveProductivity,
-                plannedHeadcount
-            );
+  }
 
-            redistributeHeadcount(headcountProjectionList, plannedHeadcount);
+  private Optional<Integer> getHeadcount(final List<MagnitudePhoto> operatingHoursPlannedHeadcount, final Instant headcountKey) {
 
-            return headcountProjectionList.stream().collect(Collectors.groupingBy(this::getArea))
-                .entrySet()
-                .stream()
-                .map(value -> {
-                  Integer reps = value.getValue()
-                      .stream()
-                      .mapToInt(HeadcountBySubArea::getReps)
-                      .sum();
-                  Double repsPercentage = value.getValue()
-                      .stream()
-                      .mapToDouble(HeadcountBySubArea::getRespPercentage)
-                      .sum();
-                  return new HeadcountAtArea(value.getKey(), reps, repsPercentage, value.getValue());
+    Optional<MagnitudePhoto> magnitudePhoto =
+        operatingHoursPlannedHeadcount.stream()
+            .filter(entity -> entity.getDate().toInstant().equals(headcountKey) && entity.getSource().equals(Source.SIMULATION))
+            .findAny()
+            .or(() -> operatingHoursPlannedHeadcount.stream()
+                .filter(entity -> entity.getDate().toInstant().equals(headcountKey) && entity.getSource().equals(Source.FORECAST))
+                .findAny());
 
-                })
-                .collect(Collectors.toList());
-
-          } else {
-            return Collections.emptyList();
-          }
-        }));
-
+    return magnitudePhoto.map(MagnitudePhoto::getValue);
   }
 
   private List<HeadcountBySubArea> getHeadcountBySubArea(final List<NumberOfUnitsInAnArea> backlogs,
                                                          final Map<String, Double> mapLastHourEffectiveProductivity,
-                                                         final int plannedHeadcount) {
+                                                         final int plannedHeadcount,
+                                                         final SettingsAtWarehouse areaConfiguration) {
+
     final Map<String, Double> calculatedHC = backlogs.stream()
         .flatMap(v -> v.getSubareas().stream())
         .collect(Collectors.toMap(
             NumberOfUnitsInASubarea::getName,
-            subAreas -> calculateRequiredHeadcountForArea(subAreas, mapLastHourEffectiveProductivity)));
+            subAreas -> calculateRequiredHeadcountForArea(subAreas, mapLastHourEffectiveProductivity, areaConfiguration)));
 
     final double totalRequiredHeadcount = calculatedHC.values().stream().reduce(0D, Double::sum);
     final double difHC = plannedHeadcount - totalRequiredHeadcount;
@@ -167,14 +194,43 @@ public class GetProjectionHeadcount {
     return headcountBySubArea.getSubArea().split(SEPARATOR)[0];
   }
 
-  private double calculateRequiredHeadcountForArea(final NumberOfUnitsInASubarea backlog, final Map<String, Double> effectiveProductivity) {
+  private double calculateRequiredHeadcountForArea(final NumberOfUnitsInASubarea backlog,
+                                                   final Map<String, Double> effectiveProductivity,
+                                                   final SettingsAtWarehouse areaConfiguration) {
 
-    double productivityByArea = effectiveProductivity.get(backlog.getName()) == null
-        ? effectiveProductivity.getOrDefault(backlog.getName().split(SEPARATOR)[0], 0D)
-        : effectiveProductivity.get(backlog.getName());
+    final String areaName = validateRKArea(backlog.getName(), areaConfiguration);
+    double productivityByArea = effectiveProductivity.get(areaName) == null
+        ? effectiveProductivity.getOrDefault(areaName.split(SEPARATOR)[0], 0D)
+        : effectiveProductivity.get(areaName);
 
     return productivityByArea == 0D ? 0D : backlog.getUnits() / productivityByArea;
   }
 
+  private String validateRKArea(String name, SettingsAtWarehouse areaConfiguration) {
+    final String[] splitName = name.split(SEPARATOR);
+    if (areaConfiguration == null) {
+      return name;
+    } else if (name.contains(RK_AREA_ID) && splitName.length > 1) {
+      final String floor = splitName[1];
+      final int forkliftLevel = areaConfiguration.getAreas().stream()
+          .filter(area -> RK_AREA_ID.equals(area.getId()) && area.getFloor().equals(floor))
+          .mapToInt(AreaConfiguration::getForkliftLevel)
+          .findFirst()
+          .orElse(0);
+
+      return forkliftLevel >= MINIMUM_RKH_VALUE ? "RK-H" : "RK-L";
+    } else {
+      return name;
+    }
+  }
+
+  private SettingsAtWarehouse getSettings(String warehouseId) {
+    try {
+      return settingsGateway.getPickingSetting(warehouseId);
+    } catch (RuntimeException e) {
+      return null;
+    }
+
+  }
 
 }

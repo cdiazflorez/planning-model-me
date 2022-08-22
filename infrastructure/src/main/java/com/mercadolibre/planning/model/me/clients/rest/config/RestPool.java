@@ -8,5 +8,6 @@ public enum RestPool {
     AUTHORIZATION,
     OUTBOUND_UNIT_SEARCH,
     STAFFING,
-    BACKLOG;
+    BACKLOG,
+    OUTBOUND_SETTING;
 }

@@ -3,6 +3,9 @@ package com.mercadolibre.planning.model.me.usecases.projection;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.enums.ProcessName;
+import com.mercadolibre.planning.model.me.gateways.outboundsettings.SettingsGateway;
+import com.mercadolibre.planning.model.me.gateways.outboundsettings.dtos.AreaConfiguration;
+import com.mercadolibre.planning.model.me.gateways.outboundsettings.dtos.SettingsAtWarehouse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
@@ -54,24 +57,31 @@ public class GetProjectionHeadcountTest {
   @Mock
   private PlanningModelGateway planningModelGateway;
 
+  @Mock
+  private SettingsGateway settingsGateway;
+
   @Test
   public void projectionHeadcountTest() {
     //GIVEN
-    when(staffingGateway.getMetricsByName(WH, METRIC_NAME,
-                                          new MetricRequest(ProcessName.PICKING, FROM.minus(1, ChronoUnit.HOURS), FROM))
+    when(staffingGateway.getMetricsByName(
+        WH,
+        METRIC_NAME,
+        new MetricRequest(ProcessName.PICKING, FROM.minus(20, ChronoUnit.DAYS), FROM))
     ).thenReturn(getMetricsByNameMock());
 
     when(planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
-                                                  .warehouseId(WH)
-                                                  .dateFrom(ZonedDateTime.ofInstant(FROM, ZoneOffset.UTC))
-                                                  .dateTo(ZonedDateTime.ofInstant(TO, ZoneOffset.UTC))
-                                                  .source(Source.SIMULATION)
-                                                  .processName(List.of(ProcessName.PICKING))
-                                                  .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
-                                                  .workflow(Workflow.FBM_WMS_OUTBOUND)
-                                                  .entityType(MagnitudeType.HEADCOUNT)
-                                                  .build())
+        .warehouseId(WH)
+        .dateFrom(ZonedDateTime.ofInstant(FROM, ZoneOffset.UTC))
+        .dateTo(ZonedDateTime.ofInstant(TO, ZoneOffset.UTC))
+        .source(Source.SIMULATION)
+        .processName(List.of(ProcessName.PICKING))
+        .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
+        .workflow(Workflow.FBM_WMS_OUTBOUND)
+        .entityType(MagnitudeType.HEADCOUNT)
+        .build())
     ).thenReturn(getTrajectoriesMock());
+
+    when(settingsGateway.getPickingSetting(WH)).thenReturn(settingsAtWarehouseMock());
 
     //WHEN
     Map<Instant, List<HeadcountAtArea>> response = getProjectionHeadcount.getProjectionHeadcount(WH, backlogsMock());
@@ -93,8 +103,8 @@ public class GetProjectionHeadcountTest {
     Assertions.assertEquals(headcountBySubarea.get("RS-0"), 2);
     Assertions.assertEquals(headcountBySubarea.get("HV-0"), 2);
     Assertions.assertEquals(headcountBySubarea.get("BL-0"), 9);
-    Assertions.assertEquals(headcountBySubarea.get("RK-H"), 19);
-    Assertions.assertEquals(headcountBySubarea.get("RK-L"), 40);
+    Assertions.assertEquals(headcountBySubarea.get("RK-1"), 19);
+    Assertions.assertEquals(headcountBySubarea.get("RK-0"), 40);
 
     headcount.forEach(magnitudePhoto -> {
 
@@ -112,14 +122,14 @@ public class GetProjectionHeadcountTest {
   private MetricResponse getMetricsByNameMock() {
 
     List<AreaResponse> areaResponseList = List.of(new AreaResponse("MZ-1", 99.48),
-                                                  new AreaResponse("MZ-2", 104.18),
-                                                  new AreaResponse("MZ-0", 118.73),
-                                                  new AreaResponse("MZ-3", 73.91),
-                                                  new AreaResponse("RS", 105.64),
-                                                  new AreaResponse("HV", 181.28),
-                                                  new AreaResponse("BL", 31.53),
-                                                  new AreaResponse("RK-H", 30.32),
-                                                  new AreaResponse("RK-L", 17.01));
+        new AreaResponse("MZ-2", 104.18),
+        new AreaResponse("MZ-0", 118.73),
+        new AreaResponse("MZ-3", 73.91),
+        new AreaResponse("RS", 105.64),
+        new AreaResponse("HV", 181.28),
+        new AreaResponse("BL", 31.53),
+        new AreaResponse("RK-H", 30.32),
+        new AreaResponse("RK-L", 17.01));
 
     ProcessResponse processResponse = new ProcessResponse("picking", 662.6, areaResponseList);
 
@@ -130,53 +140,77 @@ public class GetProjectionHeadcountTest {
   private List<MagnitudePhoto> getTrajectoriesMock() {
 
     return List.of(MagnitudePhoto.builder()
-                       .processName(ProcessName.PICKING)
-                       .workflow(Workflow.FBM_WMS_OUTBOUND)
-                       .date(ZonedDateTime.of(2022, 5, 8, 15, 0, 0, 0, ZoneOffset.UTC))
-                       .value(80)
-                       .metricUnit(MetricUnit.WORKERS).build(),
-                   MagnitudePhoto.builder()
-                       .processName(ProcessName.PICKING)
-                       .workflow(Workflow.FBM_WMS_OUTBOUND)
-                       .date(ZonedDateTime.of(2022, 5, 8, 16, 0, 0, 0, ZoneOffset.UTC))
-                       .value(48)
-                       .metricUnit(MetricUnit.WORKERS).build(),
-                   MagnitudePhoto.builder()
-                       .processName(ProcessName.PICKING)
-                       .workflow(Workflow.FBM_WMS_OUTBOUND)
-                       .date(ZonedDateTime.of(2022, 5, 8, 17, 0, 0, 0, ZoneOffset.UTC))
-                       .value(50)
-                       .metricUnit(MetricUnit.WORKERS).build(),
-                   MagnitudePhoto.builder()
-                       .processName(ProcessName.PICKING)
-                       .workflow(Workflow.FBM_WMS_OUTBOUND)
-                       .date(ZonedDateTime.of(2022, 5, 8, 18, 0, 0, 0, ZoneOffset.UTC))
-                       .value(56)
-                       .metricUnit(MetricUnit.WORKERS).build(),
-                   MagnitudePhoto.builder()
-                       .processName(ProcessName.PICKING)
-                       .workflow(Workflow.FBM_WMS_OUTBOUND)
-                       .date(ZonedDateTime.of(2022, 5, 8, 19, 0, 0, 0, ZoneOffset.UTC))
-                       .value(60)
-                       .metricUnit(MetricUnit.WORKERS).build(),
-                   MagnitudePhoto.builder()
-                       .processName(ProcessName.PICKING)
-                       .workflow(Workflow.FBM_WMS_OUTBOUND)
-                       .date(ZonedDateTime.of(2022, 5, 8, 20, 0, 0, 0, ZoneOffset.UTC))
-                       .value(56)
-                       .metricUnit(MetricUnit.WORKERS).build(),
-                   MagnitudePhoto.builder()
-                       .processName(ProcessName.PICKING)
-                       .workflow(Workflow.FBM_WMS_OUTBOUND)
-                       .date(ZonedDateTime.of(2022, 5, 8, 21, 0, 0, 0, ZoneOffset.UTC))
-                       .value(40)
-                       .metricUnit(MetricUnit.WORKERS).build(),
-                   MagnitudePhoto.builder()
-                       .processName(ProcessName.PICKING)
-                       .workflow(Workflow.FBM_WMS_OUTBOUND)
-                       .date(ZonedDateTime.of(2022, 5, 8, 22, 0, 0, 0, ZoneOffset.UTC))
-                       .value(30)
-                       .metricUnit(MetricUnit.WORKERS).build()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 15, 0, 0, 0, ZoneOffset.UTC))
+            .value(80)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.FORECAST)
+            .build(),
+        MagnitudePhoto.builder()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 16, 0, 0, 0, ZoneOffset.UTC))
+            .value(48)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.FORECAST)
+            .build(),
+        MagnitudePhoto.builder()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 17, 0, 0, 0, ZoneOffset.UTC))
+            .value(50)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.FORECAST)
+            .build(),
+        MagnitudePhoto.builder()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 18, 0, 0, 0, ZoneOffset.UTC))
+            .value(56)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.FORECAST)
+            .build(),
+        MagnitudePhoto.builder()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 19, 0, 0, 0, ZoneOffset.UTC))
+            .value(60)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.FORECAST)
+            .build(),
+        MagnitudePhoto.builder()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 20, 0, 0, 0, ZoneOffset.UTC))
+            .value(56)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.FORECAST)
+            .build(),
+        MagnitudePhoto.builder()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 21, 0, 0, 0, ZoneOffset.UTC))
+            .value(40)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.FORECAST)
+            .build(),
+        MagnitudePhoto.builder()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 22, 0, 0, 0, ZoneOffset.UTC))
+            .value(30)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.FORECAST)
+            .build(),
+        MagnitudePhoto.builder()
+            .processName(ProcessName.PICKING)
+            .workflow(Workflow.FBM_WMS_OUTBOUND)
+            .date(ZonedDateTime.of(2022, 5, 8, 22, 0, 0, 0, ZoneOffset.UTC))
+            .value(30)
+            .metricUnit(MetricUnit.WORKERS)
+            .source(Source.SIMULATION)
+            .build()
     );
   }
 
@@ -196,17 +230,24 @@ public class GetProjectionHeadcountTest {
 
   private List<NumberOfUnitsInAnArea> numberOfUnitsInAnAreas() {
     return List.of(new NumberOfUnitsInAnArea("MZ",
-                                             List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-1", 100),
-                                                     new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-2", 150),
-                                                     new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-0", 50),
-                                                     new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-3", 80)
-                                             )),
-                   new NumberOfUnitsInAnArea("RS", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RS-0", 70))),
-                   new NumberOfUnitsInAnArea("HV", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("HV-0", 200))),
-                   new NumberOfUnitsInAnArea("BL", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("BL-0", 120))),
-                   new NumberOfUnitsInAnArea("RK",
-                                             List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RK-H", 250),
-                                                     new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RK-L", 300)))
+            List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-1", 100),
+                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-2", 150),
+                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-0", 50),
+                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("MZ-3", 80)
+            )),
+        new NumberOfUnitsInAnArea("RS", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RS-0", 70))),
+        new NumberOfUnitsInAnArea("HV", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("HV-0", 200))),
+        new NumberOfUnitsInAnArea("BL", List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("BL-0", 120))),
+        new NumberOfUnitsInAnArea("RK",
+            List.of(new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RK-1", 250),
+                new NumberOfUnitsInAnArea.NumberOfUnitsInASubarea("RK-0", 300)))
     );
+  }
+
+  private SettingsAtWarehouse settingsAtWarehouseMock() {
+
+    return new SettingsAtWarehouse(WH,
+        List.of(new AreaConfiguration("RK", "0", 1), new AreaConfiguration("RK", "1", 2)));
+
   }
 }
