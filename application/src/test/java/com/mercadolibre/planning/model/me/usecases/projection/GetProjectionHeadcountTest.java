@@ -63,25 +63,9 @@ public class GetProjectionHeadcountTest {
   @Test
   public void projectionHeadcountTest() {
     //GIVEN
-    when(staffingGateway.getMetricsByName(
-        WH,
-        METRIC_NAME,
-        new MetricRequest(ProcessName.PICKING, FROM.minus(20, ChronoUnit.DAYS), FROM))
-    ).thenReturn(getMetricsByNameMock());
-
-    when(planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
-        .warehouseId(WH)
-        .dateFrom(ZonedDateTime.ofInstant(FROM, ZoneOffset.UTC))
-        .dateTo(ZonedDateTime.ofInstant(TO, ZoneOffset.UTC))
-        .source(Source.SIMULATION)
-        .processName(List.of(ProcessName.PICKING))
-        .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
-        .workflow(Workflow.FBM_WMS_OUTBOUND)
-        .entityType(MagnitudeType.HEADCOUNT)
-        .build())
-    ).thenReturn(getTrajectoriesMock());
-
-    when(settingsGateway.getPickingSetting(WH)).thenReturn(settingsAtWarehouseMock());
+    whenStaffing();
+    whenPlanningModel();
+    whenSettings();
 
     //WHEN
     Map<Instant, List<HeadcountAtArea>> response = getProjectionHeadcount.getProjectionHeadcount(WH, backlogsMock());
@@ -117,6 +101,66 @@ public class GetProjectionHeadcountTest {
       Assertions.assertEquals(magnitudePhoto.getValue(), totalHeadcountDistributionAtArea);
     });
 
+  }
+
+  @Test
+  public void projectionHeadcountNotRKTest() {
+
+    //GIVEN
+    whenStaffing();
+    whenPlanningModel();
+    whenSettingError();
+
+    //WHEN
+    Map<Instant, List<HeadcountAtArea>> response = getProjectionHeadcount.getProjectionHeadcount(WH, backlogsMock());
+
+    Assertions.assertNotNull(response);
+
+    Map<String, Integer> headcountBySubarea = response.get(Instant.parse("2022-05-08T15:00:00Z"))
+        .stream()
+        .flatMap(headcountAtArea -> headcountAtArea.getSubAreas().stream())
+        .collect(Collectors.toMap(HeadcountBySubArea::getSubArea, HeadcountBySubArea::getReps));
+
+    Assertions.assertEquals(headcountBySubarea.get("MZ-0"), 4);
+    Assertions.assertEquals(headcountBySubarea.get("MZ-1"), 8);
+    Assertions.assertEquals(headcountBySubarea.get("MZ-2"), 12);
+    Assertions.assertEquals(headcountBySubarea.get("MZ-3"), 9);
+    Assertions.assertEquals(headcountBySubarea.get("RS-0"), 6);
+    Assertions.assertEquals(headcountBySubarea.get("HV-0"), 9);
+    Assertions.assertEquals(headcountBySubarea.get("BL-0"), 32);
+    Assertions.assertEquals(headcountBySubarea.get("RK-1"), 0);
+    Assertions.assertEquals(headcountBySubarea.get("RK-0"), 0);
+
+  }
+
+  private void whenStaffing() {
+    when(staffingGateway.getMetricsByName(
+        WH,
+        METRIC_NAME,
+        new MetricRequest(ProcessName.PICKING, FROM.minus(20, ChronoUnit.DAYS), FROM))
+    ).thenReturn(getMetricsByNameMock());
+  }
+
+  private void whenPlanningModel() {
+    when(planningModelGateway.getTrajectories(TrajectoriesRequest.builder()
+        .warehouseId(WH)
+        .dateFrom(ZonedDateTime.ofInstant(FROM, ZoneOffset.UTC))
+        .dateTo(ZonedDateTime.ofInstant(TO, ZoneOffset.UTC))
+        .source(Source.SIMULATION)
+        .processName(List.of(ProcessName.PICKING))
+        .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
+        .workflow(Workflow.FBM_WMS_OUTBOUND)
+        .entityType(MagnitudeType.HEADCOUNT)
+        .build())
+    ).thenReturn(getTrajectoriesMock());
+  }
+
+  private void whenSettings() {
+    when(settingsGateway.getPickingSetting(WH)).thenReturn(settingsAtWarehouseMock());
+  }
+
+  private void whenSettingError() {
+    when(settingsGateway.getPickingSetting(WH)).thenThrow(RuntimeException.class);
   }
 
   private MetricResponse getMetricsByNameMock() {
