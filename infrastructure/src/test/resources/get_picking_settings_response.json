@@ -1,0 +1,16 @@
+{
+  "warehouse_id": "ARTW01",
+  "areas": [
+    {
+      "id": "DM",
+      "floor": "3",
+      "forklift_level": 0
+    },
+    {
+      "id": "HV",
+      "floor": "0",
+      "forklift_level": 0
+    }
+  ]
+}
+
