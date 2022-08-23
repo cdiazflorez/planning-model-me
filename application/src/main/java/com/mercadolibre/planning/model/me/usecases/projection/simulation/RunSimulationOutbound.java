@@ -10,6 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionOutbound;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectionWorkflow;
@@ -21,10 +22,13 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import javax.inject.Named;
 
-/** Implementation of GetProjectionOutbound that invokes run simulation on planning model gateway. */
+/**
+ * Implementation of GetProjectionOutbound that invokes run simulation on planning model gateway.
+ */
 @Named
 public class RunSimulationOutbound extends GetProjectionOutbound {
 
+  private final FeatureSwitches featureSwitches;
 
   protected RunSimulationOutbound(final PlanningModelGateway planningModelGateway,
                                   final LogisticCenterGateway logisticCenterGateway,
@@ -32,10 +36,12 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
                                   final GetEntities getEntities,
                                   final GetSimpleDeferralProjection getSimpleDeferralProjection,
                                   final BacklogApiGateway backlogGateway,
-                                  final GetSales getSales) {
+                                  final GetSales getSales,
+                                  final FeatureSwitches featureSwitches) {
 
     super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities, getSimpleDeferralProjection, backlogGateway,
-        getSales);
+          getSales);
+    this.featureSwitches = featureSwitches;
   }
 
   @Override
@@ -45,22 +51,27 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
                                                  final List<Backlog> backlogs,
                                                  final String timeZone) {
 
-    return planningModelGateway.runSimulation(SimulationRequest.builder()
-        .warehouseId(input.getWarehouseId())
-        .workflow(input.getWorkflow())
-        .processName(ProjectionWorkflow.getProcesses(FBM_WMS_OUTBOUND))
-        .dateFrom(dateFrom)
-        .dateTo(dateTo)
-        .backlog(backlogs.stream()
-            .map(backlog -> new QuantityByDate(
-                backlog.getDate(),
-                backlog.getQuantity()))
-            .collect(toList()))
-        .simulations(input.getSimulations())
-        .userId(input.getUserId())
-        .applyDeviation(true)
-        .timeZone(timeZone)
-        .build());
-  }
+    if (featureSwitches.isProjectionLibEnabled(input.getWarehouseId())) {
+      // TODO Implement flow projection lib.
+      return List.of();
+    } else {
 
+      return planningModelGateway.runSimulation(SimulationRequest.builder()
+                                                    .warehouseId(input.getWarehouseId())
+                                                    .workflow(input.getWorkflow())
+                                                    .processName(ProjectionWorkflow.getProcesses(FBM_WMS_OUTBOUND))
+                                                    .dateFrom(dateFrom)
+                                                    .dateTo(dateTo)
+                                                    .backlog(backlogs.stream()
+                                                                 .map(backlog -> new QuantityByDate(
+                                                                     backlog.getDate(),
+                                                                     backlog.getQuantity()))
+                                                                 .collect(toList()))
+                                                    .simulations(input.getSimulations())
+                                                    .userId(input.getUserId())
+                                                    .applyDeviation(true)
+                                                    .timeZone(timeZone)
+                                                    .build());
+    }
+  }
 }

@@ -1,10 +1,12 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.BATCH_SORTER;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
@@ -13,6 +15,8 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getHourAndDay;
@@ -44,6 +48,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.RowName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import java.time.ZonedDateTime;
@@ -62,11 +67,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable> {
 
-  private static final Map<Workflow, List<ProcessName>> PROCESSES_BY_WORKFLOW = Map.of(
-      Workflow.FBM_WMS_OUTBOUND, List.of(PICKING, PACKING, PACKING_WALL),
-      Workflow.FBM_WMS_INBOUND, List.of(PUT_AWAY, CHECK_IN)
-  );
-
   private static final DateTimeFormatter COLUMN_HOUR_FORMAT = ofPattern("HH:00");
 
   private static final String NO_VALUE = "-";
@@ -84,6 +84,8 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
   private final PlanningModelGateway planningModelGateway;
 
   private final LogisticCenterGateway logisticCenterGateway;
+
+  private final FeatureSwitches featureSwitches;
 
   /**
    * Builds planning tool entities table view
@@ -111,7 +113,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                 .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
                 .dateFrom(utcDateFrom)
                 .dateTo(utcDateTo)
-                .processName(PROCESSES_BY_WORKFLOW.get(input.getWorkflow()))
+                .processName(getProcessesByWorkflow(input.getWorkflow(), input.getWarehouseId()))
                 .simulations(input.getSimulations())
                 .entityFilters(Map.of(
                     HEADCOUNT, Map.of(
@@ -160,8 +162,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
     return new ComplexTable(
         headers,
         List.of(createData(config, HEADCOUNT, headcount, headers, emptyList()),
-                createData(config, PRODUCTIVITY, mainProductivities,
-                           headers, polyvalentProductivities),
+                createData(config, PRODUCTIVITY, mainProductivities, headers, polyvalentProductivities),
                 createData(config, THROUGHPUT, throughputs, headers, emptyList())),
         action,
         "Headcount / Throughput"
@@ -272,5 +273,22 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
       default:
         return null;
     }
+  }
+
+  // TODO Remove this method when the transition to project with the library is finished
+  private List<ProcessName> getProcessesByWorkflow(final Workflow workflow,
+                                                   final String logisticCenterId) {
+
+    if (workflow == FBM_WMS_OUTBOUND && featureSwitches.isProjectionLibEnabled(logisticCenterId)) {
+      return List.of(PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL);
+    }
+    if (workflow == FBM_WMS_OUTBOUND && !featureSwitches.isProjectionLibEnabled(logisticCenterId)) {
+      return List.of(PICKING, PACKING, PACKING_WALL);
+    }
+    if (workflow == FBM_WMS_INBOUND) {
+      return List.of(PUT_AWAY, CHECK_IN);
+    }
+
+    return List.of();
   }
 }

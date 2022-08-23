@@ -1,11 +1,13 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.BATCH_SORTER;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.GLOBAL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getNextHour;
@@ -48,8 +50,10 @@ class EntityRowTest {
         Arguments.of(FBM_WMS_INBOUND, PUT_AWAY, "Put Away"),
         Arguments.of(FBM_WMS_INBOUND, CHECK_IN, "Check in"),
         Arguments.of(FBM_WMS_OUTBOUND, PICKING, "Picking"),
+        Arguments.of(FBM_WMS_OUTBOUND, BATCH_SORTER, "Batch sorter"),
+        Arguments.of(FBM_WMS_OUTBOUND, WALL_IN, "Wall in"),
         Arguments.of(FBM_WMS_OUTBOUND, PACKING, "Packing"),
-        Arguments.of(FBM_WMS_OUTBOUND, PACKING_WALL, "Wall"),
+        Arguments.of(FBM_WMS_OUTBOUND, PACKING_WALL, "Packing wall"),
         Arguments.of(FBM_WMS_OUTBOUND, GLOBAL, "Capacidad Máxima")
     );
   }

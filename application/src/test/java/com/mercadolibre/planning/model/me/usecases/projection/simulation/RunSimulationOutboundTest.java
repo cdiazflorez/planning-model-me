@@ -41,6 +41,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityBy
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
@@ -95,16 +96,20 @@ public class RunSimulationOutboundTest {
   @Mock
   private BacklogApiGateway backlogGateway;
 
+  @Mock
+  private FeatureSwitches featureSwitches;
+
   @Test
   public void testExecute() {
     // Given
     final List<String> steps = List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
-        "grouping", "grouped", "to_pack");
+                                       "grouping", "grouped", "to_pack");
     final ZonedDateTime utcCurrentTime = getCurrentTime();
     final List<Backlog> mockedBacklog = mockBacklog(utcCurrentTime);
     final List<Backlog> mockedPlanningBacklog = mockPlanningBacklog(utcCurrentTime);
     final List<ProcessName> processes = List.of(PACKING, PACKING_WALL);
 
+    when(featureSwitches.isProjectionLibEnabled(WAREHOUSE_ID)).thenReturn(false);
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
@@ -116,12 +121,12 @@ public class RunSimulationOutboundTest {
     final ZonedDateTime utcDateTimeTo = utcCurrentTime.plusHours(1);
 
     when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
-            .warehouseId(WAREHOUSE_ID)
-            .workflow(FBM_WMS_OUTBOUND)
-            .zoneId(TIME_ZONE.toZoneId())
-            .date(utcCurrentTime)
-            .build()
-        )
+        .warehouseId(WAREHOUSE_ID)
+        .workflow(FBM_WMS_OUTBOUND)
+        .zoneId(TIME_ZONE.toZoneId())
+        .date(utcCurrentTime)
+        .build()
+                                   )
     )).thenReturn(mockSuggestedWaves(utcCurrentTime, utcDateTimeTo));
 
     when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
@@ -154,20 +159,91 @@ public class RunSimulationOutboundTest {
 
     // When
     final PlanningView planningView = runSimulationOutbound.execute(GetProjectionInputDto.builder()
-        .date(utcCurrentTime)
-        .workflow(FBM_WMS_OUTBOUND)
-        .warehouseId(WAREHOUSE_ID)
-        .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
-            HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
-        )))))
-        .requestDate(utcCurrentTime.toInstant())
-        .build()
+                                                                        .date(utcCurrentTime)
+                                                                        .workflow(FBM_WMS_OUTBOUND)
+                                                                        .warehouseId(WAREHOUSE_ID)
+                                                                        .simulations(
+                                                                            List.of(new Simulation(PICKING, List.of(new SimulationEntity(
+                                                                                HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
+                                                                            )))))
+                                                                        .requestDate(utcCurrentTime.toInstant())
+                                                                        .build()
     );
 
     // Then
     assertEquals(5, planningView.getData().getProjections().size());
     assertEquals(mockComplexTable(), planningView.getData().getComplexTable1());
     assertProjection(planningView.getData().getProjections());
+  }
+
+  @Test
+  public void testExecuteEnabled() {
+    // Given
+    final List<String> steps = List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
+                                       "grouping", "grouped", "to_pack");
+    final ZonedDateTime utcCurrentTime = getCurrentTime();
+    final List<Backlog> mockedBacklog = mockBacklog(utcCurrentTime);
+    final List<Backlog> mockedPlanningBacklog = mockPlanningBacklog(utcCurrentTime);
+
+    when(featureSwitches.isProjectionLibEnabled(WAREHOUSE_ID)).thenReturn(true);
+
+    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+
+    final ZonedDateTime utcDateTimeTo = utcCurrentTime.plusHours(1);
+
+    when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
+        .warehouseId(WAREHOUSE_ID)
+        .workflow(FBM_WMS_OUTBOUND)
+        .zoneId(TIME_ZONE.toZoneId())
+        .date(utcCurrentTime)
+        .build()
+                                   )
+    )).thenReturn(mockSuggestedWaves(utcCurrentTime, utcDateTimeTo));
+
+    when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
+
+    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        utcCurrentTime,
+        mockedBacklog,
+        false,
+        emptyList())))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            mockProjections(utcCurrentTime),
+            new LogisticCenterConfiguration(TIME_ZONE)));
+
+    when(backlogGateway.getCurrentBacklog(
+        WAREHOUSE_ID,
+        List.of("outbound-orders"),
+        steps,
+        now().truncatedTo(ChronoUnit.HOURS).toInstant(),
+        now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
+        List.of("date_out"))
+
+    ).thenReturn(List.of(
+        new Consolidation(null, Map.of("date_out", getCurrentTime().minusHours(1).toString()), 150, true),
+        new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(2).toString()), 235, true),
+        new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(3).toString()), 300, true)
+    ));
+
+    when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedPlanningBacklog);
+
+    // When
+    final PlanningView planningView =
+        runSimulationOutbound.execute(GetProjectionInputDto.builder()
+                                          .date(utcCurrentTime)
+                                          .workflow(FBM_WMS_OUTBOUND)
+                                          .warehouseId(WAREHOUSE_ID)
+                                          .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
+                                              HEADCOUNT, List.of(new QuantityByDate(utcCurrentTime, 20))
+                                          )))))
+                                          .requestDate(utcCurrentTime.toInstant())
+                                          .build()
+        );
+
+    // Then
+    assertEquals(mockComplexTable(), planningView.getData().getComplexTable1());
   }
 
   private void assertProjection(final List<Projection> projections) {
@@ -256,10 +332,10 @@ public class RunSimulationOutboundTest {
         .dateFrom(currentTime)
         .dateTo(currentTime.plusDays(4))
         .backlog(backlogs.stream()
-            .map(backlog -> new QuantityByDate(
-                backlog.getDate(),
-                backlog.getQuantity()))
-            .collect(toList()))
+                     .map(backlog -> new QuantityByDate(
+                         backlog.getDate(),
+                         backlog.getQuantity()))
+                     .collect(toList()))
         .simulations(List.of(new Simulation(PICKING, List.of(new SimulationEntity(
             HEADCOUNT, List.of(new QuantityByDate(currentTime, 20))
         )))))
@@ -287,19 +363,19 @@ public class RunSimulationOutboundTest {
     );
     final List<Map<String, Object>> data = List.of(
         Map.of("column_1",
-            Map.of("title", "Unidades por onda", "subtitle",
-                MONO_ORDER_DISTRIBUTION.getTitle()),
-            "column_2", "0 uds."
+               Map.of("title", "Unidades por onda", "subtitle",
+                      MONO_ORDER_DISTRIBUTION.getTitle()),
+               "column_2", "0 uds."
         ),
         Map.of("column_1",
-            Map.of("title", "Unidades por onda", "subtitle",
-                MULTI_BATCH_DISTRIBUTION.getTitle()),
-            "column_2", "100 uds."
+               Map.of("title", "Unidades por onda", "subtitle",
+                      MULTI_BATCH_DISTRIBUTION.getTitle()),
+               "column_2", "100 uds."
         ),
         Map.of("column_1",
-            Map.of("title", "Unidades por onda", "subtitle",
-                MULTI_ORDER_DISTRIBUTION.getTitle()),
-            "column_2", "100 uds."
+               Map.of("title", "Unidades por onda", "subtitle",
+                      MULTI_ORDER_DISTRIBUTION.getTitle()),
+               "column_2", "100 uds."
         )
     );
     return new SimpleTable(title, columnHeaders, data);

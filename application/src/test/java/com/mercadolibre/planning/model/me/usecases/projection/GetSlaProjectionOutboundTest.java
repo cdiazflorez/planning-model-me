@@ -35,6 +35,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
@@ -102,6 +103,9 @@ public class GetSlaProjectionOutboundTest {
   @Mock
   private BacklogApiGateway backlogGateway;
 
+  @Mock
+  private FeatureSwitches featureSwitches;
+
   @Test
   void testOutboundExecute() {
     // Given
@@ -117,6 +121,8 @@ public class GetSlaProjectionOutboundTest {
         .date(currentUtcDateTime)
         .requestDate(currentUtcDateTime.toInstant())
         .build();
+
+    when(featureSwitches.isProjectionLibEnabled(WAREHOUSE_ID)).thenReturn(false);
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
@@ -159,6 +165,61 @@ public class GetSlaProjectionOutboundTest {
     // Then
     assertNull(planningView.getEmptyStateMessage());
     assertProjection(planningView.getData().getProjections(), processingTimes);
+    assertEquals(mockComplexTable(), planningView.getData().getComplexTable1());
+    assertSimpleTable(planningView.getData().getSimpleTable1(), currentUtcDateTime, utcDateTimeTo);
+  }
+
+  @Test
+  void testOutboundExecuteEnabled() {
+    // Given
+    final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+    final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
+
+    final GetProjectionInputDto input = GetProjectionInputDto.builder()
+        .workflow(FBM_WMS_OUTBOUND)
+        .warehouseId(WAREHOUSE_ID)
+        .date(currentUtcDateTime)
+        .requestDate(currentUtcDateTime.toInstant())
+        .build();
+
+    when(featureSwitches.isProjectionLibEnabled(WAREHOUSE_ID)).thenReturn(true);
+
+    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+
+    final List<Backlog> mockedBacklog = mockBacklog();
+
+    when(getWaveSuggestion.execute(any(GetWaveSuggestionInputDto.class)))
+        .thenReturn(mockSuggestedWaves(currentUtcDateTime, utcDateTimeTo));
+
+    when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
+
+    when(getSimpleDeferralProjection.execute(any(GetProjectionInput.class)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            mockProjectionsDeferral(currentUtcDateTime),
+            new LogisticCenterConfiguration(TIME_ZONE)));
+
+    when(backlogGateway.getCurrentBacklog(
+        WAREHOUSE_ID,
+        List.of("outbound-orders"),
+        STATUSES,
+        now().truncatedTo(ChronoUnit.HOURS).toInstant(),
+        now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
+        List.of("date_out"))
+    ).thenReturn(List.of(
+        new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
+        new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
+        new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true),
+        new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120, true)
+    ));
+
+    when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedBacklog);
+
+    // When
+    final PlanningView planningView = getSlaProjectionOutbound.execute(input);
+
+    // Then
+    assertNull(planningView.getEmptyStateMessage());
     assertEquals(mockComplexTable(), planningView.getData().getComplexTable1());
     assertSimpleTable(planningView.getData().getSimpleTable1(), currentUtcDateTime, utcDateTimeTo);
   }
