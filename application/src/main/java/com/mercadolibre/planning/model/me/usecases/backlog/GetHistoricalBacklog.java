@@ -77,6 +77,7 @@ class GetHistoricalBacklog {
 
   private Map<ProcessName, Map<Instant, Integer>> getBacklogByProcess(final GetHistoricalBacklogInput input) {
     return IntStream.rangeClosed(1, BACKLOG_WEEKS_DATE_FROM_LOOKBACK)
+        .parallel()
         .mapToObj(shift -> getData(input, Duration.ofDays(DAYS_OF_WEEK * shift)))
         .map(Map::entrySet)
         .flatMap(Set::stream)

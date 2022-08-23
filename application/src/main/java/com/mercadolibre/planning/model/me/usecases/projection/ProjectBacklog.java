@@ -47,7 +47,12 @@ public class ProjectBacklog {
   public List<BacklogProjectionResponse> execute(final BacklogProjectionInput input) {
 
     final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatios = input.isHasWall() && input.getWorkflow() == FBM_WMS_OUTBOUND
-        ? ratioService.getPackingRatio(input.getWarehouseId(), input.getDateFrom().toInstant(), input.getDateTo().toInstant())
+        ? ratioService.getPackingRatio(
+            input.getWarehouseId(),
+            input.getSlaDateFrom(),
+            input.getSlaDateTo(),
+            input.getDateFrom().toInstant(),
+            input.getDateTo().toInstant())
         : emptyMap();
 
     final Map<Instant, Double> packingWallRatios =

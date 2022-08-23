@@ -103,7 +103,7 @@ public class DetailsBacklogRatioServiceTest {
     // GIVEN
     mockBacklog();
     mockProjection(650);
-    when(ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO)).thenReturn(emptyMap());
+    when(ratioService.getPackingRatio(WAREHOUSE_ID, REQUEST_DATE, REQUEST_DATE.plus(24, ChronoUnit.HOURS), DATE_FROM, DATE_TO)).thenReturn(emptyMap());
 
     // WHEN
     final var results = detailsBacklogRatioService.getMonitorBacklog(input(true));
@@ -146,7 +146,7 @@ public class DetailsBacklogRatioServiceTest {
     // GIVEN
     mockMissingBacklog();
     mockProjection(0);
-    when(ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO)).thenReturn(emptyMap());
+    when(ratioService.getPackingRatio(WAREHOUSE_ID, REQUEST_DATE, REQUEST_DATE.plus(24, ChronoUnit.HOURS), DATE_FROM, DATE_TO)).thenReturn(emptyMap());
 
     // WHEN
     final var results = detailsBacklogRatioService.getMonitorBacklog(input(true));
@@ -168,7 +168,7 @@ public class DetailsBacklogRatioServiceTest {
     // GIVEN
     mockBacklog();
     mockFailedProjections();
-    when(ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO)).thenReturn(emptyMap());
+    when(ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO, DATE_FROM, DATE_TO)).thenReturn(emptyMap());
 
     // WHEN
     final var results = detailsBacklogRatioService.getMonitorBacklog(input(true));

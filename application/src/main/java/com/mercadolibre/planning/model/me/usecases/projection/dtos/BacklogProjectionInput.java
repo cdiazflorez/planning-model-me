@@ -23,6 +23,10 @@ public class BacklogProjectionInput {
 
   long userId;
 
+  Instant slaDateFrom;
+
+  Instant slaDateTo;
+
   ZonedDateTime dateFrom;
 
   ZonedDateTime dateTo;

@@ -41,7 +41,7 @@ public class DetailsBacklogRatioService extends DetailsBacklogService implements
   @Override
   protected Map<Instant, Double> getPackingWallRatios(final BacklogProviderInput input) {
     final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatios = input.isHasWall()
-        ? ratioService.getPackingRatio(input.getWarehouseId(), input.getDateFrom(), input.getDateTo())
+        ? ratioService.getPackingRatio(input.getWarehouseId(), input.getSlaFrom(), input.getSlaTo(), input.getDateFrom(), input.getDateTo())
         : emptyMap();
 
     return packingRatios.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, item -> item.getValue().getPackingWallRatio()));
