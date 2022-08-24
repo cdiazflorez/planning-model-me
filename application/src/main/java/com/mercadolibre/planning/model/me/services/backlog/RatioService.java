@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculato
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.RatioInputGroup;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.RatioWeightsSource;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.UnitsPerDate;
+import com.newrelic.api.agent.Trace;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -43,6 +44,8 @@ public class RatioService {
   private static final int GROUPING_KEY_DAYS_MULTIPLIER = 100;
 
   private static final int DEFAULT_WEEKS = 3;
+
+  private static final int DAYS_IN_A_WEEK = 7;
 
   private static final Map<ProcessName, Predicate<Photo.Group>> FILTER_BY_PROCESS = Map.of(
       PACKING, RatioService::isPackingTote,
@@ -98,18 +101,33 @@ public class RatioService {
    * class uses the backlog at the end of it.
    *
    * @param logisticCenterId warehouse id.
+   * @param slaDateFrom      starting date for which the ratio is desired.
+   * @param slaDateTo        ending date for which the ratio is desired.
    * @param dateFrom         starting date for which the ratio is desired.
    * @param dateTo           ending date for which the ratio is desired.
    * @return A list of ratio per day for both packing and consolidation flow bifurcation.
    */
-  public Map<Instant, PackingRatio> getPackingRatio(final String logisticCenterId, final Instant dateFrom, final Instant dateTo) {
-    final Map<Instant, RatioInputGroup> inputs = getInputFromPastWeeks(logisticCenterId, dateFrom, dateTo, DEFAULT_WEEKS);
+  @Trace
+  public Map<Instant, PackingRatio> getPackingRatio(final String logisticCenterId,
+                                                    final Instant slaDateFrom,
+                                                    final Instant slaDateTo,
+                                                    final Instant dateFrom,
+                                                    final Instant dateTo) {
+    final Map<Instant, RatioInputGroup> inputs = getInputFromPastWeeks(
+        logisticCenterId,
+        slaDateFrom,
+        slaDateTo,
+        dateFrom,
+        dateTo,
+        DEFAULT_WEEKS);
     final RatioWeightsSource weights = new ConstantStepRatioWeight(dateFrom, DEFAULT_WEEKS);
 
     return PackingRatioCalculator.calculate(inputs, weights);
   }
 
   private Map<Instant, RatioInputGroup> getInputFromPastWeeks(final String logisticCenterId,
+                                                              final Instant slaDateFrom,
+                                                              final Instant slaDateTo,
                                                               final Instant dateFrom,
                                                               final Instant dateTo,
                                                               final int weeks) {
@@ -118,10 +136,13 @@ public class RatioService {
     final var zonedDateTo = ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC);
 
     final var groupedPhotos = LongStream.rangeClosed(1, weeks)
+        .parallel()
         .mapToObj(i -> backlog(
             logisticCenterId,
-            zonedDateFrom.minusWeeks(i).toInstant(),
-            zonedDateTo.minusWeeks(i).plusHours(1L).toInstant()
+            slaDateFrom.minus(i * DAYS_IN_A_WEEK, ChronoUnit.DAYS),
+            slaDateTo.minus(i * DAYS_IN_A_WEEK, ChronoUnit.DAYS),
+            dateFrom.minus(i * DAYS_IN_A_WEEK, ChronoUnit.DAYS),
+            dateTo.minus(i * DAYS_IN_A_WEEK, ChronoUnit.DAYS).plus(1L, ChronoUnit.HOURS)
         ))
         .flatMap(List::stream)
         .collect(Collectors.groupingBy(RatioService::groupingKey));
@@ -148,7 +169,12 @@ public class RatioService {
   }
 
   // TODO: Update BacklogPhotoApiGateway and move this call to that gateway
-  private List<Photo> getBacklog(final String logisticCenterId, final Instant dateFrom, final Instant dateTo) {
+  private List<Photo> getBacklog(final String logisticCenterId,
+                                 final Instant slaDateFrom,
+                                 final Instant slaDateTo,
+                                 final Instant dateFrom,
+                                 final Instant dateTo) {
+
     return backlogGateway.getPhotos(
         new BacklogPhotosRequest(
             logisticCenterId,
@@ -156,8 +182,8 @@ public class RatioService {
             Set.of(Step.TO_GROUP, Step.TO_PACK),
             null,
             null,
-            dateFrom,
-            dateTo,
+            slaDateFrom,
+            slaDateTo,
             Set.of(STEP, AREA),
             dateFrom,
             dateTo
@@ -165,8 +191,13 @@ public class RatioService {
     );
   }
 
-  private List<ProcessedUnitsAtHourAndProcess> backlog(final String logisticCenterId, final Instant dateFrom, final Instant dateTo) {
-    final var photos = getBacklog(logisticCenterId, dateFrom, dateTo);
+  private List<ProcessedUnitsAtHourAndProcess> backlog(final String logisticCenterId,
+                                                       final Instant slaDateFrom,
+                                                       final Instant slaDateTo,
+                                                       final Instant dateFrom,
+                                                       final Instant dateTo) {
+
+    final var photos = getBacklog(logisticCenterId, slaDateFrom, slaDateTo, dateFrom, dateTo);
 
     return Stream.of(
             calculateProcessedUnitsPerHourForProcess(photos, BATCH_SORTER),

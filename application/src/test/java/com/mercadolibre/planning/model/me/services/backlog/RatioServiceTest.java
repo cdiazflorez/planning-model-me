@@ -48,7 +48,7 @@ public class RatioServiceTest {
     mockBacklog(DATE_FROM, DATE_TO);
 
     // WHEN
-    final var ratios = ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO);
+    final var ratios = ratioService.getPackingRatio(WAREHOUSE_ID, DATE_FROM, DATE_TO, DATE_FROM, DATE_TO);
 
     // THEN
     assertNotNull(ratios);
@@ -70,10 +70,9 @@ public class RatioServiceTest {
   }
 
   private void mockBacklog(final Instant dateFrom, final Instant dateTo) {
-    final var requestDateTo = dateTo.plus(1, ChronoUnit.HOURS);
 
     final var firstDateFrom = dateFrom.minus(7L, ChronoUnit.DAYS);
-    final var firstDateTo = requestDateTo.minus(7L, ChronoUnit.DAYS);
+    final var firstDateTo = dateTo.minus(7L, ChronoUnit.DAYS);
     when(gateway.getPhotos(request(firstDateFrom, firstDateTo)))
         .thenReturn(
             buildPhotos(
@@ -87,7 +86,7 @@ public class RatioServiceTest {
         );
 
     final var secondDateFrom = dateFrom.minus(14L, ChronoUnit.DAYS);
-    final var secondDateTo = requestDateTo.minus(14L, ChronoUnit.DAYS);
+    final var secondDateTo = dateTo.minus(14L, ChronoUnit.DAYS);
     when(gateway.getPhotos(request(secondDateFrom, secondDateTo)))
         .thenReturn(
             buildPhotos(
@@ -101,7 +100,7 @@ public class RatioServiceTest {
         );
 
     final var thirdDateFrom = dateFrom.minus(21L, ChronoUnit.DAYS);
-    final var thirdDateTo = requestDateTo.minus(21L, ChronoUnit.DAYS);
+    final var thirdDateTo = dateTo.minus(21L, ChronoUnit.DAYS);
     when(gateway.getPhotos(request(thirdDateFrom, thirdDateTo)))
         .thenReturn(
             buildPhotos(

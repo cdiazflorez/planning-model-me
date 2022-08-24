@@ -74,7 +74,13 @@ public class ProjectBacklogTest {
     // GIVEN
     final ZonedDateTime firstDate = getNextHour(A_DATE);
 
-    when(ratioService.getPackingRatio(WAREHOUSE_ID, A_DATE.toInstant(), A_DATE.plusHours(25).toInstant())).thenReturn(emptyMap());
+    when(ratioService.getPackingRatio(
+        WAREHOUSE_ID,
+        A_DATE.toInstant(),
+        A_DATE.plusHours(10).toInstant(),
+        A_DATE.toInstant(),
+        A_DATE.plusHours(25).toInstant())
+    ).thenReturn(emptyMap());
 
     when(planningModel.getBacklogProjection(
         BacklogProjectionRequest.builder()
@@ -110,6 +116,8 @@ public class ProjectBacklogTest {
         .warehouseId(WAREHOUSE_ID)
         .processName(List.of(WAVING, PICKING, PACKING))
         .userId(1L)
+        .slaDateFrom(A_DATE.toInstant())
+        .slaDateTo(A_DATE.plusHours(10).toInstant())
         .dateFrom(A_DATE)
         .dateTo(A_DATE.plusHours(25))
         .groupType(ORDER_GROUP_TYPE)
