@@ -1,8 +1,10 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.BATCH_SORTER;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.ABILITY_LEVEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
@@ -29,6 +31,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeP
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
+import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -56,10 +59,15 @@ public class GetEntitiesTest {
   @Mock
   private LogisticCenterGateway logisticCenterGateway;
 
+  @Mock
+  private FeatureSwitches featureSwitches;
+
   @Test
   public void testExecute() {
     //GIVEN
     final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
+
+    when(featureSwitches.isProjectionLibEnabled(WAREHOUSE_ID)).thenReturn(false);
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(getDefault()));
@@ -71,6 +79,53 @@ public class GetEntitiesTest {
                                                      .dateFrom(utcCurrentTime)
                                                      .dateTo(utcCurrentTime.plusDays(1))
                                                      .processName(List.of(PICKING, PACKING, PACKING_WALL))
+                                                     .entityFilters(Map.of(
+                                                         HEADCOUNT, Map.of(
+                                                             PROCESSING_TYPE.toJson(),
+                                                             List.of(ACTIVE_WORKERS.getName())
+                                                         ),
+                                                         PRODUCTIVITY, Map.of(
+                                                             ABILITY_LEVEL.toJson(),
+                                                             List.of("1", "2")
+                                                         ))
+                                                     )
+                                                     .build())
+    ).thenReturn(
+        Map.of(
+            HEADCOUNT, mockHeadcountEntities(utcCurrentTime),
+            PRODUCTIVITY, mockProductivityEntities(utcCurrentTime),
+            THROUGHPUT, new ArrayList<>()
+        )
+    );
+
+
+    //WHEN
+    final ComplexTable response = getEntities.execute(GetProjectionInputDto.builder()
+                                                          .workflow(FBM_WMS_OUTBOUND)
+                                                          .warehouseId(WAREHOUSE_ID)
+                                                          .build());
+
+    //THEN
+    assertComplexTable(response);
+  }
+
+  @Test
+  public void testExecuteEnabled() {
+    //GIVEN
+    final ZonedDateTime utcCurrentTime = getCurrentUtcDate();
+
+    when(featureSwitches.isProjectionLibEnabled(WAREHOUSE_ID)).thenReturn(true);
+
+    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+        .thenReturn(new LogisticCenterConfiguration(getDefault()));
+
+    when(planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
+                                                     .warehouseId(WAREHOUSE_ID)
+                                                     .workflow(FBM_WMS_OUTBOUND)
+                                                     .entityTypes(List.of(HEADCOUNT, THROUGHPUT, PRODUCTIVITY))
+                                                     .dateFrom(utcCurrentTime)
+                                                     .dateTo(utcCurrentTime.plusDays(1))
+                                                     .processName(List.of(PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL))
                                                      .entityFilters(Map.of(
                                                          HEADCOUNT, Map.of(
                                                              PROCESSING_TYPE.toJson(),

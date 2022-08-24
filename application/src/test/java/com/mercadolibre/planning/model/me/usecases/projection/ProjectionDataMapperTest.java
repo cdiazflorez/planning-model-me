@@ -20,11 +20,11 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 public class ProjectionDataMapperTest {
-
-
-  static final Long FORECAST_UNIT = 0L;
+  static final long FORECAST_UNIT = 0L;
 
   static final int CURRENT_BACKLOG = 21;
+
+  static final int BACKLOG_UNITS = 30;
 
   static final int PROCESSING_TIME = 30;
 
@@ -91,14 +91,15 @@ public class ProjectionDataMapperTest {
         )).collect(Collectors.toList());
   }
 
-  private List<Backlog> createBacklogs() {
+  private List<Backlog> createBacklogs(int backlog) {
     return DATA_PROJECTION.stream()
         .map(elem -> new Backlog(
             elem.get("CPT").atZone(ZoneId.of("UTC")),
             null,
-            CURRENT_BACKLOG
+            backlog
         )).collect(Collectors.toList());
   }
+
 
   private List<Projection> mockListProjection(boolean showDeviation) {
     final Long forecastUnit = showDeviation ? FORECAST_UNIT : null;
@@ -110,6 +111,7 @@ public class ProjectionDataMapperTest {
             elem.get("PROJECT_END_DATE"),
             CURRENT_BACKLOG,
             forecastUnit,
+            BACKLOG_UNITS,
             30,
             0,
             false,
@@ -129,14 +131,16 @@ public class ProjectionDataMapperTest {
 
     final List<ProjectionResult> projections = createProjections();
 
-    final List<Backlog> backlogs = createBacklogs();
+    final List<Backlog> backlogs = createBacklogs(CURRENT_BACKLOG);
+
+    final List<Backlog> sales = createBacklogs((BACKLOG_UNITS));
 
     return GetProjectionDataInput.builder()
         .workflow(FBM_WMS_OUTBOUND)
         .warehouseId(WAREHOUSE_ID)
         .dateFrom(dateFrom)
         .dateTo(dateTo)
-        .sales(Collections.emptyList())
+        .sales(sales)
         .projections(projections)
         .planningDistribution(Collections.emptyList())
         .backlogs(backlogs)

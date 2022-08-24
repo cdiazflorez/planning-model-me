@@ -91,6 +91,7 @@ public class GetSlaProjectionTest {
             Instant.parse("2022-07-12T14:00:00Z"),
             21,
             0L,
+            0L,
             0,
             0,
             false,

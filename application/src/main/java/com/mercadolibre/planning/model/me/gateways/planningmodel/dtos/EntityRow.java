@@ -53,6 +53,12 @@ public class EntityRow {
             case PACKING:
                 rowName = RowName.PACKING;
                 break;
+            case BATCH_SORTER:
+                rowName = RowName.BATCH_SORTER;
+                break;
+            case WALL_IN:
+                rowName = RowName.WALL_IN;
+                break;
             case PACKING_WALL:
                 rowName = RowName.PACKING_WALL;
                 break;

@@ -9,6 +9,7 @@ public class Projection {
   Instant projectedEndDate;
   long currentBacklog;
   Long forecastedUnits;
+  long soldUnits;
   int cycleTime;
   int remainingQuantity;
   boolean isDeferred;
