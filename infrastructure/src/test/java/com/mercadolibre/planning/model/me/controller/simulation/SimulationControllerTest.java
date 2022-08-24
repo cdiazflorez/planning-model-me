@@ -441,8 +441,9 @@ public class SimulationControllerTest {
     return PROJECTIONS.stream().map(elem -> new Projection(
         elem.get("CPT"),
         elem.get("PROJECT_END_DATE"),
-        2L,
+        2,
         0L,
+        0,
         60,
         0,
         false,

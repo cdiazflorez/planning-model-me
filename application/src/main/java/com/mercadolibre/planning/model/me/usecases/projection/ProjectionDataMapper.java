@@ -35,13 +35,8 @@ public final class ProjectionDataMapper {
         .collect(toList());
   }
 
-  private static double getNumericDeviation(final ZonedDateTime cpt,
-                                            final Integer backlogQuantity,
-                                            final List<PlanningDistributionResponse> planning) {
-    final long forecastedItemsForCpt = planning.stream()
-        .filter(distribution -> cpt.isEqual(distribution.getDateOut()))
-        .mapToLong(PlanningDistributionResponse::getTotal)
-        .sum();
+  private static double getNumericDeviation(final long backlogQuantity,
+                                            final long forecastedItemsForCpt) {
 
     if (forecastedItemsForCpt == 0 || backlogQuantity == 0) {
       return 0.0;
@@ -50,21 +45,19 @@ public final class ProjectionDataMapper {
     return (((double) backlogQuantity / forecastedItemsForCpt) - 1);
   }
 
-  private static Long filterForecastQuantity(final ZonedDateTime cpt,
+  private static long filterForecastQuantity(final ZonedDateTime cpt,
                                              final List<PlanningDistributionResponse> planning) {
-    final Optional<PlanningDistributionResponse> cptForecast = planning.stream()
+    return planning.stream()
         .filter(elem -> cpt.isEqual(elem.getDateOut()))
-        .findFirst();
-
-    return cptForecast.map(PlanningDistributionResponse::getTotal).orElse(0L);
+        .mapToLong(PlanningDistributionResponse::getTotal)
+        .sum();
   }
 
-  private static int filterBacklogQuantity(final ZonedDateTime cpt, final List<Backlog> backlogs) {
-    final Optional<Backlog> cptBacklog = backlogs.stream()
+  private static long filterBacklogQuantity(final ZonedDateTime cpt, final List<Backlog> backlogs) {
+    return backlogs.stream()
         .filter(backlog -> cpt.isEqual(backlog.getDate()))
-        .findFirst();
-
-    return cptBacklog.map(Backlog::getQuantity).orElse(0);
+        .mapToLong(Backlog::getQuantity)
+        .sum();
   }
 
   private static Projection createProjection(
@@ -81,11 +74,11 @@ public final class ProjectionDataMapper {
     final Instant simulatedEndDate = projection.getSimulatedEndDate() != null
         ? projection.getSimulatedEndDate().toInstant()
         : null;
-    final int backlog = filterBacklogQuantity(cpt, backlogs);
-    final Integer soldItems = filterBacklogQuantity(cpt, sales);
+    final long backlog = filterBacklogQuantity(cpt, backlogs);
+    final long soldItems = filterBacklogQuantity(cpt, sales);
 
     final Long forecastItems = showDeviation ? filterForecastQuantity(cpt, planningDistribution) : null;
-    final Double divertedItems = showDeviation ? getNumericDeviation(cpt, soldItems, planningDistribution) : null;
+    final Double divertedItems = showDeviation ? getNumericDeviation(soldItems, forecastItems) : null;
 
     final int processingTime = Optional.ofNullable(projection.getProcessingTime())
         .map(ProcessingTime::getValue).orElse(DEFAULT_PROCESSING_TIME);
@@ -95,6 +88,7 @@ public final class ProjectionDataMapper {
         projectedEndDate,
         backlog,
         forecastItems,
+        soldItems,
         processingTime,
         projection.getRemainingQuantity(),
         projection.isDeferred(),
