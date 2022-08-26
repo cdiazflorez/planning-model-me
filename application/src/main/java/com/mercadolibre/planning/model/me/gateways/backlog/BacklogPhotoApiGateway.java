@@ -18,9 +18,10 @@ public interface BacklogPhotoApiGateway {
    * The cells of the returned photos are filtered and grouped according to the {@link BacklogRequest} parameter.
    *
    * @param request parameter for call client of backlog api
+   * @param cached true if you want cached response for future requests
    * @return map of process by list of BacklogPhoto
    */
-  Map<ProcessName, List<BacklogPhoto>> getTotalBacklogPerProcessAndInstantDate(BacklogRequest request);
+  Map<ProcessName, List<BacklogPhoto>> getTotalBacklogPerProcessAndInstantDate(BacklogRequest request, boolean cached);
 
   /**
    * Get backlog details.

@@ -175,7 +175,7 @@ public class RatioService {
                                  final Instant dateFrom,
                                  final Instant dateTo) {
 
-    return backlogGateway.getPhotos(
+    return backlogGateway.getPhotosCached(
         new BacklogPhotosRequest(
             logisticCenterId,
             Set.of(BacklogWorkflow.OUTBOUND_ORDERS),

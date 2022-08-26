@@ -216,7 +216,7 @@ public class DetailsBacklogRatioServiceTest {
     final var fourthDate = REQUEST_DATE;
 
     when(
-        backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest())
+        backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest(), false)
     ).thenReturn(
         Map.of(
             WAVING, List.of(
@@ -237,7 +237,7 @@ public class DetailsBacklogRatioServiceTest {
     final var thirdDate = DATE_FROM.plus(2, ChronoUnit.HOURS);
 
     when(
-        backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest())
+        backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest(), false)
     ).thenReturn(
         Map.of(
             WAVING, List.of(

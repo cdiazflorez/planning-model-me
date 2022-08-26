@@ -24,6 +24,7 @@ import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.json.type.TypeReference;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestPool;
+import com.mercadolibre.planning.model.me.config.CacheConfig;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.BacklogNotRespondingException;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -170,6 +172,20 @@ public class BacklogApiClientImplement extends HttpClient implements BacklogApiG
       log.error("could not retrieve backlog photos", e);
       throw new BacklogNotRespondingException("Unable to get photos from Backlog API", e);
     }
+  }
+
+  /**
+   * Gets the backlog photos in the interval specified by the {@link PhotoRequest}.
+   * The cells of the returned photos are filtered and grouped according to the {@link PhotoRequest} parameter
+   * cached same request from ratio service.
+   *
+   * @param request request of client photo.
+   * @return list of photos obtain for client.
+   * @throws BacklogNotRespondingException error call backlogs api.
+   */
+  @Cacheable(CacheConfig.BACKLOG_PHOTO)
+  public List<Photo> getPhotosCached(final BacklogPhotosRequest request) {
+    return this.getPhotos(request);
   }
 
   /**

@@ -144,7 +144,7 @@ class GetHistoricalBacklogTest {
             null,
             REQUEST_DATE.minusWeeks(shift).toInstant(),
             REQUEST_DATE.minusWeeks(shift).plusHours(24).toInstant(),
-            Set.copyOf(of(STEP, AREA)))
+            Set.copyOf(of(STEP, AREA))), true
     )).thenReturn(Map.of(
         WAVING, of(new BacklogPhoto(mockFromDate.plus(0, ChronoUnit.HOURS), 239),
                         new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 472),
