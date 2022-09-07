@@ -34,9 +34,6 @@ dependencies {
     implementation 'com.mercadolibre.restclient:meli-restclient-default'
     implementation 'com.mercadolibre.resilience:resilience-core'
     implementation 'com.mercadolibre.library:kraken-client-java:1.4.0'
-    implementation 'org.springframework.boot:spring-boot-starter-cache'
-    implementation 'com.github.ben-manes.caffeine:caffeine'
-
 
     // bigquery
     implementation platform('com.google.cloud:libraries-bom:25.0.0')

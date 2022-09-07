@@ -53,7 +53,7 @@ public class BacklogPhotoApiAdapterTest {
 
     // WHEN
     final Map<ProcessName, List<BacklogPhoto>> backlogByProcess =
-        backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(backlogPhotoRequest, false);
+        backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(backlogPhotoRequest);
 
     // THEN
     final var expected = expectedSummaryBacklog();

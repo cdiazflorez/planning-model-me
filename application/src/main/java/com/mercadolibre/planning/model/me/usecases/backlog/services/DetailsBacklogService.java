@@ -85,7 +85,7 @@ public class DetailsBacklogService implements GetBacklogMonitorDetails.BacklogPr
             input.getSlaFrom(),
             input.getSlaTo(),
             Set.of(STEP, AREA)
-        ), false
+        )
     );
   }
 

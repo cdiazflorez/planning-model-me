@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class BacklogMonitorController {
 
   private static final Duration DEFAULT_HOURS_LOOKBACK = Duration.ofHours(2);
-  private static final Duration DEFAULT_HOURS_LOOKAHEAD = Duration.ofHours(21);
+  private static final Duration DEFAULT_HOURS_LOOKAHEAD = Duration.ofHours(8);
 
   private final GetBacklogMonitor getBacklogMonitor;
 
@@ -56,7 +56,7 @@ public class BacklogMonitorController {
     var updatedProcesses = processes == null || processes.isEmpty() ? List.of(WAVING, PICKING, PACKING) : processes;
 
     final Instant requestDate = requestClock.now();
-    final Instant startOfCurrentHour = this.getStartHour(dateFrom, requestDate);
+    final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
     final WorkflowBacklogDetail response = getBacklogMonitor.execute(
         new GetBacklogMonitorInputDto(
@@ -71,11 +71,10 @@ public class BacklogMonitorController {
     );
 
     return ResponseEntity.ok(
-            new WorkflowBacklogDetail(
-                response.getDateSelector(),
-                getWorkflow(workflow).getName(),
-                response.getCurrentDatetime(),
-                response.getProcesses())
+        new WorkflowBacklogDetail(
+            getWorkflow(workflow).getName(),
+            response.getCurrentDatetime(),
+            response.getProcesses())
     );
   }
 
@@ -90,8 +89,7 @@ public class BacklogMonitorController {
       @RequestParam(required = false, defaultValue = "false") final Boolean hasWall) {
 
     final Instant requestDate = requestClock.now();
-    final Instant startOfCurrentHour = this.getStartHour(dateFrom, requestDate);
-
+    final Instant startOfCurrentHour = requestDate.truncatedTo(ChronoUnit.HOURS);
 
     return ResponseEntity.ok(
         getBacklogMonitorDetails.execute(new GetBacklogMonitorDetailsInput(
@@ -107,22 +105,16 @@ public class BacklogMonitorController {
     );
   }
 
-  private Instant dateFrom(final OffsetDateTime dateFrom, final Instant startOfCurrentHour) {
-    return dateFrom == null
+  private Instant dateFrom(final OffsetDateTime date, final Instant startOfCurrentHour) {
+    return date == null
         ? startOfCurrentHour.minus(DEFAULT_HOURS_LOOKBACK)
-        : dateFrom.toInstant().minus(DEFAULT_HOURS_LOOKBACK);
+        : date.toInstant();
   }
 
-  private Instant dateTo(final OffsetDateTime dateTo, final Instant startOfCurrentHour) {
-    return dateTo == null
+  private Instant dateTo(final OffsetDateTime date, final Instant startOfCurrentHour) {
+    return date == null
         ? startOfCurrentHour.plus(DEFAULT_HOURS_LOOKAHEAD)
-        : dateTo.toInstant();
-  }
-
-  private Instant getStartHour(final OffsetDateTime dateFrom, final Instant currentDate) {
-    return dateFrom == null
-        ? currentDate.truncatedTo(ChronoUnit.HOURS)
-        : dateFrom.toInstant().truncatedTo(ChronoUnit.HOURS);
+        : date.toInstant();
   }
 
   private Workflow getWorkflow(final String workflowParam) {

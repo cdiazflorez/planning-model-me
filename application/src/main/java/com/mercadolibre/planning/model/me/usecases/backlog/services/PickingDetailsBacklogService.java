@@ -64,7 +64,7 @@ public class PickingDetailsBacklogService implements BacklogProvider {
   @Override
   public Map<Instant, List<NumberOfUnitsInAnArea>> getMonitorBacklog(final BacklogProviderInput input) {
     final var currentBacklog = getCurrentBacklog(input);
-    final var mappedBacklog = mapPhotosToNumberOfUnitsInAnAreaByTakenOn(currentBacklog.getOrDefault(PICKING, emptyList()));
+    final var mappedBacklog = mapPhotosToNumberOfUnitsInAnAreaByTakenOn(currentBacklog.get(PICKING));
 
     final var pastBacklog = selectPhotos(mappedBacklog, input.getDateFrom(), input.getRequestDate());
     final var projectedBacklog = getProjectedBacklog(input, currentBacklog, input.getThroughput(), input.getRequestDate());

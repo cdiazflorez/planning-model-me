@@ -28,7 +28,5 @@ public interface BacklogApiGateway {
 
   List<Photo> getPhotos(BacklogPhotosRequest request);
 
-  List<Photo> getPhotosCached(BacklogPhotosRequest request);
-
   Photo getLastPhoto(BacklogLastPhotoRequest request);
 }

@@ -4,10 +4,8 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
-import static java.time.ZoneOffset.UTC;
 import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -20,19 +18,15 @@ import com.mercadolibre.planning.model.me.entities.monitor.ProcessDetail;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitor;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -45,13 +39,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 class BacklogMonitorControllerTest {
   private static final String BASE_URL = "/wms/flow/middleend/logistic_centers/%s/backlog";
 
-  private static final String CURRENT_DATE = "2021-08-12T01:00:00Z";
-
-  private static final String DATE_FROM = "2021-08-13T01:00:00Z";
-
-  private static final String DATE_FROM_MINUS_TWO_HOURS = "2021-08-12T23:00:00Z";
-
-  private static final String A_DATE_MINUS_TWO_HOURS = "2021-08-11T23:00:00Z";
+  private static final String A_DATE = "2021-08-12T01:00:00Z";
 
   private static final String ANOTHER_DATE = "2021-08-12T04:00:00Z";
 
@@ -60,8 +48,6 @@ class BacklogMonitorControllerTest {
   private static final String PROCESS = "picking";
 
   private static final String OUTBOUND = "fbm-wms-outbound";
-
-  private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
 
   @Autowired
   private MockMvc mockMvc;
@@ -79,13 +65,13 @@ class BacklogMonitorControllerTest {
   void testGetMonitorWithProcess() throws Exception {
     // GIVEN
 
-    var firstDate = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
+    var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
     GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
         firstDate,
         WAREHOUSE_ID,
         FBM_WMS_OUTBOUND,
         List.of(WAVING, PICKING, PACKING),
-        OffsetDateTime.parse(DATE_FROM_MINUS_TWO_HOURS, ISO_DATE_TIME).toInstant(),
+        firstDate,
         OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
         999L,
         false);
@@ -97,38 +83,8 @@ class BacklogMonitorControllerTest {
     final ResultActions result = mockMvc.perform(
         MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
             .param("workflow", OUTBOUND)
-            .param("date_from", DATE_FROM)
+            .param("date_from", A_DATE)
             .param("date_to", ANOTHER_DATE)
-            .param("caller.id", "999")
-            .param("processes", "WAVING, PICKING, PACKING")
-    );
-
-    // THEN
-    result.andExpect(status().isOk());
-    result.andExpect(content().json(
-        getResourceAsString("get_backlog_monitor_response.json")));
-  }
-
-  @Test
-  void testGetMonitorWithoutFromDate() throws Exception {
-    var firstDate = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
-    var dateTo = firstDate.plus(Duration.ofHours(21));
-    GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
-        firstDate,
-        WAREHOUSE_ID,
-        FBM_WMS_OUTBOUND,
-        List.of(WAVING, PICKING, PACKING),
-        OffsetDateTime.parse(A_DATE_MINUS_TWO_HOURS, ISO_DATE_TIME).toInstant(),
-        dateTo,
-        999L,
-        false);
-
-    when(requestClock.now()).thenReturn(firstDate);
-    when(getBacklogMonitor.execute(input)).thenReturn(getMockedResponse());
-
-    final ResultActions result = mockMvc.perform(
-        MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
-            .param("workflow", OUTBOUND)
             .param("caller.id", "999")
             .param("processes", "WAVING, PICKING, PACKING")
     );
@@ -143,13 +99,13 @@ class BacklogMonitorControllerTest {
   void testGetMonitorWithoutProcesses() throws Exception {
     // GIVEN
 
-    var firstDate = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
+    var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
     GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
         firstDate,
         WAREHOUSE_ID,
         FBM_WMS_OUTBOUND,
         List.of(WAVING, PICKING, PACKING),
-        OffsetDateTime.parse(A_DATE_MINUS_TWO_HOURS, ISO_DATE_TIME).toInstant(),
+        firstDate,
         OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
         999L,
         false);
@@ -161,7 +117,7 @@ class BacklogMonitorControllerTest {
     final ResultActions result = mockMvc.perform(
         MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
             .param("workflow", OUTBOUND)
-            .param("date_from", CURRENT_DATE)
+            .param("date_from", A_DATE)
             .param("date_to", ANOTHER_DATE)
             .param("caller.id", "999")
             .param("processes", "")
@@ -177,13 +133,13 @@ class BacklogMonitorControllerTest {
   void testGetMonitorEmptyProcesses() throws Exception {
     // GIVEN
 
-    var firstDate = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
+    var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
     GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
         firstDate,
         WAREHOUSE_ID,
         FBM_WMS_OUTBOUND,
         List.of(WAVING, PICKING, PACKING),
-        OffsetDateTime.parse(A_DATE_MINUS_TWO_HOURS, ISO_DATE_TIME).toInstant(),
+        firstDate,
         OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
         999L,
         false);
@@ -195,7 +151,7 @@ class BacklogMonitorControllerTest {
     final ResultActions result = mockMvc.perform(
         MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
             .param("workflow", OUTBOUND)
-            .param("date_from", CURRENT_DATE)
+            .param("date_from", A_DATE)
             .param("date_to", ANOTHER_DATE)
             .param("caller.id", "999")
     );
@@ -209,13 +165,13 @@ class BacklogMonitorControllerTest {
   @Test
   void testGetDetails() throws Exception {
     // GIVEN
-    var firstDate = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
+    var firstDate = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
     GetBacklogMonitorDetailsInput input = new GetBacklogMonitorDetailsInput(
         firstDate,
         WAREHOUSE_ID,
         FBM_WMS_OUTBOUND,
         PICKING,
-        OffsetDateTime.parse(A_DATE_MINUS_TWO_HOURS, ISO_DATE_TIME).toInstant(),
+        firstDate,
         OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant(),
         999L,
         false
@@ -229,7 +185,7 @@ class BacklogMonitorControllerTest {
         MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/details")
             .param("workflow", OUTBOUND)
             .param("process", PROCESS)
-            .param("date_from", CURRENT_DATE)
+            .param("date_from", A_DATE)
             .param("date_to", ANOTHER_DATE)
             .param("caller.id", "999")
     );
@@ -245,7 +201,7 @@ class BacklogMonitorControllerTest {
     // WHEN
     final ResultActions result = mockMvc.perform(
         MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
-            .param("date_from", CURRENT_DATE)
+            .param("date_from", A_DATE)
             .param("date_to", ANOTHER_DATE)
             .param("caller.id", "999")
     );
@@ -260,7 +216,7 @@ class BacklogMonitorControllerTest {
     final ResultActions result = mockMvc.perform(
         MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
             .param("workflow", OUTBOUND)
-            .param("date_from", CURRENT_DATE)
+            .param("date_from", A_DATE)
             .param("date_to", ANOTHER_DATE)
     );
 
@@ -269,11 +225,11 @@ class BacklogMonitorControllerTest {
   }
 
   private GetBacklogMonitorDetailsResponse getDetailsMockedResponse() {
-    Instant date = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
+    Instant date = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
     Instant anotherDate = OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant();
 
     return new GetBacklogMonitorDetailsResponse(
-        OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant(),
+        OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant(),
         List.of(
             new DetailedBacklogPhoto(
                 date,
@@ -333,16 +289,10 @@ class BacklogMonitorControllerTest {
   }
 
   private WorkflowBacklogDetail getMockedResponse() {
-    Instant date = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
+    Instant date = OffsetDateTime.parse(A_DATE, ISO_DATE_TIME).toInstant();
     Instant anotherDate = OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant();
-    LogisticCenterConfiguration config = new LogisticCenterConfiguration(TIME_ZONE);
-    final ZonedDateTime selectedDate = ZonedDateTime.ofInstant(Instant.now(), UTC);
+
     return new WorkflowBacklogDetail(
-        getDateSelector(
-            ZonedDateTime.ofInstant(Instant.now(), config.getZoneId()),
-            selectedDate,
-            3
-        ),
         "outbound-orders",
         Instant.now(),
         List.of(
