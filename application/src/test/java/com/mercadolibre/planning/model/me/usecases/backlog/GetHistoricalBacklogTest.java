@@ -73,14 +73,49 @@ class GetHistoricalBacklogTest {
     final var dateFrom = DATE_FROM.minusWeeks(3L);
     final var dateTo = DATE_TO.minusWeeks(1L).plusHours(1L);
 
-    mockHistoricalBacklog(1);
-    mockHistoricalBacklog(2);
-    mockHistoricalBacklog(3);
+    mockHistoricalBacklog(1, REQUEST_DATE);
+    mockHistoricalBacklog(2, REQUEST_DATE);
+    mockHistoricalBacklog(3, REQUEST_DATE);
 
     mockThroughput(dateFrom, dateTo);
 
     final var input = new GetHistoricalBacklogInput(
         REQUEST_DATE.toInstant(),
+        WAREHOUSE_ID,
+        FBM_WMS_OUTBOUND,
+        of(WAVING, PICKING, PACKING),
+        DATE_FROM.toInstant(),
+        DATE_TO.toInstant()
+    );
+
+    // WHEN
+    final Map<ProcessName, HistoricalBacklog> backlogs = getHistoricalBacklog.execute(input);
+
+    // THEN
+    assertNotNull(backlogs);
+
+    // waving
+    final var waving = backlogs.get(WAVING);
+    assertEquals(239, waving.get(DATE_FROM.toInstant()).getUnits()); // 239, 232, 225
+    assertEquals(184, waving.get(DATE_FROM.toInstant()).getMinutes()); // 77, 79, 82
+
+    assertEquals(938, waving.get(DATE_TO.toInstant()).getUnits()); // 938, 910, 882
+    assertEquals(183, waving.get(DATE_TO.toInstant()).getMinutes()); // 303, 312, 322
+  }
+
+  @Test
+  void testExecuteDiffDateFrom (){
+    final var dateFrom = DATE_FROM.minusWeeks(3L);
+    final var dateTo = DATE_TO.minusWeeks(1L).plusHours(1L);
+    final var request = REQUEST_DATE.minusDays(1);
+
+    mockHistoricalBacklog(1, request);
+    mockHistoricalBacklog(2, request);
+    mockHistoricalBacklog(3, request);
+
+    mockThroughput(dateFrom, dateTo);
+    final var input = new GetHistoricalBacklogInput(
+        request.toInstant(),
         WAREHOUSE_ID,
         FBM_WMS_OUTBOUND,
         of(WAVING, PICKING, PACKING),
@@ -128,10 +163,15 @@ class GetHistoricalBacklogTest {
     when(getProcessThroughput.execute(input)).thenReturn(new GetThroughputResult(result));
   }
 
-  private void mockHistoricalBacklog(final long shift) {
+  private void mockHistoricalBacklog(final long shift, ZonedDateTime requestDate) {
 
+    final Instant mockRequestDate = requestDate.minusWeeks(shift).toInstant();
     final Instant mockFromDate = DATE_FROM.minusWeeks(shift).toInstant();
     final Instant mockToDate = DATE_TO.minusWeeks(shift).toInstant();
+
+    final Instant adjustedRequestDate = mockFromDate.isAfter(mockRequestDate)
+        ? mockFromDate
+        : mockRequestDate;
 
     when(backlogPhotoApiGateway.getTotalBacklogPerProcessAndInstantDate(
         new BacklogRequest(
@@ -142,8 +182,8 @@ class GetHistoricalBacklogTest {
             mockToDate.plus(5, ChronoUnit.MINUTES),
             null,
             null,
-            REQUEST_DATE.minusWeeks(shift).toInstant(),
-            REQUEST_DATE.minusWeeks(shift).plusHours(24).toInstant(),
+            adjustedRequestDate,
+            adjustedRequestDate.plus(24, ChronoUnit.HOURS),
             Set.copyOf(of(STEP, AREA))), true
     )).thenReturn(Map.of(
         WAVING, of(new BacklogPhoto(mockFromDate.plus(0, ChronoUnit.HOURS), 239),
