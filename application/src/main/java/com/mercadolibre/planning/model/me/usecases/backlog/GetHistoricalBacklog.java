@@ -117,7 +117,8 @@ class GetHistoricalBacklog {
             adjustedRequestDate.minus(offsetFrom, HOURS),
             adjustedRequestDate.plus(offsetTo, HOURS),
             Set.of(STEP, AREA)
-        )
+        ),
+        true
     );
   }
 

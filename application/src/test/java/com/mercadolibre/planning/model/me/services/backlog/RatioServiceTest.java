@@ -14,6 +14,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotosRequ
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo.Group;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.PackingRatio;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -73,7 +74,7 @@ public class RatioServiceTest {
 
     final var firstDateFrom = dateFrom.minus(7L, ChronoUnit.DAYS);
     final var firstDateTo = dateTo.minus(7L, ChronoUnit.DAYS);
-    when(gateway.getPhotos(request(firstDateFrom, firstDateTo)))
+    when(gateway.getPhotosCached(request(firstDateFrom, firstDateTo)))
         .thenReturn(
             buildPhotos(
                 firstDateFrom,
@@ -87,7 +88,7 @@ public class RatioServiceTest {
 
     final var secondDateFrom = dateFrom.minus(14L, ChronoUnit.DAYS);
     final var secondDateTo = dateTo.minus(14L, ChronoUnit.DAYS);
-    when(gateway.getPhotos(request(secondDateFrom, secondDateTo)))
+    when(gateway.getPhotosCached(request(secondDateFrom, secondDateTo)))
         .thenReturn(
             buildPhotos(
                 secondDateFrom,
@@ -101,7 +102,7 @@ public class RatioServiceTest {
 
     final var thirdDateFrom = dateFrom.minus(21L, ChronoUnit.DAYS);
     final var thirdDateTo = dateTo.minus(21L, ChronoUnit.DAYS);
-    when(gateway.getPhotos(request(thirdDateFrom, thirdDateTo)))
+    when(gateway.getPhotosCached(request(thirdDateFrom, thirdDateTo)))
         .thenReturn(
             buildPhotos(
                 thirdDateFrom,
@@ -125,7 +126,7 @@ public class RatioServiceTest {
         dateTo,
         Set.of(STEP, AREA),
         dateFrom,
-        dateTo
+        dateTo.plus(Duration.ofHours(1))
     );
   }
 

@@ -17,6 +17,8 @@ public interface BacklogApiGateway {
 
   List<Consolidation> getBacklog(BacklogRequest request);
 
+  List<Photo> getPhotosCached(BacklogPhotosRequest request);
+
   List<Consolidation> getCurrentBacklog(String logisticCenterId,
                                         List<String> workflows,
                                         List<String> steps,

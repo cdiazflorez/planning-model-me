@@ -5,7 +5,6 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
-import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.PROCESS;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
@@ -18,7 +17,6 @@ import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
 import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
@@ -35,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -56,14 +53,10 @@ class GetHistoricalBacklogTest {
   private static final ZonedDateTime DATE_FROM = DATES.get(0);
 
   private static final ZonedDateTime DATE_TO = DATES.get(3);
-
-
-  @InjectMocks
-  private GetHistoricalBacklog getHistoricalBacklog;
-
   @Mock
   BacklogPhotoApiGateway backlogPhotoApiGateway;
-
+  @InjectMocks
+  private GetHistoricalBacklog getHistoricalBacklog;
   @Mock
   private GetProcessThroughput getProcessThroughput;
 
@@ -144,21 +137,22 @@ class GetHistoricalBacklogTest {
             null,
             REQUEST_DATE.minusWeeks(shift).toInstant(),
             REQUEST_DATE.minusWeeks(shift).plusHours(24).toInstant(),
-            Set.copyOf(of(STEP, AREA)))
+            Set.copyOf(of(STEP, AREA))),
+        true
     )).thenReturn(Map.of(
         WAVING, of(new BacklogPhoto(mockFromDate.plus(0, ChronoUnit.HOURS), 239),
-                        new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 472),
-                        new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 705),
-                        new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 938)),
+            new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 472),
+            new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 705),
+            new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 938)),
         PICKING, of(new BacklogPhoto(mockFromDate.plus(0, ChronoUnit.HOURS), 717),
-                         new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 1416),
-                         new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 2115),
-                         new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 2814)),
+            new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 1416),
+            new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 2115),
+            new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 2814)),
         PACKING, of(new BacklogPhoto(mockFromDate.plus(0, ChronoUnit.HOURS), 478),
-                         new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 944),
-                         new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 1410),
-                         new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 1876))
-        ));
+            new BacklogPhoto(mockFromDate.plus(1, ChronoUnit.HOURS), 944),
+            new BacklogPhoto(mockFromDate.plus(2, ChronoUnit.HOURS), 1410),
+            new BacklogPhoto(mockFromDate.plus(3, ChronoUnit.HOURS), 1876))
+    ));
 
   }
 

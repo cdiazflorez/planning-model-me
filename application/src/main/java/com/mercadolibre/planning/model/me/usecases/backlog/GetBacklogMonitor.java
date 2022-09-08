@@ -112,7 +112,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS),
             input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS),
             Set.of(STEP, AREA)
-        )
+        ),
+        false
     );
 
     final Map<ProcessName, List<BacklogPhoto>> projectedBacklog = getProjectedBacklog(workflow, input, backlogPhotoByProcess);
