@@ -36,7 +36,8 @@ public enum Step {
   TO_RESTOCK,
   TO_ROUTE,
   TO_SORT,
-  UNAVAILABLE;
+  UNAVAILABLE,
+  GROUPED;
 
   @JsonCreator
   public static Optional<Step> from(final String value) {

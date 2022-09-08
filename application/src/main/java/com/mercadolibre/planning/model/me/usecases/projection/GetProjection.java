@@ -128,6 +128,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
           .build();
 
     } catch (RuntimeException ex) {
+      log.error(ex.getMessage(), ex);
       return PlanningView.builder()
           .isNewVersion(PROJECTIONS_VERSION)
           .currentDate(now().withZoneSameInstant(UTC).truncatedTo(ChronoUnit.SECONDS))
@@ -202,10 +203,10 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
         .build());
   }
 
-  private List<PlanningDistributionResponse> getForecastedBacklog(final String warehouseId,
-                                                                  final Workflow workflow,
-                                                                  final ZonedDateTime dateFrom,
-                                                                  final ZonedDateTime dateTo) {
+  protected List<PlanningDistributionResponse> getForecastedBacklog(final String warehouseId,
+                                                                    final Workflow workflow,
+                                                                    final ZonedDateTime dateFrom,
+                                                                    final ZonedDateTime dateTo) {
 
     return planningModelGateway.getPlanningDistribution(PlanningDistributionRequest.builder()
         .warehouseId(warehouseId)
