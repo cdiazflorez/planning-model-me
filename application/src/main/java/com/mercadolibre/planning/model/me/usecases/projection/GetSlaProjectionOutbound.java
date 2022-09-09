@@ -59,6 +59,7 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
     this.ratioService = ratioService;
   }
 
+
   @Override
   protected List<ProjectionResult> getProjection(final GetProjectionInputDto input,
                                                  final ZonedDateTime dateFrom,
