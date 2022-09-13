@@ -187,7 +187,7 @@ public class DetailsBacklogServiceTest {
     final var fourthDate = REQUEST_DATE;
 
     Mockito.when(
-        backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest())
+        backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest(), false)
     ).thenReturn(
         Map.of(
             WAVING, List.of(
@@ -208,7 +208,7 @@ public class DetailsBacklogServiceTest {
     final var thirdDate = DATE_FROM.plus(2, ChronoUnit.HOURS);
 
     Mockito.when(
-        backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest())
+        backlogGateway.getTotalBacklogPerProcessAndInstantDate(backlogRequest(), false)
     ).thenReturn(
         Map.of(
             WAVING, List.of(

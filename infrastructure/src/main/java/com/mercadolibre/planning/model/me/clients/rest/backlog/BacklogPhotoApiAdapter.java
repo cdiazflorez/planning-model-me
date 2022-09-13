@@ -37,8 +37,9 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
   private final BacklogApiGateway backlogApiGateway;
 
   @Override
-  public Map<ProcessName, List<BacklogPhoto>> getTotalBacklogPerProcessAndInstantDate(final BacklogRequest request) {
-    final List<Photo> photos = backlogApiGateway.getPhotos(toBacklogPhotosRequest(request));
+  public Map<ProcessName, List<BacklogPhoto>> getTotalBacklogPerProcessAndInstantDate(final BacklogRequest request, final boolean cached) {
+    final List<Photo> photos = cached ? backlogApiGateway.getPhotosCached(toBacklogPhotosRequest(request))
+        : backlogApiGateway.getPhotos(toBacklogPhotosRequest(request));
 
     final Instant lastTakenOn = photos.stream().max(Comparator.comparing(Photo::getTakenOn)).map(Photo::getTakenOn).orElse(Instant.now());
 

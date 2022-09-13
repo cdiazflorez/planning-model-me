@@ -49,5 +49,4 @@ public class TrajectoriesRequest {
     private List<ProcessingType> processingType;
 
     private List<Simulation> simulations;
-
 }

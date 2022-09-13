@@ -174,19 +174,20 @@ class GetBacklogMonitorTest {
     final GetBacklogMonitorInputDto input = input(FBM_WMS_OUTBOUND, 1);
 
     when(backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(
-             new BacklogRequest(
-                 input.getWarehouseId(),
-                 Set.of(input.getWorkflow()),
-                 Set.copyOf(PROCESS_BY_WORKFLOW.get(input.getWorkflow())),
-                 input.getDateFrom(),
-                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
-                 null,
-                 null,
-                 input.getRequestDate(),
-                 input.getRequestDate().plus(24, ChronoUnit.HOURS),
-                 Set.of(STEP, AREA)
-             )
-         )
+            new BacklogRequest(
+                input.getWarehouseId(),
+                Set.of(input.getWorkflow()),
+                Set.copyOf(PROCESS_BY_WORKFLOW.get(input.getWorkflow())),
+                input.getDateFrom(),
+                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
+                null,
+                null,
+                input.getRequestDate(),
+                input.getRequestDate().plus(24, ChronoUnit.HOURS),
+                Set.of(STEP, AREA)
+            ),
+            false
+        )
     ).thenThrow(new TestException());
 
 
@@ -337,21 +338,22 @@ class GetBacklogMonitorTest {
     final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
 
     when(backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(
-             new BacklogRequest(
-                 input.getWarehouseId(),
-                 Set.of(input.getWorkflow()),
-                 Set.copyOf(PROCESS_BY_WORKFLOW.get(input.getWorkflow())),
-                 input.getDateFrom(),
-                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
-                 null,
-                 null,
-                 isOutbound ? input.getRequestDate() : input.getRequestDate().minus(168, ChronoUnit.HOURS),
-                 isOutbound
-                     ? input.getRequestDate().plus(24, ChronoUnit.HOURS)
-                     : input.getRequestDate().plus(168, ChronoUnit.HOURS),
-                 Set.of(STEP, AREA)
-             )
-         )
+            new BacklogRequest(
+                input.getWarehouseId(),
+                Set.of(input.getWorkflow()),
+                Set.copyOf(PROCESS_BY_WORKFLOW.get(input.getWorkflow())),
+                input.getDateFrom(),
+                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
+                null,
+                null,
+                isOutbound ? input.getRequestDate() : input.getRequestDate().minus(168, ChronoUnit.HOURS),
+                isOutbound
+                    ? input.getRequestDate().plus(24, ChronoUnit.HOURS)
+                    : input.getRequestDate().plus(168, ChronoUnit.HOURS),
+                Set.of(STEP, AREA)
+            ),
+            false
+        )
     ).thenReturn(response);
   }
 
@@ -395,8 +397,8 @@ class GetBacklogMonitorTest {
 
     var currentBacklog = backlogApiResponse.entrySet().stream()
         .map(backlogByProcess ->
-                 new CurrentBacklog(backlogByProcess.getKey(),
-                                    backlogByProcess.getValue().get(0).getQuantity()))
+            new CurrentBacklog(backlogByProcess.getKey(),
+                backlogByProcess.getValue().get(0).getQuantity()))
         .collect(Collectors.toList());
 
     final var requestProjection = BacklogProjectionInput.builder()
@@ -416,16 +418,16 @@ class GetBacklogMonitorTest {
     when(backlogProjection.execute(requestProjection))
         .thenReturn(isOutbound ? of(
             new BacklogProjectionResponse(WAVING, of(new ProjectionValue(firstDate, 125),
-                                                     new ProjectionValue(secondDate, 250))),
+                new ProjectionValue(secondDate, 250))),
             new BacklogProjectionResponse(PICKING, of(new ProjectionValue(firstDate, 410),
-                                                      new ProjectionValue(secondDate, 630))),
+                new ProjectionValue(secondDate, 630))),
             new BacklogProjectionResponse(PACKING, of(new ProjectionValue(firstDate, 888),
-                                                      new ProjectionValue(secondDate, 999))))
-                        : of(
+                new ProjectionValue(secondDate, 999))))
+            : of(
             new BacklogProjectionResponse(CHECK_IN, of(new ProjectionValue(firstDate, 125),
-                                                       new ProjectionValue(secondDate, 250))),
+                new ProjectionValue(secondDate, 250))),
             new BacklogProjectionResponse(PUT_AWAY, of(new ProjectionValue(firstDate, 410),
-                                                       new ProjectionValue(secondDate, 630)))));
+                new ProjectionValue(secondDate, 630)))));
 
   }
 
@@ -448,7 +450,7 @@ class GetBacklogMonitorTest {
 
     when(getHistoricalBacklog.execute(request))
         .thenReturn(isOutbound
-                        ? Map.of(
+            ? Map.of(
             WAVING, new HistoricalBacklog(
                 Map.of(
                     firstDateHash, new UnitMeasure(200, 20),
@@ -467,7 +469,7 @@ class GetBacklogMonitorTest {
                     secondDateHash, new UnitMeasure(120, 12),
                     thirdDateHash, new UnitMeasure(220, 22),
                     fourthDateHash, new UnitMeasure(420, 42))))
-                        : Map.of(
+            : Map.of(
             CHECK_IN, new HistoricalBacklog(
                 Map.of(
                     firstDateHash, new UnitMeasure(200, 20),
@@ -533,7 +535,7 @@ class GetBacklogMonitorTest {
         .warehouseId(input.getWarehouseId())
         .workflow(input.getWorkflow())
         .processes(PROCESS_BY_WORKFLOW.get(input.getWorkflow()).stream().map(x -> ProcessName.from(x.getName()))
-                       .collect(Collectors.toList()))
+            .collect(Collectors.toList()))
         .dateFrom(input.getDateFrom())
         .dateTo(input.getDateTo())
         .build();
@@ -541,7 +543,7 @@ class GetBacklogMonitorTest {
     final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
 
     when(getBacklogLimits.execute(request)).thenReturn(isOutbound
-                                                           ? Map.of(
+        ? Map.of(
         WAVING, Map.of(
             DATES.get(0).toInstant(), new BacklogLimit(5, 15),
             DATES.get(1).toInstant(), new BacklogLimit(7, 21),
@@ -563,7 +565,7 @@ class GetBacklogMonitorTest {
             DATES.get(3).toInstant(), new BacklogLimit(0, 10),
             DATES.get(5).toInstant(), new BacklogLimit(3, 30),
             DATES.get(6).toInstant(), new BacklogLimit(4, 40)))
-                                                           : Map.of(
+        : Map.of(
         CHECK_IN, Map.of(
             DATES.get(0).toInstant(), new BacklogLimit(5, 15),
             DATES.get(1).toInstant(), new BacklogLimit(7, 21),

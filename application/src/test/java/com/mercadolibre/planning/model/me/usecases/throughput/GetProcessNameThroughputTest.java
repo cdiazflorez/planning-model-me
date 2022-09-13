@@ -34,7 +34,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class GetProcessThroughputTest {
+class GetProcessNameThroughputTest {
 
   @InjectMocks
   private GetProcessThroughput getProcessThroughput;

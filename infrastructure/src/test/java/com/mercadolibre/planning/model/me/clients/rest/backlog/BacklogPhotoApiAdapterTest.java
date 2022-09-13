@@ -53,18 +53,31 @@ public class BacklogPhotoApiAdapterTest {
 
     // WHEN
     final Map<ProcessName, List<BacklogPhoto>> backlogByProcess =
-        backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(backlogPhotoRequest);
+        backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(backlogPhotoRequest, false);
 
     // THEN
     final var expected = expectedSummaryBacklog();
 
-    Assertions.assertEquals(expected.get(PICKING).size(), backlogByProcess.get(PICKING).size());
-    Assertions.assertEquals(expected.get(PACKING).size(), backlogByProcess.get(PACKING).size());
-    Assertions.assertEquals(expected.get(PACKING_WALL).size(), backlogByProcess.get(PACKING_WALL).size());
-    Assertions.assertEquals(sortedBacklogPhotoByTakenOn(expected.get(PICKING)), sortedBacklogPhotoByTakenOn(backlogByProcess.get(PICKING)));
-    Assertions.assertEquals(sortedBacklogPhotoByTakenOn(expected.get(PACKING)), sortedBacklogPhotoByTakenOn(backlogByProcess.get(PACKING)));
-    Assertions.assertEquals(sortedBacklogPhotoByTakenOn(expected.get(PACKING_WALL)),
-                            sortedBacklogPhotoByTakenOn(backlogByProcess.get(PACKING_WALL)));
+    assertionsSummary(expected, backlogByProcess);
+  }
+
+  @Test
+  void testExecuteBacklogSummaryCached() {
+    // GIVEN
+    final BacklogPhotosRequest photoRequestMock = createBacklogPhotoRequest(Set.of(Step.TO_PICK, Step.TO_PACK));
+    when(backlogApiGateway.getPhotosCached(photoRequestMock))
+        .thenReturn(mockPhotos());
+
+    final BacklogRequest backlogPhotoRequest = createRequest(Set.of(PICKING, PACKING, PACKING_WALL));
+
+    // WHEN
+    final Map<ProcessName, List<BacklogPhoto>> backlogByProcess =
+        backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(backlogPhotoRequest, true);
+
+    // THEN
+    final var expected = expectedSummaryBacklog();
+
+    assertionsSummary(expected, backlogByProcess);
   }
 
   @Test
@@ -90,6 +103,19 @@ public class BacklogPhotoApiAdapterTest {
     Assertions.assertEquals(sortedPhotoByTakenOn(expected.get(PICKING)), sortedPhotoByTakenOn(backlogByProcess.get(PICKING)));
     Assertions.assertEquals(sortedPhotoByTakenOn(expected.get(PACKING)), sortedPhotoByTakenOn(backlogByProcess.get(PACKING)));
     Assertions.assertEquals(sortedPhotoByTakenOn(expected.get(PACKING_WALL)), sortedPhotoByTakenOn(backlogByProcess.get(PACKING_WALL)));
+  }
+
+  private void assertionsSummary(
+      final Map<ProcessName, List<BacklogPhoto>> expected,
+      final Map<ProcessName, List<BacklogPhoto>> backlogByProcess) {
+
+    Assertions.assertEquals(expected.get(PICKING).size(), backlogByProcess.get(PICKING).size());
+    Assertions.assertEquals(expected.get(PACKING).size(), backlogByProcess.get(PACKING).size());
+    Assertions.assertEquals(expected.get(PACKING_WALL).size(), backlogByProcess.get(PACKING_WALL).size());
+    Assertions.assertEquals(sortedBacklogPhotoByTakenOn(expected.get(PICKING)), sortedBacklogPhotoByTakenOn(backlogByProcess.get(PICKING)));
+    Assertions.assertEquals(sortedBacklogPhotoByTakenOn(expected.get(PACKING)), sortedBacklogPhotoByTakenOn(backlogByProcess.get(PACKING)));
+    Assertions.assertEquals(sortedBacklogPhotoByTakenOn(expected.get(PACKING_WALL)),
+        sortedBacklogPhotoByTakenOn(backlogByProcess.get(PACKING_WALL)));
   }
 
   private BacklogRequest createRequest(Set<ProcessName> processes) {
@@ -155,16 +181,16 @@ public class BacklogPhotoApiAdapterTest {
                 List.of(
                     new Photo.Group(
                         Map.of(BacklogGrouper.STEP, "TO_PICK",
-                               BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                               BacklogGrouper.AREA, "MZ"),
+                            BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                            BacklogGrouper.AREA, "MZ"),
                         100,
                         1000
                     ),
 
                     new Photo.Group(
                         Map.of(BacklogGrouper.STEP, "TO_PICK",
-                               BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                               BacklogGrouper.AREA, "HV"),
+                            BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                            BacklogGrouper.AREA, "HV"),
                         10,
                         1000
                     )
@@ -175,15 +201,15 @@ public class BacklogPhotoApiAdapterTest {
                 List.of(
                     new Photo.Group(
                         Map.of(BacklogGrouper.STEP, "TO_PICK",
-                               BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
+                            BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
                         50,
                         500
                     ),
 
                     new Photo.Group(
                         Map.of(BacklogGrouper.STEP, "TO_PICK",
-                               BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                               BacklogGrouper.AREA, "HV"),
+                            BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                            BacklogGrouper.AREA, "HV"),
                         5,
                         50
                     )
@@ -197,8 +223,8 @@ public class BacklogPhotoApiAdapterTest {
                 List.of(
                     new Photo.Group(
                         Map.of(BacklogGrouper.STEP, "TO_PACK",
-                               BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                               BacklogGrouper.AREA, "AREA"),
+                            BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                            BacklogGrouper.AREA, "AREA"),
                         200,
                         2000
                     )
@@ -209,7 +235,7 @@ public class BacklogPhotoApiAdapterTest {
                 List.of(
                     new Photo.Group(
                         Map.of(BacklogGrouper.STEP, "TO_PACK",
-                               BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
+                            BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
                         100,
                         1000
                     )
@@ -223,8 +249,8 @@ public class BacklogPhotoApiAdapterTest {
                 List.of(
                     new Photo.Group(
                         Map.of(BacklogGrouper.STEP, "TO_PACK",
-                               BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                               BacklogGrouper.AREA, Area.PW.getName()),
+                            BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                            BacklogGrouper.AREA, Area.PW.getName()),
                         50,
                         500
                     )
@@ -235,8 +261,8 @@ public class BacklogPhotoApiAdapterTest {
                 List.of(
                     new Photo.Group(
                         Map.of(BacklogGrouper.STEP, "TO_PACK",
-                               BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                               BacklogGrouper.AREA, Area.PW.getName()),
+                            BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                            BacklogGrouper.AREA, Area.PW.getName()),
                         10,
                         100
                     )
@@ -254,32 +280,32 @@ public class BacklogPhotoApiAdapterTest {
             List.of(
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PICK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, "MZ"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, "MZ"),
                     100,
                     1000
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PICK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, "HV"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, "HV"),
                     10,
                     1000
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PACK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, "AREA"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, "AREA"),
                     200,
                     2000
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PACK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, Area.PW.getName()),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, Area.PW.getName()),
                     50,
                     500
                 )
@@ -291,32 +317,32 @@ public class BacklogPhotoApiAdapterTest {
             List.of(
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PICK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, "MZ"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, "MZ"),
                     100,
                     1000
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PICK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, "HV"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, "HV"),
                     10,
                     1000
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PACK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, "AREA"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, "AREA"),
                     200,
                     2000
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PACK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, Area.PW.getName()),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, Area.PW.getName()),
                     50,
                     500
                 )
@@ -328,30 +354,30 @@ public class BacklogPhotoApiAdapterTest {
             List.of(
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PICK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
                     30,
                     500
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PICK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, "HV"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, "HV"),
                     3,
                     50
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PACK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
                     20,
                     1000
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PACK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, Area.PW.getName()),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, Area.PW.getName()),
                     2,
                     100
                 )
@@ -363,30 +389,30 @@ public class BacklogPhotoApiAdapterTest {
             List.of(
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PICK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
                     50,
                     500
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PICK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, "HV"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, "HV"),
                     5,
                     50
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PACK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z"),
                     100,
                     1000
                 ),
 
                 new Photo.Group(
                     Map.of(BacklogGrouper.STEP, "TO_PACK",
-                           BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
-                           BacklogGrouper.AREA, Area.PW.getName()),
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, Area.PW.getName()),
                     10,
                     100
                 )

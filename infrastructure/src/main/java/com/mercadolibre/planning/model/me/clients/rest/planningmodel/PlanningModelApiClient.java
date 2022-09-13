@@ -30,6 +30,7 @@ import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
@@ -49,6 +50,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsR
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SlaProperties;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
@@ -422,8 +424,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         .build();
 
     return send(request, response -> response.getData(new TypeReference<>() {
-        }));
-    }
+    }));
+  }
 
   @Trace
   @Override
@@ -506,6 +508,19 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  @Trace
+  @Override
+  public Map<Workflow, Map<Instant, SlaProperties>> getCycleTime(final String logisticCenterId, final CycleTimeRequest cycleTimeRequest) {
+    final HttpRequest request = HttpRequest.builder()
+        .url(format(CONFIGURATION_URL + "/logistic_center_id/%s/cycle_time/search", logisticCenterId))
+        .POST(requestSupplier(cycleTimeRequest))
+        .acceptedHttpStatuses(Set.of(OK))
+        .build();
+
+    return send(request, response -> response.getData(new TypeReference<>() {
+    }));
+  }
+
   protected Map<String, String> createEntityParams(final TrajectoriesRequest request) {
     final Map<String, String> params = getBaseParam(request.getWarehouseId(),
                                                     request.getDateFrom(),
@@ -514,6 +529,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     if (request.getProcessingType() != null) {
       params.put("processing_type", getEnumNamesAsString(request.getProcessingType()));
     }
+
     return params;
   }
 

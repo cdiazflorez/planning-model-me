@@ -247,6 +247,38 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
   }
 
   @Test
+  void testGetPhotosCached() throws JSONException {
+    // GIVEN
+    final String url = String.format(URL_PHOTO, WAREHOUSE_ID);
+    mockSuccessfulResponse(url, buildResponsePhotos());
+
+    final Instant dateFrom = Instant.parse("2022-06-22T00:00:00Z");
+    final Instant dateTo = Instant.parse("2022-06-24T00:00:00Z");
+
+    // WHEN
+    final List<Photo> photos = client.getPhotosCached(
+        new BacklogPhotosRequest(
+            WAREHOUSE_ID,
+            Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+            Set.of(Step.TO_PICK),
+            dateFrom,
+            dateTo,
+            dateFrom,
+            dateTo,
+            Set.of(BacklogGrouper.STEP),
+            dateFrom,
+            dateTo
+        )
+    );
+
+    final Photo photo = photos.get(0);
+
+    assertEquals(Instant.parse("2022-06-21T12:00:00Z"), photo.getTakenOn());
+    assertEquals("to_pick", photo.getGroups().get(0).getGroupValue(BacklogGrouper.STEP).get());
+    assertEquals(12, photo.getGroups().get(0).getTotal());
+  }
+
+  @Test
   void testGetBacklogErr() {
     // GIVEN
     mockErroneousResponse();
