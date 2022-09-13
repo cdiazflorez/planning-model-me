@@ -10,6 +10,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
+import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.TIME_ZONE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.parse;
@@ -28,6 +29,8 @@ import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -46,6 +49,7 @@ import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughput
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import com.mercadolibre.planning.model.me.utils.TestException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -53,6 +57,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -69,6 +74,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class GetBacklogMonitorTest {
+
+  public static final TimeZone TIME_ZONE = TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
+
   private static final List<ZonedDateTime> DATES = of(
       parse("2021-08-12T01:00:00Z", ISO_OFFSET_DATE_TIME),
       parse("2021-08-12T02:00:00Z", ISO_OFFSET_DATE_TIME),
@@ -111,6 +119,9 @@ class GetBacklogMonitorTest {
   private GetBacklogLimits getBacklogLimits;
 
   @Mock
+  private LogisticCenterGateway logisticCenterGateway;
+
+  @Mock
   private ProjectBacklog backlogProjection;
 
   private MockedStatic<DateUtils> mockDt;
@@ -136,6 +147,7 @@ class GetBacklogMonitorTest {
   void testExecuteOK1() {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
+    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockDateUtils(mockDt);
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
@@ -174,20 +186,19 @@ class GetBacklogMonitorTest {
     final GetBacklogMonitorInputDto input = input(FBM_WMS_OUTBOUND, 1);
 
     when(backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(
-            new BacklogRequest(
-                input.getWarehouseId(),
-                Set.of(input.getWorkflow()),
-                Set.copyOf(PROCESS_BY_WORKFLOW.get(input.getWorkflow())),
-                input.getDateFrom(),
-                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
-                null,
-                null,
-                input.getRequestDate(),
-                input.getRequestDate().plus(24, ChronoUnit.HOURS),
-                Set.of(STEP, AREA)
-            ),
-            false
-        )
+             new BacklogRequest(
+                 input.getWarehouseId(),
+                 Set.of(input.getWorkflow()),
+                 Set.copyOf(PROCESS_BY_WORKFLOW.get(input.getWorkflow())),
+                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS).minus(Duration.ofHours(2)),
+                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
+                 null,
+                 null,
+                 input.getRequestDate(),
+                 input.getRequestDate().plus(24, ChronoUnit.HOURS),
+                 Set.of(STEP, AREA)
+             ), false
+         )
     ).thenThrow(new TestException());
 
 
@@ -205,7 +216,7 @@ class GetBacklogMonitorTest {
     var input = input(workflow, 1);
     mockDateUtils(mockDt);
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(workflow == FBM_WMS_OUTBOUND));
-
+    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockHistoricalBacklog(input);
     mockThroughput(input);
 
@@ -225,6 +236,7 @@ class GetBacklogMonitorTest {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
     mockDateUtils(mockDt);
+    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
     mockThroughput(input);
@@ -264,6 +276,7 @@ class GetBacklogMonitorTest {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
     mockDateUtils(mockDt);
+    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
     mockHistoricalBacklog(input);
@@ -333,27 +346,31 @@ class GetBacklogMonitorTest {
     );
   }
 
+  private void mockLogisticCenterConfiguration(String warehouseId) {
+    when(logisticCenterGateway.getConfiguration(warehouseId))
+        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+  }
+
   private void mockBacklogPhotoApiResponse(final GetBacklogMonitorInputDto input, final Map<ProcessName, List<BacklogPhoto>> response) {
 
     final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
 
     when(backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(
-            new BacklogRequest(
-                input.getWarehouseId(),
-                Set.of(input.getWorkflow()),
-                Set.copyOf(PROCESS_BY_WORKFLOW.get(input.getWorkflow())),
-                input.getDateFrom(),
-                input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
-                null,
-                null,
-                isOutbound ? input.getRequestDate() : input.getRequestDate().minus(168, ChronoUnit.HOURS),
-                isOutbound
-                    ? input.getRequestDate().plus(24, ChronoUnit.HOURS)
-                    : input.getRequestDate().plus(168, ChronoUnit.HOURS),
-                Set.of(STEP, AREA)
-            ),
-            false
-        )
+             new BacklogRequest(
+                 input.getWarehouseId(),
+                 Set.of(input.getWorkflow()),
+                 Set.copyOf(PROCESS_BY_WORKFLOW.get(input.getWorkflow())),
+                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS).minus(Duration.ofHours(2)),
+                 input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
+                 null,
+                 null,
+                 isOutbound ? input.getRequestDate() : input.getRequestDate().minus(168, ChronoUnit.HOURS),
+                 isOutbound
+                     ? input.getRequestDate().plus(24, ChronoUnit.HOURS)
+                     : input.getRequestDate().plus(168, ChronoUnit.HOURS),
+                 Set.of(STEP, AREA)
+             ), false
+         )
     ).thenReturn(response);
   }
 
@@ -397,8 +414,8 @@ class GetBacklogMonitorTest {
 
     var currentBacklog = backlogApiResponse.entrySet().stream()
         .map(backlogByProcess ->
-            new CurrentBacklog(backlogByProcess.getKey(),
-                backlogByProcess.getValue().get(0).getQuantity()))
+                 new CurrentBacklog(backlogByProcess.getKey(),
+                                    backlogByProcess.getValue().get(0).getQuantity()))
         .collect(Collectors.toList());
 
     final var requestProjection = BacklogProjectionInput.builder()
@@ -418,14 +435,14 @@ class GetBacklogMonitorTest {
     when(backlogProjection.execute(requestProjection))
         .thenReturn(isOutbound ? of(
             new BacklogProjectionResponse(WAVING, of(new ProjectionValue(firstDate, 125),
-                new ProjectionValue(secondDate, 250))),
+                                                     new ProjectionValue(secondDate, 250))),
             new BacklogProjectionResponse(PICKING, of(new ProjectionValue(firstDate, 410),
-                new ProjectionValue(secondDate, 630))),
+                                                      new ProjectionValue(secondDate, 630))),
             new BacklogProjectionResponse(PACKING, of(new ProjectionValue(firstDate, 888),
-                new ProjectionValue(secondDate, 999))))
-            : of(
+                                                      new ProjectionValue(secondDate, 999))))
+                        : of(
             new BacklogProjectionResponse(CHECK_IN, of(new ProjectionValue(firstDate, 125),
-                new ProjectionValue(secondDate, 250))),
+                                                       new ProjectionValue(secondDate, 250))),
             new BacklogProjectionResponse(PUT_AWAY, of(new ProjectionValue(firstDate, 410),
                 new ProjectionValue(secondDate, 630)))));
 

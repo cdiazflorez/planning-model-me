@@ -7,6 +7,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
 import static com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog.emptyBacklog;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -17,6 +18,8 @@ import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -33,6 +36,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjec
 import com.mercadolibre.planning.model.me.usecases.throughput.GetProcessThroughput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputInput;
 import com.mercadolibre.planning.model.me.usecases.throughput.dtos.GetThroughputResult;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -56,6 +60,10 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
       FBM_WMS_INBOUND, ""
   );
 
+  private static final int SELECTOR_DAYS_TO_SHOW = 2;
+
+  private static final Duration DEFAULT_HOURS_LOOKBACK = Duration.ofHours(2);
+
   private static final int HOUR_TPH_FUTURE = 24;
 
   private final ProjectBacklog backlogProjection;
@@ -67,6 +75,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
   private final GetHistoricalBacklog getHistoricalBacklog;
 
   private final GetBacklogLimits getBacklogLimits;
+
+  private final LogisticCenterGateway logisticCenterGateway;
 
   private static int getTphAveragePerHour(final UnitMeasure backlogMeasuredInHour) {
     final int seconds = 60;
@@ -85,12 +95,21 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
    */
   public WorkflowBacklogDetail execute(final GetBacklogMonitorInputDto input) {
     final List<ProcessData> processData = getData(input);
+    final ZonedDateTime selectedDate = ZonedDateTime.ofInstant(input.getDateFrom().plus(DEFAULT_HOURS_LOOKBACK), UTC);
+    final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(input.getWarehouseId());
+
+
     final Instant takenOnDateOfLastPhoto = getDateWhenLatestPhotoOfAllCurrentBacklogsWasTaken(
         processData,
         input.getRequestDate().truncatedTo(ChronoUnit.SECONDS)
     );
 
     return new WorkflowBacklogDetail(
+        getDateSelector(
+            ZonedDateTime.ofInstant(input.getRequestDate(), config.getZoneId()),
+            selectedDate,
+            SELECTOR_DAYS_TO_SHOW
+        ),
         input.getWorkflow().getName(),
         takenOnDateOfLastPhoto,
         buildProcesses(processData, takenOnDateOfLastPhoto)
@@ -105,7 +124,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             input.getWarehouseId(),
             Set.of(input.getWorkflow()),
             Set.copyOf(input.getProcesses()),
-            input.getDateFrom(),
+            input.getRequestDate().truncatedTo(ChronoUnit.HOURS).minus(DEFAULT_HOURS_LOOKBACK),
             input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
             null,
             null,
@@ -125,13 +144,22 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     return input.getProcesses().stream()
         .map(processName -> new ProcessData(
             ProcessName.from(processName.getName()),
-            backlogPhotoByProcess.getOrDefault(processName, emptyList()),
+            includeCurrentBacklog(backlogPhotoByProcess.getOrDefault(processName, emptyList()), input.getDateFrom())
+                ? backlogPhotoByProcess.get(processName)
+                : emptyList(),
             projectedBacklog.getOrDefault(processName, emptyList()),
             historicalBacklog.getOrDefault(processName, emptyBacklog()),
             throughput.find(ProcessName.from(processName.getName())).orElse(emptyMap()),
             backlogLimits.getOrDefault(ProcessName.from(processName.getName()), emptyMap())
         ))
         .collect(Collectors.toList());
+  }
+
+  private boolean includeCurrentBacklog(List<BacklogPhoto> currentPhoto, Instant dateFrom) {
+    if (currentPhoto.isEmpty()) {
+      return false;
+    }
+    return !currentPhoto.stream().findFirst().get().getTakenOn().isBefore(dateFrom);
   }
 
   private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(final GetBacklogMonitorInputDto input) {
@@ -159,6 +187,12 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
       /* The zone is not necessary but the ProjectBacklog use case requires it to no avail. */
       final ZonedDateTime requestDate = ZonedDateTime.ofInstant(input.getRequestDate().truncatedTo(ChronoUnit.HOURS), UTC);
 
+      final Instant dateFrom = input.getDateFrom().isAfter(input.getRequestDate())
+          ? input.getDateFrom().truncatedTo(ChronoUnit.HOURS)
+          : input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
+
+      // toDo Revisar API ya que siempre se espera que los backlogs lleguen ordenados del mas reciente al mas antiguo
+
       var currentBacklog = backlogPhotoByProcess.entrySet().stream()
           .map(backlogByProcess ->
                    new CurrentBacklog(backlogByProcess.getKey(),
@@ -169,8 +203,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
           .workflow(input.getWorkflow())
           .warehouseId(input.getWarehouseId())
           .processName(input.getProcesses())
-          .slaDateFrom(input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS))
-          .slaDateTo(input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS))
+          .slaDateFrom(Instant.from(requestDate.minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS)))
+          .slaDateTo(dateFrom.plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS))
           .dateFrom(requestDate)
           .dateTo(ZonedDateTime.ofInstant(input.getDateTo(), UTC))
           .groupType(GROUP_TYPE_BY_WORKFLOW.get(input.getWorkflow()))
@@ -190,6 +224,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
                                          .filter(v -> !v.getDate()
                                              .toInstant()
                                              .isAfter(input.getDateTo())
+                                             && !v.getDate().toInstant().isBefore(Instant.from(dateFrom))
                                          )
                                          .map(v -> new BacklogPhoto(
                                              v.getDate().toInstant(),
