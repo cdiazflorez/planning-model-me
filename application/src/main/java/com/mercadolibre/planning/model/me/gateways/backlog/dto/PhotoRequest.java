@@ -16,8 +16,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode
 @AllArgsConstructor
 public class PhotoRequest {
   protected String logisticCenterId;

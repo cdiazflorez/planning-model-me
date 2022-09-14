@@ -98,7 +98,7 @@ class GetHistoricalBacklog {
 
     final Instant requestDate = input.getDateFrom().isAfter(input.getRequestDate())
         ? input.getDateFrom()
-        : input.getRequestDate();
+        : input.getRequestDate().truncatedTo(HOURS);
 
     final Instant adjustedRequestDate = requestDate.minus(shift);
     final Instant adjustedDateFrom = input.getDateFrom().minus(shift);
