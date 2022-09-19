@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.EqualsAndHashCode;
 
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class BacklogPhotosRequest extends PhotoRequest {
 
   Instant dateFrom;

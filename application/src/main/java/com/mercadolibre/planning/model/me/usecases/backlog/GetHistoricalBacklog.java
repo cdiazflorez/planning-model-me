@@ -39,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 @Named
 @AllArgsConstructor
 class GetHistoricalBacklog {
-  private static final String PROCESS_KEY = "process";
 
   private static final int BACKLOG_WEEKS_DATE_FROM_LOOKBACK = 3;
 
@@ -96,7 +95,12 @@ class GetHistoricalBacklog {
   private Map<ProcessName, List<BacklogPhoto>> getConsolidatedTrajectory(final GetHistoricalBacklogInput input,
                                                                          final Duration shift) {
 
-    final Instant adjustedRequestDate = input.getRequestDate().minus(shift);
+
+    final Instant requestDate = input.getDateFrom().isAfter(input.getRequestDate())
+        ? input.getDateFrom()
+        : input.getRequestDate().truncatedTo(HOURS);
+
+    final Instant adjustedRequestDate = requestDate.minus(shift);
     final Instant adjustedDateFrom = input.getDateFrom().minus(shift);
     // adds five minutes to take into account the consolidations job's delays
     final Instant adjustedDateTo = input.getDateTo().minus(shift).plus(5, MINUTES);
