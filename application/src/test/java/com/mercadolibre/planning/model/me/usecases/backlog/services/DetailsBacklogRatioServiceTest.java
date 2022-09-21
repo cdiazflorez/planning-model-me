@@ -145,7 +145,7 @@ public class DetailsBacklogRatioServiceTest {
   void testMissingBacklog() {
     // GIVEN
     mockMissingBacklog();
-    mockProjection(0);
+    mockProjection(600);
     when(ratioService.getPackingRatio(WAREHOUSE_ID, REQUEST_DATE, REQUEST_DATE.plus(24, ChronoUnit.HOURS), DATE_FROM, DATE_TO)).thenReturn(emptyMap());
 
     // WHEN
@@ -226,7 +226,12 @@ public class DetailsBacklogRatioServiceTest {
                 new BacklogPhoto(secondDate.plus(30, ChronoUnit.MINUTES), 1500),
                 new BacklogPhoto(thirdDate, 600),
                 new BacklogPhoto(fourthDate, 650)
-            )
+            ),
+            PICKING, List.of(new BacklogPhoto(firstDate, 0)),
+            PACKING, List.of(new BacklogPhoto(firstDate, 0)),
+            BATCH_SORTER, List.of(new BacklogPhoto(firstDate, 0)),
+            WALL_IN, List.of(new BacklogPhoto(firstDate, 0)),
+            PACKING_WALL, List.of(new BacklogPhoto(firstDate, 0))
         )
     );
   }
@@ -245,7 +250,12 @@ public class DetailsBacklogRatioServiceTest {
                 new BacklogPhoto(firstDate.plus(30, ChronoUnit.MINUTES), 1000),
                 new BacklogPhoto(secondDate.plus(30, ChronoUnit.MINUTES), 1500),
                 new BacklogPhoto(thirdDate, 600)
-            )
+            ),
+            PICKING, List.of(new BacklogPhoto(firstDate, 0)),
+            PACKING, List.of(new BacklogPhoto(firstDate, 0)),
+            BATCH_SORTER, List.of(new BacklogPhoto(firstDate, 0)),
+            WALL_IN, List.of(new BacklogPhoto(firstDate, 0)),
+            PACKING_WALL, List.of(new BacklogPhoto(firstDate, 0))
         )
     );
   }
@@ -261,12 +271,12 @@ public class DetailsBacklogRatioServiceTest {
                 .workflow(FBM_WMS_OUTBOUND)
                 .processName(List.of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL))
                 .currentBacklog(List.of(
-                    new CurrentBacklog(WAVING, currentBacklog),
                     new CurrentBacklog(PICKING, 0),
+                    new CurrentBacklog(PACKING_WALL, 0),
                     new CurrentBacklog(PACKING, 0),
+                    new CurrentBacklog(WAVING, currentBacklog),
                     new CurrentBacklog(BATCH_SORTER, 0),
-                    new CurrentBacklog(WALL_IN, 0),
-                    new CurrentBacklog(PACKING_WALL, 0)
+                    new CurrentBacklog(WALL_IN, 0)
                 ))
                 .dateFrom(dateFrom)
                 .dateTo(dateTo)

@@ -147,7 +147,6 @@ class GetBacklogMonitorTest {
   void testExecuteOK1() {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
-    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockDateUtils(mockDt);
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
@@ -216,7 +215,6 @@ class GetBacklogMonitorTest {
     var input = input(workflow, 1);
     mockDateUtils(mockDt);
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(workflow == FBM_WMS_OUTBOUND));
-    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockHistoricalBacklog(input);
     mockThroughput(input);
 
@@ -236,7 +234,6 @@ class GetBacklogMonitorTest {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
     mockDateUtils(mockDt);
-    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
     mockThroughput(input);
@@ -276,7 +273,6 @@ class GetBacklogMonitorTest {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
     mockDateUtils(mockDt);
-    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
     mockHistoricalBacklog(input);
@@ -344,11 +340,6 @@ class GetBacklogMonitorTest {
         0L,
         false
     );
-  }
-
-  private void mockLogisticCenterConfiguration(String warehouseId) {
-    when(logisticCenterGateway.getConfiguration(warehouseId))
-        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
   }
 
   private void mockBacklogPhotoApiResponse(final GetBacklogMonitorInputDto input, final Map<ProcessName, List<BacklogPhoto>> response) {

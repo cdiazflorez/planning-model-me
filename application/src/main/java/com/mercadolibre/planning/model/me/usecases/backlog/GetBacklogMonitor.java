@@ -95,21 +95,12 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
    */
   public WorkflowBacklogDetail execute(final GetBacklogMonitorInputDto input) {
     final List<ProcessData> processData = getData(input);
-    final ZonedDateTime selectedDate = ZonedDateTime.ofInstant(input.getDateFrom().plus(DEFAULT_HOURS_LOOKBACK), UTC);
-    final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(input.getWarehouseId());
-
-
     final Instant takenOnDateOfLastPhoto = getDateWhenLatestPhotoOfAllCurrentBacklogsWasTaken(
         processData,
         input.getRequestDate().truncatedTo(ChronoUnit.SECONDS)
     );
 
     return new WorkflowBacklogDetail(
-        getDateSelector(
-            ZonedDateTime.ofInstant(input.getRequestDate(), config.getZoneId()),
-            selectedDate,
-            SELECTOR_DAYS_TO_SHOW
-        ),
         input.getWorkflow().getName(),
         takenOnDateOfLastPhoto,
         buildProcesses(processData, takenOnDateOfLastPhoto)
@@ -118,7 +109,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
   private List<ProcessData> getData(final GetBacklogMonitorInputDto input) {
     final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
-
     final Map<ProcessName, List<BacklogPhoto>> backlogPhotoByProcess = backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(
         new BacklogRequest(
             input.getWarehouseId(),
