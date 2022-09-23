@@ -28,10 +28,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
 import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
-import com.mercadolibre.planning.model.me.usecases.backlog.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -39,6 +37,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
@@ -54,9 +53,6 @@ public class DetailsBacklogService implements GetBacklogMonitorDetails.BacklogPr
       FBM_WMS_INBOUND, of(CHECK_IN, PUT_AWAY)
   );
   private static final List<ProcessName> PROCESSES = of(WAVING, WALL_IN, PACKING_WALL, CHECK_IN, PUT_AWAY);
-
-  private static final Duration DEFAULT_HOURS_LOOKBACK = Duration.ofHours(2);
-
   protected final ProjectionGateway projectionGateway;
   private final BacklogPhotoApiGateway backlogPhotoApiGateway;
 
@@ -68,43 +64,26 @@ public class DetailsBacklogService implements GetBacklogMonitorDetails.BacklogPr
   @Override
   public Map<Instant, List<NumberOfUnitsInAnArea>> getMonitorBacklog(final BacklogProviderInput input) {
     final var currentBacklog = getCurrentBacklog(input);
-    final var backlogByProcess = getCurrentBacklogForAllProcess(currentBacklog);
     final var mappedBacklog = mapBacklogToNumberOfUnitsInAreasByTakenOn(currentBacklog.get(input.getProcess()));
 
     final var pastBacklog = selectPhotos(mappedBacklog, input.getDateFrom(), input.getRequestDate());
-    final var projectedBacklog = getProjectedBacklog(input, backlogByProcess);
+    final var projectedBacklog = getProjectedBacklog(input, pastBacklog);
 
     return mergeMaps(pastBacklog, projectedBacklog);
   }
 
-  private List<CurrentBacklog> getCurrentBacklogForAllProcess(Map<ProcessName, List<BacklogPhoto>> backlogPhotoByProcess) {
-
-    return backlogPhotoByProcess.entrySet()
-        .stream()
-        .sorted(Map.Entry.comparingByKey())
-        .map(backlogByProcess ->
-            new CurrentBacklog(backlogByProcess.getKey(),
-                !backlogByProcess.getValue().isEmpty()
-                    ? backlogByProcess.getValue().stream().max(Comparator.comparing(BacklogPhoto::getTakenOn)).get().getQuantity()
-                    : 0
-            )
-        )
-        .collect(Collectors.toList());
-  }
-
   private Map<ProcessName, List<BacklogPhoto>> getCurrentBacklog(final BacklogProviderInput input) {
-    final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
     return backlogPhotoApiGateway.getTotalBacklogPerProcessAndInstantDate(
         new BacklogRequest(
             input.getWarehouseId(),
             Set.of(input.getWorkflow()),
             Set.copyOf(PROCESS_DEPENDENCIES_BY_WORKFLOWS.get(input.getWorkflow())),
-            input.getRequestDate().truncatedTo(ChronoUnit.HOURS).minus(DEFAULT_HOURS_LOOKBACK),
-            input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
+            input.getDateFrom(),
+            input.getRequestDate(),
             null,
             null,
-            input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS),
-            input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS),
+            input.getSlaFrom(),
+            input.getSlaTo(),
             Set.of(STEP, AREA)
         ),
         false
@@ -122,10 +101,22 @@ public class DetailsBacklogService implements GetBacklogMonitorDetails.BacklogPr
   }
 
   private Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklog(final BacklogProviderInput input,
-                                                                        final List<CurrentBacklog> currentBacklog) {
+                                                                        final Map<Instant, List<NumberOfUnitsInAnArea>> backlog) {
+
+    final var lastConsolidationDate = backlog.keySet().stream().max(Comparator.naturalOrder()).orElseThrow();
+    final var currentBacklog = backlog.entrySet()
+        .stream()
+        .filter(entry -> lastConsolidationDate.equals(entry.getKey()))
+        .map(Map.Entry::getValue)
+        .flatMap(List::stream)
+        .mapToInt(NumberOfUnitsInAnArea::getUnits)
+        .sum();
+
+    var currentByProcess = PROCESS_DEPENDENCIES_BY_WORKFLOWS.get(input.getWorkflow()).stream()
+        .collect(Collectors.toMap(Function.identity(), item -> item.equals(input.getProcess()) ? currentBacklog : 0));
 
     try {
-      return getProjectedBacklogWithoutAreas(input, currentBacklog);
+      return getProjectedBacklogWithoutAreas(input, currentByProcess);
     } catch (RuntimeException e) {
       log.error("could not retrieve backlog projections", e);
     }
@@ -134,14 +125,18 @@ public class DetailsBacklogService implements GetBacklogMonitorDetails.BacklogPr
   }
 
   protected Map<Instant, List<NumberOfUnitsInAnArea>> getProjectedBacklogWithoutAreas(final BacklogProviderInput input,
-                                                                                      final List<CurrentBacklog> currentBacklog) {
+                                                                                      final Map<ProcessName, Integer> backlog) {
 
-    final Instant dateFrom = input.getDateFrom().isAfter(input.getRequestDate())
-        ? input.getDateFrom().truncatedTo(ChronoUnit.HOURS)
-        : input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
+    final Instant dateFrom = input.getRequestDate().truncatedTo(ChronoUnit.HOURS);
 
     final Instant dateTo = input.getDateTo()
         .truncatedTo(ChronoUnit.HOURS);
+
+    // the projection requires backlog for all processes
+    final var currentBacklog = PROCESS_DEPENDENCIES_BY_WORKFLOWS.get(input.getWorkflow())
+        .stream()
+        .map(process -> new CurrentBacklog(process, backlog.getOrDefault(process, 0)))
+        .collect(Collectors.toList());
 
     final List<BacklogProjectionResponse> projectedBacklog = projectionGateway.getBacklogProjection(
         BacklogProjectionRequest.builder()

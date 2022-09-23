@@ -8,6 +8,7 @@ import java.util.List;
 
 @Value
 public class WorkflowBacklogDetail {
+    private DateSelector dateSelector;
     private String workflow;
     private Instant currentDatetime;
     private List<ProcessDetail> processes;

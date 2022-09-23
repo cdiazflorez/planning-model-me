@@ -118,9 +118,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   private Map<Instant, List<NumberOfUnitsInAnArea>> getBacklog(final GetBacklogMonitorDetailsInput input,
                                                                final GetThroughputResult throughput) {
     final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
-    final Instant dateFrom = input.getDateFrom().truncatedTo(ChronoUnit.HOURS);
     final var slaFrom = input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS);
-    final var slaTo = dateFrom.plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS);
+    final var slaTo = input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS);
 
     final var providerInput = new BacklogProvider.BacklogProviderInput(
         input.getRequestDate(),
@@ -140,9 +139,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .filter(provider -> provider.canProvide(input.getProcess()))
         .findFirst()
         .map(provider -> provider.getMonitorBacklog(providerInput))
-        .orElseThrow()
-        .entrySet().stream().filter(map -> !map.getKey().isBefore(dateFrom))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        .orElseThrow();
   }
 
   private List<VariablesPhoto> getData(final GetBacklogMonitorDetailsInput input) {

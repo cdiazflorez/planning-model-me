@@ -6,7 +6,6 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -119,7 +118,7 @@ public class DetailsBacklogServiceTest {
   void testMissingBacklog() {
     // GIVEN
     mockMissingBacklog();
-    mockProjection(600);
+    mockProjection(0);
 
     // WHEN
     final var results = service.getMonitorBacklog(input());
@@ -198,12 +197,7 @@ public class DetailsBacklogServiceTest {
                 new BacklogPhoto(secondDate.plus(30, ChronoUnit.MINUTES), 1500),
                 new BacklogPhoto(thirdDate, 600),
                 new BacklogPhoto(fourthDate, 650)
-            ),
-            PICKING, List.of(new BacklogPhoto(firstDate, 0)),
-            PACKING, List.of(new BacklogPhoto(firstDate, 0)),
-            BATCH_SORTER, List.of(new BacklogPhoto(firstDate, 0)),
-            WALL_IN, List.of(new BacklogPhoto(firstDate, 0)),
-            PACKING_WALL, List.of(new BacklogPhoto(firstDate, 0))
+            )
         )
     );
   }
@@ -222,12 +216,7 @@ public class DetailsBacklogServiceTest {
                 new BacklogPhoto(firstDate.plus(30, ChronoUnit.MINUTES), 1000),
                 new BacklogPhoto(secondDate.plus(30, ChronoUnit.MINUTES), 1500),
                 new BacklogPhoto(thirdDate, 600)
-            ),
-            PICKING, emptyList(),
-            PACKING, emptyList(),
-            BATCH_SORTER, emptyList(),
-            WALL_IN, emptyList(),
-            PACKING_WALL, emptyList()
+            )
         )
     );
   }
@@ -235,6 +224,7 @@ public class DetailsBacklogServiceTest {
   private void mockProjection(final int currentBacklog) {
     final var dateFrom = REQUEST_DATE.atZone(ZoneOffset.UTC).truncatedTo(ChronoUnit.HOURS);
     final var dateTo = DATE_TO.atZone(ZoneOffset.UTC);
+
     Mockito.when(
         projectionGateway.getBacklogProjection(
             BacklogProjectionRequest.builder()
@@ -242,12 +232,12 @@ public class DetailsBacklogServiceTest {
                 .workflow(Workflow.FBM_WMS_OUTBOUND)
                 .processName(List.of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL))
                 .currentBacklog(List.of(
-                    new CurrentBacklog(PICKING, 0),
-                    new CurrentBacklog(PACKING_WALL, 0),
-                    new CurrentBacklog(PACKING, 0),
                     new CurrentBacklog(WAVING, currentBacklog),
+                    new CurrentBacklog(PICKING, 0),
+                    new CurrentBacklog(PACKING, 0),
                     new CurrentBacklog(BATCH_SORTER, 0),
-                    new CurrentBacklog(WALL_IN, 0)
+                    new CurrentBacklog(WALL_IN, 0),
+                    new CurrentBacklog(PACKING_WALL, 0)
                 ))
                 .dateFrom(dateFrom)
                 .dateTo(dateTo)
