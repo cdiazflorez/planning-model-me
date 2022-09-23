@@ -338,6 +338,11 @@ class BacklogMonitorControllerTest {
     LogisticCenterConfiguration config = new LogisticCenterConfiguration(TIME_ZONE);
     final ZonedDateTime selectedDate = ZonedDateTime.ofInstant(Instant.now(), UTC);
     return new WorkflowBacklogDetail(
+        getDateSelector(
+            ZonedDateTime.ofInstant(Instant.now(), config.getZoneId()),
+            selectedDate,
+            3
+        ),
         "outbound-orders",
         Instant.now(),
         List.of(
