@@ -11,6 +11,7 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -39,6 +40,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -57,9 +59,7 @@ import lombok.Value;
 @Named
 public class CalculateProjectionService {
 
-  private static final int HOUR = 60;
-
-  private static final int HALF_AN_HOUR = 30;
+  private static final int INFLECTION_POINT_DURATION = 5;
 
   private static final ZoneId UTC = ZoneId.of("UTC");
 
@@ -175,20 +175,19 @@ public class CalculateProjectionService {
   }
 
   private static List<Instant> generateInflectionPoints(final Instant dateFrom, final Instant dateTo) {
-    final Instant dateFromTruncate = dateFrom.truncatedTo(ChronoUnit.HOURS);
+    final Instant firstInflectionPoint = dateFrom.truncatedTo(MINUTES);
+    final int currentMinute = LocalDateTime.ofInstant(firstInflectionPoint, UTC).getMinute();
+    final int minutesToSecondInflectionPoint = INFLECTION_POINT_DURATION - (currentMinute % INFLECTION_POINT_DURATION);
+    final Instant secondInflectionPoint = firstInflectionPoint.plus(minutesToSecondInflectionPoint, MINUTES);
 
     final List<Instant> inflectionPoints = new ArrayList<>();
-    inflectionPoints.add(dateFrom);
-
-    Instant date = dateFromTruncate.plus(HALF_AN_HOUR, ChronoUnit.MINUTES).isBefore(dateFrom)
-        ? dateFromTruncate.plus(HOUR, ChronoUnit.MINUTES)
-        : dateFromTruncate.plus(HALF_AN_HOUR, ChronoUnit.MINUTES);
+    inflectionPoints.add(firstInflectionPoint);
+    Instant date = secondInflectionPoint;
 
     while (date.isBefore(dateTo) || date.equals(dateTo)) {
       inflectionPoints.add(date);
-      date = date.plus(HALF_AN_HOUR, ChronoUnit.MINUTES);
+      date = date.plus(INFLECTION_POINT_DURATION, MINUTES);
     }
-
     return inflectionPoints;
   }
 
@@ -276,6 +275,7 @@ public class CalculateProjectionService {
   /**
    * Calculate projection about params.
    *
+   * @param requestDate             request date
    * @param dateFrom                request dateFrom
    * @param dateTo                  request dateTo
    * @param workflow                workflow
@@ -288,6 +288,7 @@ public class CalculateProjectionService {
    */
 
   public List<ProjectionResult> execute(
+      final Instant requestDate,
       final Instant dateFrom,
       final Instant dateTo,
       final Workflow workflow,
@@ -300,7 +301,7 @@ public class CalculateProjectionService {
 
     final var currentHourRatio = ratioByHour.get(dateTo.truncatedTo(ChronoUnit.HOURS));
     final var currentBacklog = BacklogProjectionGrouper.reduce(backlogPhoto, currentHourRatio);
-    final var inflectionPoints = generateInflectionPoints(dateFrom, dateTo);
+    final var inflectionPoints = generateInflectionPoints(requestDate, dateTo);
     final var ratios = ratiosAsDistributions(ratioByHour, inflectionPoints);
 
     final SequentialProcess globalSequentialProcess = buildProcessGraph(workflow);

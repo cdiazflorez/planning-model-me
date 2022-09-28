@@ -94,6 +94,7 @@ public class SaveSimulationOutbound extends GetProjectionOutbound {
 
       return calculateProjection.execute(
           input.getRequestDate(),
+          Instant.from(dateFrom),
           Instant.from(dateTo),
           input.getWorkflow(),
           getThroughputByProcess(input, dateFrom, dateTo, Collections.emptyList()),

@@ -355,6 +355,7 @@ public class RunSimulationOutboundTest {
     //result of calculateProjection isn't real, because it trys test the before algorithm. NO TEST THIS OUTPUT
     when(calculateProjection.execute(
         Instant.from(UTC_CURRENT_DATE),
+        Instant.from(UTC_CURRENT_DATE),
         Instant.from(utcDateTimeTo),
         FBM_WMS_OUTBOUND,
         generateThroughput(generateMagnitudesPhoto(UTC_CURRENT_DATE, utcDateTimeTo).get(THROUGHPUT)),

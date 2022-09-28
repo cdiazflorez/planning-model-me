@@ -98,6 +98,7 @@ public class CalculateProjectionServiceTest {
     final List<ProjectionResult> projectionResults = calculateProjectionService
         .execute(
             CURRENT_DATE,
+            CURRENT_DATE,
             DATE_TO,
             FBM_WMS_OUTBOUND,
             throughputByProcess(),
@@ -189,9 +190,9 @@ public class CalculateProjectionServiceTest {
 
   private List<ProjectionResult> expectedProjectionResult() {
     return List.of(
-        projectionResult(FIRST_DATE_CPT, Instant.parse("2022-08-22T01:41:15Z"), 575),
-        projectionResult(SECOND_DATE_CPT, Instant.parse("2022-08-22T04:33:45Z"), 1850),
-        projectionResult(THIRD_DATE_CPT, null, 1975)
+        projectionResult(FIRST_DATE_CPT, Instant.parse("2022-08-22T00:41:12Z"), 297),
+        projectionResult(SECOND_DATE_CPT, Instant.parse("2022-08-22T04:13:47Z"), 1825),
+        projectionResult(THIRD_DATE_CPT, null, 1888)
     );
   }
 }
