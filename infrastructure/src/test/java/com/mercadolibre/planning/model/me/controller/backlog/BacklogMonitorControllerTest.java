@@ -4,7 +4,6 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
@@ -335,14 +334,7 @@ class BacklogMonitorControllerTest {
   private WorkflowBacklogDetail getMockedResponse() {
     Instant date = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
     Instant anotherDate = OffsetDateTime.parse(ANOTHER_DATE, ISO_DATE_TIME).toInstant();
-    LogisticCenterConfiguration config = new LogisticCenterConfiguration(TIME_ZONE);
-    final ZonedDateTime selectedDate = ZonedDateTime.ofInstant(Instant.now(), UTC);
     return new WorkflowBacklogDetail(
-        getDateSelector(
-            ZonedDateTime.ofInstant(Instant.now(), config.getZoneId()),
-            selectedDate,
-            3
-        ),
         "outbound-orders",
         Instant.now(),
         List.of(

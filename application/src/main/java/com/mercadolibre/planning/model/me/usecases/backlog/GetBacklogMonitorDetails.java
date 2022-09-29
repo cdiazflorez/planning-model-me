@@ -258,7 +258,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         .warehouseId(input.getWarehouseId())
         .workflow(input.getWorkflow())
         .processes(processes)
-        .dateFrom(input.getDateFrom().atZone(UTC))
+        .dateFrom(input.getRequestDate().atZone(UTC))
         .dateTo(input.getDateTo().atZone(UTC).plusHours(HOUR_TPH_FUTURE))
         .build();
 

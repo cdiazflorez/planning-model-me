@@ -72,7 +72,6 @@ public class BacklogMonitorController {
 
     return ResponseEntity.ok(
             new WorkflowBacklogDetail(
-                response.getDateSelector(),
                 getWorkflow(workflow).getName(),
                 response.getCurrentDatetime(),
                 response.getProcesses())
