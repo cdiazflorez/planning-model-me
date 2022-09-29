@@ -82,6 +82,7 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
 
       return calculateProjection.execute(
           input.getRequestDate(),
+          Instant.from(dateFrom),
           Instant.from(dateTo),
           input.getWorkflow(),
           getThroughputByProcess(input, dateFrom, dateTo, emptyList()),

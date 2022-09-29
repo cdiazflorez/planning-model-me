@@ -84,6 +84,7 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
 
       final var projections = calculateProjection.execute(
           input.getRequestDate(),
+          Instant.from(dateFrom),
           Instant.from(dateTo),
           input.getWorkflow(),
           thpProjected,
@@ -95,6 +96,7 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
 
       final var simulations = calculateProjection.execute(
           input.getRequestDate(),
+          Instant.from(dateFrom),
           Instant.from(dateTo),
           input.getWorkflow(),
           tphSimulated,

@@ -208,6 +208,7 @@ public class GetSlaProjectionOutboundTest {
   void testOutboundExecuteEnabled() {
     // Given
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+    final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.truncatedTo(HOURS);
     final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
 
     final var slaFrom = now().truncatedTo(HOURS).toInstant();
@@ -312,6 +313,7 @@ public class GetSlaProjectionOutboundTest {
     //result of calculateProjection isn't real, because it trys test the before algorithm. NO TEST THIS OUTPUT
     when(calculateProjection.execute(
         Instant.from(currentUtcDateTime),
+        Instant.from(utcDateTimeFrom),
         Instant.from(utcDateTimeTo),
         FBM_WMS_OUTBOUND,
         generateThroughput(generateMagnitudesPhoto(currentUtcDateTime, utcDateTimeTo).get(THROUGHPUT)),

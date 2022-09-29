@@ -483,6 +483,7 @@ class SaveSimulationOutboundTest {
 
     when(calculateProjection.execute(
         input.getRequestDate(),
+        dateFromAsInstant,
         dateToAsInstant,
         FBM_WMS_OUTBOUND,
         THROUGHPUT_PER_PROCESS,
