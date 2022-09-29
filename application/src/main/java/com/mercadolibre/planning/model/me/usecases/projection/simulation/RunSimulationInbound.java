@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
@@ -34,7 +35,7 @@ public class RunSimulationInbound extends GetProjectionInbound {
                                                  final ZonedDateTime dateFrom,
                                                  final ZonedDateTime dateTo,
                                                  final List<Backlog> backlogs,
-                                                 final String timeZone) {
+                                                 final LogisticCenterConfiguration config) {
     return planningModelGateway.runSimulation(SimulationRequest.builder()
         .warehouseId(input.getWarehouseId())
         .workflow(input.getWorkflow())
@@ -49,7 +50,7 @@ public class RunSimulationInbound extends GetProjectionInbound {
         .simulations(input.getSimulations())
         .userId(input.getUserId())
         .applyDeviation(true)
-        .timeZone(timeZone)
+        .timeZone(config.getTimeZone().getID())
         .build());
   }
 }

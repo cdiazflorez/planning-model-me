@@ -228,7 +228,7 @@ public class RunSimulationOutboundTest {
     when(featureSwitches.isProjectionLibEnabled(WAREHOUSE_ID)).thenReturn(true);
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE, true));
 
     final ZonedDateTime utcDateTimeTo = UTC_CURRENT_DATE.plusDays(4);
 

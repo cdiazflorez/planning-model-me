@@ -302,7 +302,7 @@ class SaveSimulationOutboundTest {
         "grouping", "grouped", "to_pack");
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE, true));
 
     when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
             .warehouseId(WAREHOUSE_ID)
