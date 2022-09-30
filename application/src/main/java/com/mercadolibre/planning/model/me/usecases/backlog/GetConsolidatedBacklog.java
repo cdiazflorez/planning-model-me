@@ -106,9 +106,12 @@ public abstract class GetConsolidatedBacklog {
         .orElse(defaultDate);
   }
 
-  protected ProcessDetail build(final ProcessName process,
-                                final Instant currentDatetime,
-                                final List<BacklogStatsByDate> backlogs) {
+  protected ProcessDetail build(
+      final ProcessName process,
+      final Instant currentDatetime,
+      final List<BacklogStatsByDate> backlogs,
+      final Instant dateFrom
+  ) {
 
     final List<VariablesPhoto> backlog = backlogs
         .stream()
@@ -125,7 +128,12 @@ public abstract class GetConsolidatedBacklog {
             measure.getMinutes() == null ? Integer.valueOf(0) : measure.getMinutes()))
         .orElse(new UnitMeasure(0, 0));
 
-    return new ProcessDetail(process.getName(), totals, backlog);
+    final List<VariablesPhoto> filteredBacklog = backlog
+        .stream()
+        .filter(bck -> !bck.getDate().isBefore(dateFrom))
+        .collect(Collectors.toList());
+
+    return new ProcessDetail(process.getName(), totals, filteredBacklog);
   }
 
   protected Map<Instant, UnitMeasure> convertBacklogTrajectoryFromUnitToTime(final List<TotaledBacklogPhoto> totaledBacklogPhotos,

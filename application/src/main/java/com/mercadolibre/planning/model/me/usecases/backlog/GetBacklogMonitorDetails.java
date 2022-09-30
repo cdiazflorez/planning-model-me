@@ -79,7 +79,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     return new GetBacklogMonitorDetailsResponse(
         currentDatetime,
         getBacklogDetails(backlog, areas, currentDatetime),
-        getResumedBacklog(input.getProcess(), currentDatetime, backlog)
+        getResumedBacklog(input.getProcess(), currentDatetime, backlog, input.getDateFrom())
     );
   }
 
@@ -307,19 +307,23 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     return emptyMap();
   }
 
-  private List<DetailedBacklogPhoto> getBacklogDetails(final List<VariablesPhoto> backlog,
-                                                       final List<AreaName> areas,
-                                                       final Instant currentDatetime) {
-
+  private List<DetailedBacklogPhoto> getBacklogDetails(
+     final List<VariablesPhoto> backlog,
+     final List<AreaName> areas,
+     final Instant currentDatetime
+  ) {
     return backlog.stream()
         .map(b -> this.toProcessDetail(b, areas, currentDatetime))
         .sorted(comparing(DetailedBacklogPhoto::getDate))
         .collect(Collectors.toList());
   }
 
-  private ProcessDetail getResumedBacklog(final ProcessName process,
-                                          final Instant currentDatetime,
-                                          final List<VariablesPhoto> variablesTrajectory) {
+  private ProcessDetail getResumedBacklog(
+      final ProcessName process,
+      final Instant currentDatetime,
+      final List<VariablesPhoto> variablesTrajectory,
+      final Instant dateFrom
+  ) {
 
     return build(
         process,
@@ -330,7 +334,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                 current.getTotal(),
                 current.getHistorical(),
                 current.getMinLimit(),
-                current.getMaxLimit())).collect(Collectors.toList()));
+                current.getMaxLimit())).collect(Collectors.toList()),
+                dateFrom);
   }
 
   private DetailedBacklogPhoto toProcessDetail(final VariablesPhoto variablesPhoto,

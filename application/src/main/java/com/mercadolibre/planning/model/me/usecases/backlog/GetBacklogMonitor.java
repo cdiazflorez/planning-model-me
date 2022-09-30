@@ -98,7 +98,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     return new WorkflowBacklogDetail(
         input.getWorkflow().getName(),
         takenOnDateOfLastPhoto,
-        buildProcesses(processData, takenOnDateOfLastPhoto)
+        buildProcesses(processData, takenOnDateOfLastPhoto, input.getDateFrom())
     );
   }
 
@@ -130,9 +130,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     return input.getProcesses().stream()
         .map(processName -> new ProcessData(
             ProcessName.from(processName.getName()),
-            includeCurrentBacklog(backlogPhotoByProcess.getOrDefault(processName, emptyList()), input.getDateFrom())
-                ? backlogPhotoByProcess.get(processName)
-                : emptyList(),
+            backlogPhotoByProcess.getOrDefault(processName, emptyList()),
             projectedBacklog.getOrDefault(processName, emptyList()),
             historicalBacklog.getOrDefault(processName, emptyBacklog()),
             throughput.find(ProcessName.from(processName.getName())).orElse(emptyMap()),
@@ -260,14 +258,18 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     return emptyMap();
   }
 
-  private List<ProcessDetail> buildProcesses(final List<ProcessData> data,
-                                             final Instant currentDateTime) {
+  private List<ProcessDetail> buildProcesses(
+     final List<ProcessData> data,
+     final Instant currentDateTime,
+     final Instant dateFrom
+  ) {
 
     return data.stream()
         .map(detail -> build(
             detail.getProcess(),
             currentDateTime,
-            toProcessDescription(detail)))
+            toProcessDescription(detail),
+            dateFrom))
         .collect(Collectors.toList());
   }
 
