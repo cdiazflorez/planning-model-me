@@ -90,7 +90,7 @@ public class BacklogApiClientImplement extends HttpClient implements BacklogApiG
    * @return list of photos obtain for client.
    * @throws BacklogNotRespondingException error call backlogs api.
    */
-  @Cacheable(CacheConfig.BACKLOG_PHOTO)
+  @Cacheable(value = CacheConfig.BACKLOG_PHOTO, sync = true)
   @Override
   public List<Photo> getPhotosCached(BacklogPhotosRequest request) {
     return this.getPhotos(request);

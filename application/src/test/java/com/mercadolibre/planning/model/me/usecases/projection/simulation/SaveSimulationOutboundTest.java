@@ -330,7 +330,7 @@ class SaveSimulationOutboundTest {
         List.of("outbound-orders"),
         steps,
         now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-        now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
+        now().truncatedTo(ChronoUnit.HOURS).plusDays(1).plusHours(2).toInstant(),
         List.of("date_out"))
     ).thenReturn(List.of(
         new Consolidation(null, Map.of("date_out", getCurrentTime().minusHours(1).toString()), 150, true),
@@ -390,7 +390,7 @@ class SaveSimulationOutboundTest {
     final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
 
     final var dateFrom = utcCurrentTime;
-    final var dateTo = utcCurrentTime.plusDays(4);
+    final var dateTo = utcCurrentTime.plusDays(1).plusHours(2);
 
     final var dateFromAsInstant = dateFrom.toInstant();
     final var dateToAsInstant = dateTo.toInstant();
@@ -605,7 +605,7 @@ class SaveSimulationOutboundTest {
         .workflow(FBM_WMS_OUTBOUND)
         .warehouseId(WAREHOUSE_ID)
         .dateFrom(currentTime)
-        .dateTo(currentTime.plusDays(4))
+        .dateTo(currentTime.plusDays(1).plusHours(2))
         .backlog(backlogs.stream()
             .map(backlog -> new QuantityByDate(
                 backlog.getDate(),

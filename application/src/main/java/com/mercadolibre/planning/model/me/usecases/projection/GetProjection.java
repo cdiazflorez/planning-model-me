@@ -64,8 +64,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
 
     final Instant dateFromToProject = requestDate.truncatedTo(ChronoUnit.HOURS);
 
-    final Instant dateToToProject = dateFromToProject.plus(PROJECTION_DAYS, ChronoUnit.DAYS);
-
     final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(input.getWarehouseId());
 
     final boolean isFirstDate = isFirstDate(input.getDate(), requestDate);
@@ -77,6 +75,8 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
     final ZonedDateTime dateToToShow = isFirstDate
         ? dateFromToProject.atZone(UTC).plusDays(PROJECTION_DAYS_TO_SHOW)
         : dateFromToShow.plusDays(PROJECTION_DAYS_TO_SHOW);
+
+    final Instant dateToToProject = dateToToShow.plusHours(1).toInstant();
 
     // Obtains the pending backlog
     final List<Backlog> backlogsToProject = getBacklog(
