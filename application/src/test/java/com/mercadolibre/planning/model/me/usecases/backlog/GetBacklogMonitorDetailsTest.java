@@ -342,7 +342,7 @@ class GetBacklogMonitorDetailsTest {
         .warehouseId(WAREHOUSE_ID)
         .workflow(workflow)
         .processes(processes)
-        .dateFrom(DATE_FROM)
+        .dateFrom(DATE_CURRENT)
         .dateTo(DATE_TO.plusHours(24))
         .build();
 

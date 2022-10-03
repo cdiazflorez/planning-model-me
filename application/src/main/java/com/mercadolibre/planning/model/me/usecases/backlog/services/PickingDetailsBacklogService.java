@@ -20,6 +20,7 @@ import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogPro
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
+import com.mercadolibre.planning.model.me.usecases.backlog.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails.BacklogProvider;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea.NumberOfUnitsInASubarea;
@@ -27,6 +28,7 @@ import com.mercadolibre.planning.model.me.usecases.projection.GetProjectionHeadc
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectBacklog;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountAtArea;
 import com.mercadolibre.planning.model.me.usecases.projection.entities.HeadcountBySubArea;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -50,9 +52,12 @@ public class PickingDetailsBacklogService implements BacklogProvider {
 
   private static final int MAX_AREA_NAME_SIZE = 2;
 
+  private static final Duration DEFAULT_HOURS_LOOKBACK = Duration.ofHours(2);
+
   private final BacklogPhotoApiGateway backlogPhotoApiGateway;
 
   private final ProjectBacklog projectBacklog;
+
 
   private final GetProjectionHeadcount getProjectionHeadcount;
 
@@ -73,18 +78,18 @@ public class PickingDetailsBacklogService implements BacklogProvider {
   }
 
   private Map<ProcessName, List<Photo>> getCurrentBacklog(final BacklogProviderInput input) {
-
+    final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
     return backlogPhotoApiGateway.getBacklogDetails(
         new BacklogRequest(
             input.getWarehouseId(),
             Set.of(input.getWorkflow()),
             Set.of(WAVING, PICKING),
-            input.getDateFrom(),
-            input.getDateTo(),
+            input.getRequestDate().truncatedTo(ChronoUnit.HOURS).minus(DEFAULT_HOURS_LOOKBACK),
+            input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
             null,
             null,
-            input.getSlaFrom(),
-            input.getSlaTo(),
+            input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS),
+            input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS),
             Set.of(STEP, AREA, DATE_OUT)
         )
     );

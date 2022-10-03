@@ -228,7 +228,7 @@ public class GetSlaProjectionOutboundTest {
 
     when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(new Photo(Instant.now(), of()));
 
-    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(new LogisticCenterConfiguration(TIME_ZONE, true));
 
     when(planningModelGateway.getCycleTime(WAREHOUSE_ID, CycleTimeRequest.builder()
         .workflows(Set.of(FBM_WMS_OUTBOUND))
@@ -282,7 +282,7 @@ public class GetSlaProjectionOutboundTest {
             slaTo
         )
     ).thenReturn(
-        generatePackingRatioByHour(Instant.from(currentUtcDateTime), Instant.from(utcDateTimeTo))
+        generatePackingRatioByHour(Instant.from(currentUtcDateTime), Instant.from(utcDateTimeTo), 0.5, 0.5)
     );
 
     when(planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
@@ -325,7 +325,129 @@ public class GetSlaProjectionOutboundTest {
             CPT_3.toInstant(), new ProcessingTime(60, MINUTES.getName()),
             CPT_4.toInstant(), new ProcessingTime(60, MINUTES.getName())
         ),
-        generatePackingRatioByHour(currentUtcDateTime.toInstant(), utcDateTimeTo.toInstant()))
+        generatePackingRatioByHour(currentUtcDateTime.toInstant(), utcDateTimeTo.toInstant(), 0.5, 0.5))
+    ).thenReturn(projectionResults());
+
+    // When
+    final PlanningView planningView = getSlaProjectionOutbound.execute(input);
+
+    // Then
+    assertNull(planningView.getEmptyStateMessage());
+    assertEquals(mockComplexTable(), planningView.getData().getComplexTable1());
+    assertSimpleTable(planningView.getData().getSimpleTable1(), currentUtcDateTime, utcDateTimeTo);
+  }
+
+  @Test
+  void testOutboundExecuteEnabledInFCWithoutWall() {
+    // Given
+    final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+    final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.truncatedTo(HOURS);
+    final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
+
+    final var slaFrom = now().truncatedTo(HOURS).toInstant();
+    final var slaTo = slaFrom.plus(4, ChronoUnit.DAYS);
+    final var photoDate = slaTo.plus(30, ChronoUnit.MINUTES);
+
+    final List<Backlog> mockedBacklog = mockBacklog();
+
+    final GetProjectionInputDto input = GetProjectionInputDto.builder()
+        .warehouseId(WAREHOUSE_ID)
+        .requestDate(currentUtcDateTime.toInstant())
+        .date(utcDateTimeTo)
+        .workflow(FBM_WMS_OUTBOUND)
+        .build();
+
+    when(featureSwitches.isProjectionLibEnabled(WAREHOUSE_ID)).thenReturn(true);
+
+    when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(new Photo(Instant.now(), of()));
+
+    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID)).thenReturn(new LogisticCenterConfiguration(TIME_ZONE, false));
+
+    when(planningModelGateway.getCycleTime(WAREHOUSE_ID, CycleTimeRequest.builder()
+        .workflows(Set.of(FBM_WMS_OUTBOUND))
+        .dateFrom(currentUtcDateTime)
+        .dateTo(utcDateTimeTo)
+        .slas(of(CPT_1, CPT_2, CPT_3, CPT_4))
+        .timeZone(BA_ZONE)
+        .build()))
+        .thenReturn(
+            Map.of(FBM_WMS_OUTBOUND,
+                Map.of(
+                    CPT_1.toInstant(), new SlaProperties(60),
+                    CPT_2.toInstant(), new SlaProperties(60),
+                    CPT_3.toInstant(), new SlaProperties(60),
+                    CPT_4.toInstant(), new SlaProperties(60)
+                )
+            )
+        );
+
+    when(getWaveSuggestion.execute(any(GetWaveSuggestionInputDto.class))).thenReturn(mockSuggestedWaves(currentUtcDateTime, utcDateTimeTo));
+
+    when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
+
+    when(getSimpleDeferralProjection.execute(any(GetProjectionInput.class)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            mockProjectionsDeferral(currentUtcDateTime),
+            new LogisticCenterConfiguration(TIME_ZONE)));
+
+
+    when(backlogGateway.getLastPhoto(new BacklogLastPhotoRequest(
+                WAREHOUSE_ID,
+                Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+                getSteps(FBM_WMS_OUTBOUND),
+                null,
+                null,
+                slaFrom,
+                slaTo,
+                Set.of(STEP, DATE_OUT, AREA),
+                slaTo
+            )
+        )
+    ).thenReturn(
+        generatePhoto(photoDate)
+    );
+
+    when(planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
+        .warehouseId(input.getWarehouseId())
+        .workflow(input.getWorkflow())
+        .processName(of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL))
+        .entityTypes(of(THROUGHPUT))
+        .dateFrom(currentUtcDateTime)
+        .dateTo(utcDateTimeTo)
+        .source(SIMULATION)
+        .simulations(emptyList())
+        .build()))
+        .thenReturn(generateMagnitudesPhoto(currentUtcDateTime, utcDateTimeTo));
+
+    when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedBacklog);
+
+    when(planningModelGateway.getPlanningDistribution(Mockito.argThat(request ->
+            WAREHOUSE_ID.equals(request.getWarehouseId())
+                && WORKFLOW.equals(request.getWorkflow())
+                && currentUtcDateTime.equals(request.getDateInFrom())
+                && utcDateTimeTo.equals(request.getDateInTo())
+                && currentUtcDateTime.equals(request.getDateOutFrom())
+                && utcDateTimeTo.equals(request.getDateOutTo())
+                && request.isApplyDeviation()
+        ))
+    ).thenReturn(emptyList());
+
+    //result of calculateProjection isn't real, because it trys test the before algorithm. NO TEST THIS OUTPUT
+    when(calculateProjection.execute(
+        Instant.from(currentUtcDateTime),
+        Instant.from(utcDateTimeFrom),
+        Instant.from(utcDateTimeTo),
+        FBM_WMS_OUTBOUND,
+        generateThroughput(generateMagnitudesPhoto(currentUtcDateTime, utcDateTimeTo).get(THROUGHPUT)),
+        generatePhoto(photoDate).getGroups(),
+        emptyList(),
+        Map.of(
+            CPT_1.toInstant(), new ProcessingTime(60, MINUTES.getName()),
+            CPT_2.toInstant(), new ProcessingTime(60, MINUTES.getName()),
+            CPT_3.toInstant(), new ProcessingTime(60, MINUTES.getName()),
+            CPT_4.toInstant(), new ProcessingTime(60, MINUTES.getName())
+        ),
+        generatePackingRatioByHour(currentUtcDateTime.toInstant(), utcDateTimeTo.toInstant(), 1.0, 0.0))
     ).thenReturn(projectionResults());
 
     // When
@@ -436,12 +558,16 @@ public class GetSlaProjectionOutboundTest {
     return Map.of(THROUGHPUT, magnitudesPhoto);
   }
 
-  private Map<Instant, PackingRatioCalculator.PackingRatio> generatePackingRatioByHour(final Instant currentDate, final Instant dateTo) {
+  private Map<Instant, PackingRatioCalculator.PackingRatio> generatePackingRatioByHour(
+      final Instant currentDate,
+      final Instant dateTo,
+      final Double packingToteRatio,
+      final Double packingWallRatio) {
     Instant date = currentDate.truncatedTo(HOURS);
     final TreeMap<Instant, PackingRatioCalculator.PackingRatio> ratioByHour = new TreeMap<>();
 
     while (date.isBefore(dateTo) || date.equals(dateTo)) {
-      ratioByHour.put(date, new PackingRatioCalculator.PackingRatio(0.5, 0.5));
+      ratioByHour.put(date, new PackingRatioCalculator.PackingRatio(packingToteRatio, packingWallRatio));
 
       date = date.plus(1, HOURS);
     }

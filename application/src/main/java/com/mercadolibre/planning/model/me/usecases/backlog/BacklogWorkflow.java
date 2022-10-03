@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-enum BacklogWorkflow {
+public enum BacklogWorkflow {
     FBM_WMS_OUTBOUND(0, 24),
     FBM_WMS_INBOUND(168, 168);
 

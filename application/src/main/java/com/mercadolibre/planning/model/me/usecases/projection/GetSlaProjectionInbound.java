@@ -4,6 +4,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Pro
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
@@ -30,7 +31,7 @@ public class GetSlaProjectionInbound extends GetProjectionInbound {
                                                  final ZonedDateTime dateFrom,
                                                  final ZonedDateTime dateTo,
                                                  final List<Backlog> backlogs,
-                                                 final String timeZone) {
+                                                 final LogisticCenterConfiguration config) {
 
     List<ProjectionResult> projectionResults = planningModelGateway.runProjection(ProjectionRequest.builder()
         .warehouseId(input.getWarehouseId())
@@ -42,7 +43,7 @@ public class GetSlaProjectionInbound extends GetProjectionInbound {
         .backlog(backlogs)
         .userId(input.getUserId())
         .applyDeviation(true)
-        .timeZone(timeZone)
+        .timeZone(config.getTimeZone().getID())
         .build());
 
     projectionResults.forEach(projectionResult ->

@@ -100,7 +100,6 @@ public class ProjectBacklog {
         new PlanningDistributionRequest(
             warehouseId,
             workflow,
-            planningDistributionDateFrom,
             planningDistributionDateTo.plusDays(1L),
             planningDistributionDateFrom,
             planningDistributionDateTo.plusDays(1L),

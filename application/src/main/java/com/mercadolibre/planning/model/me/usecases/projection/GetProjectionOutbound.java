@@ -36,6 +36,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.PackingRatio;
+import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
@@ -43,9 +45,11 @@ import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjection
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,6 +57,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -71,19 +76,23 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
   private final GetWaveSuggestion getWaveSuggestion;
 
+  private final RatioService ratioService;
+
   protected GetProjectionOutbound(final PlanningModelGateway planningModelGateway,
                                   final LogisticCenterGateway logisticCenterGateway,
                                   final GetWaveSuggestion getWaveSuggestion,
                                   final GetEntities getEntities,
                                   final GetSimpleDeferralProjection getSimpleDeferralProjection,
                                   final BacklogApiGateway backlogGateway,
-                                  final GetSales getSales) {
+                                  final GetSales getSales,
+                                  final RatioService ratioService) {
 
     super(getSales, planningModelGateway, logisticCenterGateway, getEntities);
 
     this.getSimpleDeferralProjection = getSimpleDeferralProjection;
     this.getWaveSuggestion = getWaveSuggestion;
     this.backlogGateway = backlogGateway;
+    this.ratioService = ratioService;
   }
 
   @Override
@@ -230,6 +239,31 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
     return cycleTimeValues.get(FBM_WMS_OUTBOUND).entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, item -> new ProcessingTime((int) item.getValue().getCycleTime(), MINUTES.getName())));
+  }
+
+  protected Map<Instant, PackingRatio> getPackingRatio(final String logisticCenterId,
+                                                       final boolean hasWall,
+                                                       final Instant slaDateFrom,
+                                                       final Instant slaDateTo,
+                                                       final Instant dateFrom,
+                                                       final Instant dateTo) {
+
+    if (hasWall) {
+      return ratioService.getPackingRatio(logisticCenterId, slaDateFrom, slaDateTo, dateFrom, dateTo);
+    } else {
+      return getPickingRatioForTotePacking(dateFrom, dateTo);
+    }
+
+  }
+
+  private Map<Instant, PackingRatio> getPickingRatioForTotePacking(final Instant dateFrom, final Instant dateTo) {
+    final long hoursBetweenDates = Duration.between(dateFrom, dateTo).toHours();
+
+    return LongStream.rangeClosed(0, hoursBetweenDates)
+        .boxed()
+        .collect(Collectors.toMap(
+            i -> dateFrom.plus(i, ChronoUnit.HOURS),
+            i -> new PackingRatio(1.0, 0.0)));
   }
 
   private List<ProjectionResult> setIsDeferred(final List<ProjectionResult> slaProjections,

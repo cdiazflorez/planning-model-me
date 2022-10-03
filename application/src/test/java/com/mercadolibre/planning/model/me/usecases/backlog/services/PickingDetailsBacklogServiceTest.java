@@ -223,7 +223,7 @@ public class PickingDetailsBacklogServiceTest {
         Set.of(Workflow.FBM_WMS_OUTBOUND),
         Set.of(WAVING, PICKING),
         DATE_FROM,
-        DATE_TO,
+        REQUEST_DATE,
         null,
         null,
         slaFrom,

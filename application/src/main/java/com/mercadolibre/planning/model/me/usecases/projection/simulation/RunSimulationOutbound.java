@@ -9,6 +9,7 @@ import static java.util.stream.Collectors.toList;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
@@ -40,8 +41,6 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
 
   private final CalculateProjectionService calculateProjection;
 
-  private final RatioService ratioService;
-
   protected RunSimulationOutbound(final PlanningModelGateway planningModelGateway,
                                   final LogisticCenterGateway logisticCenterGateway,
                                   final GetWaveSuggestion getWaveSuggestion,
@@ -54,10 +53,9 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
                                   final RatioService ratioService) {
 
     super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities, getSimpleDeferralProjection, backlogGateway,
-        getSales);
+        getSales, ratioService);
     this.featureSwitches = featureSwitches;
     this.calculateProjection = calculateProjection;
-    this.ratioService = ratioService;
   }
 
   @Override
@@ -65,7 +63,7 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
                                                  final ZonedDateTime dateFrom,
                                                  final ZonedDateTime dateTo,
                                                  final List<Backlog> backlogs,
-                                                 final String timeZone) {
+                                                 final LogisticCenterConfiguration config) {
 
     if (featureSwitches.isProjectionLibEnabled(input.getWarehouseId())) {
       final var thpProjected = getThroughputByProcess(input, dateFrom, dateTo, emptyList());
@@ -73,9 +71,10 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
 
       final var currentBacklog = getCurrentBacklog(input, dateFrom, dateTo);
       final var plannedBacklog = getExpectedBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
-      final var defaultSlas = getSlas(input, dateFrom, dateTo, currentBacklog, plannedBacklog, timeZone);
-      final var packingRatio = ratioService.getPackingRatio(
+      final var defaultSlas = getSlas(input, dateFrom, dateTo, currentBacklog, plannedBacklog, config.getTimeZone().getID());
+      final var packingRatio = getPackingRatio(
           input.getWarehouseId(),
+          config.isPutToWall(),
           input.getRequestDate(),
           dateTo.toInstant().plus(2, HOURS),
           dateFrom.toInstant(),
@@ -123,7 +122,7 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
           .simulations(input.getSimulations())
           .userId(input.getUserId())
           .applyDeviation(true)
-          .timeZone(timeZone)
+          .timeZone(config.getTimeZone().getID())
           .build());
     }
   }

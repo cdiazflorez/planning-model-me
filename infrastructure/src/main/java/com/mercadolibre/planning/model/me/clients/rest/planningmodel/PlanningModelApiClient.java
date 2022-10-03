@@ -72,6 +72,7 @@ import com.mercadolibre.restclient.exception.ParseException;
 import com.newrelic.api.agent.Trace;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -360,7 +361,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
                                                                                final List<BacklogAreaDistribution> backlogDistribution) {
 
     final var request = new BacklogProjectionInAreasRequest(
-        dateFrom,
+        dateFrom.truncatedTo(ChronoUnit.HOURS),
         dateTo,
         processes,
         throughput,

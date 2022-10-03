@@ -7,7 +7,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
 import static com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog.emptyBacklog;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getDateSelector;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -18,8 +17,6 @@ import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -60,8 +57,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
       FBM_WMS_INBOUND, ""
   );
 
-  private static final int SELECTOR_DAYS_TO_SHOW = 2;
-
   private static final Duration DEFAULT_HOURS_LOOKBACK = Duration.ofHours(2);
 
   private static final int HOUR_TPH_FUTURE = 24;
@@ -75,8 +70,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
   private final GetHistoricalBacklog getHistoricalBacklog;
 
   private final GetBacklogLimits getBacklogLimits;
-
-  private final LogisticCenterGateway logisticCenterGateway;
 
   private static int getTphAveragePerHour(final UnitMeasure backlogMeasuredInHour) {
     final int seconds = 60;
@@ -95,8 +88,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
    */
   public WorkflowBacklogDetail execute(final GetBacklogMonitorInputDto input) {
     final List<ProcessData> processData = getData(input);
-    final ZonedDateTime selectedDate = ZonedDateTime.ofInstant(input.getDateFrom().plus(DEFAULT_HOURS_LOOKBACK), UTC);
-    final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(input.getWarehouseId());
 
 
     final Instant takenOnDateOfLastPhoto = getDateWhenLatestPhotoOfAllCurrentBacklogsWasTaken(
@@ -105,14 +96,9 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     );
 
     return new WorkflowBacklogDetail(
-        getDateSelector(
-            ZonedDateTime.ofInstant(input.getRequestDate(), config.getZoneId()),
-            selectedDate,
-            SELECTOR_DAYS_TO_SHOW
-        ),
         input.getWorkflow().getName(),
         takenOnDateOfLastPhoto,
-        buildProcesses(processData, takenOnDateOfLastPhoto)
+        buildProcesses(processData, takenOnDateOfLastPhoto, input.getDateFrom())
     );
   }
 
@@ -144,9 +130,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     return input.getProcesses().stream()
         .map(processName -> new ProcessData(
             ProcessName.from(processName.getName()),
-            includeCurrentBacklog(backlogPhotoByProcess.getOrDefault(processName, emptyList()), input.getDateFrom())
-                ? backlogPhotoByProcess.get(processName)
-                : emptyList(),
+            backlogPhotoByProcess.getOrDefault(processName, emptyList()),
             projectedBacklog.getOrDefault(processName, emptyList()),
             historicalBacklog.getOrDefault(processName, emptyBacklog()),
             throughput.find(ProcessName.from(processName.getName())).orElse(emptyMap()),
@@ -274,14 +258,18 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     return emptyMap();
   }
 
-  private List<ProcessDetail> buildProcesses(final List<ProcessData> data,
-                                             final Instant currentDateTime) {
+  private List<ProcessDetail> buildProcesses(
+     final List<ProcessData> data,
+     final Instant currentDateTime,
+     final Instant dateFrom
+  ) {
 
     return data.stream()
         .map(detail -> build(
             detail.getProcess(),
             currentDateTime,
-            toProcessDescription(detail)))
+            toProcessDescription(detail),
+            dateFrom))
         .collect(Collectors.toList());
   }
 

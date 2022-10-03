@@ -10,7 +10,6 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
-import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.TIME_ZONE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.parse;
@@ -29,8 +28,6 @@ import com.mercadolibre.planning.model.me.entities.monitor.VariablesPhoto;
 import com.mercadolibre.planning.model.me.entities.monitor.WorkflowBacklogDetail;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
@@ -57,7 +54,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -74,8 +70,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class GetBacklogMonitorTest {
-
-  public static final TimeZone TIME_ZONE = TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
 
   private static final List<ZonedDateTime> DATES = of(
       parse("2021-08-12T01:00:00Z", ISO_OFFSET_DATE_TIME),
@@ -119,9 +113,6 @@ class GetBacklogMonitorTest {
   private GetBacklogLimits getBacklogLimits;
 
   @Mock
-  private LogisticCenterGateway logisticCenterGateway;
-
-  @Mock
   private ProjectBacklog backlogProjection;
 
   private MockedStatic<DateUtils> mockDt;
@@ -147,7 +138,6 @@ class GetBacklogMonitorTest {
   void testExecuteOK1() {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
-    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockDateUtils(mockDt);
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
@@ -216,7 +206,6 @@ class GetBacklogMonitorTest {
     var input = input(workflow, 1);
     mockDateUtils(mockDt);
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(workflow == FBM_WMS_OUTBOUND));
-    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockHistoricalBacklog(input);
     mockThroughput(input);
 
@@ -236,7 +225,6 @@ class GetBacklogMonitorTest {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
     mockDateUtils(mockDt);
-    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
     mockThroughput(input);
@@ -276,7 +264,6 @@ class GetBacklogMonitorTest {
     // GIVEN
     var input = input(FBM_WMS_OUTBOUND, 1);
     mockDateUtils(mockDt);
-    mockLogisticCenterConfiguration(input.getWarehouseId());
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
     mockHistoricalBacklog(input);
@@ -344,11 +331,6 @@ class GetBacklogMonitorTest {
         0L,
         false
     );
-  }
-
-  private void mockLogisticCenterConfiguration(String warehouseId) {
-    when(logisticCenterGateway.getConfiguration(warehouseId))
-        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
   }
 
   private void mockBacklogPhotoApiResponse(final GetBacklogMonitorInputDto input, final Map<ProcessName, List<BacklogPhoto>> response) {

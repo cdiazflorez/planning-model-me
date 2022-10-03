@@ -96,7 +96,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
           dateFromToProject.atZone(UTC),
           dateToToProject.atZone(UTC),
           backlogsToProject,
-          config.getTimeZone().getID()
+          config
       );
 
       final List<ProjectionResult> projectionsSla =
@@ -247,7 +247,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
                                                           ZonedDateTime dateFrom,
                                                           ZonedDateTime dateTo,
                                                           List<Backlog> backlogs,
-                                                          String timeZone);
+                                                          LogisticCenterConfiguration config);
 
   protected abstract List<Backlog> getBacklog(Workflow workflow,
                                               String warehouseId,
