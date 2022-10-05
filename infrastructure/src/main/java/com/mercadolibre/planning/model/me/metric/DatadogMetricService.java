@@ -6,6 +6,7 @@ import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimul
 import com.mercadolibre.planning.model.me.controller.simulation.request.SaveSimulationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.utils.MetricsService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,7 @@ import static com.mercadolibre.planning.model.me.config.EnvironmentUtil.getScope
 @Component
 @Slf4j
 @AllArgsConstructor
-public class DatadogMetricService {
+public class DatadogMetricService implements MetricsService {
 
     private final DatadogWrapper datadog;
 
@@ -71,20 +72,40 @@ public class DatadogMetricService {
         }
     }
 
-    public void trackProjection(final String warehouseId,
-                                final Workflow workflow,
-                                final String projectionType) {
+    public void trackProjectionError(
+        final String warehouseId,
+        final Workflow workflow,
+        final String projectionType,
+        final String errorType
+    ) {
+        trackProjection(warehouseId, workflow, projectionType, "application.planning.model.projection.error", errorType);
+    }
 
+    public void trackProjectionRequest(
+        final String warehouseId,
+        final Workflow workflow,
+        final String projectionType
+    ) {
+        trackProjection(warehouseId, workflow, projectionType, "application.planning.model.projection", null);
+    }
+
+    private void trackProjection(
+        final String warehouseId,
+        final Workflow workflow,
+        final String projectionType,
+        final String metricName,
+        final String errorType
+    ) {
         final Tags tags = new Tags();
-
         tags.add("warehouse_id", warehouseId);
         tags.add("workflow", workflow.getName());
         tags.add("projection_type", projectionType);
-
         tags.add("scope", getScope());
-
+        if (errorType != null) {
+            tags.add("error_type", errorType);
+        }
         try {
-            datadog.incrementCounter("application.planning.model.projection", tags);
+            datadog.incrementCounter(metricName, tags);
         } catch (Exception e) {
             log.warn("[warehouse_id:{}][workflow:{}][projection_type:{}]"
                             + "Couldn't track projection metric",

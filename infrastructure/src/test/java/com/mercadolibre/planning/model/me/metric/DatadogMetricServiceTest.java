@@ -155,10 +155,26 @@ public class DatadogMetricServiceTest {
         tags.add("projection_type", "CPT");
 
         // WHEN
-        service.trackProjection(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE);
+        service.trackProjectionRequest(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE);
 
         // THEN
         thenCreatedTagsCorrectly("application.planning.model.projection", tags);
+    }
+
+    @Test
+    @DisplayName("Send projection")
+    public void testSendProjectionError() {
+        // GIVEN
+        final MetricCollector.Tags tags = createTags();
+        tags.add("workflow", "fbm-wms-outbound");
+        tags.add("projection_type", "CPT");
+        tags.add("error_type", "some_error");
+
+        // WHEN
+        service.trackProjectionError(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE, "some_error");
+
+        // THEN
+        thenCreatedTagsCorrectly("application.planning.model.projection.error", tags);
     }
 
     @Test
@@ -173,7 +189,7 @@ public class DatadogMetricServiceTest {
                 .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
 
         // WHEN - THEN
-        assertDoesNotThrow(() -> service.trackProjection(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE));
+        assertDoesNotThrow(() -> service.trackProjectionRequest(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE));
     }
 
     @Test
