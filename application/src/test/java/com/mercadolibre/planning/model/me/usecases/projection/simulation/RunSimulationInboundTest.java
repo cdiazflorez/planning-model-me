@@ -86,7 +86,7 @@ public class RunSimulationInboundTest {
             FBM_WMS_INBOUND,
             WAREHOUSE_ID,
             utcCurrentTime.toInstant(),
-            utcCurrentTime.plusDays(4).toInstant()
+            utcCurrentTime.plusDays(1).plusHours(1).toInstant()
         )))
         .thenReturn(mockedBacklog);
 
@@ -196,7 +196,7 @@ public class RunSimulationInboundTest {
         .workflow(FBM_WMS_INBOUND)
         .warehouseId(WAREHOUSE_ID)
         .dateFrom(currentTime)
-        .dateTo(currentTime.plusDays(4))
+        .dateTo(currentTime.plusDays(1).plusHours(1))
         .backlog(backlogs.stream()
             .map(backlog -> new QuantityByDate(
                 backlog.getDate(),

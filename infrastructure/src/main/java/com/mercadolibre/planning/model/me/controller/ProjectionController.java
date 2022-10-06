@@ -58,7 +58,7 @@ public class ProjectionController {
 
     authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-    datadogMetricService.trackProjection(warehouseId, workflow, "CPT");
+    datadogMetricService.trackProjectionRequest(warehouseId, workflow, "CPT");
 
     return ResponseEntity.of(of(getSlaProjection.execute(GetProjectionInputDto.builder()
                                                              .workflow(workflow)
@@ -79,7 +79,7 @@ public class ProjectionController {
 
     authorizeUser.execute(new AuthorizeUserDto(callerId, USER_PERMISSION.get(workflow)));
 
-    datadogMetricService.trackProjection(warehouseId, workflow, "deferral");
+    datadogMetricService.trackProjectionRequest(warehouseId, workflow, "deferral");
 
     return ResponseEntity.of(of(getDeferralProjections.execute(new GetProjectionInput(
         warehouseId,

@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +39,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.gateways.projection.deferral.DeferralProjectionStatus;
 import com.mercadolibre.planning.model.me.usecases.projection.ProjectionDataMapper;
+import com.mercadolibre.planning.model.me.utils.MetricsService;
+import com.mercadolibre.planning.model.me.utils.TestException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -81,6 +84,10 @@ public class GetDeferralProjectionTest {
 
   @Mock
   private ProjectionGateway projectionGateway;
+
+  @Mock
+  private MetricsService dataDog;
+
 
   @Test
   public void testExecute() {
@@ -307,6 +314,107 @@ public class GetDeferralProjectionTest {
 
     //THEN
     verifyNoInteractions(getProjectionDataMapper);
+  }
+
+  @Test
+  public void testItemsDeferralException() {
+    // GIVEN
+    final ZonedDateTime currentUtcDate = CPT_0;
+
+    when(requestClockGateway.now()).thenReturn(GET_CURRENT_UTC_DATE_TIME.toInstant());
+
+    when(planningModelGateway.searchTrajectories(any(SearchTrajectoriesRequest.class))).thenReturn(
+        mockHeadcountEntities());
+
+    when(backlogGateway.getCurrentBacklog(
+        WAREHOUSE_ID,
+        List.of("outbound-orders"),
+        List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted",
+            "to_group", "grouping", "grouped", "to_pack"),
+        currentUtcDate.toInstant(),
+        currentUtcDate.plusDays(3).toInstant(),
+        List.of("date_out"))
+    ).thenReturn(List.of(
+        new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
+        new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
+        new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true)
+    ));
+
+    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false,
+        null)))
+        .thenReturn(new GetSimpleDeferralProjectionOutput(
+            mockProjectionResult(),
+            new LogisticCenterConfiguration(getDefault())));
+
+    // when getDeferralProjectionStatus returns exception
+    when(projectionGateway.getDeferralProjectionStatus(
+        any(Instant.class),
+        any(Instant.class),
+        any(WORKFLOW.getClass()),
+        any(),
+        any(),
+        any(String.class),
+        any(String.class),
+        any(boolean.class),
+        any()))
+        .thenThrow(TestException.class);
+
+    // WHEN
+    final PlanningView projection = getDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID,
+        FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false,
+        null));
+
+    //THEN
+    assertEquals(3, projection.getData().getProjections().size());
+    assertFalse(projection.getData().getProjections().get(0).isDeferred());
+    assertFalse(projection.getData().getProjections().get(1).isDeferred());
+    assertFalse(projection.getData().getProjections().get(2).isDeferred());
+
+    assertEquals(0, projection.getData().getProjections().get(0).getDeferredUnits());
+    assertEquals(0, projection.getData().getProjections().get(1).getDeferredUnits());
+    assertEquals(0, projection.getData().getProjections().get(2).getDeferredUnits());
+
+    verify(dataDog).trackProjectionError("ARTW01", FBM_WMS_OUTBOUND, "deferral", "items_to_deferral");
+  }
+
+
+  @Test
+  public void testBacklogsApiException() {
+    // GIVEN
+    final ZonedDateTime currentUtcDate = CPT_0;
+
+    when(requestClockGateway.now()).thenReturn(GET_CURRENT_UTC_DATE_TIME.toInstant());
+
+    when(backlogGateway.getCurrentBacklog(
+        WAREHOUSE_ID,
+        List.of("outbound-orders"),
+        List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted",
+            "to_group", "grouping", "grouped", "to_pack"),
+        currentUtcDate.toInstant(),
+        currentUtcDate.plusDays(3).toInstant(),
+        List.of("date_out"))
+    ).thenThrow(TestException.class);
+
+    // WHEN
+    final PlanningView projection = getDeferralProjection.execute(new GetProjectionInput(
+        WAREHOUSE_ID,
+        FBM_WMS_OUTBOUND,
+        currentUtcDate,
+        mockBacklog(),
+        false,
+        null));
+
+    //THEN
+    assertNull(projection.getData());
+
   }
 
   @Test

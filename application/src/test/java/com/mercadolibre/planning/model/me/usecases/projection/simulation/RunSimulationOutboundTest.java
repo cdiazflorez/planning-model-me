@@ -189,7 +189,7 @@ public class RunSimulationOutboundTest {
         List.of("outbound-orders"),
         steps,
         now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-        now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
+        now().truncatedTo(ChronoUnit.HOURS).plusDays(1).plusHours(1).toInstant(),
         List.of("date_out"))
 
     ).thenReturn(List.of(
@@ -230,7 +230,7 @@ public class RunSimulationOutboundTest {
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE, true));
 
-    final ZonedDateTime utcDateTimeTo = UTC_CURRENT_DATE.plusDays(4);
+    final ZonedDateTime utcDateTimeTo = UTC_CURRENT_DATE.plusDays(1).plusHours(1);
 
     when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
             .warehouseId(WAREHOUSE_ID)
@@ -258,7 +258,7 @@ public class RunSimulationOutboundTest {
         List.of("outbound-orders"),
         steps,
         now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-        now().truncatedTo(ChronoUnit.HOURS).plusDays(4).toInstant(),
+        now().truncatedTo(ChronoUnit.HOURS).plusDays(1).plusHours(1).toInstant(),
         List.of("date_out"))
 
     ).thenReturn(List.of(
@@ -311,7 +311,7 @@ public class RunSimulationOutboundTest {
         );
 
     final var slaFrom = now().truncatedTo(HOURS).toInstant();
-    final var slaTo = slaFrom.plus(4, ChronoUnit.DAYS);
+    final var slaTo = slaFrom.plus(1, ChronoUnit.DAYS).plus(1, HOURS);
     final var photoDate = slaTo.plus(30, ChronoUnit.MINUTES);
 
     when(backlogGateway.getLastPhoto(new BacklogLastPhotoRequest(
@@ -468,7 +468,7 @@ public class RunSimulationOutboundTest {
         .workflow(FBM_WMS_OUTBOUND)
         .warehouseId(WAREHOUSE_ID)
         .dateFrom(currentTime)
-        .dateTo(currentTime.plusDays(4))
+        .dateTo(currentTime.plusDays(1).plusHours(1))
         .backlog(backlogs.stream()
             .map(backlog -> new QuantityByDate(
                 backlog.getDate(),

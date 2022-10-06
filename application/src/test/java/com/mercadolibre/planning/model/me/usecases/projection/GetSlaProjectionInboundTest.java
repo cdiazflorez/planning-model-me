@@ -91,7 +91,7 @@ public class GetSlaProjectionInboundTest {
   void testInboundExecute() {
     // Given
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-    final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
+    final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(1).plusHours(1);
     final List<Backlog> mockedPlanningBacklog = mockPlanningBacklog();
     final List<Backlog> mockedBacklog = List.of(
         new Backlog(SLA_1, 50),
