@@ -24,6 +24,6 @@ public enum ProcessPath {
 
     @JsonValue
     public String getName() {
-        return name().toLowerCase();
+        return name().toLowerCase(Locale.getDefault());
     }
 }
