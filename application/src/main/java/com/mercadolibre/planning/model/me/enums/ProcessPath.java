@@ -5,17 +5,17 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Locale;
 
 public enum ProcessPath {
-    NON_TOT_MONO,
-    SIOC,
-    PP_DEFAULT_MULTI,
-    NON_TOT_MULTI_ORDER,
+    GLOBAL,
+    TOT_MONO,
     TOT_MULTI_BATCH,
     TOT_MULTI_ORDER,
-    TOT_MONO,
+    NON_TOT_MONO,
+    NON_TOT_MULTI_ORDER,
     PP_DEFAULT_MONO,
+    PP_DEFAULT_MULTI,
+    SIOC,
     AMBIENT,
-    REFRIGERATED,
-    GLOBAL;
+    REFRIGERATED;
 
     @JsonCreator
     public static ProcessPath from(final String value) {
