@@ -170,13 +170,13 @@ public class RepsForecastSheetParser implements SheetParser {
       final List<HeadcountProductivity> headcountProductivities =
               ForecastProductivityProcessName.stream()
                       .map(
-                              processName ->
-                                      new HeadcountProductivity(
-                                              GLOBAL,
-                                              processName.name(),
-                                              MetricUnit.UNITS_PER_HOUR.getName(),
-                                              DEFAULT_ABILITY_LEVEL,
-                                              new ArrayList<>()))
+                           processName ->
+                               new HeadcountProductivity(
+                                   GLOBAL,
+                                   processName.name(),
+                                   MetricUnit.UNITS_PER_HOUR.getName(),
+                                   DEFAULT_ABILITY_LEVEL,
+                                   new ArrayList<>()))
                       .collect(Collectors.toList());
 
     final ZoneId zoneId = config.getZoneId();
