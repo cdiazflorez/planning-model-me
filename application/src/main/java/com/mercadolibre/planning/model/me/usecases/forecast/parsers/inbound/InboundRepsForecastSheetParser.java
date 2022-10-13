@@ -273,6 +273,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
                 column.getType().name(),
                 column.getUnit().getName(),
                 column.getProcess().getName(),
+                GLOBAL,
                 toProcessingDistributionData(rows, column)
             )
         )

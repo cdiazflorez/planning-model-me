@@ -164,6 +164,7 @@ public class RepsForecastSheetParser implements SheetParser {
                                     forecastProcessType.toString(),
                                     forecastProcessType.getMetricUnit().getName(),
                                     forecastProcessName.toString(),
+                                    GLOBAL,
                                     new ArrayList<>())))
             .collect(Collectors.toList());
 
