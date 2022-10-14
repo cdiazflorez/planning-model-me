@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.mercadolibre.planning.model.me.enums.ProcessPath.GLOBAL;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
@@ -163,19 +164,21 @@ public class RepsForecastSheetParser implements SheetParser {
                                     forecastProcessType.toString(),
                                     forecastProcessType.getMetricUnit().getName(),
                                     forecastProcessName.toString(),
+                                    GLOBAL,
                                     new ArrayList<>())))
             .collect(Collectors.toList());
 
-    final List<HeadcountProductivity> headcountProductivities =
-        ForecastProductivityProcessName.stream()
-            .map(
-                processName ->
-                    new HeadcountProductivity(
-                        processName.name(),
-                        MetricUnit.UNITS_PER_HOUR.getName(),
-                        DEFAULT_ABILITY_LEVEL,
-                        new ArrayList<>()))
-            .collect(Collectors.toList());
+      final List<HeadcountProductivity> headcountProductivities =
+              ForecastProductivityProcessName.stream()
+                      .map(
+                           processName ->
+                               new HeadcountProductivity(
+                                   GLOBAL,
+                                   processName.name(),
+                                   MetricUnit.UNITS_PER_HOUR.getName(),
+                                   DEFAULT_ABILITY_LEVEL,
+                                   new ArrayList<>()))
+                      .collect(Collectors.toList());
 
     final ZoneId zoneId = config.getZoneId();
 

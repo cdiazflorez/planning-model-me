@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessPath.GLOBAL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES;
@@ -242,6 +243,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
   private List<HeadcountProductivity> buildHeadcountProductivities(final List<RepsRow> rows) {
     return Arrays.stream(Productivity.values())
         .map(column -> new HeadcountProductivity(
+                GLOBAL,
                 column.getProcess().getName(),
                 UNITS_PER_HOUR.getName(),
                 DEFAULT_ABILITY_LEVEL,
@@ -271,6 +273,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
                 column.getType().name(),
                 column.getUnit().getName(),
                 column.getProcess().getName(),
+                GLOBAL,
                 toProcessingDistributionData(rows, column)
             )
         )

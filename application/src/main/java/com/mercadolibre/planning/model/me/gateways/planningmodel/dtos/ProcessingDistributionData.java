@@ -6,6 +6,6 @@ import java.time.ZonedDateTime;
 
 @Value
 public class ProcessingDistributionData {
-    private ZonedDateTime date;
-    private int quantity;
+    ZonedDateTime date;
+    double quantity;
 }
