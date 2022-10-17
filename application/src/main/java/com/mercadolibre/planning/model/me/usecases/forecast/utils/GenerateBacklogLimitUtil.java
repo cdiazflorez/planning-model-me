@@ -14,6 +14,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueOrFail;
 import static java.util.stream.Collectors.toList;
 
+import com.mercadolibre.planning.model.me.enums.ProcessPath;
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
@@ -48,9 +49,10 @@ public class GenerateBacklogLimitUtil {
     final ZoneId zoneId = config.getZoneId();
     return Arrays.stream(BacklogLimitConf.values())
         .map(conf -> new BacklogLimit(
+                ProcessPath.GLOBAL,
+                conf.getProcess(),
                 conf.getType(),
                 conf.getType().getMetricUnit(),
-                conf.getProcess(),
                 getBacklogLimitData(sheet, zoneId, conf)
             )
         ).collect(toList());
