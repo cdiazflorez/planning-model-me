@@ -11,6 +11,7 @@ public enum ProcessPath {
     TOT_MULTI_ORDER,
     NON_TOT_MONO,
     NON_TOT_MULTI_ORDER,
+    NON_TOT_MULTI_BATCH,
     PP_DEFAULT_MONO,
     PP_DEFAULT_MULTI,
     SIOC,
