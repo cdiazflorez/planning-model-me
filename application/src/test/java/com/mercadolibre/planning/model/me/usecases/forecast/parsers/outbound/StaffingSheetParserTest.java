@@ -139,16 +139,15 @@ public class StaffingSheetParserTest {
           hc.getData().sort(Comparator.comparing(HeadcountProductivityData::getProductivity));
           IntStream.range(0, hc.getData().size())
               .forEach(i -> {
-                long expectedProductivity = getProductivityByProcessAndIndex(hc.getProcessName(), i);
+                long expectedProductivity = getProductivityByProcessAndIndex(hc.getProcessPath(), i);
                 assertEquals(expectedProductivity, hc.getData().get(i).getProductivity());
               });
         }
     );
   }
 
-  private long getProductivityByProcessAndIndex(final String processPath, final int index) {
-    final ProcessPath pp = ProcessPath.from(processPath);
-    return INIT_PRODUCTIVITY_BY_PROCESS.get(pp) + index;
+  private long getProductivityByProcessAndIndex(final ProcessPath processPath, final int index) {
+    return INIT_PRODUCTIVITY_BY_PROCESS.get(processPath) + index;
   }
 
   private void assertHeadcountRatio(final List<HeadcountProductivityRatio> hcRatio) {

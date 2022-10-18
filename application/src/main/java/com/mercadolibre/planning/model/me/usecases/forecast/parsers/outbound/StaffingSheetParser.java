@@ -6,6 +6,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleCellValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntCellValueAt;
 
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
@@ -111,7 +112,8 @@ public class StaffingSheetParser implements SheetParser {
     return Arrays.stream(ForecastStaffingProductivityColumnName.values()).map(
         column ->
             new HeadcountProductivity(
-                column.getProcessPath().getName(),
+                column.getProcessPath(),
+                ProcessName.PICKING.getName(),
                 MetricUnit.UNITS_PER_HOUR.getName(),
                 DEFAULT_ABILITY_LEVEL,
                 getHeadcountProductivityData(rows, column)
