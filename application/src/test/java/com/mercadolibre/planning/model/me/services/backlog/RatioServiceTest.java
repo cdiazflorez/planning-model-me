@@ -74,52 +74,103 @@ public class RatioServiceTest {
 
     final var firstDateFrom = dateFrom.minus(7L, ChronoUnit.DAYS);
     final var firstDateTo = dateTo.minus(7L, ChronoUnit.DAYS);
-    when(gateway.getPhotosCached(request(firstDateFrom, firstDateTo)))
+    when(gateway.getPhotosCached(requestToGroup(firstDateFrom, firstDateTo)))
         .thenReturn(
             buildPhotos(
                 firstDateFrom,
-                groups(100, 100, 100, 100),
-                groups(100, 150, 150, 150),
-                groups(200, 200, 200, 175),
-                groups(201, 250, 250, 205),
-                groups(201, 250, 250, 205)
+                groups(100),
+                groups(100),
+                groups(200),
+                groups(201),
+                groups(201)
+            )
+        );
+
+    when(gateway.getPhotosCached(requestToPack(firstDateFrom, firstDateTo)))
+        .thenReturn(
+            buildPhotos(
+                firstDateFrom,
+                packs(100, 100, 100),
+                packs(150, 150, 150),
+                packs(200, 200, 175),
+                packs(250, 250, 205),
+                packs(250, 250, 205)
             )
         );
 
     final var secondDateFrom = dateFrom.minus(14L, ChronoUnit.DAYS);
     final var secondDateTo = dateTo.minus(14L, ChronoUnit.DAYS);
-    when(gateway.getPhotosCached(request(secondDateFrom, secondDateTo)))
+    when(gateway.getPhotosCached(requestToGroup(secondDateFrom, secondDateTo)))
         .thenReturn(
             buildPhotos(
                 secondDateFrom,
-                groups(100, 100, 100, 100),
-                groups(100, 125, 125, 200),
-                groups(125, 150, 175, 300),
-                groups(126, 250, 175, 400),
-                groups(126, 250, 175, 400)
+                groups(100),
+                groups(100),
+                groups(125),
+                groups(126),
+                groups(126)
+            )
+        );
+
+    when(gateway.getPhotosCached(requestToPack(secondDateFrom, secondDateTo)))
+        .thenReturn(
+            buildPhotos(
+                secondDateFrom,
+                packs(100, 100, 100),
+                packs(125, 125, 200),
+                packs(150, 175, 300),
+                packs(250, 175, 400),
+                packs(250, 175, 400)
             )
         );
 
     final var thirdDateFrom = dateFrom.minus(21L, ChronoUnit.DAYS);
     final var thirdDateTo = dateTo.minus(21L, ChronoUnit.DAYS);
-    when(gateway.getPhotosCached(request(thirdDateFrom, thirdDateTo)))
+    when(gateway.getPhotosCached(requestToGroup(thirdDateFrom, thirdDateTo)))
         .thenReturn(
             buildPhotos(
                 thirdDateFrom,
-                groups(100, 100, 100, 100),
-                groups(100, 115, 115, 100),
-                groups(175, 135, 120, 110),
-                groups(175, 135, 120, 110),
-                groups(175, 135, 120, 110)
+                groups(100),
+                groups(100),
+                groups(175),
+                groups(175),
+                groups(175)
+            )
+        );
+
+    when(gateway.getPhotosCached(requestToPack(thirdDateFrom, thirdDateTo)))
+        .thenReturn(
+            buildPhotos(
+                thirdDateFrom,
+                packs(100, 100, 100),
+                packs(115, 115, 100),
+                packs(135, 120, 110),
+                packs(135, 120, 110),
+                packs(135, 120, 110)
             )
         );
   }
 
-  private BacklogPhotosRequest request(final Instant dateFrom, final Instant dateTo) {
+  private BacklogPhotosRequest requestToGroup(final Instant dateFrom, final Instant dateTo) {
     return new BacklogPhotosRequest(
         WAREHOUSE_ID,
         Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
-        Set.of(Step.TO_GROUP, Step.TO_PACK),
+        Set.of(Step.TO_GROUP),
+        null,
+        null,
+        dateFrom,
+        dateTo,
+        Set.of(STEP, AREA),
+        dateFrom,
+        dateTo.plus(Duration.ofHours(1))
+    );
+  }
+
+  private BacklogPhotosRequest requestToPack(final Instant dateFrom, final Instant dateTo) {
+    return new BacklogPhotosRequest(
+        WAREHOUSE_ID,
+        Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+        Set.of(Step.TO_PACK),
         null,
         null,
         dateFrom,
@@ -137,12 +188,16 @@ public class RatioServiceTest {
         .collect(Collectors.toList());
   }
 
-  private List<Group> groups(final int batchSorterUnits,
-                             final int someAreaPackingToteUnits,
-                             final int anotherAreaPackingToteUnits,
-                             final int packingWallUnits) {
+  private List<Group> groups(final int batchSorterUnits) {
     return List.of(
-        new Group(Map.of(STEP, "TO_GROUP"), 10, batchSorterUnits),
+        new Group(Map.of(STEP, "TO_GROUP"), 10, batchSorterUnits)
+    );
+  }
+
+  private List<Group> packs(final int someAreaPackingToteUnits,
+                            final int anotherAreaPackingToteUnits,
+                            final int packingWallUnits) {
+    return List.of(
         new Group(Map.of(STEP, "TO_PACK", AREA, "MZ"), 20, someAreaPackingToteUnits),
         new Group(Map.of(STEP, "TO_PACK", AREA, "HV"), 30, anotherAreaPackingToteUnits),
         new Group(Map.of(STEP, "TO_PACK", AREA, "PW"), 30, packingWallUnits)
