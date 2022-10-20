@@ -175,11 +175,11 @@ public class RatioService {
                                  final Instant dateFrom,
                                  final Instant dateTo) {
 
-    return backlogGateway.getPhotosCached(
+    var backlogToPack = backlogGateway.getPhotosCached(
         new BacklogPhotosRequest(
             logisticCenterId,
             Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
-            Set.of(Step.TO_GROUP, Step.TO_PACK),
+            Set.of(Step.TO_PACK),
             null,
             null,
             slaDateFrom,
@@ -189,6 +189,34 @@ public class RatioService {
             dateTo
         )
     );
+
+    var backlogToGroup = backlogGateway.getPhotosCached(
+        new BacklogPhotosRequest(
+            logisticCenterId,
+            Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+            Set.of(Step.TO_GROUP),
+            null,
+            null,
+            slaDateFrom,
+            slaDateTo,
+            Set.of(STEP, AREA),
+            dateFrom,
+            dateTo
+        )
+    );
+
+    return Stream.concat(backlogToGroup.stream(), backlogToPack.stream()).collect(Collectors.toList()).stream()
+        .collect(Collectors.groupingBy(Photo::getTakenOn))
+        .entrySet().stream()
+        .map(item -> new Photo(item.getKey(), mergeGroups(item.getValue()))).collect(Collectors.toList());
+  }
+
+  private List<Photo.Group> mergeGroups(final List<Photo> photosWithRepeats) {
+    final List<Photo.Group> merge = new ArrayList<>();
+    photosWithRepeats.forEach(item -> {
+      merge.addAll(item.getGroups());
+    });
+    return merge;
   }
 
   private List<ProcessedUnitsAtHourAndProcess> backlog(final String logisticCenterId,
