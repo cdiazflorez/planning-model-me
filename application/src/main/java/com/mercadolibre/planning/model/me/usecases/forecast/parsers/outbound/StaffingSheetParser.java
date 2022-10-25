@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_RATIO_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY_PP;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_RATIO;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDateTimeCellValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleCellValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntCellValueAt;
@@ -16,7 +16,7 @@ import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.SheetParser;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastStaffingProductivityColumnName;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastStaffingRatioColumnName;
-import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.HeadcountProductivityRatio;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.HeadcountRatio;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.StaffingRow;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
 import com.mercadolibre.spreadsheet.MeliSheet;
@@ -60,13 +60,13 @@ public class StaffingSheetParser implements SheetParser {
 
     checkForErrors(rows);
 
-    final List<HeadcountProductivityRatio> hcRatios = buildHeadcountRatioProductivity(rows);
+    final List<HeadcountRatio> hcRatios = buildHeadcountRatioProductivity(rows);
 
     validateTotalRatio(hcRatios);
 
     return new ForecastSheetDto(sheet.getSheetName(), Map.of(
-        HEADCOUNT_PRODUCTIVITY, buildHeadcountProductivity(rows),
-        HEADCOUNT_RATIO_PRODUCTIVITY, hcRatios
+        HEADCOUNT_PRODUCTIVITY_PP, buildHeadcountProductivity(rows),
+        HEADCOUNT_RATIO, hcRatios
     ));
   }
 
@@ -86,12 +86,12 @@ public class StaffingSheetParser implements SheetParser {
     );
   }
 
-  private void validateTotalRatio(final List<HeadcountProductivityRatio> hcRatios) {
+  private void validateTotalRatio(final List<HeadcountRatio> hcRatios) {
     final List<String> errors = hcRatios.stream()
         .flatMap(hcRatio -> hcRatio.getData().stream())
         .collect(Collectors.toMap(
-                HeadcountProductivityRatio.HeadcountProductivityRatioData::getDate,
-                HeadcountProductivityRatio.HeadcountProductivityRatioData::getRatio,
+                HeadcountRatio.HeadcountRatioData::getDate,
+                HeadcountRatio.HeadcountRatioData::getRatio,
                 Double::sum
             )
         )
@@ -134,21 +134,21 @@ public class StaffingSheetParser implements SheetParser {
 
   }
 
-  private List<HeadcountProductivityRatio> buildHeadcountRatioProductivity(final List<StaffingRow> rows) {
+  private List<HeadcountRatio> buildHeadcountRatioProductivity(final List<StaffingRow> rows) {
     return Arrays.stream(ForecastStaffingRatioColumnName.values()).map(
         column ->
-            new HeadcountProductivityRatio(
+            new HeadcountRatio(
                 column.getProcessPath(),
                 getHeadcountRatioData(rows, column)
             )
     ).collect(Collectors.toList());
   }
 
-  private List<HeadcountProductivityRatio.HeadcountProductivityRatioData> getHeadcountRatioData(
+  private List<HeadcountRatio.HeadcountRatioData> getHeadcountRatioData(
       final List<StaffingRow> rows, final ForecastStaffingRatioColumnName column) {
 
     return rows.stream().map(row ->
-        new HeadcountProductivityRatio.HeadcountProductivityRatioData(
+        new HeadcountRatio.HeadcountRatioData(
             row.getDate().getValue(),
             row.getRatios().get(column).getValue()
         )

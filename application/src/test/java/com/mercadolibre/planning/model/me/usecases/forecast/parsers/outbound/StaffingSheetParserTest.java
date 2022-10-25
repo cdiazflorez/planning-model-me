@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_RATIO_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY_PP;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_RATIO;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFrom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,7 +15,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivityData;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
-import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.HeadcountProductivityRatio;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.HeadcountRatio;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.text.DecimalFormat;
 import java.util.Comparator;
@@ -125,11 +125,11 @@ public class StaffingSheetParserTest {
     assertEquals(2, forecastSheetDto.getValues().values().size());
 
     final var values = forecastSheetDto.getValues();
-    assertTrue(values.containsKey(HEADCOUNT_PRODUCTIVITY));
-    assertHeadcountProductivity((List<HeadcountProductivity>) values.get(HEADCOUNT_PRODUCTIVITY));
+    assertTrue(values.containsKey(HEADCOUNT_PRODUCTIVITY_PP));
+    assertHeadcountProductivity((List<HeadcountProductivity>) values.get(HEADCOUNT_PRODUCTIVITY_PP));
 
-    assertTrue(values.containsKey(HEADCOUNT_RATIO_PRODUCTIVITY));
-    assertHeadcountRatio((List<HeadcountProductivityRatio>) values.get(HEADCOUNT_RATIO_PRODUCTIVITY));
+    assertTrue(values.containsKey(HEADCOUNT_RATIO));
+    assertHeadcountRatio((List<HeadcountRatio>) values.get(HEADCOUNT_RATIO));
   }
 
   private void assertHeadcountProductivity(List<HeadcountProductivity> hcProductivity) {
@@ -150,7 +150,7 @@ public class StaffingSheetParserTest {
     return INIT_PRODUCTIVITY_BY_PROCESS.get(processPath) + index;
   }
 
-  private void assertHeadcountRatio(final List<HeadcountProductivityRatio> hcRatio) {
+  private void assertHeadcountRatio(final List<HeadcountRatio> hcRatio) {
     assertEquals(8, hcRatio.size());
 
     AtomicInteger index = new AtomicInteger();

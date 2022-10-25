@@ -6,12 +6,12 @@ import java.util.List;
 import lombok.Value;
 
 @Value
-public class HeadcountProductivityRatio {
+public class HeadcountRatio {
   ProcessPath processPath;
-  List<HeadcountProductivityRatioData> data;
+  List<HeadcountRatioData> data;
 
   @Value
-  public static class HeadcountProductivityRatioData {
+  public static class HeadcountRatioData {
     ZonedDateTime date;
     double ratio;
   }
