@@ -12,9 +12,7 @@ public enum ForecastStaffingProductivityColumnName {
   TOT_MULTI_ORDER(3, ProcessPath.TOT_MULTI_ORDER),
   NON_TOT_MONO(4, ProcessPath.NON_TOT_MONO),
   NON_TOT_MULTI_ORDER(5, ProcessPath.NON_TOT_MULTI_ORDER),
-  NON_TOT_MULTI_BATCH(6, ProcessPath.NON_TOT_MULTI_BATCH),
-  PP_DEFAULT_MONO(7, ProcessPath.PP_DEFAULT_MONO),
-  PP_DEFAULT_MULTI(8, ProcessPath.PP_DEFAULT_MULTI);
+  NON_TOT_MULTI_BATCH(6, ProcessPath.NON_TOT_MULTI_BATCH);
 
   private final int columnIndex;
 

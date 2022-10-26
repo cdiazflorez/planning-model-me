@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_RATIO_PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY_PP;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_RATIO;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFrom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,9 +15,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivityData;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
-import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.HeadcountProductivityRatio;
-import com.mercadolibre.spreadsheet.MeliSheet;
-import java.text.DecimalFormat;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.HeadcountRatio;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -30,18 +28,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class StaffingSheetParserTest {
+class StaffingSheetParserTest {
   private static final String VALID_FILE_PATH = "MVP1-outbound-test.xlsx";
 
   private static final String ERRONEOUS_FILE_PATH = "MVP1-outbound-ratio-error.xlsx";
 
   private static final String SHEET = "PP - Staffing";
-
-  private static final String MIDDLE = "middle";
-
-  private static final String FINAL = "final";
-
-  private static final int FINAL_INDEX_ROW = 167;
 
   private static final LogisticCenterConfiguration CONF =
       new LogisticCenterConfiguration(TimeZone.getDefault());
@@ -58,19 +50,21 @@ public class StaffingSheetParserTest {
   );
 
   private static final Map<ProcessPath, Double> INIT_RATIO_BY_PROCESS = Map.of(
-      ProcessPath.TOT_MONO, 0.01,
+      ProcessPath.TOT_MONO, 0.80,
       ProcessPath.TOT_MULTI_BATCH, 0.02,
       ProcessPath.TOT_MULTI_ORDER, 0.03,
       ProcessPath.NON_TOT_MONO, 0.04,
       ProcessPath.NON_TOT_MULTI_ORDER, 0.05,
-      ProcessPath.NON_TOT_MULTI_BATCH, 0.06,
-      ProcessPath.PP_DEFAULT_MONO, 0.07,
-      ProcessPath.PP_DEFAULT_MULTI, 0.72
+      ProcessPath.NON_TOT_MULTI_BATCH, 0.06
   );
 
-  private static final Map<String, Double> RATIO_PP_DEFAULT_MULTI = Map.of(
-      MIDDLE, 0.65,
-      FINAL, 0.58
+  private static final Map<ProcessPath, Double> RATIO_BY_PROCESS = Map.of(
+      ProcessPath.TOT_MONO, 0.02,
+      ProcessPath.TOT_MULTI_BATCH, 0.03,
+      ProcessPath.TOT_MULTI_ORDER, 0.04,
+      ProcessPath.NON_TOT_MONO, 0.05,
+      ProcessPath.NON_TOT_MULTI_ORDER, 0.06,
+      ProcessPath.NON_TOT_MULTI_BATCH, 0.80
   );
 
   private final StaffingSheetParser staffingSheetParser = new StaffingSheetParser();
@@ -94,11 +88,10 @@ public class StaffingSheetParserTest {
   @DisplayName("Test when Melisheet is null then a ForecastParsingException is thrown")
   void errorURL() {
     // GIVEN
-    final MeliSheet staffingSheet = null;
 
     // WHEN
     final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
-        () -> staffingSheetParser.parse("ARBA01", staffingSheet, CONF));
+        () -> staffingSheetParser.parse("ARBA01", null, CONF));
     // THEN
     assertNotNull(exception.getMessage());
   }
@@ -115,7 +108,7 @@ public class StaffingSheetParserTest {
 
     // THEN
     assertNotNull(exception.getMessage());
-    final String expectedMessage = "Ratio out range = 1.27, expected ratio from 0.99 to 1.01";
+    final String expectedMessage = "Ratio out range = 1.04, expected ratio from 0.99 to 1.01";
 
     assertEquals(expectedMessage, exception.getMessage());
   }
@@ -125,15 +118,15 @@ public class StaffingSheetParserTest {
     assertEquals(2, forecastSheetDto.getValues().values().size());
 
     final var values = forecastSheetDto.getValues();
-    assertTrue(values.containsKey(HEADCOUNT_PRODUCTIVITY));
-    assertHeadcountProductivity((List<HeadcountProductivity>) values.get(HEADCOUNT_PRODUCTIVITY));
+    assertTrue(values.containsKey(HEADCOUNT_PRODUCTIVITY_PP));
+    assertHeadcountProductivity((List<HeadcountProductivity>) values.get(HEADCOUNT_PRODUCTIVITY_PP));
 
-    assertTrue(values.containsKey(HEADCOUNT_RATIO_PRODUCTIVITY));
-    assertHeadcountRatio((List<HeadcountProductivityRatio>) values.get(HEADCOUNT_RATIO_PRODUCTIVITY));
+    assertTrue(values.containsKey(HEADCOUNT_RATIO));
+    assertHeadcountRatio((List<HeadcountRatio>) values.get(HEADCOUNT_RATIO));
   }
 
   private void assertHeadcountProductivity(List<HeadcountProductivity> hcProductivity) {
-    assertEquals(8, hcProductivity.size());
+    assertEquals(6, hcProductivity.size());
 
     hcProductivity.forEach(hc -> {
           hc.getData().sort(Comparator.comparing(HeadcountProductivityData::getProductivity));
@@ -150,39 +143,26 @@ public class StaffingSheetParserTest {
     return INIT_PRODUCTIVITY_BY_PROCESS.get(processPath) + index;
   }
 
-  private void assertHeadcountRatio(final List<HeadcountProductivityRatio> hcRatio) {
-    assertEquals(8, hcRatio.size());
+  private void assertHeadcountRatio(final List<HeadcountRatio> hcRatio) {
+    assertEquals(6, hcRatio.size());
 
     AtomicInteger index = new AtomicInteger();
 
-    hcRatio.forEach(hc -> {
-          IntStream.range(0, hc.getData().size())
-              .forEach(i -> {
-                Double expectedRatio = getRatioByProcessAndIndex(hc.getProcessPath().getName(), i);
-                assertEquals(expectedRatio, hc.getData().get(i).getRatio());
-                index.getAndIncrement();
-              });
-        }
+    hcRatio.forEach(hc -> IntStream.range(0, hc.getData().size())
+        .forEach(i -> {
+          Double expectedRatio = getRatioByProcessAndIndex(hc.getProcessPath().getName(), i);
+          assertEquals(expectedRatio, hc.getData().get(i).getRatio());
+          index.getAndIncrement();
+        })
     );
   }
 
   private Double getRatioByProcessAndIndex(final String processPath, final int index) {
     final ProcessPath pp = ProcessPath.from(processPath);
-    final DecimalFormat doubleFormat = new DecimalFormat("#.00");
     if (index == 0) {
       return INIT_RATIO_BY_PROCESS.get(pp);
-    } else if (index < FINAL_INDEX_ROW) {
-      if (pp == ProcessPath.PP_DEFAULT_MULTI) {
-        return RATIO_PP_DEFAULT_MULTI.get(MIDDLE);
-      }
-      return Double.valueOf(doubleFormat.format(INIT_RATIO_BY_PROCESS.get(pp) + 0.01));
-    }
-
-    if (pp == ProcessPath.PP_DEFAULT_MULTI) {
-      return RATIO_PP_DEFAULT_MULTI.get(FINAL);
     } else {
-      return Double.valueOf(doubleFormat.format(INIT_RATIO_BY_PROCESS.get(pp) + 0.02));
+      return RATIO_BY_PROCESS.get(pp);
     }
-
   }
 }
