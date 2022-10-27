@@ -37,20 +37,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
 
+    implementation "com.lmax:disruptor:3.4.4"
+
     // bigquery
     implementation platform('com.google.cloud:libraries-bom:25.0.0')
     implementation 'com.google.cloud:google-cloud-bigquery'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation "com.mercadolibre.restclient:meli-restclient-core::tests"
-}
-
-configurations {
-    all {
-        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
-        exclude group: 'ch.qos.logback', module: 'logback-classic'
-        exclude group: 'org.apache.logging.log4j', module: 'log4j-to-slf4j'
-    }
 }
 
 task runLocal {
