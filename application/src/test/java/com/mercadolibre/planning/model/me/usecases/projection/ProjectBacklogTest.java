@@ -21,7 +21,10 @@ import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
@@ -44,6 +47,7 @@ import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetSha
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -202,6 +206,32 @@ public class ProjectBacklogTest {
     assertEquals(200, checkinProjections.getValues().get(1).getQuantity());
   }
 
+  @Test
+  public void testWrongDateRange() {
+    final BacklogProjectionInput input = BacklogProjectionInput.builder()
+        .workflow(FBM_WMS_OUTBOUND)
+        .warehouseId(WAREHOUSE_ID)
+        .processName(List.of(WAVING, PICKING, PACKING))
+        .userId(1L)
+        .slaDateFrom(A_DATE.toInstant())
+        .slaDateTo(A_DATE.plusHours(10).toInstant())
+        .dateFrom(A_DATE.plusDays(1))
+        .dateTo(A_DATE)
+        .groupType(ORDER_GROUP_TYPE)
+        .backlogs(List.of(
+            new CurrentBacklog(WAVING, 0),
+            new CurrentBacklog(PICKING, 2232),
+            new CurrentBacklog(PACKING, 1442)
+        ))
+        .hasWall(true)
+        .build();
+
+    // WHEN
+    final List<BacklogProjectionResponse> projections = projectBacklog.execute(input);
+    assertEquals(Collections.emptyList(), projections);
+    verify(ratioService, never()).getPackingRatio(anyString(), any(), any(), any(), any());
+    verify(planningModel, never()).getBacklogProjection(any());
+  }
   @Test
   void testProjectBacklogByArea() {
     // GIVEN
