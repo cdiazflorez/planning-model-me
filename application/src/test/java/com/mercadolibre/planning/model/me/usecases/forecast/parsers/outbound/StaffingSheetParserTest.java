@@ -36,7 +36,7 @@ class StaffingSheetParserTest {
   private static final String SHEET = "PP - Staffing";
 
   private static final LogisticCenterConfiguration CONF =
-      new LogisticCenterConfiguration(TimeZone.getDefault());
+      new LogisticCenterConfiguration(TimeZone.getTimeZone("America/Argentina/Buenos_Aires"));
 
   private static final Map<ProcessPath, Integer> INIT_PRODUCTIVITY_BY_PROCESS = Map.of(
       ProcessPath.TOT_MONO, 20,
@@ -108,7 +108,7 @@ class StaffingSheetParserTest {
 
     // THEN
     assertNotNull(exception.getMessage());
-    final String expectedMessage = "Ratio out range = 1.04, expected ratio from 0.99 to 1.01";
+    final String expectedMessage = "Ratio out range = 2021-01-24T00:00:00 for date = 1.04, expected ratio from 0.99 to 1.01";
 
     assertEquals(expectedMessage, exception.getMessage());
   }

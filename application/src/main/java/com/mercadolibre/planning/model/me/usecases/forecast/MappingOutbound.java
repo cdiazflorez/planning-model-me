@@ -18,6 +18,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
 
 import com.mercadolibre.planning.model.me.enums.ProcessPath;
+import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
@@ -32,9 +33,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 final class MappingOutbound {
-  static final String WAREHOUSE_ID = "warehouse_id";
+  private static final int DECIMAL_QUANTITY = 2;
 
-  static final int DECIMAL_QUANTITY = 2;
+  private static final String WAREHOUSE_ID = "warehouse_id";
+
+  private static final String INVALID_DATES_ERROR_MESSAGE = "`Reps` sheet dates must match `PP - Staffing` sheet dates";
 
   private MappingOutbound() {
   }
@@ -65,7 +68,10 @@ final class MappingOutbound {
     final var pickingGlobalHeadcount = processingDistribution.stream()
         .filter(processing -> PICKING.getName().equals(processing.getProcessName())
             && processing.getType().equals(ACTIVE_WORKERS.toString()))
-        .findFirst().orElseThrow();
+        .findFirst()
+        .orElseThrow();
+
+    checkRatioDates(ratiosPP, pickingGlobalHeadcount);
 
     final var ratioByProcessPathAndDate = buildRatioByProcessPathAndDate(ratiosPP);
 
@@ -85,6 +91,32 @@ final class MappingOutbound {
     newProcessingDistribution.addAll(pdPickingRatio);
 
     return newProcessingDistribution;
+  }
+
+  private static void checkRatioDates(final List<HeadcountRatio> ratiosPP, final ProcessingDistribution pickingHeadcount) {
+    final var somePpRatio = ratiosPP.stream()
+        .findAny()
+        .map(HeadcountRatio::getData);
+
+    if (somePpRatio.isEmpty()) {
+      return;
+    }
+
+    final var ppRatioDates = somePpRatio.get()
+        .stream()
+        .map(HeadcountRatio.HeadcountRatioData::getDate)
+        .map(ZonedDateTime::toInstant)
+        .collect(Collectors.toSet());
+
+    final var pickingDates = pickingHeadcount.getData()
+        .stream()
+        .map(ProcessingDistributionData::getDate)
+        .map(ZonedDateTime::toInstant)
+        .collect(Collectors.toSet());
+
+    if ((pickingDates.size() != ppRatioDates.size()) || !(pickingDates.containsAll(ppRatioDates))) {
+      throw new ForecastParsingException(INVALID_DATES_ERROR_MESSAGE);
+    }
   }
 
   private static List<ProcessingDistributionData> buildDataWithRatio(
