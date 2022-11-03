@@ -9,7 +9,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum BacklogWorkflow {
   OUTBOUND_ORDERS("OUTBOUND-ORDERS"),
-  INBOUND("inbound");
+  INBOUND("inbound"),
+  INBOUND_TRANSFER("INBOUND-TRANSFER");
 
   private final String name;
 

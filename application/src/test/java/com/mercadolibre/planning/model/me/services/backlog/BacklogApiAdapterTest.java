@@ -1,8 +1,11 @@
 package com.mercadolibre.planning.model.me.services.backlog;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
 import static java.util.Collections.emptyList;
@@ -68,6 +71,45 @@ public class BacklogApiAdapterTest {
         "ARBA01",
         of(FBM_WMS_OUTBOUND),
         of(WAVING, PICKING, PACKING),
+        of(DATE_OUT),
+        Instant.from(NOW),
+        Instant.from(NOW),
+        Instant.from(NOW),
+        Instant.from(NOW.plusHours(24))
+    );
+
+    // THEN
+    assertEquals(consolidations.get(0).getDate(), result.get(0).getDate());
+    assertEquals(consolidations.get(0).getTotal(), result.get(0).getTotal());
+    assertEquals(consolidations.get(0).getKeys(), result.get(0).getKeys());
+  }
+
+  @Test
+  void testExecuteCurrentBacklogInbound() {
+    // GIVEN
+    final List<Consolidation> consolidations = getConsolidation();
+
+    final BacklogRequest gatewayRequest = new BacklogRequest(
+        Instant.from(NOW),
+        "ARBA01",
+        of("inbound", "inbound-transfer"),
+        of(CHECK_IN.getName(), PUT_AWAY.getName()),
+        emptyList(),
+        of("date_out"),
+        Instant.from(NOW),
+        Instant.from(NOW),
+        Instant.from(NOW),
+        Instant.from(NOW.plusHours(24))
+    );
+
+    // WHEN
+    when(backlogApiGateway.getBacklog(gatewayRequest)).thenReturn(consolidations);
+
+    final List<Consolidation> result = backlogApiAdapter.getCurrentBacklog(
+        Instant.from(NOW),
+        "ARBA01",
+        of(FBM_WMS_INBOUND),
+        of(CHECK_IN, PUT_AWAY),
         of(DATE_OUT),
         Instant.from(NOW),
         Instant.from(NOW),

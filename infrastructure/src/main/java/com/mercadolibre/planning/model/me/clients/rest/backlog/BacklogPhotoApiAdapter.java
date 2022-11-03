@@ -115,11 +115,7 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
 
   private BacklogPhotosRequest toBacklogPhotosRequest(final BacklogRequest request) {
     final Set<Step> steps = processesToSteps(request.getProcesses());
-    final Set<BacklogWorkflow> workflows = request.getWorkflows()
-        .stream()
-        .map(Workflow::getBacklogWorkflow)
-        .collect(Collectors.toSet());
-
+    final Set<BacklogWorkflow> workflows = workflowToBacklogWorkflow(request.getWorkflows());
     return new BacklogPhotosRequest(
         request.getLogisticCenterId(),
         workflows,
@@ -132,6 +128,13 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
         request.getDateFrom(),
         request.getDateTo()
     );
+  }
+
+  private Set<BacklogWorkflow> workflowToBacklogWorkflow(final Set<Workflow> workflow) {
+    return workflow.stream()
+        .map(Workflow::getBacklogWorkflow)
+        .flatMap(List::stream)
+        .collect(Collectors.toSet());
   }
 
   private Set<Step> processesToSteps(final Set<ProcessName> processes) {

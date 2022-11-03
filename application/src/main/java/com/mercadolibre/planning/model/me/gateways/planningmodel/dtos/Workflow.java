@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -15,10 +16,10 @@ import static java.util.stream.Collectors.toMap;
 @Getter
 @AllArgsConstructor
 public enum Workflow {
-    FBM_WMS_INBOUND(BacklogWorkflow.INBOUND),
-    FBM_WMS_OUTBOUND(BacklogWorkflow.OUTBOUND_ORDERS);
+    FBM_WMS_INBOUND(List.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER)),
+    FBM_WMS_OUTBOUND(List.of(BacklogWorkflow.OUTBOUND_ORDERS));
 
-    private BacklogWorkflow backlogWorkflow;
+    private List<BacklogWorkflow> backlogWorkflow;
 
     private static final Map<String, Workflow> LOOKUP = Arrays.stream(values()).collect(
             toMap(Workflow::toString, Function.identity())
