@@ -139,13 +139,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         .collect(Collectors.toList());
   }
 
-  private boolean includeCurrentBacklog(List<BacklogPhoto> currentPhoto, Instant dateFrom) {
-    if (currentPhoto.isEmpty()) {
-      return false;
-    }
-    return !currentPhoto.stream().findFirst().get().getTakenOn().isBefore(dateFrom);
-  }
-
   private Map<ProcessName, HistoricalBacklog> getHistoricalBacklog(final GetBacklogMonitorInputDto input) {
     try {
       return getHistoricalBacklog.execute(new GetHistoricalBacklogInput(

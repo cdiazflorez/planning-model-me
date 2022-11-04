@@ -5,6 +5,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDateTimeCellValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleCellValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntCellValueAt;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
@@ -21,10 +22,12 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.mod
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -47,6 +50,8 @@ public class StaffingSheetParser implements SheetParser {
 
   private static final double RATIO_LIMIT_DOWN = 0.99;
 
+  private static final String RATIO_OUT_OF_RANGE_ERROR_MESSAGE = "Ratio out range = %s for date = %s, expected ratio from %s to %s";
+
   @Override
   public String name() {
     return TARGET_SHEET;
@@ -62,7 +67,7 @@ public class StaffingSheetParser implements SheetParser {
 
     final List<HeadcountRatio> hcRatios = buildHeadcountRatioProductivity(rows);
 
-    validateTotalRatio(hcRatios);
+    validateTotalRatio(hcRatios, zoneId);
 
     return new ForecastSheetDto(sheet.getSheetName(), Map.of(
         HEADCOUNT_PRODUCTIVITY_PP, buildHeadcountProductivity(rows),
@@ -86,7 +91,14 @@ public class StaffingSheetParser implements SheetParser {
     );
   }
 
-  private void validateTotalRatio(final List<HeadcountRatio> hcRatios) {
+  private void validateTotalRatio(final List<HeadcountRatio> hcRatios, final ZoneId zoneId) {
+    final BiFunction<ZonedDateTime, Double, String> messageBuilder = (date, ratio) -> String.format(
+        RATIO_OUT_OF_RANGE_ERROR_MESSAGE,
+        date.withZoneSameInstant(zoneId).format(ISO_LOCAL_DATE_TIME),
+        ratio,
+        RATIO_LIMIT_DOWN, RATIO_LIMIT_UP
+    );
+
     final List<String> errors = hcRatios.stream()
         .flatMap(hcRatio -> hcRatio.getData().stream())
         .collect(Collectors.toMap(
@@ -95,9 +107,10 @@ public class StaffingSheetParser implements SheetParser {
                 Double::sum
             )
         )
-        .values().stream()
-        .filter(ratio -> ratio > RATIO_LIMIT_UP || ratio < RATIO_LIMIT_DOWN)
-        .map(ratio -> String.format("Ratio out range = %s, expected ratio from %s to %s", ratio, RATIO_LIMIT_DOWN, RATIO_LIMIT_UP))
+        .entrySet()
+        .stream()
+        .filter(entry -> entry.getValue() > RATIO_LIMIT_UP || entry.getValue() < RATIO_LIMIT_DOWN)
+        .map(entry -> messageBuilder.apply(entry.getKey(), entry.getValue()))
         .collect(Collectors.toList());
 
     var errorMessages = errors.isEmpty() ? Optional.empty() : Optional.of(String.join(DELIMITER, errors));

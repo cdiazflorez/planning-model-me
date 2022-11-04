@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
-final public class ForecastParserHelper {
+public final class ForecastParserHelper {
 
     private ForecastParserHelper() {}
 

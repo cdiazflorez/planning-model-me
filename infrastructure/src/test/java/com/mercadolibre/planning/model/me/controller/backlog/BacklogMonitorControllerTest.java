@@ -54,13 +54,13 @@ class BacklogMonitorControllerTest {
 
   private static final String ANOTHER_DATE = "2021-08-12T04:00:00Z";
 
+  private static final String CURRENT_DATE_PLUS_ONE_DAY = "2021-08-12T22:00:00Z";
+
   private static final String WAREHOUSE_ID = "COCU01";
 
   private static final String PROCESS = "picking";
 
   private static final String OUTBOUND = "fbm-wms-outbound";
-
-  private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("America/Argentina/Buenos_Aires");
 
   @Autowired
   private MockMvc mockMvc;
@@ -128,6 +128,38 @@ class BacklogMonitorControllerTest {
     final ResultActions result = mockMvc.perform(
         MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
             .param("workflow", OUTBOUND)
+            .param("caller.id", "999")
+            .param("processes", "WAVING, PICKING, PACKING")
+    );
+
+    // THEN
+    result.andExpect(status().isOk());
+    result.andExpect(content().json(
+        getResourceAsString("get_backlog_monitor_response.json")));
+  }
+
+  @Test
+  void testGetMonitorWrongDateFrom() throws Exception {
+    // GIVEN
+    var firstDate = OffsetDateTime.parse(CURRENT_DATE, ISO_DATE_TIME).toInstant();
+    GetBacklogMonitorInputDto input = new GetBacklogMonitorInputDto(
+        firstDate,
+        WAREHOUSE_ID,
+        FBM_WMS_OUTBOUND,
+        List.of(WAVING, PICKING, PACKING),
+        OffsetDateTime.parse(A_DATE_MINUS_TWO_HOURS, ISO_DATE_TIME).toInstant(),
+        OffsetDateTime.parse(CURRENT_DATE_PLUS_ONE_DAY, ISO_DATE_TIME).toInstant(),
+        999L,
+        false);
+
+    when(requestClock.now()).thenReturn(firstDate);
+    when(getBacklogMonitor.execute(input)).thenReturn(getMockedResponse());
+
+    // WHEN
+    final ResultActions result = mockMvc.perform(
+        MockMvcRequestBuilders.get(format(BASE_URL, WAREHOUSE_ID) + "/monitor")
+            .param("workflow", OUTBOUND)
+            .param("date_from", A_DATE_MINUS_TWO_HOURS)
             .param("caller.id", "999")
             .param("processes", "WAVING, PICKING, PACKING")
     );

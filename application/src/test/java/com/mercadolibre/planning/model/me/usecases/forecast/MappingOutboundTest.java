@@ -18,7 +18,10 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivityData;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
@@ -33,6 +36,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -80,6 +84,61 @@ class MappingOutboundTest {
         .collect(Collectors.toList());
 
     assertEquals(expectedSorted, actualSorted);
+  }
+
+  @Test
+  @DisplayName("given non overlapping dates for headcount and ratios then an exception should be thrown")
+  void buildProcessingDistributionTestWithNonOverlappingDates() {
+    // GIVEN
+    final var headcount = processingDistributions();
+    final var ratios = List.of(
+        new HeadcountRatio(
+            TOT_MONO,
+            List.of(new HeadcountRatio.HeadcountRatioData(DATE.plusHours(1L), 0.01))
+        )
+    );
+
+    final Map<ForecastColumn, Object> input = Map.of(
+        PROCESSING_DISTRIBUTION, headcount,
+        HEADCOUNT_RATIO, ratios
+    );
+
+    // WHEN
+    final var e = assertThrows(
+        ForecastParsingException.class,
+        () -> MappingOutbound.buildProcessingDistribution(input)
+    );
+
+    assertTrue(e.getMessage().contains("dates"));
+  }
+
+  @Test
+  @DisplayName("given more dates for ratios than headcount then an exception should be thrown")
+  void buildProcessingDistributionTestWithDisjointDatesSet() {
+    // GIVEN
+    final var headcount = processingDistributions();
+    final var ratios = List.of(
+        new HeadcountRatio(
+            TOT_MONO,
+            List.of(
+                new HeadcountRatio.HeadcountRatioData(DATE.plusHours(1L), 0.01),
+                new HeadcountRatio.HeadcountRatioData(DATE.plusHours(2L), 0.01)
+            )
+        )
+    );
+
+    final Map<ForecastColumn, Object> input = Map.of(
+        PROCESSING_DISTRIBUTION, headcount,
+        HEADCOUNT_RATIO, ratios
+    );
+
+    // WHEN
+    final var e = assertThrows(
+        ForecastParsingException.class,
+        () -> MappingOutbound.buildProcessingDistribution(input)
+    );
+
+    assertTrue(e.getMessage().contains("dates"));
   }
 
   private Map<ForecastColumn, Object> parsedValuesProductivity() {

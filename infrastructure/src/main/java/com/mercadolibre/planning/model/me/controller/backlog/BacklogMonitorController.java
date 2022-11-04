@@ -107,7 +107,7 @@ public class BacklogMonitorController {
   }
 
   private Instant dateFrom(final OffsetDateTime dateFrom, final Instant startOfCurrentHour) {
-    return dateFrom == null
+    return dateFrom == null || dateFrom.toInstant().isBefore(startOfCurrentHour)
         ? startOfCurrentHour.minus(DEFAULT_HOURS_LOOKBACK)
         : dateFrom.toInstant().minus(DEFAULT_HOURS_LOOKBACK);
   }
@@ -119,8 +119,9 @@ public class BacklogMonitorController {
   }
 
   private Instant getStartHour(final OffsetDateTime dateFrom, final Instant currentDate) {
-    return dateFrom == null
-        ? currentDate.truncatedTo(ChronoUnit.HOURS)
+    final Instant truncatedCurrentDate = currentDate.truncatedTo(ChronoUnit.HOURS);
+    return dateFrom == null || dateFrom.toInstant().isBefore(truncatedCurrentDate)
+        ? truncatedCurrentDate
         : dateFrom.toInstant().truncatedTo(ChronoUnit.HOURS);
   }
 

@@ -24,6 +24,7 @@ import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetSha
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -31,8 +32,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Named
+@Slf4j
 @AllArgsConstructor
 public class ProjectBacklog {
 
@@ -45,6 +48,11 @@ public class ProjectBacklog {
   private final RatioService ratioService;
 
   public List<BacklogProjectionResponse> execute(final BacklogProjectionInput input) {
+
+    if (input.getDateTo().isBefore(input.getDateFrom())) {
+      log.info("wrong date range for projections. input {}", input);
+      return Collections.emptyList();
+    }
 
     final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatios = input.isHasWall() && input.getWorkflow() == FBM_WMS_OUTBOUND
         ? ratioService.getPackingRatio(

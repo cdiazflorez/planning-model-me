@@ -24,6 +24,10 @@ import java.util.stream.Stream;
 
 public final class ParseOutboundForecastFromFile {
 
+  private ParseOutboundForecastFromFile() {
+
+  }
+
   private static final StaffingSheetParser STAFFING_SHEET_PARSER = new StaffingSheetParser();
   private static final RepsForecastSheetParser REPS_FORECAST_SHEET_PARSER = new RepsForecastSheetParser();
   private static final SalesDistributionSheetParser SALES_DISTRIBUTION_SHEET_PARSER = new SalesDistributionSheetParser();
