@@ -33,12 +33,13 @@ public class BacklogApiAdapter {
   );
 
   private static final String INBOUND = "inbound";
+  private static final String INBOUND_TRANSFER = "inbound-transfer";
 
   private static final String OUTBOUND_ORDERS = "outbound-orders";
 
-  private static final Map<Workflow, String> WORKFLOW_BY_ALIAS_WORKFLOW = Map.of(
-      FBM_WMS_OUTBOUND, OUTBOUND_ORDERS,
-      FBM_WMS_INBOUND, INBOUND
+  private static final Map<Workflow, List<String>> WORKFLOW_BY_ALIAS_WORKFLOW = Map.of(
+      FBM_WMS_OUTBOUND, List.of(OUTBOUND_ORDERS),
+      FBM_WMS_INBOUND, List.of(INBOUND, INBOUND_TRANSFER)
   );
 
   private final BacklogApiGateway backlogApiGateway;
@@ -86,8 +87,9 @@ public class BacklogApiAdapter {
   }
 
   private List<String> getWorkflowAliasByWorkflow(final List<Workflow> workflowsBase) {
-
-    return workflowsBase.stream().map(WORKFLOW_BY_ALIAS_WORKFLOW::get)
+    return workflowsBase.stream()
+        .map(WORKFLOW_BY_ALIAS_WORKFLOW::get)
+        .flatMap(List::stream)
         .collect(Collectors.toList());
   }
 }

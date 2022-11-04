@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
+import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
@@ -82,7 +83,7 @@ public class GetBacklogScheduled {
     final List<Consolidation> receivedInboundBacklog = backlogGateway.getCurrentBacklog(
         new BacklogCurrentRequest(warehouse)
             .withDateInRange(scheduledDateFrom, scheduledDateTo)
-            .withWorkflows(List.of("inbound"))
+            .withWorkflows(List.of(BacklogWorkflow.INBOUND.getName(), BacklogWorkflow.INBOUND_TRANSFER.getName()))
             .withSteps(List.of("CHECK_IN", "PUT_AWAY", "FINISHED"))
             .withGroupingFields(List.of("process")));
 
@@ -106,7 +107,7 @@ public class GetBacklogScheduled {
     final Instant photoDateTo = dayDate.plus(AMOUNT_TO_ADD_MINUTES, ChronoUnit.MINUTES);
     List<Consolidation> photos = backlogGateway.getBacklog(
         new BacklogRequest(warehouseId, dayDate, photoDateTo)
-            .withWorkflows(List.of("inbound"))
+            .withWorkflows(List.of(BacklogWorkflow.INBOUND.getName(), BacklogWorkflow.INBOUND_TRANSFER.getName()))
             .withSteps(List.of("SCHEDULED"))
             .withGroupingFields(List.of("date_in"))
             .withDateInRange(dayDate, dayDate.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS))

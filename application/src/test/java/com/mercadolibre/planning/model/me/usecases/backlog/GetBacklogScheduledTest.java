@@ -69,7 +69,7 @@ public class GetBacklogScheduledTest {
         //first photo of day
         when(backlogGateway.getBacklog(
                 new BacklogRequest(WAREHOUSE_ID, today, photoDateTo)
-                        .withWorkflows(List.of("inbound"))
+                        .withWorkflows(List.of("inbound", "INBOUND-TRANSFER"))
                         .withGroupingFields(List.of("date_in"))
                         .withSteps(List.of("SCHEDULED"))
                         .withDateInRange(today, today.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS))
@@ -77,7 +77,7 @@ public class GetBacklogScheduledTest {
 
         when(backlogGateway.getCurrentBacklog(
                 new BacklogCurrentRequest(WAREHOUSE_ID)
-                        .withWorkflows(List.of("inbound"))
+                        .withWorkflows(List.of("inbound", "INBOUND-TRANSFER"))
                         .withSteps(List.of("CHECK_IN", "PUT_AWAY", "FINISHED"))
                         .withDateInRange(today, now)
                         .withGroupingFields(List.of("process"))

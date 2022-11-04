@@ -1,8 +1,10 @@
 package com.mercadolibre.planning.model.me.clients.rest.backlog;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.CHECK_IN;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +51,7 @@ public class BacklogPhotoApiAdapterTest {
     when(backlogApiGateway.getPhotos(photoRequestMock))
         .thenReturn(mockPhotos());
 
-    final BacklogRequest backlogPhotoRequest = createRequest(Set.of(PICKING, PACKING, PACKING_WALL));
+    final BacklogRequest backlogPhotoRequest = createRequest(Set.of(PICKING, PACKING, PACKING_WALL), Workflow.FBM_WMS_OUTBOUND);
 
     // WHEN
     final Map<ProcessName, List<BacklogPhoto>> backlogByProcess =
@@ -62,13 +64,37 @@ public class BacklogPhotoApiAdapterTest {
   }
 
   @Test
+  void testExecuteBacklogInboundSummary() {
+    // GIVEN
+    final BacklogPhotosRequest photoRequestMock = createBacklogPhotoInboundRequest(Set.of(Step.CHECK_IN, Step.PUT_AWAY));
+    when(backlogApiGateway.getPhotos(photoRequestMock))
+        .thenReturn(mockInboundPhotos());
+
+    final BacklogRequest backlogPhotoRequest = createRequest(Set.of(CHECK_IN, PUT_AWAY), Workflow.FBM_WMS_INBOUND);
+
+    // WHEN
+    final Map<ProcessName, List<BacklogPhoto>> backlogByProcess =
+        backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(backlogPhotoRequest, false);
+
+    // THEN
+    Assertions.assertEquals(2, backlogByProcess.size());
+
+    final var putAway = backlogByProcess.get(PUT_AWAY);
+    Assertions.assertEquals(250, putAway.get(0).getQuantity());
+    Assertions.assertEquals(150, putAway.get(1).getQuantity());
+
+    final var checkIn = backlogByProcess.get(CHECK_IN);
+    Assertions.assertEquals(110, checkIn.get(0).getQuantity());
+    Assertions.assertEquals(200, checkIn.get(1).getQuantity());
+  }
+  @Test
   void testExecuteBacklogSummaryCached() {
     // GIVEN
     final BacklogPhotosRequest photoRequestMock = createBacklogPhotoRequest(Set.of(Step.TO_PICK, Step.TO_PACK));
     when(backlogApiGateway.getPhotosCached(photoRequestMock))
         .thenReturn(mockPhotos());
 
-    final BacklogRequest backlogPhotoRequest = createRequest(Set.of(PICKING, PACKING, PACKING_WALL));
+    final BacklogRequest backlogPhotoRequest = createRequest(Set.of(PICKING, PACKING, PACKING_WALL), Workflow.FBM_WMS_OUTBOUND);
 
     // WHEN
     final Map<ProcessName, List<BacklogPhoto>> backlogByProcess =
@@ -87,7 +113,7 @@ public class BacklogPhotoApiAdapterTest {
     when(backlogApiGateway.getPhotos(photoRequestMock))
         .thenReturn(mockPhotos());
 
-    final BacklogRequest backlogPhotoRequest = createRequest(Set.of(PICKING, PACKING, PACKING_WALL));
+    final BacklogRequest backlogPhotoRequest = createRequest(Set.of(PICKING, PACKING, PACKING_WALL), Workflow.FBM_WMS_OUTBOUND);
 
     // WHEN
     final Map<ProcessName, List<Photo>> backlogByProcess = backlogPhotoApiAdapter.getBacklogDetails(backlogPhotoRequest);
@@ -118,10 +144,10 @@ public class BacklogPhotoApiAdapterTest {
         sortedBacklogPhotoByTakenOn(backlogByProcess.get(PACKING_WALL)));
   }
 
-  private BacklogRequest createRequest(Set<ProcessName> processes) {
+  private BacklogRequest createRequest(Set<ProcessName> processes, Workflow workflow) {
     return new BacklogRequest(
         WAREHOUSE_ID,
-        Set.of(Workflow.FBM_WMS_OUTBOUND),
+        Set.of(workflow),
         processes,
         DATE_FROM,
         DATE_TO,
@@ -137,6 +163,21 @@ public class BacklogPhotoApiAdapterTest {
     return new BacklogPhotosRequest(
         WAREHOUSE_ID,
         Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+        steps,
+        DATE_FROM,
+        DATE_TO,
+        DATE_FROM,
+        DATE_TO,
+        Set.of(BacklogGrouper.STEP, BacklogGrouper.AREA, BacklogGrouper.DATE_OUT),
+        DATE_FROM,
+        DATE_TO
+    );
+  }
+
+  private BacklogPhotosRequest createBacklogPhotoInboundRequest(Set<Step> steps) {
+    return new BacklogPhotosRequest(
+        WAREHOUSE_ID,
+        Set.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER),
         steps,
         DATE_FROM,
         DATE_TO,
@@ -415,6 +456,89 @@ public class BacklogPhotoApiAdapterTest {
                         BacklogGrouper.AREA, Area.PW.getName()),
                     10,
                     100
+                )
+            )
+        )
+    );
+
+  }
+
+
+  private List<Photo> mockInboundPhotos() {
+    final String CHECK_IN = "CHECK_IN";
+    final String PUT_AWAY = "PUT_AWAY";
+    final String NA = "N/A";
+    return List.of(
+        new Photo(
+            Instant.parse("2022-06-08T00:00:00Z"),
+            List.of(
+                new Photo.Group(
+                    Map.of(BacklogGrouper.STEP, CHECK_IN,
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, NA),
+                    100,
+                    1000
+                ),
+
+                new Photo.Group(
+                    Map.of(BacklogGrouper.STEP, CHECK_IN,
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, NA),
+                    10,
+                    1000
+                ),
+
+                new Photo.Group(
+                    Map.of(BacklogGrouper.STEP, PUT_AWAY,
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, NA),
+                    200,
+                    2000
+                ),
+
+                new Photo.Group(
+                    Map.of(BacklogGrouper.STEP, PUT_AWAY,
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, NA),
+                    50,
+                    500
+                )
+            )
+        ),
+
+        new Photo(
+            Instant.parse("2022-06-08T00:30:00Z"),
+            List.of(
+                new Photo.Group(
+                    Map.of(BacklogGrouper.STEP, CHECK_IN,
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, NA),
+                    190,
+                    1000
+                ),
+
+                new Photo.Group(
+                    Map.of(BacklogGrouper.STEP, CHECK_IN,
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, NA),
+                    10,
+                    1000
+                ),
+
+                new Photo.Group(
+                    Map.of(BacklogGrouper.STEP, PUT_AWAY,
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, NA),
+                    100,
+                    2000
+                ),
+
+                new Photo.Group(
+                    Map.of(BacklogGrouper.STEP, PUT_AWAY,
+                        BacklogGrouper.DATE_OUT, "2022-06-09T00:00:00Z",
+                        BacklogGrouper.AREA, NA),
+                    50,
+                    500
                 )
             )
         )
