@@ -15,7 +15,7 @@ dependencies {
     compile 'javax.inject:javax.inject:1'
     compile 'com.mercadolibre:java-meli-spreadsheet:2.2.0'
 
-    implementation 'com.mercadolibre.fbm.flow:projection-tools:0.0.9'
+    implementation 'com.mercadolibre.fbm.flow:projection-tools:0.0.10'
 }
 
 test {

@@ -21,8 +21,8 @@ import static java.util.stream.Collectors.toMap;
 import com.mercadolibre.flow.projection.tools.services.entities.context.Backlog;
 import com.mercadolibre.flow.projection.tools.services.entities.context.ContextsHolder;
 import com.mercadolibre.flow.projection.tools.services.entities.context.DelegateAssistant;
+import com.mercadolibre.flow.projection.tools.services.entities.context.PiecewiseUpstream;
 import com.mercadolibre.flow.projection.tools.services.entities.context.ThroughputPerHour;
-import com.mercadolibre.flow.projection.tools.services.entities.context.UpstreamByInflectionPoints;
 import com.mercadolibre.flow.projection.tools.services.entities.orderedbacklogbydate.OrderedBacklogByDate;
 import com.mercadolibre.flow.projection.tools.services.entities.orderedbacklogbydate.OrderedBacklogByDateConsumer;
 import com.mercadolibre.flow.projection.tools.services.entities.orderedbacklogbydate.helpers.BacklogByDateHelper;
@@ -306,7 +306,7 @@ public class CalculateProjectionService {
 
     final SequentialProcess globalSequentialProcess = buildProcessGraph(workflow);
     final ContextsHolder context = buildContextsHolder(currentBacklog, throughputByProcess, ratios);
-    final UpstreamByInflectionPoints forecastedBacklog = mapForecastToUpstreamBacklog(forecastSales);
+    final PiecewiseUpstream forecastedBacklog = mapForecastToUpstreamBacklog(forecastSales);
 
     final ContextsHolder projection = globalSequentialProcess.accept(context, forecastedBacklog, inflectionPoints);
 
@@ -351,7 +351,7 @@ public class CalculateProjectionService {
         .build();
   }
 
-  private UpstreamByInflectionPoints mapForecastToUpstreamBacklog(final List<PlanningDistributionResponse> forecastSales) {
+  private PiecewiseUpstream mapForecastToUpstreamBacklog(final List<PlanningDistributionResponse> forecastSales) {
 
     final Map<Instant, Backlog> upstreamBacklog = forecastSales.stream()
         .filter(entry -> entry.getTotal() > 0)
@@ -376,7 +376,7 @@ public class CalculateProjectionService {
             )
         );
 
-    return new UpstreamByInflectionPoints(upstreamBacklog);
+    return new PiecewiseUpstream(upstreamBacklog);
   }
 
   private static class UnsupportedWorkflowException extends RuntimeException {
