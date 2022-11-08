@@ -21,6 +21,8 @@ public class SalesDistributionSheetParserTest {
 
   private static final String VALID_FILE_PATH = "outbound_forecast.xlsx";
 
+  private static final String VALID_FILE_PATH_PILOT = "MVP2-outbound-forecast.xlsx";
+
   private static final String INVALID_DATE_FILE_PATH = "outbound_forecast_invalid_date.xlsx";
 
   private static final String INVALID_COLUMN_FILE_PATH = "outbound_forecast_invalid_content_in_unused_columns.xlsx";
@@ -33,6 +35,20 @@ public class SalesDistributionSheetParserTest {
   void parseOk() {
     // GIVEN
     final MeliSheet repsSheet = getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), VALID_FILE_PATH);
+    // not a test, only a check
+    assert repsSheet != null;
+
+    // WHEN
+    final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse("ARBA01", repsSheet, CONF);
+
+    // THEN
+    assertNotNull(forecastSheetDto);
+  }
+
+  @Test
+  void parsePilotOk() {
+    // GIVEN
+    final MeliSheet repsSheet = getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), VALID_FILE_PATH_PILOT);
     // not a test, only a check
     assert repsSheet != null;
 
@@ -50,7 +66,7 @@ public class SalesDistributionSheetParserTest {
     // not a test, only a check
     assert ordersSheet != null;
 
-    assertThrows(ForecastParsingException.class, () -> salesDistributionSheetParser.parse(WAREHOUSE_ID, ordersSheet, CONF));
+    assertThrows(ForecastParsingException.class, () -> salesDistributionSheetParser.parse("ARBA01", ordersSheet, CONF));
   }
 
   @Test
@@ -62,7 +78,7 @@ public class SalesDistributionSheetParserTest {
     assert repsSheet != null;
 
     // WHEN
-    final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse(WAREHOUSE_ID, repsSheet, CONF);
+    final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse("ARBA01", repsSheet, CONF);
 
     // THEN
     assertNotNull(forecastSheetDto);

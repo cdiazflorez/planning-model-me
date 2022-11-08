@@ -27,11 +27,11 @@ public class ParseOutboundForecastFromFileTest {
                 TestUtils.getResource(VALID_FILE_PATH)
         );
         // WHEN
-        final var forecast = ParseOutboundForecastFromFile.parse(WAREHOUSE_ID, document, 1234L, CONFIG);
+        final var forecast = ParseOutboundForecastFromFile.parse("ARBA01", document, 1234L, CONFIG);
 
         // THEN
         assertNotNull(forecast);
-        assertEquals("ARTW01", forecast.getMetadata().get(0).getValue());
+        assertEquals("ARBA01", forecast.getMetadata().get(0).getValue());
         assertEquals("14-2022", forecast.getMetadata().get(1).getValue());
         assertEquals(1234L, forecast.getUserID());
     }
