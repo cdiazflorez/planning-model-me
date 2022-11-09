@@ -62,7 +62,7 @@ public class SalesDistributionSheetParserTest {
     // WHEN
     final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse(WAREHOUSE_ID, repsSheet, CONF);
 
-    var rows = forecastSheetDto.getValues().values().iterator().next();
+    var rows = forecastSheetDto.getValues().values().stream().findFirst().get();
     @SuppressWarnings("unchecked") var firstRow = ((List<PlanningDistribution>)rows).get(0);
 
     // THEN
