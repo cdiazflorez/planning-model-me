@@ -36,7 +36,7 @@ public class SalesDistributionSheetParserTest {
 
   private static final String INVALID_COLUMN_FILE_PATH = "outbound_forecast_invalid_content_in_unused_columns.xlsx";
 
-  private static final LogisticCenterConfiguration CONF = new LogisticCenterConfiguration(TimeZone.getDefault());
+  private static final LogisticCenterConfiguration CONF = new LogisticCenterConfiguration(TimeZone.getTimeZone("UTC"));
 
   private final SalesDistributionSheetParser salesDistributionSheetParser = new SalesDistributionSheetParser();
 
@@ -66,8 +66,8 @@ public class SalesDistributionSheetParserTest {
 
     var rows = forecastSheetDto.getValues().values().stream().map(item -> (List<PlanningDistribution>)item)
         .findFirst().get();
-    var targetRows = rows.stream().filter(item -> ZonedDateTime.parse("2022-10-31T03:00Z").equals(item.getDateIn())
-    && ZonedDateTime.parse("2022-10-31T07:00Z").equals(item.getDateOut())).collect(Collectors.toList());
+    var targetRows = rows.stream().filter(item -> ZonedDateTime.parse("2022-10-31T00:00Z").equals(item.getDateIn())
+    && ZonedDateTime.parse("2022-10-31T04:00Z").equals(item.getDateOut())).collect(Collectors.toList());
 
     // THEN
     assertNotNull(forecastSheetDto);
