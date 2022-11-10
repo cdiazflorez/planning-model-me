@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import com.mercadolibre.planning.model.me.enums.ProcessPath;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,7 +12,11 @@ import java.util.List;
 public class PlanningDistribution {
     private ZonedDateTime dateIn;
     private ZonedDateTime dateOut;
-    private long quantity;
+    private String carrierId;
+    private String serviceId;
+    private String canalization;
+    private ProcessPath processPath;
+    private double quantity;
     private String quantityMetricUnit;
-    private List<Metadata> metadata;
+    private List<String> metadata;
 }

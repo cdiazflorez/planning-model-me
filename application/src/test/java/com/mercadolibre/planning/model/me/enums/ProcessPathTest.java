@@ -15,5 +15,4 @@ public class ProcessPathTest {
     public void testGetProcessPathOk(final ProcessPath processPath) {
         assertFalse(processPath.getName().isEmpty());
     }
-
 }
