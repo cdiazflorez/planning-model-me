@@ -48,7 +48,7 @@ public class UploadForecastTest {
 
     // WHEN
     var response = uploadForecast.upload(
-        WAREHOUSE_ID,
+        "ARBA01",
         FBM_WMS_OUTBOUND,
         Target.FBM_WMS_OUTBOUND.forecastParser,
         bytes,

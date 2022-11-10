@@ -16,8 +16,8 @@ public enum ForecastProcessPathConfiguration {
   CANALIZATION_COLUMN(5, 6),
   PD_QUANTITY_COLUMN(6, 7);
 
-  //TODO Add BRBA01 when starting pilot.
-  private static final List<String> LOGISTIC_CENTER_WITH_PP = List.of();
+  //TODO Change ARTW01 by BRBA01 when starting pilot.
+  private static final List<String> LOGISTIC_CENTER_WITH_PP = List.of("ARTW01");
 
   private static final int COLUMN_COUNT = values().length;
 
