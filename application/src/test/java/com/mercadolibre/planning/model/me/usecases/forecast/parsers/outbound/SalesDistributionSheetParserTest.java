@@ -12,10 +12,12 @@ import com.mercadolibre.planning.model.me.enums.ProcessPath;
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistribution;
+import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.DisplayName;
@@ -62,20 +64,21 @@ public class SalesDistributionSheetParserTest {
     // WHEN
     final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse(WAREHOUSE_ID, repsSheet, CONF);
 
-    var rows = forecastSheetDto.getValues().values().stream().findFirst().get();
-    @SuppressWarnings("unchecked") var firstRow = ((List<PlanningDistribution>)rows).get(0);
+    var rows = forecastSheetDto.getValues().values().stream().map(item -> (List<PlanningDistribution>)item)
+        .findFirst().get();
+    var targetRows = rows.stream().filter(item -> ZonedDateTime.parse("2022-10-31T03:00Z").equals(item.getDateIn())
+    && ZonedDateTime.parse("2022-10-31T07:00Z").equals(item.getDateOut())).collect(Collectors.toList());
 
     // THEN
     assertNotNull(forecastSheetDto);
-    assertEquals(firstRow.getDateIn(), ZonedDateTime.parse("2022-10-31T03:00Z"));
-    assertEquals(firstRow.getDateOut(), ZonedDateTime.parse("2022-10-31T07:00Z"));
-    assertEquals(firstRow.getCarrierId(), "webpack");
-    assertEquals(firstRow.getServiceId(), "0");
-    assertEquals(firstRow.getCanalization(), "web202");
-    assertEquals(firstRow.getProcessPath(), ProcessPath.NON_TOT_MONO);
-    assertEquals(firstRow.getQuantity(), 237.0);
-    assertEquals(firstRow.getQuantityMetricUnit(), "units");
-    assertEquals(firstRow.getMetadata(), List.of());
+    assertEquals(targetRows.size(), 1);
+    assertEquals(targetRows.get(0).getCarrierId(), "webpack");
+    assertEquals(targetRows.get(0).getServiceId(), "0");
+    assertEquals(targetRows.get(0).getCanalization(), "web202");
+    assertEquals(targetRows.get(0).getProcessPath(), ProcessPath.NON_TOT_MONO);
+    assertEquals(targetRows.get(0).getQuantity(), 237.0);
+    assertEquals(targetRows.get(0).getQuantityMetricUnit(), "units");
+    assertEquals(targetRows.get(0).getMetadata(), List.of());
   }
 
   @Test
