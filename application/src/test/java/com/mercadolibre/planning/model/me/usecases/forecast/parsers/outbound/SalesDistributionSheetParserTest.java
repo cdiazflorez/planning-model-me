@@ -65,7 +65,6 @@ public class SalesDistributionSheetParserTest {
         .findFirst().get();
     var firstRow = rows.stream().filter(item -> ZonedDateTime.parse("2022-10-31T00:00Z").equals(item.getDateIn())
         && ZonedDateTime.parse("2022-10-31T04:00Z").equals(item.getDateOut())).collect(Collectors.toList());
-
     var secondRow = rows.stream().filter(item -> ZonedDateTime.parse("2022-10-30T00:00Z").equals(item.getDateIn())
         && ZonedDateTime.parse("2022-10-30T04:00Z").equals(item.getDateOut())).collect(Collectors.toList());
 
