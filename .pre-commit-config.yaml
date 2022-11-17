@@ -11,7 +11,6 @@ repos:
   # Next hooks are Code Quality hooks. 
   # If you want them to run on each commit, uncomment them
   # These are OPTIONAL.
-  
   # - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
   #   rev: v2.3.0
   #   hooks:
@@ -28,3 +27,9 @@ repos:
   #     args:
   #       - -R
   #       - .code_quality/pmd_rules.xml
+  - repo: https://github.com/mercadolibre/fury_datasec-git-hooks
+    rev: 1.0.1
+    hooks:
+      - id: pre_commit_hook
+        stages: [commit]
+        verbose: true
