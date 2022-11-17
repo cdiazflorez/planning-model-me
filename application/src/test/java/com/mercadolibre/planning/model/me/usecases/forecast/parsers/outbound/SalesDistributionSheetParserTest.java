@@ -6,18 +6,15 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFro
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mercadolibre.planning.model.me.enums.ProcessPath;
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistribution;
-import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.DisplayName;
@@ -64,21 +61,24 @@ public class SalesDistributionSheetParserTest {
     // WHEN
     final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse(WAREHOUSE_ID, repsSheet, CONF);
 
-    var rows = forecastSheetDto.getValues().values().stream().map(item -> (List<PlanningDistribution>)item)
+    var rows = forecastSheetDto.getValues().values().stream().map(item -> (List<PlanningDistribution>) item)
         .findFirst().get();
-    var targetRows = rows.stream().filter(item -> ZonedDateTime.parse("2022-10-31T00:00Z").equals(item.getDateIn())
-    && ZonedDateTime.parse("2022-10-31T04:00Z").equals(item.getDateOut())).collect(Collectors.toList());
+    var firstRow = rows.stream().filter(item -> ZonedDateTime.parse("2022-10-31T00:00Z").equals(item.getDateIn())
+        && ZonedDateTime.parse("2022-10-31T04:00Z").equals(item.getDateOut())).collect(Collectors.toList());
+    var secondRow = rows.stream().filter(item -> ZonedDateTime.parse("2022-10-30T00:00Z").equals(item.getDateIn())
+        && ZonedDateTime.parse("2022-10-30T04:00Z").equals(item.getDateOut())).collect(Collectors.toList());
 
     // THEN
     assertNotNull(forecastSheetDto);
-    assertEquals(targetRows.size(), 1);
-    assertEquals(targetRows.get(0).getCarrierId(), "webpack");
-    assertEquals(targetRows.get(0).getServiceId(), "0");
-    assertEquals(targetRows.get(0).getCanalization(), "web202");
-    assertEquals(targetRows.get(0).getProcessPath(), ProcessPath.NON_TOT_MONO);
-    assertEquals(targetRows.get(0).getQuantity(), 237.0);
-    assertEquals(targetRows.get(0).getQuantityMetricUnit(), "units");
-    assertEquals(targetRows.get(0).getMetadata(), List.of());
+    assertEquals(firstRow.size(), 1);
+    assertEquals(firstRow.get(0).getCarrierId(), "webpack");
+    assertEquals(firstRow.get(0).getServiceId(), "0");
+    assertEquals(firstRow.get(0).getCanalization(), "web202");
+    assertEquals(firstRow.get(0).getProcessPath(), ProcessPath.NON_TOT_MONO);
+    assertEquals(firstRow.get(0).getQuantity(), 237.05);
+    assertEquals(secondRow.get(0).getQuantity(), 164.21);
+    assertEquals(firstRow.get(0).getQuantityMetricUnit(), "units");
+    assertEquals(firstRow.get(0).getMetadata(), List.of());
   }
 
   @Test

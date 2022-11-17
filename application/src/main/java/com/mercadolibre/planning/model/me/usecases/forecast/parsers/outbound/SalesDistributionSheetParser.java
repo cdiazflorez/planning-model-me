@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 
 import static com.mercadolibre.planning.model.me.enums.ProcessPath.GLOBAL;
-import static com.mercadolibre.planning.model.me.enums.ProcessPath.fromDescription;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PLANNING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessPathConfiguration.CANALIZATION_COLUMN;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessPathConfiguration.CARRIER_ID_COLUMN;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.Range;
+import org.apache.commons.math3.util.Precision;
 
 public class SalesDistributionSheetParser implements SheetParser {
 
@@ -82,10 +82,11 @@ public class SalesDistributionSheetParser implements SheetParser {
     final ZoneId zoneId = config.getZoneId();
 
     final ProcessPath processPath = ForecastProcessPathConfiguration.hasProcessPath(logisticCenterId)
-        ? fromDescription(getStringValueAt(sheet, row, PROCESS_PATH_ID_COLUMN.getPosition(logisticCenterId))) : GLOBAL;
+        ? ProcessPath.from(getStringValueAt(sheet, row, PROCESS_PATH_ID_COLUMN.getPosition(logisticCenterId))) : GLOBAL;
     final String carrierId = getStringValueAt(sheet, row, CARRIER_ID_COLUMN.getPosition(logisticCenterId));
     final String serviceId = String.valueOf(getIntValueAt(sheet, row, SERVICE_ID_COLUMN.getPosition(logisticCenterId)));
     final String canalization = getStringValueAt(sheet, row, CANALIZATION_COLUMN.getPosition(logisticCenterId));
+    final double quantity = Precision.round(getDoubleValueAt(sheet, row.getIndex(), PD_QUANTITY_COLUMN.getPosition(logisticCenterId)), 2);
 
     return PlanningDistribution.builder()
         .dateOut(SpreadsheetUtils.getDateTimeAt(sheet, row, PD_DATE_OUT_COLUMN.getPosition(logisticCenterId), zoneId))
@@ -94,7 +95,7 @@ public class SalesDistributionSheetParser implements SheetParser {
         .serviceId(serviceId)
         .canalization(canalization)
         .processPath(processPath)
-        .quantity(getDoubleValueAt(sheet, row.getIndex(), PD_QUANTITY_COLUMN.getPosition(logisticCenterId)))
+        .quantity(quantity)
         .quantityMetricUnit(MetricUnit.UNITS.getName())
         .metadata(List.of())
         .build();
