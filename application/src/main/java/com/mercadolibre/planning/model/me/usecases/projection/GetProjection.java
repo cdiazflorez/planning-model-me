@@ -215,7 +215,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
         .dateInTo(dateFrom)
         .dateOutFrom(dateFrom)
         .dateOutTo(dateTo)
-        .applyDeviation(true)
+        .applyDeviation(false)
         .build());
   }
 
