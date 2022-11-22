@@ -6,9 +6,6 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
@@ -19,7 +16,6 @@ import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
 import static com.mercadolibre.planning.model.me.usecases.projection.InboundProjectionTestUtils.mockPlanningBacklog;
 import static com.mercadolibre.planning.model.me.usecases.projection.ProjectionWorkflow.getSteps;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -38,10 +34,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
@@ -77,8 +71,6 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimple
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -205,9 +197,6 @@ class SaveSimulationOutboundTest {
   private LogisticCenterGateway logisticCenterGateway;
 
   @Mock
-  private GetWaveSuggestion getWaveSuggestion;
-
-  @Mock
   private GetEntities getEntities;
 
   @Mock
@@ -294,7 +283,6 @@ class SaveSimulationOutboundTest {
     final ZonedDateTime utcCurrentTime = getCurrentTime();
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
     final ZonedDateTime utcDateTimeFrom = currentUtcDateTime.plusHours(1);
-    final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusHours(2);
 
     final List<Backlog> mockedPlanningBacklog = mockPlanningBacklog(utcCurrentTime);
 
@@ -303,15 +291,6 @@ class SaveSimulationOutboundTest {
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE, true));
-
-    when(getWaveSuggestion.execute((GetWaveSuggestionInputDto.builder()
-            .warehouseId(WAREHOUSE_ID)
-            .workflow(FBM_WMS_OUTBOUND)
-            .zoneId(TIME_ZONE.toZoneId())
-            .date(utcDateTimeFrom)
-            .build()
-        )
-    )).thenReturn(mockSuggestedWaves(utcDateTimeFrom, utcDateTimeTo));
 
     when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
 
@@ -628,38 +607,6 @@ class SaveSimulationOutboundTest {
         new Backlog(currentTime.plusHours(2), 235),
         new Backlog(currentTime.plusHours(3), 300)
     );
-  }
-
-  private SimpleTable mockSuggestedWaves(final ZonedDateTime utcDateTimeFrom,
-                                         final ZonedDateTime utcDateTimeTo) {
-    final String title = "Ondas sugeridas";
-    final String nextHour = utcDateTimeFrom.withZoneSameInstant(TIME_ZONE.toZoneId())
-        .format(HOUR_MINUTES_FORMATTER) + "-"
-        + utcDateTimeTo.withZoneSameInstant(TIME_ZONE.toZoneId())
-        .format(HOUR_MINUTES_FORMATTER);
-    final String expectedTitle = "Sig. hora " + nextHour;
-    final List<ColumnHeader> columnHeaders = List.of(
-        new ColumnHeader("column_1", expectedTitle, null),
-        new ColumnHeader("column_2", "Tamaño de onda", null)
-    );
-    final List<Map<String, Object>> data = List.of(
-        Map.of("column_1",
-            Map.of("title", "Unidades por onda", "subtitle",
-                MONO_ORDER_DISTRIBUTION.getTitle()),
-            "column_2", "0 uds."
-        ),
-        Map.of("column_1",
-            Map.of("title", "Unidades por onda", "subtitle",
-                MULTI_BATCH_DISTRIBUTION.getTitle()),
-            "column_2", "100 uds."
-        ),
-        Map.of("column_1",
-            Map.of("title", "Unidades por onda", "subtitle",
-                MULTI_ORDER_DISTRIBUTION.getTitle()),
-            "column_2", "100 uds."
-        )
-    );
-    return new SimpleTable(title, columnHeaders, data);
   }
 
   private ComplexTable mockComplexTable() {

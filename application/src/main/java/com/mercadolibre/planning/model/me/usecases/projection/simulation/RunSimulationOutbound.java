@@ -23,7 +23,6 @@ import com.mercadolibre.planning.model.me.usecases.projection.ProjectionWorkflow
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -43,7 +42,6 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
 
   protected RunSimulationOutbound(final PlanningModelGateway planningModelGateway,
                                   final LogisticCenterGateway logisticCenterGateway,
-                                  final GetWaveSuggestion getWaveSuggestion,
                                   final GetEntities getEntities,
                                   final GetSimpleDeferralProjection getSimpleDeferralProjection,
                                   final BacklogApiGateway backlogGateway,
@@ -52,7 +50,7 @@ public class RunSimulationOutbound extends GetProjectionOutbound {
                                   final CalculateProjectionService calculateProjection,
                                   final RatioService ratioService) {
 
-    super(planningModelGateway, logisticCenterGateway, getWaveSuggestion, getEntities, getSimpleDeferralProjection, backlogGateway,
+    super(planningModelGateway, logisticCenterGateway, getEntities, getSimpleDeferralProjection, backlogGateway,
         getSales, ratioService);
     this.featureSwitches = featureSwitches;
     this.calculateProjection = calculateProjection;

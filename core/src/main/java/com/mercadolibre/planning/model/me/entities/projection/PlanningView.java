@@ -8,9 +8,6 @@ import lombok.Value;
 @Value
 @Builder
 public class PlanningView {
-
-  Boolean isNewVersion;
-
   ZonedDateTime currentDate;
   /**
    * Projection/Deferrer date selector.

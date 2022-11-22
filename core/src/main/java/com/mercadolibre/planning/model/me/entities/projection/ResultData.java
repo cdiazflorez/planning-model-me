@@ -8,9 +8,6 @@ import lombok.Value;
 
 @Value
 public class ResultData {
-  @JsonProperty("simple_table_1")
-  SimpleTable simpleTable1;
-
   @JsonProperty("complex_table_1")
   ComplexTable complexTable1;
 

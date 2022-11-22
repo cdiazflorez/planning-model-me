@@ -1,7 +1,5 @@
 package com.mercadolibre.planning.model.me.controller.simulation;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
@@ -25,7 +23,6 @@ import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ResultData;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.entities.projection.simulationmode.DateValidate;
@@ -118,10 +115,8 @@ public class SimulationControllerTest {
 
     when(runSimulation.execute(any(GetProjectionInputDto.class)))
         .thenReturn(PlanningView.builder()
-            .isNewVersion(true)
             .currentDate(CURRENT_DATE)
             .data(new ResultData(
-                mockSuggestedWaves(),
                 mockComplexTable(),
                 mockProjectionsCpt()))
             .build()
@@ -172,10 +167,8 @@ public class SimulationControllerTest {
 
     when(saveSimulation.execute(any(GetProjectionInputDto.class)))
         .thenReturn(PlanningView.builder()
-            .isNewVersion(true)
             .currentDate(CURRENT_DATE)
             .data(new ResultData(
-                mockSuggestedWaves(),
                 mockComplexTable(),
                 mockProjectionsCpt()))
             .build()
@@ -252,9 +245,8 @@ public class SimulationControllerTest {
     //GIVEN
     when(getDeferralProjection.execute(any(GetProjectionInput.class)))
         .thenReturn(PlanningView.builder()
-            .isNewVersion(true)
             .currentDate(CURRENT_DATE)
-            .data(new ResultData(null,
+            .data(new ResultData(
                 null,
                 null))
             .build()
@@ -282,10 +274,8 @@ public class SimulationControllerTest {
     //GIVEN
     when(getDeferralProjection.execute(any(GetProjectionInput.class)))
         .thenReturn(PlanningView.builder()
-            .isNewVersion(true)
             .currentDate(CURRENT_DATE)
             .data(new ResultData(
-                null,
                 null,
                 null))
             .build()
@@ -414,27 +404,6 @@ public class SimulationControllerTest {
         action,
         "Headcount / Throughput"
     );
-  }
-
-  private SimpleTable mockSuggestedWaves() {
-    final String title = "Ondas sugeridas";
-    final List<ColumnHeader> columnHeaders = List.of(
-        new ColumnHeader("column_1", "Sig. hora 23:00-1:00", null),
-        new ColumnHeader("column_2", "Tamaño de onda", null)
-    );
-    final List<Map<String, Object>> data = List.of(
-        Map.of("column_1",
-            Map.of("title", "Unidades por onda", "subtitle",
-                MONO_ORDER_DISTRIBUTION.getName()),
-            "column_2", "130 uds."
-        ),
-        Map.of("column_1",
-            Map.of("title", "Unidades por onda", "subtitle",
-                MULTI_BATCH_DISTRIBUTION.getName()),
-            "column_2", "0 uds."
-        )
-    );
-    return new SimpleTable(title, columnHeaders, data);
   }
 
   private List<Projection> mockProjectionsCpt() {

@@ -3,11 +3,9 @@ package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -62,7 +60,6 @@ public class RunSimulationTest {
   private PlanningView mockPlanningView() {
 
     return PlanningView.builder()
-        .isNewVersion(true)
         .currentDate(CURRENT_DATE)
         .build();
   }

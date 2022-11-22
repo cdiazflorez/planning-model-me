@@ -4,9 +4,6 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
@@ -70,8 +67,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationEntity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.CurrentBacklog;
@@ -880,58 +875,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
     // WHEN - THEN
     assertThrows(exceptionClass, () -> client.getPlanningDistribution(request));
-  }
-
-  @Test
-  void testGetSuggestedWaves() throws JSONException {
-    // GIVEN
-    final ZonedDateTime currentTime =
-        now().withMinute(0).withSecond(0).withNano(0);
-
-    final SuggestedWavesRequest request =
-        SuggestedWavesRequest.builder()
-            .workflow(FBM_WMS_OUTBOUND)
-            .warehouseId(WAREHOUSE_ID)
-            .dateFrom(currentTime)
-            .dateTo(currentTime.plusHours(1))
-            .backlog(20)
-            .applyDeviation(true)
-            .build();
-
-    final JSONArray response = new JSONArray()
-        .put(new JSONObject()
-            .put("quantity", "100")
-            .put("wave_cardinality", "mono_order_distribution")
-        )
-        .put(new JSONObject()
-            .put("quantity", "100")
-            .put("wave_cardinality", "multi_order_distribution")
-        )
-        .put(new JSONObject()
-            .put("quantity", "50")
-            .put("wave_cardinality", "multi_batch_distribution")
-        );
-
-    MockResponse.builder()
-        .withMethod(GET)
-        .withURL(BASE_URL + format(SUGGESTED_WAVES_URL, FBM_WMS_OUTBOUND))
-        .withStatusCode(OK.value())
-        .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-        .withResponseBody(response.toString())
-        .build();
-
-    // WHEN
-    final List<SuggestedWave> suggestedWaves = client.getSuggestedWaves(request);
-    // THEN
-    assertNotNull(suggestedWaves);
-    assertEquals(100, suggestedWaves.get(0).getQuantity());
-    assertEquals(MONO_ORDER_DISTRIBUTION, suggestedWaves.get(0).getWaveCardinality());
-
-    assertEquals(100, suggestedWaves.get(1).getQuantity());
-    assertEquals(MULTI_ORDER_DISTRIBUTION, suggestedWaves.get(1).getWaveCardinality());
-
-    assertEquals(50, suggestedWaves.get(2).getQuantity());
-    assertEquals(MULTI_BATCH_DISTRIBUTION, suggestedWaves.get(2).getWaveCardinality());
   }
 
   @Test
