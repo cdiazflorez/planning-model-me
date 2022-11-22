@@ -294,11 +294,9 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   @Trace
   @Override
-  public List<PlanningDistributionResponse> getPlanningDistribution(
-      final PlanningDistributionRequest planningDistributionRequest) {
+  public List<PlanningDistributionResponse> getPlanningDistribution(final PlanningDistributionRequest planningDistributionRequest) {
     final HttpRequest request = HttpRequest.builder()
-        .url(format(WORKFLOWS_URL + "/planning_distributions",
-                    planningDistributionRequest.getWorkflow().getName()))
+        .url(format(WORKFLOWS_URL + "/planning_distributions", planningDistributionRequest.getWorkflow().getName()))
         .GET()
         .queryParams(createPlanningDistributionParams(planningDistributionRequest))
         .acceptedHttpStatuses(Set.of(OK))
@@ -544,30 +542,28 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     return params;
   }
 
-  private Map<String, String> createPlanningDistributionParams(
-      final PlanningDistributionRequest request) {
-    final Map<String, String> params = new LinkedHashMap<>();
-    addParameter(request.getWarehouseId(),
-                 () -> params.put(WAREHOUSE_ID,
-                                  request.getWarehouseId()));
-    addParameter(request.getDateInFrom(),
-                 () -> params.put("date_in_from",
-                                  request.getDateInFrom().format(ISO_OFFSET_DATE_TIME)));
-    addParameter(request.getDateInTo(),
-                 () -> params.put("date_in_to",
-                                  request.getDateInTo().format(ISO_OFFSET_DATE_TIME)));
-    addParameter(request.getDateOutFrom(),
-                 () -> params.put("date_out_from",
-                                  request.getDateOutFrom().format(ISO_OFFSET_DATE_TIME)));
-    addParameter(request.getDateOutTo(),
-                 () -> params.put("date_out_to",
-                                  request.getDateOutTo().format(ISO_OFFSET_DATE_TIME)));
+  private Map<String, String> createPlanningDistributionParams(final PlanningDistributionRequest request) {
+    final Map<String, String> params = new HashMap<>();
+    addParameter(params, WAREHOUSE_ID, request.getWarehouseId());
+    addParameter(params, "date_in_from", request.getDateInFrom());
+    addParameter(params, "date_in_to", request.getDateInTo());
+    addParameter(params, "date_out_from", request.getDateOutFrom());
+    addParameter(params, "date_out_to", request.getDateOutTo());
+    addParameter(params, "apply_deviation", Boolean.toString(request.isApplyDeviation()));
+
     return params;
   }
 
-  private void addParameter(Object parameter,
-                            Runnable valueCallable) {
-    ofNullable(parameter).ifPresent(t -> valueCallable.run());
+  private void addParameter(final Map<String, String> parameters, final String name, final ZonedDateTime value) {
+    if (name != null && value != null) {
+      parameters.put(name, value.format(ISO_OFFSET_DATE_TIME));
+    }
+  }
+
+  private void addParameter(final Map<String, String> parameters, final String name, final String value) {
+    if (name != null && value != null) {
+      parameters.put(name, value);
+    }
   }
 
   private <T> RequestBodyHandler requestSupplier(final T requestBody) {

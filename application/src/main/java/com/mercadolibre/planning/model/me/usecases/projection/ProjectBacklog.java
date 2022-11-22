@@ -111,7 +111,7 @@ public class ProjectBacklog {
             planningDistributionDateTo.plusDays(1L),
             planningDistributionDateFrom,
             planningDistributionDateTo.plusDays(1L),
-            true
+            false
         )
     );
   }
