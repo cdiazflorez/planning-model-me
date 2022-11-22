@@ -19,7 +19,6 @@ import static java.util.List.of;
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
@@ -43,8 +42,6 @@ import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimple
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.GetWaveSuggestion;
-import com.mercadolibre.planning.model.me.usecases.wavesuggestion.dto.GetWaveSuggestionInputDto;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -74,13 +71,10 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
   private final BacklogApiGateway backlogGateway;
 
-  private final GetWaveSuggestion getWaveSuggestion;
-
   private final RatioService ratioService;
 
   protected GetProjectionOutbound(final PlanningModelGateway planningModelGateway,
                                   final LogisticCenterGateway logisticCenterGateway,
-                                  final GetWaveSuggestion getWaveSuggestion,
                                   final GetEntities getEntities,
                                   final GetSimpleDeferralProjection getSimpleDeferralProjection,
                                   final BacklogApiGateway backlogGateway,
@@ -90,7 +84,6 @@ public abstract class GetProjectionOutbound extends GetProjection {
     super(getSales, planningModelGateway, logisticCenterGateway, getEntities);
 
     this.getSimpleDeferralProjection = getSimpleDeferralProjection;
-    this.getWaveSuggestion = getWaveSuggestion;
     this.backlogGateway = backlogGateway;
     this.ratioService = ratioService;
   }
@@ -136,19 +129,6 @@ public abstract class GetProjectionOutbound extends GetProjection {
             ZonedDateTime.parse(backlog.getKeys().get(groupingKey)),
             backlog.getTotal()))
         .collect(toList());
-  }
-
-  @Override
-  protected final SimpleTable getWaveSuggestionTable(final String warehouseID,
-                                                     final Workflow workflow,
-                                                     final ZoneId zoneId,
-                                                     final ZonedDateTime date) {
-    return getWaveSuggestion.execute(GetWaveSuggestionInputDto.builder()
-        .zoneId(zoneId)
-        .warehouseId(warehouseID)
-        .workflow(workflow)
-        .date(date)
-        .build());
   }
 
   protected Map<ProcessName, Map<Instant, Integer>> getThroughputByProcess(final GetProjectionInputDto input,

@@ -44,7 +44,6 @@ public class SaveSimulationTest {
         .build();
 
     final PlanningView mockPlanning = PlanningView.builder()
-        .isNewVersion(true)
         .currentDate(CURRENT_DATE)
         .build();
 

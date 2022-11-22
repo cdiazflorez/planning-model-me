@@ -8,7 +8,6 @@ import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ResultData;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTableAction;
 import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
@@ -28,7 +27,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class GetSlaProjectionTest {
-  private static final Boolean PROJECTIONS_VERSION = true;
 
   private static final ZonedDateTime CURRENT_DATE = Instant.parse("2022-07-13T13:00:00Z").atZone(ZoneId.of("UTC"));
 
@@ -72,10 +70,8 @@ public class GetSlaProjectionTest {
   private PlanningView mockPlanningView() {
     final Date[] dates = {new Date("", "", true)};
 
-    final List<Map<String, Object>> map = List.of(Map.of("", new Object()));
     final List<ColumnHeader> columnHeader = List.of(new ColumnHeader("", "", ""));
 
-    final SimpleTable simpleTable = new SimpleTable("", columnHeader, map);
     List<Map<String, Content>> content = List.of(Map.of("",
         new Content("", ZonedDateTime.now(), Map.of("", ""), "", true)));
 
@@ -104,10 +100,9 @@ public class GetSlaProjectionTest {
     );
 
     return PlanningView.builder()
-        .isNewVersion(PROJECTIONS_VERSION)
         .currentDate(CURRENT_DATE)
         .dateSelector(new DateSelector("title Date", dates))
-        .data(new ResultData(simpleTable, complexTable, projections))
+        .data(new ResultData(complexTable, projections))
         .build();
   }
 }

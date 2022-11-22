@@ -1,9 +1,6 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MONO_ORDER_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_BATCH_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Cardinality.MULTI_ORDER_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
@@ -27,7 +24,6 @@ import com.mercadolibre.planning.model.me.entities.projection.Content;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ResultData;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
@@ -99,11 +95,9 @@ public class ProjectionControllerTest {
     when(requestClock.now()).thenReturn(now);
     when(getSlaProjection.execute(any(GetProjectionInputDto.class)))
         .thenReturn(PlanningView.builder()
-                        .isNewVersion(true)
                         .currentDate(CURRENT_DATE)
                         .dateSelector(mockDateSelector())
                         .data(new ResultData(
-                            mockSuggestedWaves(),
                             mockComplexTable(),
                             mockProjectionsCpt()))
                         .build()
@@ -156,11 +150,9 @@ public class ProjectionControllerTest {
     when(getDeferralProjection.execute(
         new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any(), false, Collections.emptyList())))
         .thenReturn(PlanningView.builder()
-                        .isNewVersion(true)
                         .currentDate(CURRENT_DATE)
                         .dateSelector(mockDateSelector())
                         .data(new ResultData(
-                            null,
                             mockComplexTable(),
                             mockProjectionsDeferral()))
                         .build()
@@ -187,11 +179,9 @@ public class ProjectionControllerTest {
     when(getDeferralProjection.execute(
         new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, null, true, Collections.emptyList())))
         .thenReturn(PlanningView.builder()
-                        .isNewVersion(true)
                         .currentDate(CURRENT_DATE)
                         .dateSelector(mockDateSelector())
                         .data(new ResultData(
-                            null,
                             mockComplexTable(),
                             mockProjectionsDeferral()))
                         .build()
@@ -327,32 +317,6 @@ public class ProjectionControllerTest {
         0,
         null
     )).collect(Collectors.toList());
-  }
-
-  private SimpleTable mockSuggestedWaves() {
-    final String title = "Ondas sugeridas";
-    final List<ColumnHeader> columnHeaders = List.of(
-        new ColumnHeader("column_1", "Sig. hora 9:00-10:00", null),
-        new ColumnHeader("column_2", "Tamaño de onda", null)
-    );
-    final List<Map<String, Object>> data = List.of(
-        Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MONO_ORDER_DISTRIBUTION.getName()),
-               "column_2", "130 uds."
-        ),
-        Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MULTI_BATCH_DISTRIBUTION.getName()),
-               "column_2", "0 uds."
-        ),
-        Map.of("column_1",
-               Map.of("title", "Unidades por onda", "subtitle",
-                      MULTI_ORDER_DISTRIBUTION.getName()),
-               "column_2", "0 uds."
-        )
-    );
-    return new SimpleTable(title, columnHeaders, data);
   }
 
   private DateSelector mockDateSelector() {

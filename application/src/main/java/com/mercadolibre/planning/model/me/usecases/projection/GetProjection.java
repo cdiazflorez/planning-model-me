@@ -9,7 +9,6 @@ import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ResultData;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -38,15 +37,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class GetProjection implements UseCase<GetProjectionInputDto, PlanningView> {
-  protected static final int PROJECTION_DAYS = 4;
-
   protected static final int PROJECTION_DAYS_TO_SHOW = 1;
 
   protected static final int SELECTOR_DAYS_TO_SHOW = 3;
 
   private static final long DAYS_TO_SHOW_LOOKBACK = 0L;
-
-  private static final Boolean PROJECTIONS_VERSION = true;
 
   private static final int SELLING_PERIOD_HOURS = 28;
 
@@ -106,19 +101,12 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
           filterProjectionsInRange(dateFromToShow, dateToToShow, projectionsSla);
 
       return PlanningView.builder()
-          .isNewVersion(PROJECTIONS_VERSION)
           .currentDate(now().withZoneSameInstant(UTC).truncatedTo(ChronoUnit.SECONDS))
           .dateSelector(getDateSelector(
               ZonedDateTime.ofInstant(requestDate, config.getZoneId()),
               dateFromToShow,
               SELECTOR_DAYS_TO_SHOW))
           .data(new ResultData(
-              getWaveSuggestionTable(
-                  input.getWarehouseId(),
-                  input.getWorkflow(),
-                  config.getZoneId(),
-                  dateFromToShow
-              ),
               getEntitiesTable(input),
               getProjectionData(input,
                   dateFromToShow,
@@ -130,7 +118,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
     } catch (RuntimeException ex) {
       log.error(ex.getMessage(), ex);
       return PlanningView.builder()
-          .isNewVersion(PROJECTIONS_VERSION)
           .currentDate(now().withZoneSameInstant(UTC).truncatedTo(ChronoUnit.SECONDS))
           .dateSelector(getDateSelector(
               ZonedDateTime.ofInstant(requestDate, config.getZoneId()),
@@ -237,11 +224,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
   protected long getDatesToShowShift() {
     return DAYS_TO_SHOW_LOOKBACK;
   }
-
-  protected abstract SimpleTable getWaveSuggestionTable(String warehouseID,
-                                                        Workflow workflow,
-                                                        ZoneId zoneId,
-                                                        ZonedDateTime date);
 
   protected abstract List<ProjectionResult> getProjection(GetProjectionInputDto input,
                                                           ZonedDateTime dateFrom,

@@ -6,7 +6,6 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZo
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.entities.projection.SimpleTable;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
@@ -82,14 +81,6 @@ public abstract class GetProjectionInbound extends GetProjection {
             dateToToProject));
 
     return summarizeOverdueBacklogOf(backlogs, zoneId, requestDate);
-  }
-
-  @Override
-  protected final SimpleTable getWaveSuggestionTable(final String warehouseID,
-                                                     final Workflow workflow,
-                                                     final ZoneId zoneId,
-                                                     final ZonedDateTime date) {
-    return null;
   }
 
   @Override

@@ -3,7 +3,6 @@ package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static java.lang.String.format;
-import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
@@ -52,8 +51,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SlaProperties;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWave;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SuggestedWavesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
@@ -312,24 +309,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
       throw ex;
     }
-  }
-
-  @Trace
-  @Override
-  public List<SuggestedWave> getSuggestedWaves(final SuggestedWavesRequest input) {
-    final Map<String, String> params =
-        getBaseParam(input.getWarehouseId(), input.getDateFrom(), input.getDateTo());
-    params.put("backlog", input.getBacklog().toString());
-    params.put("apply_deviation", valueOf(input.isApplyDeviation()));
-
-    final HttpRequest request = HttpRequest.builder()
-        .url(format(WORKFLOWS_URL + "/projections/suggested_waves", input.getWorkflow()))
-        .GET()
-        .queryParams(params)
-        .acceptedHttpStatuses(Set.of(OK))
-        .build();
-    return send(request, response -> response.getData(new TypeReference<>() {
-    }));
   }
 
   @Trace

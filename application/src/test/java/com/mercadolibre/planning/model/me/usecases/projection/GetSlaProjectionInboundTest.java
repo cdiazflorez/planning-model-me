@@ -34,7 +34,6 @@ import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDate
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -248,11 +247,9 @@ public class GetSlaProjectionInboundTest {
     final Date[] dates = {new Date("", "", true)};
 
     return PlanningView.builder()
-        .isNewVersion(true)
         .currentDate(getCurrentUtcDate())
         .dateSelector(new DateSelector("title Date", dates))
         .data(new ResultData(
-            null,
             mockComplexTable(),
             emptyList()
         ))

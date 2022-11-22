@@ -146,10 +146,9 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
       );
 
       return PlanningView.builder()
-          .isNewVersion(PROJECTIONS_VERSION)
           .currentDate(now().withZoneSameInstant(UTC).truncatedTo(ChronoUnit.SECONDS))
           .dateSelector(getDateSelector(dateFromToProject, dateFromToShow, SELECTOR_DAYS_TO_SHOW))
-          .data(new ResultData(null,
+          .data(new ResultData(
               getThroughput(deferralBaseOutput.getConfiguration(),
                   input,
                   dateFromToShow.truncatedTo(ChronoUnit.HOURS),
@@ -165,7 +164,6 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
       log.error(ex.getMessage(), ex);
       metricsService.trackProjectionError(input.getLogisticCenterId(), input.getWorkflow(), PROJECTION_TYPE, "general");
       return PlanningView.builder()
-          .isNewVersion(PROJECTIONS_VERSION)
           .currentDate(now().withZoneSameInstant(UTC).truncatedTo(ChronoUnit.SECONDS))
           .dateSelector(getDateSelector(
               requestDateTime,
