@@ -25,9 +25,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class SalesDistributionSheetParserTest {
 
-  private static final String VALID_FILE_PATH = "outbound_forecast.xlsx";
+  private static final String VALID_FILE = "outbound_forecast.xlsx";
 
-  private static final String VALID_FILE_PATH_PILOT = "MVP2-outbound-forecast.xlsx";
+  private static final String VALID_PROCESS_PATH_FILE = "MVP2-outbound-forecast.xlsx";
 
   private static final String INVALID_DATE_FILE_PATH = "outbound_forecast_invalid_date.xlsx";
 
@@ -38,9 +38,9 @@ public class SalesDistributionSheetParserTest {
   private final SalesDistributionSheetParser salesDistributionSheetParser = new SalesDistributionSheetParser();
 
   @Test
-  void parseOk() {
+  void parseFileWithoutProcessPathOk() {
     // GIVEN
-    final MeliSheet repsSheet = getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), VALID_FILE_PATH);
+    final MeliSheet repsSheet = getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), VALID_FILE);
     // not a test, only a check
     assert repsSheet != null;
 
@@ -52,9 +52,9 @@ public class SalesDistributionSheetParserTest {
   }
 
   @Test
-  void parsePilotOk() {
+  void parseFileWithProcessPathOk() {
     // GIVEN
-    final MeliSheet repsSheet = getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), VALID_FILE_PATH_PILOT);
+    final MeliSheet repsSheet = getMeliSheetFrom(ORDER_DISTRIBUTION.getName(), VALID_PROCESS_PATH_FILE);
     // not a test, only a check
     assert repsSheet != null;
 

@@ -23,7 +23,7 @@ dependencies {
     compile project(':application')
 
     implementation platform('com.fasterxml.jackson:jackson-bom:2.13.3')
-    implementation platform('com.mercadolibre.library:java-melitk-bom:1.1.7')
+    implementation platform('com.mercadolibre.library:java-melitk-bom:1.0.0')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'

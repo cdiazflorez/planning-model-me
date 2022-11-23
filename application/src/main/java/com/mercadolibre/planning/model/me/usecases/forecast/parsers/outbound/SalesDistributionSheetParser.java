@@ -49,23 +49,22 @@ public class SalesDistributionSheetParser implements SheetParser {
   ) {
     return new ForecastSheetDto(
         sheet.getSheetName(),
-        Map.of(PLANNING_DISTRIBUTION, parsePlanningDistributionRows(sheet, config, logisticCenterId))
+        Map.of(PLANNING_DISTRIBUTION, parsePlanningDistributionRows(sheet, config))
     );
   }
 
   private static List<PlanningDistribution> parsePlanningDistributionRows(
       final MeliSheet sheet,
-      final LogisticCenterConfiguration config,
-      final String logisticCenterId
+      final LogisticCenterConfiguration config
   ) {
     return sheet.getRowsStartingFrom(PLANNING_DISTRIBUTION_STARTING_ROW).stream()
-        .filter(item -> rowIsNotEmpty(item, logisticCenterId))
-        .map(row -> createPlanningDistributionFrom(row, sheet, config, logisticCenterId))
+        .filter(item -> rowIsNotEmpty(item, sheet))
+        .map(row -> createPlanningDistributionFrom(row, sheet, config))
         .collect(toList());
   }
 
-  private static boolean rowIsNotEmpty(final MeliRow row, final String logisticCenterId) {
-    final Range<Integer> columns = Range.between(1, ForecastProcessPathConfiguration.maxValidateColumnIndex(logisticCenterId));
+  private static boolean rowIsNotEmpty(final MeliRow row, final MeliSheet sheet) {
+    final Range<Integer> columns = Range.between(1, ForecastProcessPathConfiguration.maxValidateColumnIndex(sheet, row));
     return row.getCells().stream()
         .filter(meliCell -> columns.contains(meliCell.getColumnIndex()))
         .map(MeliCell::getValue)
@@ -76,21 +75,20 @@ public class SalesDistributionSheetParser implements SheetParser {
   private static PlanningDistribution createPlanningDistributionFrom(
       final MeliRow row,
       final MeliSheet sheet,
-      final LogisticCenterConfiguration config,
-      final String logisticCenterId
+      final LogisticCenterConfiguration config
   ) {
     final ZoneId zoneId = config.getZoneId();
 
-    final ProcessPath processPath = ForecastProcessPathConfiguration.hasProcessPath(logisticCenterId)
-        ? ProcessPath.from(getStringValueAt(sheet, row, PROCESS_PATH_ID_COLUMN.getPosition(logisticCenterId))) : GLOBAL;
-    final String carrierId = getStringValueAt(sheet, row, CARRIER_ID_COLUMN.getPosition(logisticCenterId));
-    final String serviceId = String.valueOf(getIntValueAt(sheet, row, SERVICE_ID_COLUMN.getPosition(logisticCenterId)));
-    final String canalization = getStringValueAt(sheet, row, CANALIZATION_COLUMN.getPosition(logisticCenterId));
-    final double quantity = Precision.round(getDoubleValueAt(sheet, row.getIndex(), PD_QUANTITY_COLUMN.getPosition(logisticCenterId)), 2);
+    final ProcessPath processPath = ForecastProcessPathConfiguration.hasProcessPath(sheet, row)
+        ? ProcessPath.from(getStringValueAt(sheet, row, PROCESS_PATH_ID_COLUMN.getPosition(sheet, row))) : GLOBAL;
+    final String carrierId = getStringValueAt(sheet, row, CARRIER_ID_COLUMN.getPosition(sheet, row));
+    final String serviceId = String.valueOf(getIntValueAt(sheet, row, SERVICE_ID_COLUMN.getPosition(sheet, row)));
+    final String canalization = getStringValueAt(sheet, row, CANALIZATION_COLUMN.getPosition(sheet, row));
+    final double quantity = Precision.round(getDoubleValueAt(sheet, row.getIndex(), PD_QUANTITY_COLUMN.getPosition(sheet, row)), 2);
 
     return PlanningDistribution.builder()
-        .dateOut(SpreadsheetUtils.getDateTimeAt(sheet, row, PD_DATE_OUT_COLUMN.getPosition(logisticCenterId), zoneId))
-        .dateIn(SpreadsheetUtils.getDateTimeAt(sheet, row, PD_DATE_IN_COLUMN.getPosition(logisticCenterId), zoneId))
+        .dateOut(SpreadsheetUtils.getDateTimeAt(sheet, row, PD_DATE_OUT_COLUMN.getPosition(sheet, row), zoneId))
+        .dateIn(SpreadsheetUtils.getDateTimeAt(sheet, row, PD_DATE_IN_COLUMN.getPosition(sheet, row), zoneId))
         .carrierId(carrierId)
         .serviceId(serviceId)
         .canalization(canalization)
