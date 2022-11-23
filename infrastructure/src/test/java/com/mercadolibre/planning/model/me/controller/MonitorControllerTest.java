@@ -110,13 +110,18 @@ class MonitorControllerTest {
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
     }
 
-    private BacklogScheduled mockBacklogScheduled(){
-        return new BacklogScheduled(
-                Indicator.builder().shipments(500).units(15500).build(),
-                Indicator.builder().shipments(350).units(10850).build(),
-                Indicator.builder().shipments(2100).units(65100).build(),
-                Indicator.builder().shipments(150).units(4650).percentage(0.3).build()
-        );
+    private Map<String, BacklogScheduled> mockBacklogScheduled() {
+        return Map.of("inbound", new BacklogScheduled(
+            Indicator.builder().shipments(500).units(15500).build(),
+            Indicator.builder().shipments(350).units(10850).build(),
+            Indicator.builder().shipments(2100).units(65100).build(),
+            Indicator.builder().shipments(150).units(4650).percentage(0.3).build()),
+            "inbound_transfer", new BacklogScheduled(
+            Indicator.builder().units(500).build(),
+            Indicator.builder().units(350).build(),
+            Indicator.builder().units(2100).build(),
+            Indicator.builder().units(150).percentage(0.3).build()
+        ));
     }
 
     private Monitor mockCurrentStatus() {

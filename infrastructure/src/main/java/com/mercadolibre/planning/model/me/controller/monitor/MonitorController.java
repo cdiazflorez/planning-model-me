@@ -11,6 +11,7 @@ import com.mercadolibre.planning.model.me.usecases.monitor.GetMonitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.Monitor;
 import com.newrelic.api.agent.Trace;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -62,7 +63,7 @@ public class MonitorController {
 
     @Trace
     @GetMapping("/fbm-wms-inbound/monitors")
-    public ResponseEntity<BacklogScheduled> getMonitorInbound(
+    public ResponseEntity<Map<String, BacklogScheduled>> getMonitorInbound(
             @RequestParam("caller.id") @NotNull final Long callerId,
             @RequestParam @NotNull @NotBlank final String logisticCenterId){
 
