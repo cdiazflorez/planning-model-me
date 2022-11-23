@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.mercadolibre.planning.model.me.usecases.forecast.utils.ProcessPathNotFoundException;
 import java.util.Locale;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,7 +28,11 @@ public enum ProcessPath {
 
   @JsonCreator
   public static ProcessPath from(final String value) {
-    return valueOf(value.toUpperCase(Locale.getDefault()));
+      try {
+          return valueOf(value.toUpperCase(Locale.getDefault()));
+      } catch (IllegalArgumentException e) {
+          throw new ProcessPathNotFoundException(value, e);
+      }
   }
 
   @JsonValue

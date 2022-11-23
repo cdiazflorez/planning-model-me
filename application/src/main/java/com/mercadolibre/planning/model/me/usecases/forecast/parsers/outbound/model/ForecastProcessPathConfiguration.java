@@ -1,6 +1,12 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model;
 
-import java.util.List;
+import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getStringValueAt;
+
+import com.mercadolibre.planning.model.me.enums.ProcessPath;
+import com.mercadolibre.planning.model.me.usecases.forecast.utils.ProcessPathNotFoundException;
+import com.mercadolibre.spreadsheet.MeliRow;
+import com.mercadolibre.spreadsheet.MeliSheet;
+import java.util.Arrays;
 import java.util.Locale;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,24 +22,35 @@ public enum ForecastProcessPathConfiguration {
   CANALIZATION_COLUMN(5, 6),
   PD_QUANTITY_COLUMN(6, 7);
 
-  //TODO Change ARTW01 by BRBA01 when starting pilot.
-  private static final List<String> LOGISTIC_CENTER_WITH_PP = List.of("ARTW01");
-
   private static final int COLUMN_COUNT = values().length;
 
   private final Integer offPP;
 
   private final Integer onPP;
 
-  public static boolean hasProcessPath(final String logisticCenter) {
-    return LOGISTIC_CENTER_WITH_PP.contains(logisticCenter.toUpperCase(Locale.getDefault()));
+  public static boolean hasProcessPath(final MeliSheet sheet, final MeliRow row) {
+      final Integer ppColumnPosition = PROCESS_PATH_ID_COLUMN.getOnPP();
+
+      if (ppColumnPosition == null || getStringValueAt(sheet, row, ppColumnPosition) == null) {
+          return false;
+      }
+
+      final String ppColumnValue = getStringValueAt(sheet, row, ppColumnPosition).toLowerCase(Locale.getDefault());
+
+      //TODO: Avoid knowing all process paths
+      try {
+          return Arrays.asList(ProcessPath.values()).contains(ProcessPath.from(ppColumnValue));
+      } catch (ProcessPathNotFoundException processPathNotFoundException) {
+          return false;
+      }
+
   }
 
-  public static int maxValidateColumnIndex(final String logisticCenter) {
-    return hasProcessPath(logisticCenter) ? COLUMN_COUNT : COLUMN_COUNT - 1;
+  public static int maxValidateColumnIndex(final MeliSheet sheet, final MeliRow row) {
+    return hasProcessPath(sheet, row) ? COLUMN_COUNT : COLUMN_COUNT - 1;
   }
 
-  public Integer getPosition(final String logisticCenter) {
-    return hasProcessPath(logisticCenter) ? this.onPP : this.offPP;
+  public Integer getPosition(final MeliSheet sheet, final MeliRow row) {
+      return hasProcessPath(sheet, row) ? this.onPP : this.offPP;
   }
 }
