@@ -9,7 +9,7 @@ sourceCompatibility = 11
 
 dependencies {
     implementation platform('com.fasterxml.jackson:jackson-bom:2.13.3')
-    implementation platform('com.mercadolibre.library:java-melitk-bom:1.1.7')
+    implementation platform('com.mercadolibre.library:java-melitk-bom:1.0.0')
 
     compile project(':core')
     compile 'javax.inject:javax.inject:1'
