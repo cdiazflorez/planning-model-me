@@ -27,7 +27,7 @@ public class ParseOutboundForecastFromFileTest {
                 TestUtils.getResource(VALID_FILE_PATH)
         );
         // WHEN
-        final var forecast = ParseOutboundForecastFromFile.parse("ARBA01", document, 1234L, CONFIG);
+        final var forecast = ParseOutboundForecastFromFile.parse("ARBA01", document, 1234L, CONFIG, logisticCenter -> true);
 
         // THEN
         assertNotNull(forecast);

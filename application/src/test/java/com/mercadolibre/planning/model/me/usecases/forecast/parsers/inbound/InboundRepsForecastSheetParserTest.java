@@ -31,6 +31,8 @@ class InboundRepsForecastSheetParserTest {
 
   private static final String VALID_FILE_PATH = "inbound_planning_ok.xlsx";
 
+  private static final String VALID_FILE_WITHOUT_CHECK_IN = "inbound_planning_without_check_in.xlsx";
+
   private static final String ERRONEOUS_FILE_PATH = "inbound_planning_with_errors.xlsx";
 
   private static final LogisticCenterConfiguration CONF =
@@ -38,7 +40,7 @@ class InboundRepsForecastSheetParserTest {
 
   private static final ZonedDateTime FIRST_DATE = ZonedDateTime.parse("2021-11-07T00:00Z", ISO_OFFSET_DATE_TIME);
 
-  private final InboundRepsForecastSheetParser parser = new InboundRepsForecastSheetParser();
+  private final InboundRepsForecastSheetParser parser = new InboundRepsForecastSheetParser(logisticCenter -> true);
 
   @Test
   @DisplayName("Excel Parsed Ok")
@@ -50,6 +52,51 @@ class InboundRepsForecastSheetParserTest {
     final ForecastSheetDto result = parser.parse("ARBA01", repsSheet, CONF);
 
     // THEN
+    assertSuccessResults(result, true);
+  }
+
+  @Test
+  @DisplayName("Excel Parsed Ok without check_in")
+  void parseOkWithoutCheckIn() {
+    // GIVEN
+    final InboundRepsForecastSheetParser parserToggle = new InboundRepsForecastSheetParser(logisticCenter -> false);
+    final MeliSheet repsSheet = getMeliSheetFrom(parserToggle.name(), VALID_FILE_WITHOUT_CHECK_IN);
+
+    // WHEN
+    final ForecastSheetDto result = parserToggle.parse("ARBA01", repsSheet, CONF);
+
+    // THEN
+    assertSuccessResults(result, false);
+  }
+
+  @Test
+  @DisplayName("Excel With Errors")
+  void errors() {
+    // GIVEN
+    final MeliSheet repsSheet = getMeliSheetFrom(parser.name(), ERRONEOUS_FILE_PATH);
+
+    // WHEN
+    final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
+        () -> parser.parse("ARBA01", repsSheet, CONF));
+
+    final ForecastParsingException exceptionWarehouse = assertThrows(ForecastParsingException.class,
+        () -> parser.parse("ARTW01", repsSheet, CONF));
+
+    // THEN
+    assertNotNull(exception.getMessage());
+    assertNotNull(exceptionWarehouse.getMessage());
+
+    final String expectedMessage =
+        "Error while trying to parse cell (D12) for sheet: Plan de staffing.\n"
+            + "Error while trying to parse cell (E15) for sheet: Plan de staffing.\n"
+            + "Error while trying to parse cell (B27) for sheet: Plan de staffing.\n"
+            + "Error while trying to parse cell (K32) for sheet: Plan de staffing";
+
+    assertEquals(expectedMessage, exception.getMessage());
+    assertTrue(exceptionWarehouse.getMessage().contains("Warehouse id ARTW01 is different from warehouse id ARBA01 from file.\n"));
+  }
+
+  private void assertSuccessResults(final ForecastSheetDto result, final boolean hasCheckIn) {
     assertNotNull(result);
     assertEquals("Plan de staffing", result.getSheetName());
     assertEquals(7, result.getValues().size());
@@ -59,7 +106,7 @@ class InboundRepsForecastSheetParserTest {
         .get(PROCESSING_DISTRIBUTION);
 
     assertNotNull(processingDistributions);
-    assertEquals(17, processingDistributions.size());
+    assertEquals(18, processingDistributions.size());
 
     final var receivingTarget = processingDistributions.get(0);
     assertEquals("receiving", receivingTarget.getProcessName());
@@ -82,7 +129,11 @@ class InboundRepsForecastSheetParserTest {
 
     final var checkInProductivity = checkInProductivities.getData().get(0);
     assertEquals(FIRST_DATE, checkInProductivity.getDayTime());
-    assertEquals(407, checkInProductivity.getProductivity());
+    if (hasCheckIn) {
+      assertEquals(244, checkInProductivity.getProductivity());
+    } else {
+      assertEquals(407, checkInProductivity.getProductivity());
+    }
 
     final var putAwayProductivities = productivities.get(1);
     assertEquals("put_away", putAwayProductivities.getProcessName());
@@ -96,31 +147,5 @@ class InboundRepsForecastSheetParserTest {
     assertTrue(result.getValues().containsKey(INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES));
     assertTrue(result.getValues().containsKey(INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES));
     assertTrue(result.getValues().containsKey(INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES));
-  }
-
-  @Test
-  @DisplayName("Excel With Errors")
-  void errors() {
-    // GIVEN
-    final MeliSheet repsSheet = getMeliSheetFrom(parser.name(), ERRONEOUS_FILE_PATH);
-
-    // WHEN
-    final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
-        () -> parser.parse("ARBA01", repsSheet, CONF));
-
-    final ForecastParsingException exceptionWarehouse = assertThrows(ForecastParsingException.class,
-        () -> parser.parse("ARTW01", repsSheet, CONF));
-
-    // THEN
-    assertNotNull(exception.getMessage());
-    assertNotNull(exceptionWarehouse.getMessage());
-
-    final String expectedMessage =
-        "Error while trying to parse cell (D15) for sheet: Plan de staffing.\n"
-            + "Error while trying to parse cell (B27) for sheet: Plan de staffing.\n"
-            + "Error while trying to parse cell (J32) for sheet: Plan de staffing";
-
-    assertEquals(expectedMessage, exception.getMessage());
-    assertTrue(exceptionWarehouse.getMessage().contains("Warehouse id ARTW01 is different from warehouse id ARBA01 from file.\n"));
   }
 }

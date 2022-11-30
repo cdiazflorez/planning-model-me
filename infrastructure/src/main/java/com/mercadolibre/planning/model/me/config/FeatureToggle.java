@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.config;
 
 import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
+import com.mercadolibre.planning.model.me.usecases.forecast.UploadForecast;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -11,13 +12,16 @@ import org.springframework.stereotype.Component;
  */
 @RefreshScope
 @Component
-public class FeatureToggle implements FeatureSwitches {
+public class FeatureToggle implements FeatureSwitches, UploadForecast.FeatureToggles {
 
   @Value("${should-call-backlog-api}")
   private boolean callBacklogApi;
 
   @Value("${projection-lib-enabled-logistic-centers}")
   private Set<String> projectionLibEnabledLogisticCenters;
+
+  @Value("${should-read-check-in-tph}")
+  private Set<String> checkInTphEnabledByLogisticCenter;
 
   /**
    * Reads configuration for enable calls to backlog api.
@@ -38,5 +42,16 @@ public class FeatureToggle implements FeatureSwitches {
   @Override
   public boolean isProjectionLibEnabled(final String logisticCenter) {
     return projectionLibEnabledLogisticCenters.contains(logisticCenter);
+  }
+
+  /**
+   * Check if Read CheckIn TPH is enabled on staffing planning by logisticCenter.
+   *
+   * @param logisticCenter target logistic center
+   * @return whether the feature toggle is active
+   */
+  @Override
+  public boolean isReadCheckInTphEnabled(final String logisticCenter) {
+    return checkInTphEnabledByLogisticCenter.contains(logisticCenter);
   }
 }

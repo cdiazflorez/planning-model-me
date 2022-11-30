@@ -36,7 +36,8 @@ public final class ParseOutboundForecastFromFile {
       final String warehouseId,
       final MeliDocument document,
       final long userId,
-      final LogisticCenterConfiguration config) {
+      final LogisticCenterConfiguration config,
+      final UploadForecast.FeatureToggles featureToggles) {
     final var parsedValues =
         parseSheets(document, selectParsers(document), warehouseId, config);
 

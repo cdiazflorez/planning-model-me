@@ -16,7 +16,7 @@ public enum Productivity {
     PUT_AWAY(Process.PUT_AWAY,
             reps -> reps.getActiveRepsPutAway().getValue().equals(0)
                     ? 0
-                    : reps.getCheckInWorkload().getValue() / reps.getActiveRepsPutAway().getValue()
+                    : reps.getPutAwayWorkload().getValue() / reps.getActiveRepsPutAway().getValue()
 
     );
 

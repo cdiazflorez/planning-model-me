@@ -12,6 +12,7 @@ public class RepsRow {
     private CellValue<ZonedDateTime> date;
     private CellValue<Integer> receivingWorkload;
     private CellValue<Integer> checkInWorkload;
+    private CellValue<Integer> putAwayWorkload;
     private CellValue<Integer> stageInWorkload;
     private CellValue<Integer> activeNsRepsReceiving;
     private CellValue<Integer> activeRepsCheckIn;
