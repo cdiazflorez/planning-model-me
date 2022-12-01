@@ -33,11 +33,12 @@ public interface ParseInboundForecastFromFile {
       final String warehouseId,
       final MeliDocument document,
       final long userId,
-      final LogisticCenterConfiguration config
+      final LogisticCenterConfiguration config,
+      final UploadForecast.FeatureToggles featureToggle
   ) {
     var parsedValues = ForecastParserHelper.parseSheets(
         document,
-        Stream.of(new InboundRepsForecastSheetParser()),
+        Stream.of(new InboundRepsForecastSheetParser(featureToggle)),
         warehouseId,
         config
     );

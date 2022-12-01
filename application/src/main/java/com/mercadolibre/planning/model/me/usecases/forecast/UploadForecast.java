@@ -20,6 +20,16 @@ public class UploadForecast {
 
     private final LogisticCenterGateway logisticCenterGateway;
 
+    private final FeatureToggles featureToggles;
+
+    /**
+     * Interface of FeatureToggle.
+     * implements fury config feature toggle
+     */
+    public interface FeatureToggles {
+        boolean isReadCheckInTphEnabled(String logisticCenter);
+    }
+
     public ForecastCreationResponse upload(final String warehouseId,
                                            final Workflow workflow,
                                            final ForecastParser forecastParser,
@@ -30,7 +40,7 @@ public class UploadForecast {
 
         var config = logisticCenterGateway.getConfiguration(warehouseId);
 
-        final var forecast = forecastParser.parse(warehouseId, document, callerId, config);
+        final var forecast = forecastParser.parse(warehouseId, document, callerId, config, featureToggles);
 
         return createForecast.execute(new ForecastDto(workflow, forecast));
     }

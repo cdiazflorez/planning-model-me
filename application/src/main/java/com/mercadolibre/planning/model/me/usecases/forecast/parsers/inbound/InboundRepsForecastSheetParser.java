@@ -27,6 +27,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.PRESENT_PUT_AWAY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.PRESENT_PUT_AWAY_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.PRESENT_RECEIVING_NS;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.PUT_AWAY_TARGET;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.RECEIVING_TARGET;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ProcessingDistributionColumn.STAGE_IN_TARGET;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDateTimeCellValueAt;
@@ -41,6 +42,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PolyvalentProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistributionData;
+import com.mercadolibre.planning.model.me.usecases.forecast.UploadForecast;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.SheetParser;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastPolyvalenceInboundProcessName;
@@ -60,7 +62,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class InboundRepsForecastSheetParser implements SheetParser {
 
   private static final String TARGET_SHEET = "Plan de Staffing";
@@ -78,6 +82,8 @@ public class InboundRepsForecastSheetParser implements SheetParser {
   private static final int POLYVALENT_ABILITY_LEVEL = 2;
 
   private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 180;
+
+  private final UploadForecast.FeatureToggles featureToggle;
 
   @Override
   public String name() {
@@ -98,7 +104,9 @@ public class InboundRepsForecastSheetParser implements SheetParser {
     final String warehouseId = getStringValueAt(
         sheet, MetadataCell.WAREHOUSE_ID.getRow(), MetadataCell.WAREHOUSE_ID.getColumn());
 
-    final List<RepsRow> rows = getRows(sheet, zoneId);
+    final boolean isReadCheckInTphEnabled = featureToggle.isReadCheckInTphEnabled(requestWarehouseId);
+
+    final List<RepsRow> rows = getRows(sheet, zoneId, isReadCheckInTphEnabled);
 
     checkForErrors(requestWarehouseId, warehouseId, week, rows);
 
@@ -147,6 +155,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
             row.getDate(),
             row.getReceivingWorkload(),
             row.getCheckInWorkload(),
+            row.getPutAwayWorkload(),
             row.getStageInWorkload(),
             row.getActiveNsRepsReceiving(),
             row.getActiveRepsCheckIn(),
@@ -187,45 +196,53 @@ public class InboundRepsForecastSheetParser implements SheetParser {
     );
   }
 
-  private List<RepsRow> getRows(final MeliSheet sheet, final ZoneId zoneId) {
+  private List<RepsRow> getRows(final MeliSheet sheet, final ZoneId zoneId, final boolean isReadCheckInTphEnabled) {
     return IntStream.rangeClosed(FIRST_ROW, LAST_ROW)
-        .mapToObj(row -> readRow(sheet, row, zoneId))
+        .mapToObj(row -> readRow(sheet, row, zoneId, isReadCheckInTphEnabled))
         .collect(Collectors.toList());
   }
 
-  private RepsRow readRow(final MeliSheet sheet, final int row, final ZoneId zoneId) {
+  private RepsRow readRow(
+      final MeliSheet sheet,
+      final int row,
+      final ZoneId zoneId,
+      final boolean isReadCheckInTphEnabled
+  ) {
     return RepsRow.builder()
         .date(getDateTimeCellValueAt(sheet, row, DATE_COLUMN, zoneId))
-        .receivingWorkload(getIntCellValueAt(sheet, row, RECEIVING_TARGET))
-        .checkInWorkload(getIntCellValueAt(sheet, row, CHECK_IN_TARGET))
-        .stageInWorkload(getIntCellValueAt(sheet, row, STAGE_IN_TARGET))
-        .activeNsRepsReceiving(getIntCellValueAt(sheet, row, ACTIVE_RECEIVING_NS))
-        .activeRepsCheckIn(getIntCellValueAt(sheet, row, ACTIVE_CHECK_IN))
-        .activeNsRepsCheckIn(getIntCellValueAt(sheet, row, ACTIVE_CHECK_IN_NS))
-        .activeRepsPutAway(getIntCellValueAt(sheet, row, ACTIVE_PUT_AWAY))
-        .activeNsRepsPutAway(getIntCellValueAt(sheet, row, ACTIVE_PUT_AWAY_NS))
-        .presentNsRepsReceiving(getIntCellValueAt(sheet, row, PRESENT_RECEIVING_NS))
-        .presentRepsCheckIn(getIntCellValueAt(sheet, row, PRESENT_CHECK_IN))
-        .presentNsRepsCheckIn(getIntCellValueAt(sheet, row, PRESENT_CHECK_IN_NS))
-        .presentRepsPutAway(getIntCellValueAt(sheet, row, PRESENT_PUT_AWAY))
-        .presentNsRepsPutAway(getIntCellValueAt(sheet, row, PRESENT_PUT_AWAY_NS))
-        .backlogLowerLimitCheckin(getDoubleCellValueAt(sheet, row, BACKLOG_LOWER_LIMIT_CHECK_IN))
-        .backlogUpperLimitCheckin(getDoubleCellValueAt(sheet, row, BACKLOG_UPPER_LIMIT_CHECK_IN))
-        .backlogLowerLimitPutAway(getDoubleCellValueAt(sheet, row, BACKLOG_LOWER_LIMIT_PUT_AWAY))
-        .backlogUpperLimitPutAway(getDoubleCellValueAt(sheet, row, BACKLOG_UPPER_LIMIT_PUT_AWAY))
+        .receivingWorkload(getIntCellValueAt(sheet, row, RECEIVING_TARGET, isReadCheckInTphEnabled))
+        .checkInWorkload(getIntCellValueAt(sheet, row, CHECK_IN_TARGET, isReadCheckInTphEnabled))
+        .putAwayWorkload(getIntCellValueAt(sheet, row, PUT_AWAY_TARGET, isReadCheckInTphEnabled))
+        .stageInWorkload(getIntCellValueAt(sheet, row, STAGE_IN_TARGET, isReadCheckInTphEnabled))
+        .activeNsRepsReceiving(getIntCellValueAt(sheet, row, ACTIVE_RECEIVING_NS, isReadCheckInTphEnabled))
+        .activeRepsCheckIn(getIntCellValueAt(sheet, row, ACTIVE_CHECK_IN, isReadCheckInTphEnabled))
+        .activeNsRepsCheckIn(getIntCellValueAt(sheet, row, ACTIVE_CHECK_IN_NS, isReadCheckInTphEnabled))
+        .activeRepsPutAway(getIntCellValueAt(sheet, row, ACTIVE_PUT_AWAY, isReadCheckInTphEnabled))
+        .activeNsRepsPutAway(getIntCellValueAt(sheet, row, ACTIVE_PUT_AWAY_NS, isReadCheckInTphEnabled))
+        .presentNsRepsReceiving(getIntCellValueAt(sheet, row, PRESENT_RECEIVING_NS, isReadCheckInTphEnabled))
+        .presentRepsCheckIn(getIntCellValueAt(sheet, row, PRESENT_CHECK_IN, isReadCheckInTphEnabled))
+        .presentNsRepsCheckIn(getIntCellValueAt(sheet, row, PRESENT_CHECK_IN_NS, isReadCheckInTphEnabled))
+        .presentRepsPutAway(getIntCellValueAt(sheet, row, PRESENT_PUT_AWAY, isReadCheckInTphEnabled))
+        .presentNsRepsPutAway(getIntCellValueAt(sheet, row, PRESENT_PUT_AWAY_NS, isReadCheckInTphEnabled))
+        .backlogLowerLimitCheckin(getDoubleCellValueAt(sheet, row, BACKLOG_LOWER_LIMIT_CHECK_IN, isReadCheckInTphEnabled))
+        .backlogUpperLimitCheckin(getDoubleCellValueAt(sheet, row, BACKLOG_UPPER_LIMIT_CHECK_IN, isReadCheckInTphEnabled))
+        .backlogLowerLimitPutAway(getDoubleCellValueAt(sheet, row, BACKLOG_LOWER_LIMIT_PUT_AWAY, isReadCheckInTphEnabled))
+        .backlogUpperLimitPutAway(getDoubleCellValueAt(sheet, row, BACKLOG_UPPER_LIMIT_PUT_AWAY, isReadCheckInTphEnabled))
         .build();
   }
 
   private CellValue<Integer> getIntCellValueAt(final MeliSheet sheet,
                                                final int row,
-                                               final ProcessingDistributionColumn column) {
-    return SpreadsheetUtils.getIntCellValueAt(sheet, row, column.getColumnId());
+                                               final ProcessingDistributionColumn column,
+                                               final boolean isReadCheckInTphEnabled) {
+    return SpreadsheetUtils.getIntCellValueAt(sheet, row, column.calculateColumnId(isReadCheckInTphEnabled));
   }
 
   private CellValue<Double> getDoubleCellValueAt(final MeliSheet sheet,
                                                  final int row,
-                                                 final ProcessingDistributionColumn column) {
-    return SpreadsheetUtils.getDoubleCellValueAt(sheet, row, column.getColumnId());
+                                                 final ProcessingDistributionColumn column,
+                                                 final boolean isReadCheckInTphEnabled) {
+    return SpreadsheetUtils.getDoubleCellValueAt(sheet, row, column.calculateColumnId(isReadCheckInTphEnabled));
   }
 
   private List<HeadcountProductivityData> toHeadcountProductivityData(final List<RepsRow> rows,

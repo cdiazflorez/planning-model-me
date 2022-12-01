@@ -30,7 +30,7 @@ class ParseInboundForecastFromFileTest {
     var document = createMeliDocumentFrom(getResource(VALID_FILE_PATH));
 
     // WHEN
-    final Forecast forecast = ParseInboundForecastFromFile.parse("ARBA01", document, 1234L, CONFIG);
+    final Forecast forecast = ParseInboundForecastFromFile.parse("ARBA01", document, 1234L, CONFIG, logisticCenter -> true);
 
     // THEN
     final List<Metadata> metadata = forecast.getMetadata();
