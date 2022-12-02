@@ -133,7 +133,7 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                         dateInTo.withZoneSameInstant(UTC),
                         dateOutFrom.withZoneSameInstant(UTC),
                         dateOutTo.withZoneSameInstant(UTC),
-                        false)
+                        true)
         );
         final Map<ZonedDateTime, List<PlanningDistributionResponse>> accumulatedByEtd =
                 forecast.stream()
