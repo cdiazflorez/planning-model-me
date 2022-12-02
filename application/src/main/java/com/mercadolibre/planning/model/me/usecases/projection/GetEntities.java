@@ -98,8 +98,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
   @Override
   public ComplexTable execute(final GetProjectionInputDto input) {
 
-    final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(
-        input.getWarehouseId());
+    final LogisticCenterConfiguration config = logisticCenterGateway.getConfiguration(input.getWarehouseId());
 
     final ZonedDateTime utcDateFrom = input.getDate() == null
         ? getCurrentUtcDate() : input.getDate();
@@ -162,8 +161,8 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
     return new ComplexTable(
         headers,
         List.of(createData(config, HEADCOUNT, headcount, headers, emptyList()),
-                createData(config, PRODUCTIVITY, mainProductivities, headers, polyvalentProductivities),
-                createData(config, THROUGHPUT, throughputs, headers, emptyList())),
+            createData(config, PRODUCTIVITY, mainProductivities, headers, polyvalentProductivities),
+            createData(config, THROUGHPUT, throughputs, headers, emptyList())),
         action,
         "Headcount / Throughput"
     );
@@ -224,8 +223,8 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
     headers.forEach(header -> {
       if ("column_1".equals(header.getId())) {
         content.put(header.getId(),
-                    new Content(capitalize(processName.getTitle()), null, null,
-                                processName.getName(), true));
+            new Content(capitalize(processName.getTitle()), null, null,
+                processName.getName(), true));
       } else {
         final Map<Source, EntityRow> entityBySource = entitiesByHour.get(header.getValue());
 
@@ -246,7 +245,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
               null, null, true));
         } else {
           content.put(header.getId(),
-                      new Content(NO_VALUE, null, null, null, true));
+              new Content(NO_VALUE, null, null, null, true));
         }
       }
     });
@@ -261,8 +260,8 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
         return Map.of(
             FIRST_TITLE, "Hora de operación",
             FIRST_SUBTITLE, format("%s - %s",
-                                   entity.getTime().format(COLUMN_HOUR_FORMAT),
-                                   entity.getTime().plusHours(1).format(COLUMN_HOUR_FORMAT)),
+                entity.getTime().format(COLUMN_HOUR_FORMAT),
+                entity.getTime().plusHours(1).format(COLUMN_HOUR_FORMAT)),
             "title_2", "Cantidad de reps FCST",
             "subtitle_2", valueOf(entity.getValue())
         );

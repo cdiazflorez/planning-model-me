@@ -93,7 +93,7 @@ public class GetProjectionSummary implements UseCase<GetProjectionSummaryInput, 
         .dateInTo(input.getDateFrom())
         .dateOutFrom(input.getDateFrom())
         .dateOutTo(input.getDateTo())
-        .applyDeviation(false)
+        .applyDeviation(true)
         .build())
         : emptyList();
   }
