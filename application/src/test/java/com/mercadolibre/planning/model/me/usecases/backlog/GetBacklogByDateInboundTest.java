@@ -41,7 +41,7 @@ public class GetBacklogByDateInboundTest {
     final List<Workflow> workflows = of(Workflow.FBM_WMS_INBOUND);
     final List<ProcessName> processNames = of(ProcessName.CHECK_IN, ProcessName.PUT_AWAY);
     final Instant dateFrom = now.minus(1, ChronoUnit.HOURS);
-    final Instant slaFrom = now.minus(7, ChronoUnit.DAYS);
+    final Instant slaFrom = now.minus(30, ChronoUnit.DAYS);
     final Instant slaTo = now.plus(1, ChronoUnit.DAYS);
 
     when(backlogApiAdapter.getCurrentBacklog(

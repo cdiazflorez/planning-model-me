@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public abstract class GetProjectionInbound extends GetProjection {
   protected static final List<ProcessName> PROCESS_NAMES_INBOUND = List.of(CHECK_IN, PUT_AWAY);
 
-  private static final long DAYS_TO_SHOW_LOOKBACK = 7L;
+  private static final long DAYS_TO_SHOW_LOOKBACK = 30L;
 
   private final GetBacklogByDateInbound getBacklogByDateInbound;
 
@@ -49,8 +49,7 @@ public abstract class GetProjectionInbound extends GetProjection {
               if (date.toInstant().isAfter(now)) {
                 return date;
               } else {
-                final ZonedDateTime truncatedDate = convertToTimeZone(zoneId, date)
-                    .truncatedTo(ChronoUnit.DAYS);
+                final ZonedDateTime truncatedDate = now.atZone(zoneId).truncatedTo(ChronoUnit.DAYS);
 
                 return convertToTimeZone(ZoneId.of("Z"), truncatedDate);
               }
