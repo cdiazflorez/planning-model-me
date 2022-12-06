@@ -26,7 +26,7 @@ public class GetBacklogByDateInbound implements UseCase<GetBacklogByDateDto, Lis
 
   private static final int MINUS_HOURS = 1;
 
-  private static final int MINUS_DAYS = 7;
+  private static final int MINUS_DAYS = 30;
 
   final BacklogApiAdapter backlogApiAdapter;
 
