@@ -50,12 +50,15 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
-  private static final String PACKING_PROCESS = "packing";
+  private static final String HU_ASSEMBLY_PROCESS = "hu_assembly";
 
-  private static final String PACKING_WALL_PROCESS = "packing_wall";
+  private static final String SALES_DISPATCH_PROCESS = "sales_dispatch";
+
+  private static final List<String> PROCESSES_WITHOUT_METRICS_FORECAST =
+      List.of(HU_ASSEMBLY_PROCESS, SALES_DISPATCH_PROCESS);
 
   private static final List<String> EFFECTIVE_PROCESSES =
-      List.of(PACKING_PROCESS, PACKING_WALL_PROCESS);
+      List.of(ProcessName.PACKING.getName(), ProcessName.PACKING_WALL.getName());
 
   private final PlanningModelGateway planningModelGateway;
 
@@ -81,17 +84,24 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     for (StaffingWorkflowConfig workflowConfig : StaffingWorkflowConfig.values()) {
       final List<String> processNames = workflowConfig.getProcesses();
       final String workflow = workflowConfig.getName();
+      final List<String> processNamesToGetTargetMetrics =
+          Workflow.FBM_WMS_OUTBOUND.getName().equals(workflow)
+              ? processNames.stream()
+                  .filter(process -> !PROCESSES_WITHOUT_METRICS_FORECAST.contains(process))
+                  .collect(toList())
+              : processNames;
 
-      /* TODO: Ajustar la configuración de Workflow cuando planning model api devuelva otros
-      workflows */
+      /* TODO: Ajustar la configuración de Workflow cuando planning model api devuelva otros workflows */
       final Map<MagnitudeType, List<MagnitudePhoto>> forecastStaffing =
           workflowConfig.isShouldRetrieveProductivity()
-              ? getForecastStaffing(logisticCenterId, workflow, processNames, now, PRODUCTIVITY)
+              ? getForecastStaffing(
+                  logisticCenterId, workflow, processNamesToGetTargetMetrics, now, PRODUCTIVITY)
               : Map.of(PRODUCTIVITY, Collections.emptyList());
 
       final Map<MagnitudeType, List<MagnitudePhoto>> plannedStaffing =
           workflowConfig.isShouldRetrieveHeadcount()
-              ? getForecastStaffing(logisticCenterId, workflow, processNames, now, HEADCOUNT)
+              ? getForecastStaffing(
+                  logisticCenterId, workflow, processNamesToGetTargetMetrics, now, HEADCOUNT)
               : Map.of(HEADCOUNT, Collections.emptyList());
 
       final StaffingWorkflowResponse staffingWorkflow = staffingByWorkflow.get(workflow);
@@ -109,14 +119,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                             process,
                             staffingByProcess.get(process),
                             filterProductivity(forecastStaffing, process),
-                            filterHeadcount(
-                                plannedStaffing.get(HEADCOUNT).stream()
-                                    .filter(
-                                        entity ->
-                                            entity
-                                                .getProcessName()
-                                                .equals(ProcessName.from(process)))
-                                    .collect(toList()))))
+                            filterHeadcount(plannedStaffing, process)))
                 .collect(toList());
 
         final Integer totalNonSystemic = staffingWorkflow.getTotals().getWorkingNonSystemic();
@@ -167,7 +170,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return totals.getNetProductivity();
   }
 
-  private Integer calculateHeadcountDelta(final Integer working, final Integer idle, final Integer planned) {
+  private Integer calculateHeadcountDelta(
+      final Integer working, final Integer idle, final Integer planned) {
     return planned == null || working == null || idle == null ? null : (working + idle) - planned;
   }
 
@@ -189,20 +193,24 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Double throughput = totals.getThroughput();
     final Integer realThroughput = throughput == null ? null : throughput.intValue();
 
-    final List<Area> areas = Optional.ofNullable(processStaffing.getAreas())
-        .map(staffingAreas -> staffingAreas.stream()
+    final List<Area> areas =
+        Optional.ofNullable(processStaffing.getAreas())
             .map(
-                area -> {
-                  final Totals areaTotals = area.getTotals();
-                  final Double areaProductivity = areaTotals.getProductivity();
-                  return new Area(
-                      area.getName(),
-                      areaProductivity == null ? null : areaProductivity.intValue(),
-                      new Worker(areaTotals.getIdle(), areaTotals.getWorkingSystemic()));
-                })
-            .sorted(Comparator.comparing(Area::getArea))
-            .collect(toList())
-        ).orElse(Collections.emptyList());
+                staffingAreas ->
+                    staffingAreas.stream()
+                        .map(
+                            area -> {
+                              final Totals areaTotals = area.getTotals();
+                              final Double areaProductivity = areaTotals.getProductivity();
+                              return new Area(
+                                  area.getName(),
+                                  areaProductivity == null ? null : areaProductivity.intValue(),
+                                  new Worker(
+                                      areaTotals.getIdle(), areaTotals.getWorkingSystemic()));
+                            })
+                        .sorted(Comparator.comparing(Area::getArea))
+                        .collect(toList()))
+            .orElse(Collections.emptyList());
 
     return Process.builder()
         .process(process)
@@ -242,17 +250,28 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     }
   }
 
-  private Integer filterProductivity(final Map<MagnitudeType, List<MagnitudePhoto>> staffingForecast, final String process) {
+  private Integer filterProductivity(
+      final Map<MagnitudeType, List<MagnitudePhoto>> staffingForecast, final String process) {
     final OptionalDouble productivity =
-        staffingForecast.get(PRODUCTIVITY).stream()
-            .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-            .mapToInt(MagnitudePhoto::getValue)
-            .average();
+        !PROCESSES_WITHOUT_METRICS_FORECAST.contains(process)
+            ? staffingForecast.get(PRODUCTIVITY).stream()
+                .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
+                .mapToInt(MagnitudePhoto::getValue)
+                .average()
+            : OptionalDouble.empty();
 
     return productivity.isPresent() ? (int) productivity.getAsDouble() : null;
   }
 
-  private Integer filterHeadcount(final List<MagnitudePhoto> staffingHeadcount) {
+  private Integer filterHeadcount(
+      final Map<MagnitudeType, List<MagnitudePhoto>> plannedStaffing, final String process) {
+
+    final List<MagnitudePhoto> staffingHeadcount =
+        !PROCESSES_WITHOUT_METRICS_FORECAST.contains(process)
+            ? plannedStaffing.get(HEADCOUNT).stream()
+                .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
+                .collect(toList())
+            : Collections.emptyList();
 
     Optional<MagnitudePhoto> magnitudePhoto =
         staffingHeadcount.stream()

@@ -27,9 +27,7 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-/**
- * Build methods and constants to be used in testing.
- */
+/** Build methods and constants to be used in testing. */
 public class TestUtils {
 
   public static final String WAREHOUSE_ID = "ARTW01";
@@ -74,6 +72,10 @@ public class TestUtils {
 
   public static final String STOCK_AUDIT_PROCESS = "stock_audit";
 
+  public static final String HU_ASSEMBLY_PROCESS = "hu_assembly";
+
+  public static final String SALES_DISPATCH_PROCESS = "sales_dispatch";
+
   public static final String AREA_MZ1 = "MZ-1";
 
   public static final String AREA_RKL = "RK-L";
@@ -82,13 +84,13 @@ public class TestUtils {
 
   public static final int INBOUND_SYS_WORKERS = 18;
 
-  public static final int OUTBOUND_IDLE_WORKERS = 12;
+  public static final int OUTBOUND_IDLE_WORKERS = 22;
 
-  public static final int OUTBOUND_SYS_WORKERS = 70;
+  public static final int OUTBOUND_SYS_WORKERS = 140;
 
-  public static final int OUTBOUND_NS_WORKERS = 20;
+  public static final int OUTBOUND_NS_WORKERS = 45;
 
-  public static final int OUTBOUND_NS_WORKERS_PROCESS = 25;
+  public static final int OUTBOUND_NS_WORKERS_PROCESS = 45;
 
   public static final int WITHDRAWALS_IDLE_WORKERS = 12;
 
@@ -185,6 +187,26 @@ public class TestUtils {
   public static final Double OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY = 32.4;
 
   public static final Double OUTBOUND_PACKING_WALL_THROUGHPUT = 11.10;
+
+  public static final int OUTBOUND_HU_ASSEMBLY_IDLE_WORKERS = 5;
+
+  public static final int OUTBOUND_HU_ASSEMBLY_SYS_WORKERS = 35;
+
+  public static final int OUTBOUND_HU_ASSEMBLY_NON_SYS_WORKERS = 10;
+
+  public static final Double OUTBOUND_HU_ASSEMBLY_NET_PRODUCTIVITY = 32.4;
+
+  public static final Double OUTBOUND_HU_ASSEMBLY_THROUGHPUT = 11.10;
+
+  public static final int OUTBOUND_SALES_DISPATCH_IDLE_WORKERS = 5;
+
+  public static final int OUTBOUND_SALES_DISPATCH_SYS_WORKERS = 35;
+
+  public static final int OUTBOUND_SALES_DISPATCH_NON_SYS_WORKERS = 10;
+
+  public static final Double OUTBOUND_SALES_DISPATCH_NET_PRODUCTIVITY = 32.4;
+
+  public static final Double OUTBOUND_SALES_DISPATCH_THROUGHPUT = 11.10;
 
   public static final int WITHDRAWALS_PICKING_IDLE_WORKERS = 3;
 
@@ -311,7 +333,7 @@ public class TestUtils {
   /**
    * Creates a MeliSheet based on a filepath and a sheet name.
    *
-   * @param name     sheet's name
+   * @param name sheet's name
    * @param filePath to search the sheet by name
    * @return a {@link MeliSheet} or null
    */
@@ -481,6 +503,26 @@ public class TestUtils {
                 OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY,
                 OUTBOUND_PACKING_WALL_THROUGHPUT,
                 OUTBOUND_PACKING_WALL_NON_SYS_WORKERS),
+            emptyList()),
+        new StaffingProcess(
+            HU_ASSEMBLY_PROCESS,
+            new ProcessTotals(
+                OUTBOUND_HU_ASSEMBLY_IDLE_WORKERS,
+                OUTBOUND_HU_ASSEMBLY_SYS_WORKERS,
+                OUTBOUND_HU_ASSEMBLY_NET_PRODUCTIVITY,
+                null,
+                OUTBOUND_HU_ASSEMBLY_THROUGHPUT,
+                OUTBOUND_HU_ASSEMBLY_NON_SYS_WORKERS),
+            emptyList()),
+        new StaffingProcess(
+            SALES_DISPATCH_PROCESS,
+            new ProcessTotals(
+                OUTBOUND_SALES_DISPATCH_IDLE_WORKERS,
+                OUTBOUND_SALES_DISPATCH_SYS_WORKERS,
+                OUTBOUND_SALES_DISPATCH_NET_PRODUCTIVITY,
+                null,
+                OUTBOUND_SALES_DISPATCH_THROUGHPUT,
+                OUTBOUND_SALES_DISPATCH_NON_SYS_WORKERS),
             emptyList()));
   }
 
