@@ -122,7 +122,7 @@ class GetStaffingTest {
 
   private static final int TOTAL_WORKFLOWS = 5;
 
-  private static final int TOTAL_WORKERS = 223;
+  private static final int TOTAL_WORKERS = 328;
 
   private static final int TOTAL_INBOUND_PROCESSES = 3;
 
@@ -152,9 +152,9 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_PUT_AWAY_RKL_NET_PRODUCTIVITY = 22;
 
-  private static final int TOTAL_OUTBOUND_PROCESSES = 5;
+  private static final int TOTAL_OUTBOUND_PROCESSES = 7;
 
-  private static final int TOTAL_OUTBOUND_WORKERS = 102;
+  private static final int TOTAL_OUTBOUND_WORKERS = 207;
 
   private static final Integer EXPECTED_OUTBOUND_PICKING_NET_PRODUCTIVITY = 45;
 
@@ -258,14 +258,11 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_DELTA_PACKING_WALL = 40;
 
-  @InjectMocks
-  private GetStaffing useCase;
+  @InjectMocks private GetStaffing useCase;
 
-  @Mock
-  private PlanningModelGateway planningModelGateway;
+  @Mock private PlanningModelGateway planningModelGateway;
 
-  @Mock
-  private StaffingGateway staffingGateway;
+  @Mock private StaffingGateway staffingGateway;
 
   @Test
   void testExecute() {
@@ -654,17 +651,18 @@ class GetStaffingTest {
     // Outbound
     final var outboundProcesses = outbound.getProcesses();
     assertEquals(FORECAST_HEADCOUNT_PICKING, outboundProcesses.get(0).getWorkers().getPlanned());
-    assertEquals(FORECAST_HEADCOUNT_BATCH_SORTER, outboundProcesses.get(1).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_BATCH_SORTER, outboundProcesses.get(1).getWorkers().getPlanned());
     assertNull(outboundProcesses.get(2).getWorkers().getPlanned());
     assertEquals(FORECAST_HEADCOUNT_PACKING, outboundProcesses.get(3).getWorkers().getPlanned());
-    assertEquals(FORECAST_HEADCOUNT_PACKING_WALL, outboundProcesses.get(4).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_PACKING_WALL, outboundProcesses.get(4).getWorkers().getPlanned());
 
     assertEquals(EXPECTED_DELTA_PICKING, outboundProcesses.get(0).getWorkers().getDelta());
     assertNull(outboundProcesses.get(1).getWorkers().getDelta());
     assertNull(outboundProcesses.get(2).getWorkers().getDelta());
     assertEquals(EXPECTED_DELTA_PACKING, outboundProcesses.get(3).getWorkers().getDelta());
-    assertEquals(
-        EXPECTED_DELTA_PACKING_WALL, outboundProcesses.get(4).getWorkers().getDelta());
+    assertEquals(EXPECTED_DELTA_PACKING_WALL, outboundProcesses.get(4).getWorkers().getDelta());
 
     // withdrawals
     assertNull(withdrawals.getProcesses().get(0).getWorkers().getPlanned());
@@ -844,25 +842,25 @@ class GetStaffingTest {
     final ZonedDateTime now = ZonedDateTime.now(UTC).withSecond(0).withNano(0);
 
     when(planningModelGateway.searchTrajectories(
-        SearchTrajectoriesRequest.builder()
-            .warehouseId(WAREHOUSE_ID)
-            .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .entityTypes(List.of(MagnitudeType.PRODUCTIVITY))
-            .dateFrom(now.truncatedTo(ChronoUnit.HOURS).minusHours(1))
-            .dateTo(now.truncatedTo(ChronoUnit.HOURS))
-            .source(Source.SIMULATION)
-            .processName(
-                List.of(
-                    ProcessName.PICKING,
-                    ProcessName.BATCH_SORTER,
-                    ProcessName.WALL_IN,
-                    ProcessName.PACKING,
-                    ProcessName.PACKING_WALL))
-            .entityFilters(
-                Map.of(
-                    MagnitudeType.PRODUCTIVITY,
-                    Map.of(EntityFilters.ABILITY_LEVEL.toJson(), List.of(String.valueOf(1)))))
-            .build()))
+            SearchTrajectoriesRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(Workflow.FBM_WMS_OUTBOUND)
+                .entityTypes(List.of(MagnitudeType.PRODUCTIVITY))
+                .dateFrom(now.truncatedTo(ChronoUnit.HOURS).minusHours(1))
+                .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                .source(Source.SIMULATION)
+                .processName(
+                    List.of(
+                        ProcessName.PICKING,
+                        ProcessName.BATCH_SORTER,
+                        ProcessName.WALL_IN,
+                        ProcessName.PACKING,
+                        ProcessName.PACKING_WALL))
+                .entityFilters(
+                    Map.of(
+                        MagnitudeType.PRODUCTIVITY,
+                        Map.of(EntityFilters.ABILITY_LEVEL.toJson(), List.of(String.valueOf(1)))))
+                .build()))
         .thenReturn(mockProductivityForecastEntities());
   }
 
@@ -870,40 +868,40 @@ class GetStaffingTest {
     final ZonedDateTime now = ZonedDateTime.now(UTC).withSecond(0).withNano(0);
 
     when(planningModelGateway.searchTrajectories(
-        SearchTrajectoriesRequest.builder()
-            .warehouseId(WAREHOUSE_ID)
-            .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .entityTypes(List.of(HEADCOUNT))
-            .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
-            .dateTo(now.truncatedTo(ChronoUnit.HOURS))
-            .processName(
-                List.of(
-                    ProcessName.PICKING,
-                    ProcessName.BATCH_SORTER,
-                    ProcessName.WALL_IN,
-                    ProcessName.PACKING,
-                    ProcessName.PACKING_WALL))
-            .entityFilters(
-                Map.of(
-                    HEADCOUNT,
-                    Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
-            .build()))
+            SearchTrajectoriesRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(Workflow.FBM_WMS_OUTBOUND)
+                .entityTypes(List.of(HEADCOUNT))
+                .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
+                .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                .processName(
+                    List.of(
+                        ProcessName.PICKING,
+                        ProcessName.BATCH_SORTER,
+                        ProcessName.WALL_IN,
+                        ProcessName.PACKING,
+                        ProcessName.PACKING_WALL))
+                .entityFilters(
+                    Map.of(
+                        HEADCOUNT,
+                        Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
+                .build()))
         .thenThrow(MockitoException.class);
 
     when(planningModelGateway.searchTrajectories(
-        SearchTrajectoriesRequest.builder()
-            .warehouseId(WAREHOUSE_ID)
-            .workflow(Workflow.FBM_WMS_INBOUND)
-            .entityTypes(List.of(HEADCOUNT))
-            .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
-            .dateTo(now.truncatedTo(ChronoUnit.HOURS))
-            .processName(
-                List.of(ProcessName.RECEIVING, ProcessName.CHECK_IN, ProcessName.PUT_AWAY))
-            .entityFilters(
-                Map.of(
-                    HEADCOUNT,
-                    Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
-            .build()))
+            SearchTrajectoriesRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(Workflow.FBM_WMS_INBOUND)
+                .entityTypes(List.of(HEADCOUNT))
+                .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
+                .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                .processName(
+                    List.of(ProcessName.RECEIVING, ProcessName.CHECK_IN, ProcessName.PUT_AWAY))
+                .entityFilters(
+                    Map.of(
+                        HEADCOUNT,
+                        Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
+                .build()))
         .thenThrow(MockitoException.class);
   }
 
@@ -911,42 +909,42 @@ class GetStaffingTest {
     final ZonedDateTime now = ZonedDateTime.now(UTC).withSecond(0).withNano(0);
 
     when(planningModelGateway.searchTrajectories(
-        SearchTrajectoriesRequest.builder()
-            .warehouseId(WAREHOUSE_ID)
-            .workflow(Workflow.FBM_WMS_OUTBOUND)
-            .entityTypes(List.of(HEADCOUNT))
-            .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
-            .dateTo(now.truncatedTo(ChronoUnit.HOURS))
-            .source(Source.SIMULATION)
-            .processName(
-                List.of(
-                    ProcessName.PICKING,
-                    ProcessName.BATCH_SORTER,
-                    ProcessName.WALL_IN,
-                    ProcessName.PACKING,
-                    ProcessName.PACKING_WALL))
-            .entityFilters(
-                Map.of(
-                    HEADCOUNT,
-                    Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
-            .build()))
+            SearchTrajectoriesRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(Workflow.FBM_WMS_OUTBOUND)
+                .entityTypes(List.of(HEADCOUNT))
+                .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
+                .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                .source(Source.SIMULATION)
+                .processName(
+                    List.of(
+                        ProcessName.PICKING,
+                        ProcessName.BATCH_SORTER,
+                        ProcessName.WALL_IN,
+                        ProcessName.PACKING,
+                        ProcessName.PACKING_WALL))
+                .entityFilters(
+                    Map.of(
+                        HEADCOUNT,
+                        Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
+                .build()))
         .thenReturn(mockHeadcountForecastEntities().get(1));
 
     when(planningModelGateway.searchTrajectories(
-        SearchTrajectoriesRequest.builder()
-            .warehouseId(WAREHOUSE_ID)
-            .workflow(Workflow.FBM_WMS_INBOUND)
-            .entityTypes(List.of(HEADCOUNT))
-            .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
-            .dateTo(now.truncatedTo(ChronoUnit.HOURS))
-            .source(Source.SIMULATION)
-            .processName(
-                List.of(ProcessName.RECEIVING, ProcessName.CHECK_IN, ProcessName.PUT_AWAY))
-            .entityFilters(
-                Map.of(
-                    HEADCOUNT,
-                    Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
-            .build()))
+            SearchTrajectoriesRequest.builder()
+                .warehouseId(WAREHOUSE_ID)
+                .workflow(Workflow.FBM_WMS_INBOUND)
+                .entityTypes(List.of(HEADCOUNT))
+                .dateFrom(now.truncatedTo(ChronoUnit.HOURS))
+                .dateTo(now.truncatedTo(ChronoUnit.HOURS))
+                .source(Source.SIMULATION)
+                .processName(
+                    List.of(ProcessName.RECEIVING, ProcessName.CHECK_IN, ProcessName.PUT_AWAY))
+                .entityFilters(
+                    Map.of(
+                        HEADCOUNT,
+                        Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
+                .build()))
         .thenReturn(mockHeadcountForecastEntities().get(0));
   }
 
@@ -969,8 +967,7 @@ class GetStaffingTest {
                     .processName(ProcessName.PUT_AWAY)
                     .source(Source.SIMULATION)
                     .value(SIMULATION_HEADCOUNT_PUT_AWAY)
-                    .build())
-        ),
+                    .build())),
         Map.of(
             HEADCOUNT,
             List.of(
@@ -993,8 +990,6 @@ class GetStaffingTest {
                     .processName(ProcessName.BATCH_SORTER)
                     .value(FORECAST_HEADCOUNT_BATCH_SORTER)
                     .source(Source.FORECAST)
-                    .build())
-        )
-    );
+                    .build())));
   }
 }
