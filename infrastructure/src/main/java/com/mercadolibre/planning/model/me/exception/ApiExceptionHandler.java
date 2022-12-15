@@ -24,6 +24,8 @@ public class ApiExceptionHandler {
 
     private static final String EXCEPTION_ATTRIBUTE = "application.exception";
 
+    private static final String BAD_REQUEST_ERROR = "bad_request";
+
     @ExceptionHandler(UserNotAuthorizedException.class)
     public ResponseEntity<ErrorResponse> handle(final UserNotAuthorizedException exception,
                                                 final HttpServletRequest request) {
@@ -156,13 +158,31 @@ public class ApiExceptionHandler {
         return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }
 
+    @ExceptionHandler(ForecastWorkersInvalidException.class)
+    public ResponseEntity<ErrorResponse> handleForecastWorkersInvalidException(
+        ForecastWorkersInvalidException exception,
+        HttpServletRequest request) {
+
+        log.error(exception.getMessage(), exception);
+
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+            .status(HttpStatus.BAD_REQUEST)
+            .message(exception.getMessage())
+            .code(exception.getCode())
+            .error(BAD_REQUEST_ERROR)
+            .build();
+
+        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+    }
+
     private ResponseEntity<ErrorResponse> getBadRequestResponseEntity(
             Exception exception,
             HttpServletRequest request) {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST)
                 .message(exception.getMessage())
-                .error("bad_request")
+                .error(BAD_REQUEST_ERROR)
                 .build();
 
         request.setAttribute(EXCEPTION_ATTRIBUTE, exception);

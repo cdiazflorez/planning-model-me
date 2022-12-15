@@ -150,6 +150,22 @@ class ApiExceptionHandlerTest {
         thenThrow(exception, expectedResponse);
     }
 
+    @Test
+    @DisplayName("Handle ForecastWorkersInvalidException")
+    void handleForecastWorkersInvalidException() {
+        // GIVEN
+        final ForecastWorkersInvalidException exception = new ForecastWorkersInvalidException("test error", "01");
+        final ErrorResponse expectedResponse = ErrorResponse.builder()
+            .error("bad_request")
+            .message("test error")
+            .code("01")
+            .status(HttpStatus.BAD_REQUEST).build();
+        // WHEN
+        response = apiExceptionHandler.handleForecastWorkersInvalidException(exception, request);
+        // THEN
+        thenThrow(exception, expectedResponse);
+    }
+
     private void thenThrow(Exception exception, ErrorResponse expectedResponse) {
         verify(request).setAttribute(EXCEPTION_ATTRIBUTE, exception);
 
