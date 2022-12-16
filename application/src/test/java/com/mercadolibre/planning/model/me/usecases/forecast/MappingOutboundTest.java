@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
+import static com.mercadolibre.planning.model.me.enums.ProcessName.BATCH_SORTER;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
@@ -17,11 +18,13 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_RATIO;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.WORKERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
+import com.mercadolibre.planning.model.me.exception.ForecastWorkersInvalidException;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivityData;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
@@ -84,6 +87,13 @@ class MappingOutboundTest {
         .collect(Collectors.toList());
 
     assertEquals(expectedSorted, actualSorted);
+  }
+
+  @Test
+  void buildProcessingDistributionWithInvalidWorkersTest() {
+    //THEN
+    assertThrows(ForecastWorkersInvalidException.class,
+        () -> MappingOutbound.buildProcessingDistribution(parsedValuesWithInvalidWorkers()));
   }
 
   @Test
@@ -151,6 +161,13 @@ class MappingOutboundTest {
   private Map<ForecastColumn, Object> parsedValuesRatio() {
     return Map.of(
         PROCESSING_DISTRIBUTION, processingDistributions(),
+        HEADCOUNT_RATIO, headcountRatio()
+    );
+  }
+
+  private Map<ForecastColumn, Object> parsedValuesWithInvalidWorkers() {
+    return Map.of(
+        PROCESSING_DISTRIBUTION, processingDistributionsWithInvalidWorkers(),
         HEADCOUNT_RATIO, headcountRatio()
     );
   }
@@ -618,5 +635,44 @@ class MappingOutboundTest {
         )
     );
   }
+
+  private List<ProcessingDistribution> processingDistributionsWithInvalidWorkers() {
+    return List.of(
+        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+            MetricUnit.UNITS_PER_HOUR.getName(),
+            PICKING.getName(),
+            GLOBAL,
+            List.of(
+                new ProcessingDistributionData(
+                    DATE,
+                    -100
+                )
+            )
+        ),
+        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+            MetricUnit.UNITS_PER_HOUR.getName(),
+            PACKING.getName(),
+            GLOBAL,
+            List.of(
+                new ProcessingDistributionData(
+                    DATE,
+                    100
+                )
+            )
+        ),
+        new ProcessingDistribution(WORKERS.toString(),
+            MetricUnit.UNITS_PER_HOUR.getName(),
+            BATCH_SORTER.getName(),
+            GLOBAL,
+            List.of(
+                new ProcessingDistributionData(
+                    DATE,
+                    -100
+                )
+            )
+        )
+    );
+  }
+
 }
 

@@ -24,13 +24,13 @@ import java.util.stream.Stream;
 
 public final class ParseOutboundForecastFromFile {
 
-  private ParseOutboundForecastFromFile() {
-
-  }
-
   private static final StaffingSheetParser STAFFING_SHEET_PARSER = new StaffingSheetParser();
-  private static final RepsForecastSheetParser REPS_FORECAST_SHEET_PARSER = new RepsForecastSheetParser();
-  private static final SalesDistributionSheetParser SALES_DISTRIBUTION_SHEET_PARSER = new SalesDistributionSheetParser();
+  private static final RepsForecastSheetParser REPS_FORECAST_SHEET_PARSER =
+      new RepsForecastSheetParser();
+  private static final SalesDistributionSheetParser SALES_DISTRIBUTION_SHEET_PARSER =
+      new SalesDistributionSheetParser();
+
+  private ParseOutboundForecastFromFile() {}
 
   public static Forecast parse(
       final String warehouseId,
@@ -38,14 +38,15 @@ public final class ParseOutboundForecastFromFile {
       final long userId,
       final LogisticCenterConfiguration config,
       final UploadForecast.FeatureToggles featureToggles) {
-    final var parsedValues =
-        parseSheets(document, selectParsers(document), warehouseId, config);
+    final var parsedValues = parseSheets(document, selectParsers(document), warehouseId, config);
 
     return OutboundForecast.builder()
         .metadata(MappingOutbound.buildForecastMetadata(warehouseId, parsedValues))
-        .processingDistributions(MappingOutbound.buildProcessingDistribution(parsedValues))
+        .processingDistributions(
+            MappingOutbound.buildProcessingDistribution(parsedValues))
         .planningDistributions((List<PlanningDistribution>) parsedValues.get(PLANNING_DISTRIBUTION))
-        .headcountDistributions((List<HeadcountDistribution>) parsedValues.get(HEADCOUNT_DISTRIBUTION))
+        .headcountDistributions(
+            (List<HeadcountDistribution>) parsedValues.get(HEADCOUNT_DISTRIBUTION))
         .headcountProductivities(MappingOutbound.buildHeadcountProductivity(parsedValues))
         .polyvalentProductivities(
             (List<PolyvalentProductivity>) parsedValues.get(POLYVALENT_PRODUCTIVITY))
@@ -55,10 +56,12 @@ public final class ParseOutboundForecastFromFile {
   }
 
   private static Stream<SheetParser> selectParsers(final MeliDocument document) {
-    final MeliSheet processPathStaffingSheet = document.getSheetByName(STAFFING_SHEET_PARSER.name());
+    final MeliSheet processPathStaffingSheet =
+        document.getSheetByName(STAFFING_SHEET_PARSER.name());
 
     if (processPathStaffingSheet != null) {
-      return Stream.of(REPS_FORECAST_SHEET_PARSER, SALES_DISTRIBUTION_SHEET_PARSER, STAFFING_SHEET_PARSER);
+      return Stream.of(
+          REPS_FORECAST_SHEET_PARSER, SALES_DISTRIBUTION_SHEET_PARSER, STAFFING_SHEET_PARSER);
     } else {
       return Stream.of(REPS_FORECAST_SHEET_PARSER, SALES_DISTRIBUTION_SHEET_PARSER);
     }

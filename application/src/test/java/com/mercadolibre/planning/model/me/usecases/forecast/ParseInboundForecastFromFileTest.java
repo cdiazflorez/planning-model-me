@@ -7,7 +7,9 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.mercadolibre.planning.model.me.exception.ForecastWorkersInvalidException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
@@ -20,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ParseInboundForecastFromFileTest {
   private static final String VALID_FILE_PATH = "inbound_planning_ok.xlsx";
+  private static final String FILE_PATH = "inbound_planning_ok_with_invalid_workers_values.xlsx";
 
   private static final LogisticCenterConfiguration CONFIG =
       new LogisticCenterConfiguration(TimeZone.getDefault());
@@ -40,5 +43,15 @@ class ParseInboundForecastFromFileTest {
     assertEquals(INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES.getName(), metadata.get(2).getKey());
     assertEquals(INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES.getName(), metadata.get(3).getKey());
     assertEquals(INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES.getName(), metadata.get(4).getKey());
+  }
+
+  @Test
+  void buildProcessingDistributionWithInvalidWorkersTest() {
+    // GIVEN
+    var document = createMeliDocumentFrom(getResource(FILE_PATH));
+
+    //THEN
+    assertThrows(ForecastWorkersInvalidException.class,
+        () -> ParseInboundForecastFromFile.parse("ARTW01", document, 1234L, CONFIG, logisticCenter -> false));
   }
 }

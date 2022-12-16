@@ -1,5 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.WORKERS_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParserHelper.adaptWeekFormat;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.BACKLOG_LIMITS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY;
@@ -11,6 +15,8 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WEEK;
 
+import com.mercadolibre.planning.model.me.enums.CodeError;
+import com.mercadolibre.planning.model.me.exception.ForecastWorkersInvalidException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
@@ -25,6 +31,7 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.Inbo
 import com.mercadolibre.spreadsheet.MeliDocument;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface ParseInboundForecastFromFile {
@@ -34,25 +41,26 @@ public interface ParseInboundForecastFromFile {
       final MeliDocument document,
       final long userId,
       final LogisticCenterConfiguration config,
-      final UploadForecast.FeatureToggles featureToggle
-  ) {
-    var parsedValues = ForecastParserHelper.parseSheets(
-        document,
-        Stream.of(new InboundRepsForecastSheetParser(featureToggle)),
-        warehouseId,
-        config
-    );
+      final UploadForecast.FeatureToggles featureToggle) {
+    var parsedValues =
+        ForecastParserHelper.parseSheets(
+            document,
+            Stream.of(new InboundRepsForecastSheetParser(featureToggle)),
+            warehouseId,
+            config);
+
+    final List<ProcessingDistribution> processingDistribution = (List<ProcessingDistribution>) parsedValues.get(PROCESSING_DISTRIBUTION);
+
+    invalidActiveAndPresentWorkersColumns(processingDistribution);
 
     return InboundForecast.builder()
         .metadata(buildForecastMetadata(warehouseId, parsedValues))
-        .processingDistributions((List<ProcessingDistribution>)
-            parsedValues.get(PROCESSING_DISTRIBUTION))
-        .headcountProductivities((List<HeadcountProductivity>)
-            parsedValues.get(HEADCOUNT_PRODUCTIVITY))
-        .polyvalentProductivities((List<PolyvalentProductivity>)
-            parsedValues.get(POLYVALENT_PRODUCTIVITY))
-        .backlogLimits((List<BacklogLimit>)
-            parsedValues.get(BACKLOG_LIMITS))
+        .processingDistributions(processingDistribution)
+        .headcountProductivities(
+            (List<HeadcountProductivity>) parsedValues.get(HEADCOUNT_PRODUCTIVITY))
+        .polyvalentProductivities(
+            (List<PolyvalentProductivity>) parsedValues.get(POLYVALENT_PRODUCTIVITY))
+        .backlogLimits((List<BacklogLimit>) parsedValues.get(BACKLOG_LIMITS))
         .userID(userId)
         .build();
   }
@@ -64,12 +72,37 @@ public interface ParseInboundForecastFromFile {
     return List.of(
         new Metadata(WAREHOUSE_ID.getName(), warehouseId),
         new Metadata(WEEK.getName(), adaptWeekFormat(String.valueOf(parsedValues.get(WEEK)))),
-        new Metadata(INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES.getName(), String.valueOf(parsedValues.get(
-            INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES))),
-        new Metadata(INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES.getName(), String.valueOf(parsedValues.get(
-            INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES))),
-        new Metadata(INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES.getName(), String.valueOf(parsedValues.get(
-            INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES)))
-    );
+        new Metadata(
+            INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES.getName(),
+            String.valueOf(parsedValues.get(INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES))),
+        new Metadata(
+            INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES.getName(),
+            String.valueOf(parsedValues.get(INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES))),
+        new Metadata(
+            INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES.getName(),
+            String.valueOf(parsedValues.get(INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES))));
+  }
+
+  private static void invalidActiveAndPresentWorkersColumns(
+      final List<ProcessingDistribution> processingDistribution
+  ) {
+    final List<String> invalidActiveAndPresentWorkers =
+        processingDistribution.stream()
+            .filter(
+                distribution ->
+                    (distribution.getType().equals(WORKERS.toString())
+                            || distribution.getType().equals(ACTIVE_WORKERS.toString())
+                            || distribution.getType().equals(ACTIVE_WORKERS_NS.toString())
+                            || distribution.getType().equals(WORKERS_NS.toString()))
+                        && distribution.getData().stream()
+                            .anyMatch(data -> data.getQuantity() < 0.0))
+            .map(workers -> workers.getProcessName() + "-" + workers.getType())
+            .collect(Collectors.toList());
+
+    if (!invalidActiveAndPresentWorkers.isEmpty()) {
+      throw new ForecastWorkersInvalidException(
+          CodeError.SBO001.getMessage() + " - " + invalidActiveAndPresentWorkers,
+          CodeError.SBO001.getName());
+    }
   }
 }

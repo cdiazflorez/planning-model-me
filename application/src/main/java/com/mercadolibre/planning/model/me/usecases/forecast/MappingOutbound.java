@@ -16,9 +16,12 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.WORKERS;
 
+import com.mercadolibre.planning.model.me.enums.CodeError;
 import com.mercadolibre.planning.model.me.enums.ProcessPath;
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
+import com.mercadolibre.planning.model.me.exception.ForecastWorkersInvalidException;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
@@ -57,13 +60,18 @@ final class MappingOutbound {
     return headcountProductivities;
   }
 
-  static List<ProcessingDistribution> buildProcessingDistribution(final Map<ForecastColumn, Object> parsedValues) {
+  static List<ProcessingDistribution> buildProcessingDistribution(
+      final Map<ForecastColumn, Object> parsedValues
+  ) {
+    final List<ProcessingDistribution> processingDistribution = (List<ProcessingDistribution>) parsedValues.get(PROCESSING_DISTRIBUTION);
+
+    validateActiveAndPresentWorkersColumns(processingDistribution);
+
     if (!parsedValues.containsKey(HEADCOUNT_RATIO)) {
-      return (List<ProcessingDistribution>) parsedValues.get(PROCESSING_DISTRIBUTION);
+      return processingDistribution;
     }
 
     final List<HeadcountRatio> ratiosPP = (List<HeadcountRatio>) parsedValues.get(HEADCOUNT_RATIO);
-    final List<ProcessingDistribution> processingDistribution = (List<ProcessingDistribution>) parsedValues.get(PROCESSING_DISTRIBUTION);
 
     final var pickingGlobalHeadcount = processingDistribution.stream()
         .filter(processing -> PICKING.getName().equals(processing.getProcessName())
@@ -170,4 +178,24 @@ final class MappingOutbound {
             )
         );
   }
+
+  private static void validateActiveAndPresentWorkersColumns(
+      final List<ProcessingDistribution> processingDistribution) {
+    final List<String> invalidActiveAndPresentWorkers =
+        processingDistribution.stream()
+            .filter(
+                distribution ->
+                    (distribution.getType().equals(WORKERS.toString())
+                        || distribution.getType().equals(ACTIVE_WORKERS.toString()))
+                        && distribution.getData().stream().anyMatch(qty -> qty.getQuantity() < 0.0))
+            .map(workers -> workers.getProcessName() + "-" + workers.getType())
+            .collect(Collectors.toList());
+
+    if (!invalidActiveAndPresentWorkers.isEmpty()) {
+      throw new ForecastWorkersInvalidException(
+          CodeError.SBO001.getMessage() + " - " + invalidActiveAndPresentWorkers,
+          CodeError.SBO001.getName());
+    }
+  }
+
 }
