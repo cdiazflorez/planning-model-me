@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
@@ -14,32 +15,32 @@ import lombok.RequiredArgsConstructor;
 
 public enum ProcessName {
 
-  PICKING(true, false, new Single("PICKING"), Step.TO_PICK),
-  PACKING_WALL(false, false, new Single("PACKING_WALL"), Step.TO_PACK),
+  PICKING(true, false, new Single("PICKING"), List.of(Step.TO_PICK, Step.TO_ROUTE)),
+  PACKING_WALL(false, false, new Single("PACKING_WALL"), List.of(Step.TO_PACK)),
   PACKING(
       false,
       false,
       new Multiple(Multiple.Layout.parallel, new Single("PACKING"), PACKING_WALL.graph),
-      Step.TO_PACK
+      List.of(Step.TO_PACK)
   ),
   WAVING(
       false,
       true,
       new Multiple(Multiple.Layout.serial, PICKING.graph, PACKING.graph),
-      Step.PENDING
+      List.of(Step.PENDING)
   ),
-  BATCH_SORTER(false, false, new Single("BATCH_SORTER"), Step.TO_SORT),
-  WALL_IN(false, false, new Single("WALL_IN"), Step.TO_GROUP),
+  BATCH_SORTER(false, false, new Single("BATCH_SORTER"), List.of(Step.TO_SORT)),
+  WALL_IN(false, false, new Single("WALL_IN"), List.of(Step.TO_GROUP, Step.SORTED, Step.GROUPING)),
   GLOBAL(false, false, new Single("GLOBAL")),
-  CHECK_IN(false, false, new Single("CHECK_IN"), Step.CHECK_IN),
-  SCHEDULED(false, false, new Single("SCHEDULED"), Step.SCHEDULED),
-  PUT_AWAY(false, false, new Single("PUT_AWAY"), Step.PUT_AWAY),
+  CHECK_IN(false, false, new Single("CHECK_IN"), List.of(Step.CHECK_IN)),
+  SCHEDULED(false, false, new Single("SCHEDULED"), List.of(Step.SCHEDULED)),
+  PUT_AWAY(false, false, new Single("PUT_AWAY"), List.of(Step.PUT_AWAY)),
   RECEIVING(false, false, new Single("RECEIVING"));
 
-  private static final Map<Step, ProcessName> PROCESS_BY_STEP = Arrays.stream(values())
-      .filter(process -> process.getStep() != null && process.getStep() != Step.TO_PACK)
+  private static final Map<ProcessName, List<Step>> PROCESS_BY_STEP = Arrays.stream(values())
+      .filter(process -> process.getSteps() != null && !process.getSteps().contains(Step.TO_PACK))
       .collect(
-          toMap(ProcessName::getStep, Function.identity())
+          toMap(Function.identity(), ProcessName::getSteps)
       );
 
   public final boolean hasAreas;
@@ -49,7 +50,7 @@ public enum ProcessName {
    * the backlog of this process is sent.
    **/
   public final Graph graph;
-  public Step step;
+  public List<Step> steps;
 
   ProcessName(
       final boolean hasAreas,
@@ -65,12 +66,12 @@ public enum ProcessName {
       final boolean hasAreas,
       final boolean hasTargetBacklog,
       final Graph graph,
-      final Step step
+      final List<Step> step
   ) {
     this.hasAreas = hasAreas;
     this.hasTargetBacklog = hasTargetBacklog;
     this.graph = graph;
-    this.step = step;
+    this.steps = step;
   }
 
   @JsonCreator
@@ -79,7 +80,11 @@ public enum ProcessName {
   }
 
   public static ProcessName getProcessByStep(final Step step) {
-    return PROCESS_BY_STEP.get(step);
+    return PROCESS_BY_STEP
+        .entrySet().stream()
+        .filter(r -> r.getValue().contains(step))
+        .findFirst()
+        .orElseThrow().getKey();
   }
 
   @JsonValue
@@ -95,8 +100,8 @@ public enum ProcessName {
     return hasTargetBacklog;
   }
 
-  public Step getStep() {
-    return step;
+  public List<Step> getSteps() {
+    return steps;
   }
 
 

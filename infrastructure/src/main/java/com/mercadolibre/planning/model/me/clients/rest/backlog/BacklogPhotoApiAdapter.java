@@ -139,7 +139,8 @@ public class BacklogPhotoApiAdapter implements BacklogPhotoApiGateway {
 
   private Set<Step> processesToSteps(final Set<ProcessName> processes) {
     return processes.stream()
-        .map(ProcessName::getStep)
+        .map(ProcessName::getSteps)
+        .flatMap(List::stream)
         .collect(Collectors.toSet());
   }
 

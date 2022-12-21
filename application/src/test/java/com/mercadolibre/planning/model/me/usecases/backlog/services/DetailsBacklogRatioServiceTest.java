@@ -203,8 +203,8 @@ public class DetailsBacklogRatioServiceTest {
         REQUEST_DATE,
         null,
         null,
-        slaFrom,
-        slaTo,
+        null,
+        null,
         Set.of(BacklogGrouper.STEP, BacklogGrouper.AREA)
     );
   }

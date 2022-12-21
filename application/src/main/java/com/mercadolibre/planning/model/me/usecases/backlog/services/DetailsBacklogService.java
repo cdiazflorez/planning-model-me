@@ -82,8 +82,8 @@ public class DetailsBacklogService implements GetBacklogMonitorDetails.BacklogPr
             input.getRequestDate(),
             null,
             null,
-            input.getSlaFrom(),
-            input.getSlaTo(),
+            null,
+            null,
             Set.of(STEP, AREA)
         ),
         false
