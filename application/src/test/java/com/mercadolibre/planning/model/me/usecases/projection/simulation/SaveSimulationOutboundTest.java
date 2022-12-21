@@ -24,6 +24,7 @@ import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyList;
+import static java.util.List.of;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -304,18 +305,8 @@ class SaveSimulationOutboundTest {
             mockProjections(utcCurrentTime),
             new LogisticCenterConfiguration(TIME_ZONE)));
 
-    when(backlogGateway.getCurrentBacklog(
-        WAREHOUSE_ID,
-        List.of("outbound-orders"),
-        steps,
-        now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-        now().truncatedTo(ChronoUnit.HOURS).plusDays(1).plusHours(2).toInstant(),
-        List.of("date_out"))
-    ).thenReturn(List.of(
-        new Consolidation(null, Map.of("date_out", getCurrentTime().minusHours(1).toString()), 150, true),
-        new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(2).toString()), 235, true),
-        new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(3).toString()), 300, true)
-    ));
+    when(backlogGateway.getLastPhoto(any())
+    ).thenReturn(generatePhoto(Instant.now()));
 
     when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedPlanningBacklog);
   }
@@ -615,6 +606,29 @@ class SaveSimulationOutboundTest {
         emptyList(),
         new ComplexTableAction("applyLabel", "cancelLabel", "editLabel"),
         "title"
+    );
+  }
+
+  private Photo generatePhoto(final Instant photoDate) {
+    return new Photo(
+        photoDate,
+        of(
+            new Photo.Group(
+                Map.of(DATE_OUT, getCurrentTime().minusHours(1).toString()),
+                150,
+                0
+            ),
+            new Photo.Group(
+                Map.of(DATE_OUT, getCurrentTime().plusHours(2).toString()),
+                235,
+                0
+            ),
+            new Photo.Group(
+                Map.of(DATE_OUT, getCurrentTime().plusHours(3).toString()),
+                300,
+                0
+            )
+        )
     );
   }
 }

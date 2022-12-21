@@ -2,16 +2,18 @@ package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZoneOffset.UTC;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotosRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -29,10 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class GetBacklogScheduledTest {
 
-    private static final String WORKFLOW_KEY = "workflow";
-    private static final String DATE_IN_KEY = "date_in";
     private static final int AMOUNT_TO_ADD_MINUTES = 5;
-    private static final int AMOUNT_TO_ADD_DAYS = 1;
     private static final int QUANTITY_BACKLOG = 500;
     private static final int QUANTITY_BACKLOG_CURRENT = 275;
 
@@ -69,21 +68,9 @@ public class GetBacklogScheduledTest {
                 .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
 
         //first photo of day
-        when(backlogGateway.getBacklog(
-                new BacklogRequest(WAREHOUSE_ID, today, photoDateTo)
-                        .withWorkflows(List.of("inbound", "INBOUND-TRANSFER"))
-                        .withGroupingFields(List.of(DATE_IN_KEY, WORKFLOW_KEY))
-                        .withSteps(List.of("SCHEDULED"))
-                        .withDateInRange(today, today.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS))
-        )).thenReturn(responseGetBacklog());
+        when(backlogGateway.getPhotos(any(BacklogPhotosRequest.class))).thenReturn(responseGetBacklog(true));
 
-        when(backlogGateway.getCurrentBacklog(
-                new BacklogCurrentRequest(WAREHOUSE_ID)
-                        .withWorkflows(List.of("inbound", "INBOUND-TRANSFER"))
-                        .withSteps(List.of("CHECK_IN", "PUT_AWAY", "FINISHED"))
-                        .withDateInRange(today, now)
-                        .withGroupingFields(List.of("process", WORKFLOW_KEY))
-        )).thenReturn(responseGetCurrentBacklog());
+        when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(responseGetCurrentBacklog(true));
 
         final Map<String, BacklogScheduled> response = getBacklogScheduled.execute(WAREHOUSE_ID, now);
 
@@ -117,9 +104,6 @@ public class GetBacklogScheduledTest {
 
     @Test
     public void testBacklogScheduledWithoutTransferBacklog() {
-        //GIVEN
-        final Instant photoDateTo = today.plus(AMOUNT_TO_ADD_MINUTES, ChronoUnit.MINUTES);
-
         //WHEN
         when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
             .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
@@ -127,30 +111,18 @@ public class GetBacklogScheduledTest {
             .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
 
         //first photo of day
-        when(backlogGateway.getBacklog(
-            new BacklogRequest(WAREHOUSE_ID, today, photoDateTo)
-                .withWorkflows(List.of("inbound", "INBOUND-TRANSFER"))
-                .withGroupingFields(List.of(DATE_IN_KEY, WORKFLOW_KEY))
-                .withSteps(List.of("SCHEDULED"))
-                .withDateInRange(today, today.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS))
-        )).thenReturn(responseGetBacklog().subList(0, 1));
+        when(backlogGateway.getPhotos(any(BacklogPhotosRequest.class))).thenReturn(responseGetBacklog(false));
 
-        when(backlogGateway.getCurrentBacklog(
-            new BacklogCurrentRequest(WAREHOUSE_ID)
-                .withWorkflows(List.of("inbound", "INBOUND-TRANSFER"))
-                .withSteps(List.of("CHECK_IN", "PUT_AWAY", "FINISHED"))
-                .withDateInRange(today, now)
-                .withGroupingFields(List.of("process", WORKFLOW_KEY))
-        )).thenReturn(responseGetCurrentBacklog().subList(0, 1));
+        when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(null);
 
         final Map<String, BacklogScheduled> response = getBacklogScheduled.execute(WAREHOUSE_ID, now);
 
         //expected
         BacklogScheduled expectedBacklogSeller = new BacklogScheduled(
             Indicator.builder().units(500).build(),
-            Indicator.builder().units(275).build(),
             Indicator.builder().units(0).build(),
-            Indicator.builder().units(225).percentage(-0.45).build()
+            Indicator.builder().units(0).build(),
+            Indicator.builder().units(500).percentage(-1.0).build()
         );
 
         BacklogScheduled expectedBacklogTransfer = new BacklogScheduled(
@@ -166,37 +138,52 @@ public class GetBacklogScheduledTest {
         Assertions.assertEquals(response.get("inbound"), response.get("total"));
     }
 
-    private List<Consolidation> responseGetBacklog() {
-        return List.of(
-            new Consolidation(
-                Instant.now(),
-                Map.of(DATE_IN_KEY, today.toString(), WORKFLOW_KEY, "inbound"),
-                QUANTITY_BACKLOG,
-                true
-            ),
-            new Consolidation(
-                Instant.now(),
-                Map.of(DATE_IN_KEY, today.toString(), WORKFLOW_KEY, "INBOUND-TRANSFER"),
-                QUANTITY_BACKLOG + 150,
-                true
+    private List<Photo> responseGetBacklog(boolean transfer) {
+
+        return transfer
+            ? List.of(new Photo(
+            Instant.now(),
+            List.of(
+                new Photo.Group(
+                    Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
+                    QUANTITY_BACKLOG,
+                    0
+                ),
+                new Photo.Group(
+                    Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"),
+                    QUANTITY_BACKLOG + 150,
+                    0
+                )
             )
-        );
+        ))
+            : List.of(new Photo(
+            Instant.now(),
+            List.of(
+                new Photo.Group(
+                    Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
+                    QUANTITY_BACKLOG,
+                    0
+                )
+            )
+        ));
     }
 
-    private List<Consolidation> responseGetCurrentBacklog() {
-        return List.of(
-            new Consolidation(
-                Instant.now(),
-                Map.of(DATE_IN_KEY, today.toString(), WORKFLOW_KEY, "inbound"),
+    private Photo responseGetCurrentBacklog(boolean transfer) {
+        return new Photo(Instant.now(),
+            transfer
+                ? List.of(new Photo.Group(
+                    Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
+                    QUANTITY_BACKLOG_CURRENT,
+                    0
+                ),
+                new Photo.Group(Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"),
+                    QUANTITY_BACKLOG_CURRENT - 125,
+                    0))
+                : List.of(new Photo.Group(
+                Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
                 QUANTITY_BACKLOG_CURRENT,
-                true
-            ),
-            new Consolidation(
-                Instant.now(),
-                Map.of(DATE_IN_KEY, today.toString(), WORKFLOW_KEY, "INBOUND-TRANSFER"),
-                QUANTITY_BACKLOG_CURRENT - 125,
-                true
-            )
+                0
+            ))
         );
     }
 }

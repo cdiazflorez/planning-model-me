@@ -1,18 +1,26 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
+import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotosRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.inject.Named;
@@ -23,7 +31,7 @@ import org.apache.commons.math3.util.Precision;
 @Named
 @AllArgsConstructor
 public class GetBacklogScheduled {
-  private static final List<BacklogWorkflow> INBOUND_WORKFLOWS = List.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER);
+  private static final Set<BacklogWorkflow> INBOUND_WORKFLOWS = Set.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER);
   private static final String WORKFLOW_KEY = "workflow";
   private static final String DATE_IN_KEY = "date_in";
   private static final int SCALE_DECIMAL = 2;
@@ -125,30 +133,42 @@ public class GetBacklogScheduled {
    * Get the total number of units corresponding to shipments whose scheduled arrival date is between the specified dates, according to the last backlog photo
    */
   private Map<BacklogWorkflow, Integer> getReceivedInboundBacklog(String warehouse, Instant scheduledDateFrom, Instant scheduledDateTo) {
-    final List<Consolidation> receivedInboundBacklog = backlogGateway.getCurrentBacklog(
-        new BacklogCurrentRequest(warehouse)
-            .withDateInRange(scheduledDateFrom, scheduledDateTo)
-            .withWorkflows(INBOUND_WORKFLOWS.stream().map(BacklogWorkflow::getName).collect(Collectors.toList()))
-            .withSteps(List.of("CHECK_IN", "PUT_AWAY", "FINISHED"))
-            .withGroupingFields(List.of("process", WORKFLOW_KEY)));
+    final Photo photo = backlogGateway.getLastPhoto(
+        new BacklogLastPhotoRequest(
+            warehouse,
+            INBOUND_WORKFLOWS,
+            Set.of(Step.CHECK_IN, Step.PUT_AWAY, Step.FINISHED),
+            scheduledDateFrom,
+            scheduledDateTo,
+            null,
+            null,
+            Set.of(BacklogGrouper.PROCESS, BacklogGrouper.WORKFLOW),
+            Instant.now()
+            ));
+
+    final List<Photo.Group> receivedInboundBacklog = photo == null ? Collections.emptyList() : photo.getGroups();
+
 
     return INBOUND_WORKFLOWS.stream()
         .collect(Collectors.toMap(
             workflow -> workflow,
             workflow -> receivedInboundBacklog.stream()
-                .filter(c -> c.getKeys().get(WORKFLOW_KEY).equals(workflow.getName()))
-                .mapToInt(Consolidation::getTotal).sum()
+                .filter(c -> c.getKey().get(BacklogGrouper.WORKFLOW).equals(workflow.getName()))
+                .mapToInt(Photo.Group::getTotal).sum()
         ));
   }
 
   private Map<BacklogWorkflow, Map<Instant, Integer>> getFirstBacklogPhotoTaken(String warehouse, Instant since) {
-    return this.getFirstPhotoOfDay(warehouse, since).entrySet().stream().collect(
+    return this.getFirstPhotoOfDay(warehouse, since)
+        .entrySet()
+        .stream()
+        .collect(
         Collectors.toMap(
             Map.Entry::getKey,
             v -> v.getValue().stream().collect(
                 Collectors.toMap(
-                  consolidation -> Instant.parse(consolidation.getKeys().get(DATE_IN_KEY)),
-                  Consolidation::getTotal,
+                  photoGroup -> Instant.parse(photoGroup.getKey().get(BacklogGrouper.DATE_IN)),
+                  Photo.Group::getTotal,
                   (firstPhotoValue, secondPhotoValue) -> firstPhotoValue
                 )
             ))
@@ -158,36 +178,29 @@ public class GetBacklogScheduled {
   /**
    * Get number of units grouped by arrival date that were scheduled to arrive during a day according to the first photo taken that day.
    */
-  private Map<BacklogWorkflow, List<Consolidation>> getFirstPhotoOfDay(String warehouseId, Instant dayDate) {
+  private Map<BacklogWorkflow, List<Photo.Group>> getFirstPhotoOfDay(String warehouseId, Instant dayDate) {
     final Instant photoDateTo = dayDate.plus(AMOUNT_TO_ADD_MINUTES, ChronoUnit.MINUTES);
-    List<Consolidation> photos = backlogGateway.getBacklog(
-        new BacklogRequest(warehouseId, dayDate, photoDateTo)
-            .withWorkflows(INBOUND_WORKFLOWS.stream().map(BacklogWorkflow::getName).collect(Collectors.toList()))
-            .withSteps(List.of("SCHEDULED"))
-            .withGroupingFields(List.of(DATE_IN_KEY, WORKFLOW_KEY))
-            .withDateInRange(dayDate, dayDate.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS))
-    );
+    List<Photo> photos = backlogGateway.getPhotos(new BacklogPhotosRequest(
+        warehouseId,
+        INBOUND_WORKFLOWS,
+        Set.of(Step.SCHEDULED),
+        dayDate,
+        dayDate.plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS),
+        null,
+        null,
+        Set.of(BacklogGrouper.DATE_IN, BacklogGrouper.WORKFLOW),
+        dayDate,
+        photoDateTo
+    ));
 
-    final var consolidationsByWorkflow = INBOUND_WORKFLOWS.stream()
+    final List<Photo.Group> groups = photos.stream().min(Comparator.comparing(Photo::getTakenOn)).map(Photo::getGroups).orElse(List.of());
+
+    return INBOUND_WORKFLOWS.stream()
         .collect(Collectors.toMap(
             workflow -> workflow,
-            workflow -> photos.stream()
-                .filter(c -> c.getKeys().get(WORKFLOW_KEY).equals(workflow.getName()))
-                .collect(
-                    Collectors.groupingBy(
-                        Consolidation::getDate,
-                        TreeMap::new,
-                        Collectors.toList()
-                    )
-                )
-        ));
-
-    return consolidationsByWorkflow.entrySet().stream()
-        .collect(Collectors.toMap(
-            Map.Entry::getKey,
-            v -> v.getValue().isEmpty()
-                ? List.of()
-                : v.getValue().firstEntry().getValue()
+            workflow -> groups.stream()
+                .filter(group -> group.getKey().get(BacklogGrouper.WORKFLOW).equals(workflow.getName()))
+                .collect(Collectors.toList())
         ));
   }
 }

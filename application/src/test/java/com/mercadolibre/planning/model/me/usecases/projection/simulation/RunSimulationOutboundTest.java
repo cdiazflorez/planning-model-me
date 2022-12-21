@@ -134,8 +134,6 @@ public class RunSimulationOutboundTest {
   @Test
   public void testExecute() {
     // Given
-    final List<String> steps = List.of("pending", "to_route", "to_pick", "picked", "to_sort", "sorted", "to_group",
-        "grouping", "grouped", "to_pack");
     final ZonedDateTime utcCurrentTime = getCurrentTime();
     final List<Backlog> mockedBacklog = mockBacklog(utcCurrentTime);
     final List<Backlog> mockedPlanningBacklog = mockPlanningBacklog(utcCurrentTime);
@@ -163,19 +161,8 @@ public class RunSimulationOutboundTest {
             mockProjections(utcCurrentTime),
             new LogisticCenterConfiguration(TIME_ZONE)));
 
-    when(backlogGateway.getCurrentBacklog(
-        WAREHOUSE_ID,
-        List.of("outbound-orders"),
-        steps,
-        now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-        now().truncatedTo(ChronoUnit.HOURS).plusDays(1).plusHours(1).toInstant(),
-        List.of("date_out"))
-
-    ).thenReturn(List.of(
-        new Consolidation(null, Map.of("date_out", getCurrentTime().minusHours(1).toString()), 150, true),
-        new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(2).toString()), 235, true),
-        new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(3).toString()), 300, true)
-    ));
+    when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class)))
+        .thenReturn(generatePhoto(Instant.now()));
 
     when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedPlanningBacklog);
 
@@ -223,19 +210,8 @@ public class RunSimulationOutboundTest {
             mockProjections(UTC_CURRENT_DATE),
             new LogisticCenterConfiguration(TIME_ZONE)));
 
-    when(backlogGateway.getCurrentBacklog(
-        WAREHOUSE_ID,
-        List.of("outbound-orders"),
-        steps,
-        now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-        now().truncatedTo(ChronoUnit.HOURS).plusDays(1).plusHours(1).toInstant(),
-        List.of("date_out"))
-
-    ).thenReturn(List.of(
-        new Consolidation(null, Map.of("date_out", getCurrentTime().minusHours(1).toString()), 150, true),
-        new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(2).toString()), 235, true),
-        new Consolidation(null, Map.of("date_out", getCurrentTime().plusHours(3).toString()), 300, true)
-    ));
+    when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class)))
+        .thenReturn(generatePhoto(Instant.now()));
 
     when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedPlanningBacklog);
 

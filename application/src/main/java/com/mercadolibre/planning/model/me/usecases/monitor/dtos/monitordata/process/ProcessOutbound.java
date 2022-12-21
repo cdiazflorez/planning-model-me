@@ -19,32 +19,38 @@ public enum ProcessOutbound {
     OUTBOUND_PLANNING(
             "pending",
             "Ready to Wave",
-            "Outbound Planning",
+            "Waving",
             0,
             asList(TOTAL_BACKLOG, IMMEDIATE_BACKLOG)),
     PICKING(
-            "to_pick",
+            "to_pick,to_route",
             "Ready to Pick",
             "Picking",
             1,
             singletonList(TOTAL_BACKLOG)),
+    BATCH_SORTED(
+        "to_sort",
+        "Ready to Sort",
+        "Batch Sorter",
+        2,
+        singletonList(TOTAL_BACKLOG)),
     WALL_IN(
-            "sorted,to_group",
-            "Ready to Group",
+            "sorted,to_group,grouping",
+            "Ready to Group, Sorted, Grouping",
             "Wall",
-            2,
+            3,
             singletonList(TOTAL_BACKLOG)),
     PACKING(
             "to_pack",
             "Ready to Pack",
-            "Packing normal",
-            3,
+            "Packing Regular",
+            4,
             singletonList(TOTAL_BACKLOG)),
     PACKING_WALL(
             "to_pack",
             "Ready to Pack",
-            "Packing de wall",
-            4,
+            "Packing Wall",
+            5,
             singletonList(TOTAL_BACKLOG));
 
     private final String status;
