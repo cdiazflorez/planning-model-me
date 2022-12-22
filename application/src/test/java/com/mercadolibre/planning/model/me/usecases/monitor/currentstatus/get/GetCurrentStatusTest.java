@@ -365,7 +365,8 @@ class GetCurrentStatusTest {
                 "immediateBacklog", ProcessBacklog.builder().process(OUTBOUND_PLANNING.getStatus()).immediateQuantity(200).build(),
                 "wallInBacklog", ProcessBacklog.builder().process(WALL_IN.getStatus()).quantity(725).build(),
                 "packingWallBacklog", ProcessBacklog.builder().process(PACKING_WALL.getStatus()).quantity(725).area("PW").build(),
-                "batchSortedBacklog", ProcessBacklog.builder().process(BATCH_SORTED.getStatus()).quantity(725).build()
+                "batchSortedBacklog", ProcessBacklog.builder().process(BATCH_SORTED.getStatus()).quantity(725).build(),
+                "batch", ProcessBacklog.builder().process(BATCH_SORTED.getStatus()).quantity(725).area("PW").build()
         );
 
         if (isEnableCallBacklogApi) {

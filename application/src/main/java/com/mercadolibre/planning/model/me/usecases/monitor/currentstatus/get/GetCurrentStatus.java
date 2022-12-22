@@ -146,7 +146,8 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
             final ProcessBacklog packingWall = ProcessBacklog.builder()
                     .process(PACKING_WALL.getStatus())
                     .quantity(lastPhotoGroup.stream()
-                            .filter(item -> PW.equals(item.getKey().get(AREA)))
+                            .filter(item -> PW.equals(item.getKey().get(AREA))
+                                && PACKING.getStatus().equalsIgnoreCase(item.getKey().get(STEP)))
                             .mapToInt(Photo.Group::getTotal).sum())
                     .area(PW)
                     .build();
