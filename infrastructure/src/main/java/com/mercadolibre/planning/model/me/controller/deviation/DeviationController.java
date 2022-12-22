@@ -1,5 +1,9 @@
 package com.mercadolibre.planning.model.me.controller.deviation;
 
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
+import static java.util.Collections.singletonList;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
@@ -11,6 +15,8 @@ import com.mercadolibre.planning.model.me.usecases.deviation.DisableDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.SaveDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.newrelic.api.agent.Trace;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.PropertyEditorRegistry;
@@ -22,13 +28,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
-import static java.util.Collections.singletonList;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 
 @Slf4j
