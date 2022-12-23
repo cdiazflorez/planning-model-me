@@ -47,7 +47,7 @@ public class BacklogPhotoApiAdapterTest {
   @Test
   void testExecuteBacklogSummary() {
     // GIVEN
-    final BacklogPhotosRequest photoRequestMock = createBacklogPhotoRequest(Set.of(Step.TO_PICK, Step.TO_PACK));
+    final BacklogPhotosRequest photoRequestMock = createBacklogPhotoRequest(Set.of(Step.TO_PICK, Step.TO_ROUTE, Step.TO_PACK));
     when(backlogApiGateway.getPhotos(photoRequestMock))
         .thenReturn(mockPhotos());
 
@@ -90,7 +90,7 @@ public class BacklogPhotoApiAdapterTest {
   @Test
   void testExecuteBacklogSummaryCached() {
     // GIVEN
-    final BacklogPhotosRequest photoRequestMock = createBacklogPhotoRequest(Set.of(Step.TO_PICK, Step.TO_PACK));
+    final BacklogPhotosRequest photoRequestMock = createBacklogPhotoRequest(Set.of(Step.TO_PICK, Step.TO_ROUTE, Step.TO_PACK));
     when(backlogApiGateway.getPhotosCached(photoRequestMock))
         .thenReturn(mockPhotos());
 
@@ -109,7 +109,7 @@ public class BacklogPhotoApiAdapterTest {
   @Test
   void testExecuteBacklogDetails() {
     // GIVEN
-    final BacklogPhotosRequest photoRequestMock = createBacklogPhotoRequest(Set.of(Step.TO_PICK, Step.TO_PACK));
+    final BacklogPhotosRequest photoRequestMock = createBacklogPhotoRequest(Set.of(Step.TO_PICK, Step.TO_ROUTE, Step.TO_PACK));
     when(backlogApiGateway.getPhotos(photoRequestMock))
         .thenReturn(mockPhotos());
 

@@ -1,5 +1,27 @@
 package com.mercadolibre.planning.model.me.usecases.monitor;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.CURRENT_STATUS;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.BATCH_SORTED;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.OUTBOUND_PLANNING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING_WALL;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PICKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.WALL_IN;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static java.util.TimeZone.getDefault;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
+
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -19,39 +41,17 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.devi
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
+import java.util.TreeSet;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.TreeSet;
-
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.CURRENT_STATUS;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.OUTBOUND_PLANNING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING_WALL;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PICKING;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.WALL_IN;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static java.util.TimeZone.getDefault;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GetMonitorTest {
@@ -97,7 +97,7 @@ class GetMonitorTest {
         final CurrentStatusData currentStatusData = (CurrentStatusData) monitorDataList.get(1);
         final Set<Process> processes = currentStatusData.getProcesses();
         assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
-        assertEquals(5, processes.size());
+        assertEquals(6, processes.size());
 
         List<Process> processList = new ArrayList<>(currentStatusData.getProcesses());
 
@@ -220,7 +220,15 @@ class GetMonitorTest {
                                                         WALL_IN.getSubtitle(),
                                                         "725 uds.")
                                                 )
-                                        ).build()
+                                        ).build(),
+                                Process.builder().title(BATCH_SORTED.getTitle())
+                                    .metrics(
+                                        List.of(createMetric(TOTAL_BACKLOG.getTitle(),
+                                            TOTAL_BACKLOG.getType(),
+                                            BATCH_SORTED.getSubtitle(),
+                                            "725 uds.")
+                                        )
+                                    ).build()
                         ))
                 ).build());
 

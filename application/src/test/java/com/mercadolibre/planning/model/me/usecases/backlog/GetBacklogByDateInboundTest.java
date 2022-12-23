@@ -5,16 +5,20 @@ import static java.util.List.of;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.enums.ProcessName;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
+import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
+import com.mercadolibre.planning.model.me.entities.workflows.Step;
+import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.services.backlog.BacklogApiAdapter;
+import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,44 +35,52 @@ public class GetBacklogByDateInboundTest {
   @InjectMocks
   private GetBacklogByDateInbound getBacklogByDateInbound;
   @Mock
-  private BacklogApiAdapter backlogApiAdapter;
+  private BacklogApiGateway backlogApiGateway;
 
   @Test
   public void testGetBacklogByDateInbound() {
 
     final Instant now = Instant.now().truncatedTo(ChronoUnit.MINUTES);
     final String warehouseId = "ARTW01";
-    final List<Workflow> workflows = of(Workflow.FBM_WMS_INBOUND);
-    final List<ProcessName> processNames = of(ProcessName.CHECK_IN, ProcessName.PUT_AWAY);
-    final Instant dateFrom = now.minus(1, ChronoUnit.HOURS);
+    final Set<BacklogWorkflow> workflows = Set.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER);
+    final Set<Step> processNames = Set.of(Step.CHECK_IN, Step.PUT_AWAY);
+    final Set<BacklogGrouper> groupers = Set.of(DATE_OUT);
     final Instant slaFrom = now.minus(30, ChronoUnit.DAYS);
     final Instant slaTo = now.plus(1, ChronoUnit.DAYS);
 
-    when(backlogApiAdapter.getCurrentBacklog(
-        now,
+    when(backlogApiGateway.getLastPhoto(new BacklogLastPhotoRequest(
         warehouseId,
         workflows,
         processNames,
-        of(DATE_OUT),
-        dateFrom,
-        now,
+        null,
+        null,
         slaFrom,
-        slaTo))
-        .thenReturn(responseGetCurrentBacklog());
+        slaTo,
+        groupers,
+        now))).thenReturn(responseGetCurrentBacklog(), null);
 
     List<Backlog> response = getBacklogByDateInbound.execute(new GetBacklogByDateDto(
         Workflow.FBM_WMS_INBOUND, warehouseId, slaFrom, slaTo
     ));
 
+    List<Backlog> responseEmpty = getBacklogByDateInbound.execute(new GetBacklogByDateDto(
+        Workflow.FBM_WMS_INBOUND, warehouseId, slaFrom, slaTo
+    ));
+
     Assertions.assertEquals(expectedBacklog(), response);
+    Assertions.assertEquals(0, responseEmpty.size());
+
   }
 
   private List<Backlog> expectedBacklog() {
     return of(new Backlog(ZonedDateTime.parse(DATE_BACKLOG), QUANTITY_BACKLOG));
   }
 
-  private List<Consolidation> responseGetCurrentBacklog() {
-    return of(new Consolidation(Instant.now(), Map.of("date_out", DATE_BACKLOG), QUANTITY_BACKLOG, true));
+  private Photo responseGetCurrentBacklog() {
+    return new Photo(
+        Instant.now(),
+        of(new Photo.Group(Map.of(DATE_OUT, DATE_BACKLOG), QUANTITY_BACKLOG, 0))
+    );
   }
 
 }

@@ -114,8 +114,8 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
             null,
             null,
-            input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS),
-            input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS),
+            null,
+            null,
             Set.of(STEP, AREA)
         ),
         false

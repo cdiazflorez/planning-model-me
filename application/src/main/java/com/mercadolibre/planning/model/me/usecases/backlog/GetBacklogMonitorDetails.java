@@ -117,9 +117,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
 
   private Map<Instant, List<NumberOfUnitsInAnArea>> getBacklog(final GetBacklogMonitorDetailsInput input,
                                                                final GetThroughputResult throughput) {
-    final BacklogWorkflow workflow = BacklogWorkflow.from(input.getWorkflow());
-    final var slaFrom = input.getRequestDate().minus(workflow.getSlaFromOffsetInHours(), ChronoUnit.HOURS);
-    final var slaTo = input.getRequestDate().plus(workflow.getSlaToOffsetInHours(), ChronoUnit.HOURS);
 
     final var providerInput = new BacklogProvider.BacklogProviderInput(
         input.getRequestDate(),
@@ -129,8 +126,8 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         throughput.asMagnitudePhotos(),
         input.getDateFrom(),
         input.getDateTo(),
-        slaFrom,
-        slaTo,
+        null,
+        null,
         input.getCallerId(),
         input.isHasWall()
     );

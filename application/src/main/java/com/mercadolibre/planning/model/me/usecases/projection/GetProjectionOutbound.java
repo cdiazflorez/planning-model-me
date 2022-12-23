@@ -13,8 +13,8 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.STEP;
-import static com.mercadolibre.planning.model.me.usecases.projection.ProjectionWorkflow.getStatuses;
 import static com.mercadolibre.planning.model.me.usecases.projection.ProjectionWorkflow.getSteps;
+import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static java.util.stream.Collectors.toList;
 
@@ -48,7 +48,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,7 +99,7 @@ public abstract class GetProjectionOutbound extends GetProjection {
             input.getDate(),
             backlogsToProject,
             false,
-            Collections.emptyList()));
+            emptyList()));
 
     return setIsDeferred(projectionsSla, deferralProjectionOutput.getProjections());
   }
@@ -113,22 +112,27 @@ public abstract class GetProjectionOutbound extends GetProjection {
                                            final ZoneId zoneId,
                                            final Instant requestDate) {
 
-    final String groupingKey = DATE_OUT.getName();
-
-    final var backlogBySla = backlogGateway.getCurrentBacklog(
+    final var lastPhoto = backlogGateway.getLastPhoto(
+        new BacklogLastPhotoRequest(
         warehouseId,
-        List.of("outbound-orders"),
-        getStatuses(FBM_WMS_OUTBOUND),
+        Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+        getSteps(FBM_WMS_OUTBOUND),
+        null,
+        null,
         dateFromToProject,
         dateToToProject,
-        List.of(groupingKey));
+        Set.of(DATE_OUT),
+        Instant.now()
+        )
+    );
 
-
-    return backlogBySla.stream()
-        .map(backlog -> new Backlog(
-            ZonedDateTime.parse(backlog.getKeys().get(groupingKey)),
-            backlog.getTotal()))
-        .collect(toList());
+    return lastPhoto == null
+        ? emptyList()
+        : lastPhoto.getGroups().stream()
+        .map(photo -> new Backlog(
+            ZonedDateTime.parse(photo.getKey().get(DATE_OUT)),
+            photo.getTotal()
+        )).collect(toList());
   }
 
   protected Map<ProcessName, Map<Instant, Integer>> getThroughputByProcess(final GetProjectionInputDto input,

@@ -184,8 +184,8 @@ class GetBacklogMonitorTest {
                  input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
                  null,
                  null,
-                 input.getRequestDate(),
-                 input.getRequestDate().plus(24, ChronoUnit.HOURS),
+                 null,
+                 null,
                  Set.of(STEP, AREA)
              ), false
          )
@@ -346,10 +346,8 @@ class GetBacklogMonitorTest {
                  input.getRequestDate().truncatedTo(ChronoUnit.SECONDS),
                  null,
                  null,
-                 isOutbound ? input.getRequestDate() : input.getRequestDate().minus(168, ChronoUnit.HOURS),
-                 isOutbound
-                     ? input.getRequestDate().plus(24, ChronoUnit.HOURS)
-                     : input.getRequestDate().plus(168, ChronoUnit.HOURS),
+                 null,
+                 null,
                  Set.of(STEP, AREA)
              ), false
          )
