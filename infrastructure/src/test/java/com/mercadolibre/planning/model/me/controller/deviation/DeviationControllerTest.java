@@ -1,5 +1,23 @@
 package com.mercadolibre.planning.model.me.controller.deviation;
 
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
+import static java.lang.String.format;
+import static java.util.Collections.singletonList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
@@ -22,23 +40,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
-import static java.lang.String.format;
-import static java.util.Collections.singletonList;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = DeviationController.class)
 public class DeviationControllerTest {
@@ -124,12 +125,32 @@ public class DeviationControllerTest {
 
         private void whenSaveDeviation() throws Exception {
             result = mvc.perform(MockMvcRequestBuilders
-                    .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/save")
-                    .content(getResourceAsString("post_save_deviation_request.json"))
-                    .contentType(APPLICATION_JSON));
+                .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/save")
+                .content(getResourceAsString("post_save_deviation_request.json"))
+                .contentType(APPLICATION_JSON));
         }
     }
 
+    @Nested
+    @DisplayName("Test save deviation scheduling")
+    class SaveDeviationShipmentController {
+
+        @Test
+        void saveDeviationShipmentOk() throws Exception {
+            // WHEN
+            whenSaveDeviationInboundUnits();
+
+            // THEN
+            thenStatusAndMessageAreCorrect(OK, "Schedule deviation saved");
+        }
+
+        private void whenSaveDeviationInboundUnits() throws Exception {
+            result = mvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_INBOUND.getName()) + "/units/save")
+                .content(getResourceAsString("post_save_deviation_request.json"))
+                .contentType(APPLICATION_JSON));
+        }
+    }
 
     @Nested
     @DisplayName("Test disable deviation")
@@ -138,10 +159,10 @@ public class DeviationControllerTest {
         void disableDeviationOk() throws Exception {
             // GIVEN
             when(disableDeviation.execute(any(DisableDeviationInput.class)))
-                    .thenReturn(DeviationResponse.builder()
-                            .status(OK.value())
-                            .message("Forecast deviation disabled")
-                            .build());
+                .thenReturn(DeviationResponse.builder()
+                    .status(OK.value())
+                    .message("Forecast deviation disabled")
+                    .build());
 
             // WHEN
             whenDisableDeviation();

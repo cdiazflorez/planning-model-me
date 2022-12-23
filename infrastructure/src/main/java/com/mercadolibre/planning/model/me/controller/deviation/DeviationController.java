@@ -3,9 +3,12 @@ package com.mercadolibre.planning.model.me.controller.deviation;
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
 import static java.util.Collections.singletonList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.OK;
 
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
+import com.mercadolibre.planning.model.me.controller.editor.DeviationTypeEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
+import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
@@ -67,6 +70,19 @@ public class DeviationController {
     }
 
     @Trace
+    @PostMapping("/{type}/save")
+    public ResponseEntity<DeviationResponse> save(
+        @PathVariable final DeviationType type,
+        @RequestBody @Valid final DeviationRequest deviationRequest) {
+
+        datadogMetricService.trackDeviationAdjustment(deviationRequest);
+
+        DeviationResponse response = new DeviationResponse(OK.value(), "Schedule deviation saved");
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+    @Trace
     @PostMapping("/disable")
     public ResponseEntity<DeviationResponse> disable(
             @PathVariable final Workflow workflow,
@@ -91,5 +107,6 @@ public class DeviationController {
     @InitBinder
     public void initBinder(final PropertyEditorRegistry dataBinder) {
         dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
+        dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
     }
 }
