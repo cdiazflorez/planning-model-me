@@ -114,15 +114,15 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
     final var lastPhoto = backlogGateway.getLastPhoto(
         new BacklogLastPhotoRequest(
-        warehouseId,
-        Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
-        getSteps(FBM_WMS_OUTBOUND),
-        null,
-        null,
-        dateFromToProject,
-        dateToToProject,
-        Set.of(DATE_OUT),
-        Instant.now()
+            warehouseId,
+            Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+            getSteps(FBM_WMS_OUTBOUND),
+            null,
+            null,
+            dateFromToProject,
+            dateToToProject,
+            Set.of(DATE_OUT),
+            Instant.now()
         )
     );
 

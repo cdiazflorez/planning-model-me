@@ -124,8 +124,8 @@ class GetCurrentStatusTest {
 
         // THEN
         final Set<Process> processes = currentStatusData.getProcesses();
-        assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
-        assertEquals(6, processes.size());
+      assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
+      assertEquals(6, processes.size());
 
         List<Process> processList = new ArrayList<>(currentStatusData.getProcesses());
 
@@ -201,8 +201,8 @@ class GetCurrentStatusTest {
 
         // THEN
         final Set<Process> processes = currentStatusData.getProcesses();
-        assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
-        assertEquals(6, processes.size());
+      assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
+      assertEquals(6, processes.size());
 
         List<Process> processList = new ArrayList<>(currentStatusData.getProcesses());
 
@@ -302,7 +302,7 @@ class GetCurrentStatusTest {
         assertMetric(pickingBacklogMetric, PICKING.getSubtitle(), TOTAL_BACKLOG.getTitle(),
                 TOTAL_BACKLOG.getType(), "10 uds.");
 
-        final Process packing = processList.get(PACKING.getIndex() - 2);
+      final Process packing = processList.get(PACKING.getIndex() - 2);
         assertEquals(PACKING.getTitle(), packing.getTitle());
         final Metric packingBacklogMetric = packing.getMetrics().get(0);
         assertMetric(packingBacklogMetric, PACKING.getSubtitle(), TOTAL_BACKLOG.getTitle(),
@@ -359,31 +359,30 @@ class GetCurrentStatusTest {
                 .thenReturn(new LogisticCenterConfiguration(getTimeZone(UTC), hasPutToWall));
 
         final Map<String, ProcessBacklog> mockProcessBacklog = Map.of(
-                "wavingProcessBacklog", ProcessBacklog.builder().process(OUTBOUND_PLANNING.getStatus()).quantity(1442).build(),
-                "packingProcessBacklog", ProcessBacklog.builder().process(PACKING.getStatus()).quantity(1442).build(),
-                "pickingProcessBacklog", ProcessBacklog.builder().process(PICKING.getStatus()).quantity(725).build(),
-                "immediateBacklog", ProcessBacklog.builder().process(OUTBOUND_PLANNING.getStatus()).immediateQuantity(200).build(),
-                "wallInBacklog", ProcessBacklog.builder().process(WALL_IN.getStatus()).quantity(725).build(),
-                "packingWallBacklog", ProcessBacklog.builder().process(PACKING_WALL.getStatus()).quantity(725).area("PW").build(),
-                "batchSortedBacklog", ProcessBacklog.builder().process(BATCH_SORTED.getStatus()).quantity(725).build(),
-                "batch", ProcessBacklog.builder().process(BATCH_SORTED.getStatus()).quantity(725).area("PW").build()
+            "wavingProcessBacklog", ProcessBacklog.builder().process(OUTBOUND_PLANNING.getStatus()).quantity(1442).build(),
+            "packingProcessBacklog", ProcessBacklog.builder().process(PACKING.getStatus()).quantity(1442).build(),
+            "pickingProcessBacklog", ProcessBacklog.builder().process(PICKING.getStatus()).quantity(725).build(),
+            "immediateBacklog", ProcessBacklog.builder().process(OUTBOUND_PLANNING.getStatus()).immediateQuantity(200).build(),
+            "wallInBacklog", ProcessBacklog.builder().process(WALL_IN.getStatus()).quantity(725).build(),
+            "packingWallBacklog", ProcessBacklog.builder().process(PACKING_WALL.getStatus()).quantity(725).area("PW").build(),
+            "batchSortedBacklog", ProcessBacklog.builder().process(BATCH_SORTED.getStatus()).quantity(725).build(),
+            "batch", ProcessBacklog.builder().process(BATCH_SORTED.getStatus()).quantity(725).area("PW").build()
         );
 
         if (isEnableCallBacklogApi) {
-            final List<Photo.Group> photoGroupList = mockProcessBacklog.values().stream()
-                .flatMap(processBacklog -> {
-                        final List<String> steps = Arrays.asList(processBacklog.getProcess().toUpperCase(Locale.ROOT).split(","));
-                         return steps.stream().map(step -> new Photo.Group(
-                                getRequestKeys(step, processBacklog.getArea(), cptFrom.toInstant()),
-                                (int) ((processBacklog.getQuantity() / steps.size()) + 0.9),
-                                0)
-                         );
-                })
-                .collect(Collectors.toList());
+          final List<Photo.Group> photoGroupList = mockProcessBacklog.values().stream()
+              .flatMap(processBacklog -> {
+                final List<String> steps = Arrays.asList(processBacklog.getProcess().toUpperCase(Locale.ROOT).split(","));
+                return steps.stream().map(step -> new Photo.Group(
+                    getRequestKeys(step, processBacklog.getArea(), cptFrom.toInstant()),
+                    (int) ((processBacklog.getQuantity() / steps.size()) + 0.9),
+                    0)
+                );
+              })
+              .collect(Collectors.toList());
 
 
-
-            when(backlogApiGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(new Photo(Instant.now(), photoGroupList));
+          when(backlogApiGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(new Photo(Instant.now(), photoGroupList));
         } else {
             when(backlogGatewayProvider.getBy(input.getWorkflow()))
                     .thenReturn(Optional.of(backlogGateway));
@@ -442,20 +441,20 @@ class GetCurrentStatusTest {
                                 .area("PW")
                                 .build());
 
-                when(backlogGateway.getUnitBacklog(
-                        new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                                cptFrom, cptTo, null, ORDER_GROUP_TYPE)))
-                        .thenReturn(mockProcessBacklog.get("wallInBacklog"));
+              when(backlogGateway.getUnitBacklog(
+                  new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
+                      cptFrom, cptTo, null, ORDER_GROUP_TYPE)))
+                  .thenReturn(mockProcessBacklog.get("wallInBacklog"));
 
-                when(backlogGateway.getUnitBacklog(
-                        new UnitProcessBacklogInput(PACKING_WALL.getStatus(), input.getWarehouseId(),
-                                cptFrom, cptTo, "PW", ORDER_GROUP_TYPE)))
-                        .thenReturn(mockProcessBacklog.get("packingWallBacklog"));
+              when(backlogGateway.getUnitBacklog(
+                  new UnitProcessBacklogInput(PACKING_WALL.getStatus(), input.getWarehouseId(),
+                      cptFrom, cptTo, "PW", ORDER_GROUP_TYPE)))
+                  .thenReturn(mockProcessBacklog.get("packingWallBacklog"));
 
-                when(backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(BATCH_SORTED.getStatus(), input.getWarehouseId(),
-                        cptFrom, cptTo, null, ORDER_GROUP_TYPE)))
-                    .thenReturn(mockProcessBacklog.get("batchSortedBacklog"));
+              when(backlogGateway.getUnitBacklog(
+                  new UnitProcessBacklogInput(BATCH_SORTED.getStatus(), input.getWarehouseId(),
+                      cptFrom, cptTo, null, ORDER_GROUP_TYPE)))
+                  .thenReturn(mockProcessBacklog.get("batchSortedBacklog"));
             }
         }
 
@@ -484,11 +483,11 @@ class GetCurrentStatusTest {
             } else if (backlogMetricInput.getProcessOutbound().equals(PACKING)) {
                 return createMetric(TOTAL_BACKLOG, PACKING, "725 uds.");
             } else if (backlogMetricInput.getProcessOutbound().equals(WALL_IN)) {
-                return createMetric(TOTAL_BACKLOG, WALL_IN, "130 uds.");
+              return createMetric(TOTAL_BACKLOG, WALL_IN, "130 uds.");
             } else if (backlogMetricInput.getProcessOutbound().equals(BATCH_SORTED)) {
-                return createMetric(TOTAL_BACKLOG, BATCH_SORTED, "725 uds.");
+              return createMetric(TOTAL_BACKLOG, BATCH_SORTED, "725 uds.");
             } else {
-                throw new IllegalArgumentException();
+              throw new IllegalArgumentException();
             }
         });
     }
@@ -507,21 +506,21 @@ class GetCurrentStatusTest {
                 : metricType.getSubtitle();
 
         final String finalValue = isAnalyticsError
-                && (metricType.equals(THROUGHPUT_PER_HOUR)
-                || metricType.equals(PRODUCTIVITY)) ? "-" : value;
+            && (metricType.equals(THROUGHPUT_PER_HOUR)
+            || metricType.equals(PRODUCTIVITY)) ? "-" : value;
 
-        return Metric.builder().title(metricType.getTitle())
-                .type(metricType.getType())
-                .subtitle(subtitle)
-                .value(finalValue)
-                .build();
+      return Metric.builder().title(metricType.getTitle())
+          .type(metricType.getType())
+          .subtitle(subtitle)
+          .value(finalValue)
+          .build();
     }
 
-    private Map<BacklogGrouper, String> getRequestKeys(final String step, final String area, final Instant cpt) {
-        return Map.of(
-            BacklogGrouper.STEP, step,
-            BacklogGrouper.AREA, area != null ? area.toUpperCase(Locale.ROOT) : "N/A",
-            BacklogGrouper.DATE_OUT, cpt.toString()
-        );
-    }
+  private Map<BacklogGrouper, String> getRequestKeys(final String step, final String area, final Instant cpt) {
+    return Map.of(
+        BacklogGrouper.STEP, step,
+        BacklogGrouper.AREA, area != null ? area.toUpperCase(Locale.ROOT) : "N/A",
+        BacklogGrouper.DATE_OUT, cpt.toString()
+    );
+  }
 }

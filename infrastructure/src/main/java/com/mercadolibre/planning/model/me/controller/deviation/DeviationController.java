@@ -7,8 +7,10 @@ import static org.springframework.http.HttpStatus.OK;
 
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
 import com.mercadolibre.planning.model.me.controller.editor.DeviationTypeEditor;
+import com.mercadolibre.planning.model.me.controller.editor.ShipmentTypeEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.enums.DeviationType;
+import com.mercadolibre.planning.model.me.enums.ShipmentType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
@@ -18,6 +20,7 @@ import com.mercadolibre.planning.model.me.usecases.deviation.DisableDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.SaveDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.newrelic.api.agent.Trace;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -48,11 +51,11 @@ public class DeviationController {
     @Trace
     @PostMapping("/save")
     public ResponseEntity<DeviationResponse> save(
-            @PathVariable final Workflow workflow,
-            @RequestBody @Valid final DeviationRequest deviationRequest) {
+        @PathVariable final Workflow workflow,
+        @RequestBody @Valid final DeviationRequest deviationRequest) {
 
         authorizeUser.execute(new AuthorizeUserDto(
-                deviationRequest.getUserId(), singletonList(OUTBOUND_SIMULATION)));
+            deviationRequest.getUserId(), singletonList(OUTBOUND_SIMULATION)));
 
         datadogMetricService.trackDeviationAdjustment(deviationRequest);
 
@@ -62,11 +65,11 @@ public class DeviationController {
             response = saveDeviation.execute(deviationRequest.toDeviationInput(workflow));
         } catch (Exception e) {
             response = new DeviationResponse(INTERNAL_SERVER_ERROR.value(),
-                    "Error persisting forecast deviation");
+                "Error persisting forecast deviation");
         }
 
         return ResponseEntity.status(response.getStatus())
-                .body(response);
+            .body(response);
     }
 
     @Trace
@@ -85,9 +88,9 @@ public class DeviationController {
     @Trace
     @PostMapping("/disable")
     public ResponseEntity<DeviationResponse> disable(
-            @PathVariable final Workflow workflow,
-            @RequestParam final String warehouseId,
-            @RequestParam("caller.id") @NotNull final Long callerId) {
+        @PathVariable final Workflow workflow,
+        @RequestParam final String warehouseId,
+        @RequestParam("caller.id") @NotNull final Long callerId) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, singletonList(OUTBOUND_SIMULATION)));
 
@@ -97,16 +100,31 @@ public class DeviationController {
             response = disableDeviation.execute(new DisableDeviationInput(warehouseId, workflow));
         } catch (Exception e) {
             response = new DeviationResponse(INTERNAL_SERVER_ERROR.value(),
-                     "Error disabling forecast deviation");
+                "Error disabling forecast deviation");
         }
 
         return ResponseEntity.status(response.getStatus())
-                .body(response);
+            .body(response);
+    }
+
+    @Trace
+    @PostMapping("/{type}/disable")
+    public ResponseEntity<DeviationResponse> disable(
+        @PathVariable final DeviationType type,
+        @PathVariable final Workflow workflow,
+        @RequestParam final String logisticCenterId,
+        @RequestParam final List<ShipmentType> shipmentTypes,
+        @RequestParam("caller.id") @NotNull final Long callerId) {
+
+      DeviationResponse response = new DeviationResponse(OK.value(), "Schedule deviation disable");
+
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @InitBinder
     public void initBinder(final PropertyEditorRegistry dataBinder) {
         dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
+        dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
         dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
     }
 }

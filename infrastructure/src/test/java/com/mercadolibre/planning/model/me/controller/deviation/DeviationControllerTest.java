@@ -18,6 +18,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.mercadolibre.planning.model.me.enums.ShipmentType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
@@ -209,6 +210,29 @@ public class DeviationControllerTest {
                     .param("caller.id", String.valueOf(USER_ID))
                     .param("warehouse_id", WAREHOUSE_ID)
                     .contentType(APPLICATION_JSON));
+        }
+    }
+
+    @Nested
+    @DisplayName("Test disable deviation Shipment")
+    class DisableDeviationShipmentController {
+
+        @Test
+        void disableDeviationShipmentOk() throws Exception {
+            // WHEN
+            whenDisableDeviationInboundUnits();
+
+            // THEN
+            thenStatusAndMessageAreCorrect(OK, "Schedule deviation disable");
+        }
+
+        private void whenDisableDeviationInboundUnits() throws Exception {
+            result = mvc.perform(MockMvcRequestBuilders
+                .post(format(URL, FBM_WMS_INBOUND.getName()) + "/units/disable")
+                .param("caller.id", String.valueOf(USER_ID))
+                .param("logistic_center_id", WAREHOUSE_ID)
+                .param("shipment_types", ShipmentType.COLLECT.getName(), ShipmentType.FTL.getName())
+                .contentType(APPLICATION_JSON));
         }
     }
 

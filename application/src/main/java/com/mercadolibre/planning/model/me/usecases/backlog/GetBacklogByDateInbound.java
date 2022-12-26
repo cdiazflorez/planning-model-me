@@ -58,8 +58,8 @@ public class GetBacklogByDateInbound implements UseCase<GetBacklogByDateDto, Lis
         .collect(
             Collectors.toMap(collect ->
                     ZonedDateTime.parse(collect
-                            .getKey()
-                            .get(DATE_OUT))
+                        .getKey()
+                        .get(DATE_OUT))
                         .withZoneSameInstant(UTC)
                         .truncatedTo(ChronoUnit.HOURS),
                 Photo.Group::getTotal,

@@ -68,9 +68,9 @@ public class GetBacklogScheduledTest {
                 .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
 
         //first photo of day
-        when(backlogGateway.getPhotos(any(BacklogPhotosRequest.class))).thenReturn(responseGetBacklog(true));
+      when(backlogGateway.getPhotos(any(BacklogPhotosRequest.class))).thenReturn(responseGetBacklog(true));
 
-        when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(responseGetCurrentBacklog(true));
+      when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(responseGetCurrentBacklog(true));
 
         final Map<String, BacklogScheduled> response = getBacklogScheduled.execute(WAREHOUSE_ID, now);
 
@@ -111,9 +111,9 @@ public class GetBacklogScheduledTest {
             .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
 
         //first photo of day
-        when(backlogGateway.getPhotos(any(BacklogPhotosRequest.class))).thenReturn(responseGetBacklog(false));
+      when(backlogGateway.getPhotos(any(BacklogPhotosRequest.class))).thenReturn(responseGetBacklog(false));
 
-        when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(null);
+      when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(null);
 
         final Map<String, BacklogScheduled> response = getBacklogScheduled.execute(WAREHOUSE_ID, now);
 
@@ -132,58 +132,58 @@ public class GetBacklogScheduledTest {
             Indicator.builder().units(0).percentage(0.0).build()
         );
 
-        //verify
-        Assertions.assertEquals(expectedBacklogSeller, response.get("inbound"));
-        Assertions.assertEquals(expectedBacklogTransfer, response.get("inbound_transfer"));
-        Assertions.assertEquals(response.get("inbound"), response.get("total"));
+      //verify
+      Assertions.assertEquals(expectedBacklogSeller, response.get("inbound"));
+      Assertions.assertEquals(expectedBacklogTransfer, response.get("inbound_transfer"));
+      Assertions.assertEquals(response.get("inbound"), response.get("total"));
     }
 
-    private List<Photo> responseGetBacklog(boolean transfer) {
+  private List<Photo> responseGetBacklog(boolean transfer) {
 
-        return transfer
-            ? List.of(new Photo(
-            Instant.now(),
-            List.of(
-                new Photo.Group(
-                    Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
-                    QUANTITY_BACKLOG,
-                    0
-                ),
-                new Photo.Group(
-                    Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"),
-                    QUANTITY_BACKLOG + 150,
-                    0
-                )
+    return transfer
+        ? List.of(new Photo(
+        Instant.now(),
+        List.of(
+            new Photo.Group(
+                Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
+                QUANTITY_BACKLOG,
+                0
+            ),
+            new Photo.Group(
+                Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"),
+                QUANTITY_BACKLOG + 150,
+                0
             )
-        ))
-            : List.of(new Photo(
-            Instant.now(),
-            List.of(
-                new Photo.Group(
-                    Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
-                    QUANTITY_BACKLOG,
-                    0
-                )
+        )
+    ))
+        : List.of(new Photo(
+        Instant.now(),
+        List.of(
+            new Photo.Group(
+                Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
+                QUANTITY_BACKLOG,
+                0
             )
-        ));
-    }
+        )
+    ));
+  }
 
-    private Photo responseGetCurrentBacklog(boolean transfer) {
-        return new Photo(Instant.now(),
-            transfer
-                ? List.of(new Photo.Group(
-                    Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
-                    QUANTITY_BACKLOG_CURRENT,
-                    0
-                ),
-                new Photo.Group(Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"),
-                    QUANTITY_BACKLOG_CURRENT - 125,
-                    0))
-                : List.of(new Photo.Group(
+  private Photo responseGetCurrentBacklog(boolean transfer) {
+    return new Photo(Instant.now(),
+        transfer
+            ? List.of(new Photo.Group(
                 Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
                 QUANTITY_BACKLOG_CURRENT,
                 0
-            ))
-        );
-    }
+            ),
+            new Photo.Group(Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"),
+                QUANTITY_BACKLOG_CURRENT - 125,
+                0))
+            : List.of(new Photo.Group(
+            Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        ))
+    );
+  }
 }

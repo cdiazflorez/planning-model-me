@@ -17,15 +17,14 @@ import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Collections.emptyList;
 
-import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.entities.projection.ProcessBacklog;
+import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import com.mercadolibre.planning.model.me.exception.BacklogGatewayNotSupportedException;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.UnitProcessBacklogInput;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.backlog.strategy.BacklogGatewayProvider;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -39,7 +38,6 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.proc
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.BacklogMetricInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.backlog.get.GetBacklogMetricUseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.metric.immediatebacklog.get.GetImmediateBacklogMetricUseCase;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,7 +91,7 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
         final ZonedDateTime cptTo = input.getCurrentTime().truncatedTo(DAYS).plusMonths(MONTHS_TO).withZoneSameInstant(UTC);
 
         if (featureSwitches.shouldCallBacklogApi()) {
-            processBacklogs = getProcessBacklogFromBacklogApi(input, config.isPutToWall());
+          processBacklogs = getProcessBacklogFromBacklogApi(input, config.isPutToWall());
         } else {
             processBacklogs = getProcessBacklogsFromOutboundUnit(input, cptFrom, cptTo, config.isPutToWall());
         }
@@ -115,61 +113,61 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
     private List<ProcessBacklog> getProcessBacklogFromBacklogApi(final GetCurrentStatusInput input,
                                                                  final boolean warehouseHasWall) {
 
-        final List<Photo.Group> lastPhotoGroup = backlogGateway.getLastPhoto(new BacklogLastPhotoRequest(
-            input.getWarehouseId(),
-            Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
-            Set.of(Step.PENDING, Step.TO_PICK, Step.TO_ROUTE, Step.TO_PACK, Step.TO_SORT, Step.SORTED, Step.TO_GROUP, Step.GROUPING),
-            null,
-            null,
-            null,
-            null,
-            Set.of(STEP, AREA, DATE_OUT),
-            input.getCurrentTime().toInstant())).getGroups();
+      final List<Photo.Group> lastPhotoGroup = backlogGateway.getLastPhoto(new BacklogLastPhotoRequest(
+          input.getWarehouseId(),
+          Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+          Set.of(Step.PENDING, Step.TO_PICK, Step.TO_ROUTE, Step.TO_PACK, Step.TO_SORT, Step.SORTED, Step.TO_GROUP, Step.GROUPING),
+          null,
+          null,
+          null,
+          null,
+          Set.of(STEP, AREA, DATE_OUT),
+          input.getCurrentTime().toInstant())).getGroups();
 
-        final ProcessBacklog wavingBacklog = getProcessBacklog(lastPhotoGroup, OUTBOUND_PLANNING.getStatus());
+      final ProcessBacklog wavingBacklog = getProcessBacklog(lastPhotoGroup, OUTBOUND_PLANNING.getStatus());
 
-        final int immediatePlanningBacklog = getImmediateBacklogFromBacklogApi(input, lastPhotoGroup);
+      final int immediatePlanningBacklog = getImmediateBacklogFromBacklogApi(input, lastPhotoGroup);
 
-        wavingBacklog.setImmediateQuantity(immediatePlanningBacklog);
+      wavingBacklog.setImmediateQuantity(immediatePlanningBacklog);
 
-        final ProcessBacklog packingBacklog = getProcessBacklog(lastPhotoGroup, PACKING.getStatus());
+      final ProcessBacklog packingBacklog = getProcessBacklog(lastPhotoGroup, PACKING.getStatus());
 
-        final ProcessBacklog pickingBacklog = getProcessBacklog(lastPhotoGroup, PICKING.getStatus());
+      final ProcessBacklog pickingBacklog = getProcessBacklog(lastPhotoGroup, PICKING.getStatus());
 
         final List<ProcessBacklog> processBacklogs = new ArrayList<>(List.of(wavingBacklog, packingBacklog, pickingBacklog));
 
         if (warehouseHasWall) {
-            final ProcessBacklog wallInBacklog = getProcessBacklog(lastPhotoGroup, WALL_IN.getStatus());
+          final ProcessBacklog wallInBacklog = getProcessBacklog(lastPhotoGroup, WALL_IN.getStatus());
 
-            final ProcessBacklog batchSorted = getProcessBacklog(lastPhotoGroup, BATCH_SORTED.getStatus());
+          final ProcessBacklog batchSorted = getProcessBacklog(lastPhotoGroup, BATCH_SORTED.getStatus());
 
-            final ProcessBacklog packingWall = ProcessBacklog.builder()
-                    .process(PACKING_WALL.getStatus())
-                    .quantity(lastPhotoGroup.stream()
-                            .filter(item -> PW.equals(item.getKey().get(AREA))
-                                && PACKING.getStatus().equalsIgnoreCase(item.getKey().get(STEP)))
-                            .mapToInt(Photo.Group::getTotal).sum())
-                    .area(PW)
-                    .build();
+          final ProcessBacklog packingWall = ProcessBacklog.builder()
+              .process(PACKING_WALL.getStatus())
+              .quantity(lastPhotoGroup.stream()
+                  .filter(item -> PW.equals(item.getKey().get(AREA))
+                      && PACKING.getStatus().equalsIgnoreCase(item.getKey().get(STEP)))
+                  .mapToInt(Photo.Group::getTotal).sum())
+              .area(PW)
+              .build();
 
-            packingBacklog.setQuantity(packingBacklog.getQuantity() - packingWall.getQuantity());
-            processBacklogs.addAll(Arrays.asList(batchSorted, wallInBacklog, packingWall));
+          packingBacklog.setQuantity(packingBacklog.getQuantity() - packingWall.getQuantity());
+          processBacklogs.addAll(Arrays.asList(batchSorted, wallInBacklog, packingWall));
         }
 
         return processBacklogs;
     }
 
-    private ProcessBacklog getProcessBacklog(final List<Photo.Group> groupList, final String processName) {
-        return ProcessBacklog.builder()
-                .process(processName)
-                .quantity(groupList.stream()
-                        .filter(item -> {
-                            final List<String> steps = Arrays.asList(processName.toUpperCase(Locale.ROOT).split(","));
-                            return steps.contains(item.getKey().get(STEP));
-                        })
-                        .mapToInt(Photo.Group::getTotal).sum())
-                .build();
-    }
+  private ProcessBacklog getProcessBacklog(final List<Photo.Group> groupList, final String processName) {
+    return ProcessBacklog.builder()
+        .process(processName)
+        .quantity(groupList.stream()
+            .filter(item -> {
+              final List<String> steps = Arrays.asList(processName.toUpperCase(Locale.ROOT).split(","));
+              return steps.contains(item.getKey().get(STEP));
+            })
+            .mapToInt(Photo.Group::getTotal).sum())
+        .build();
+  }
 
     private List<ProcessBacklog> getProcessBacklogsFromOutboundUnit(final GetCurrentStatusInput input,
                                                                     final ZonedDateTime cptFrom,
@@ -203,28 +201,28 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
         processBacklogs.add(pickingBacklog);
 
         if (warehouseHasWall) {
-            final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(
-                    new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
-                            cptFrom, cptTo, null, input.getGroupType()));
+          final ProcessBacklog wallInBacklog = backlogGateway.getUnitBacklog(
+              new UnitProcessBacklogInput(WALL_IN.getStatus(), input.getWarehouseId(),
+                  cptFrom, cptTo, null, input.getGroupType()));
 
-            final ProcessBacklog batchSorted = backlogGateway
-                .getUnitBacklog(
-                    new UnitProcessBacklogInput(
-                        BATCH_SORTED.getStatus(),
-                        input.getWarehouseId(),
-                        cptFrom,
-                        cptTo,
-                        null,
-                        input.getGroupType()));
+          final ProcessBacklog batchSorted = backlogGateway
+              .getUnitBacklog(
+                  new UnitProcessBacklogInput(
+                      BATCH_SORTED.getStatus(),
+                      input.getWarehouseId(),
+                      cptFrom,
+                      cptTo,
+                      null,
+                      input.getGroupType()));
 
-            final ProcessBacklog packingWall = backlogGateway
-                    .getUnitBacklog(
-                            new UnitProcessBacklogInput(ProcessOutbound.PACKING_WALL.getStatus(),
-                                    input.getWarehouseId(), cptFrom, cptTo, PW,
-                                    input.getGroupType()));
+          final ProcessBacklog packingWall = backlogGateway
+              .getUnitBacklog(
+                  new UnitProcessBacklogInput(ProcessOutbound.PACKING_WALL.getStatus(),
+                      input.getWarehouseId(), cptFrom, cptTo, PW,
+                      input.getGroupType()));
 
-            packingBacklog.setQuantity(packingBacklog.getQuantity() - packingWall.getQuantity());
-            processBacklogs.addAll(Arrays.asList(batchSorted, wallInBacklog, packingWall));
+          packingBacklog.setQuantity(packingBacklog.getQuantity() - packingWall.getQuantity());
+          processBacklogs.addAll(Arrays.asList(batchSorted, wallInBacklog, packingWall));
         }
 
         return processBacklogs;
@@ -251,44 +249,44 @@ public class GetCurrentStatus implements UseCase<GetCurrentStatusInput, CurrentS
                 .getQuantity();
     }
 
-    private int getImmediateBacklogFromBacklogApi(final GetCurrentStatusInput input,
-                                                  final List<Photo.Group> backlogConsolidation) {
-        final ZonedDateTime yesterday = input.getCurrentTime()
-                .minusDays(1)
-                .withZoneSameInstant(UTC);
+  private int getImmediateBacklogFromBacklogApi(final GetCurrentStatusInput input,
+                                                final List<Photo.Group> backlogConsolidation) {
+    final ZonedDateTime yesterday = input.getCurrentTime()
+        .minusDays(1)
+        .withZoneSameInstant(UTC);
 
-        final ZonedDateTime tomorrow = input.getCurrentTime()
-                .plusDays(1)
-                .withZoneSameInstant(UTC);
+    final ZonedDateTime tomorrow = input.getCurrentTime()
+        .plusDays(1)
+        .withZoneSameInstant(UTC);
 
-        return backlogConsolidation.stream()
-                .filter(item -> item.getKey().get(STEP).equals(OUTBOUND_PLANNING.getStatus().toUpperCase(Locale.ROOT))
-                        && ZonedDateTime.parse(item.getKey().get(DATE_OUT)).isAfter(yesterday)
-                        && ZonedDateTime.parse(item.getKey().get(DATE_OUT)).isBefore(tomorrow))
-                .mapToInt(Photo.Group::getTotal).sum();
+    return backlogConsolidation.stream()
+        .filter(item -> item.getKey().get(STEP).equals(OUTBOUND_PLANNING.getStatus().toUpperCase(Locale.ROOT))
+            && ZonedDateTime.parse(item.getKey().get(DATE_OUT)).isAfter(yesterday)
+            && ZonedDateTime.parse(item.getKey().get(DATE_OUT)).isBefore(tomorrow))
+        .mapToInt(Photo.Group::getTotal).sum();
     }
 
     private void addProcessIfExist(final TreeSet<Process> processes,
                                    final CurrentStatusMetricInputs inputs) {
 
-        final Runnable packingWallIsNotPresent = getRunnableProcessToAdd(
-                processes, inputs, () -> {
-                }, WALL_IN
-        );
+      final Runnable packingWallIsNotPresent = getRunnableProcessToAdd(
+          processes, inputs, () -> {
+          }, WALL_IN
+      );
 
-        final Runnable batchIsNotPresent = getRunnableProcessToAdd(processes,
-            inputs, packingWallIsNotPresent, BATCH_SORTED
-        );
+      final Runnable batchIsNotPresent = getRunnableProcessToAdd(processes,
+          inputs, packingWallIsNotPresent, BATCH_SORTED
+      );
 
-        final Runnable packingIsNotPresent = getRunnableProcessToAdd(processes,
-                inputs, batchIsNotPresent, PACKING_WALL
-        );
-        final Runnable pickingIsNotPresent = getRunnableProcessToAdd(processes,
-                inputs, packingIsNotPresent, PACKING
-        );
-        final Runnable outboundPlanningIsNotPresent = getRunnableProcessToAdd(processes,
-                inputs, pickingIsNotPresent, PICKING
-        );
+      final Runnable packingIsNotPresent = getRunnableProcessToAdd(processes,
+          inputs, batchIsNotPresent, PACKING_WALL
+      );
+      final Runnable pickingIsNotPresent = getRunnableProcessToAdd(processes,
+          inputs, packingIsNotPresent, PACKING
+      );
+      final Runnable outboundPlanningIsNotPresent = getRunnableProcessToAdd(processes,
+          inputs, pickingIsNotPresent, PICKING
+      );
 
         getProcessBy(inputs, OUTBOUND_PLANNING).ifPresentOrElse(processes::add, outboundPlanningIsNotPresent);
     }

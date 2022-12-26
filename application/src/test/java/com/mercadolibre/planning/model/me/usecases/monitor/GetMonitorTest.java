@@ -96,8 +96,8 @@ class GetMonitorTest {
 
         final CurrentStatusData currentStatusData = (CurrentStatusData) monitorDataList.get(1);
         final Set<Process> processes = currentStatusData.getProcesses();
-        assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
-        assertEquals(6, processes.size());
+      assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
+      assertEquals(6, processes.size());
 
         List<Process> processList = new ArrayList<>(currentStatusData.getProcesses());
 
@@ -210,25 +210,25 @@ class GetMonitorTest {
                                                 List.of(createMetric(TOTAL_BACKLOG.getTitle(),
                                                         TOTAL_BACKLOG.getType(),
                                                         PACKING_WALL.getSubtitle(),
-                                                        "981 uds.")
-                                        )
-                                        ).build(),
-                                Process.builder().title(WALL_IN.getTitle())
-                                        .metrics(
-                                                List.of(createMetric(TOTAL_BACKLOG.getTitle(),
-                                                        TOTAL_BACKLOG.getType(),
-                                                        WALL_IN.getSubtitle(),
-                                                        "725 uds.")
+                                                    "981 uds.")
                                                 )
                                         ).build(),
-                                Process.builder().title(BATCH_SORTED.getTitle())
-                                    .metrics(
-                                        List.of(createMetric(TOTAL_BACKLOG.getTitle(),
-                                            TOTAL_BACKLOG.getType(),
-                                            BATCH_SORTED.getSubtitle(),
-                                            "725 uds.")
-                                        )
-                                    ).build()
+                            Process.builder().title(WALL_IN.getTitle())
+                                .metrics(
+                                    List.of(createMetric(TOTAL_BACKLOG.getTitle(),
+                                        TOTAL_BACKLOG.getType(),
+                                        WALL_IN.getSubtitle(),
+                                        "725 uds.")
+                                    )
+                                ).build(),
+                            Process.builder().title(BATCH_SORTED.getTitle())
+                                .metrics(
+                                    List.of(createMetric(TOTAL_BACKLOG.getTitle(),
+                                        TOTAL_BACKLOG.getType(),
+                                        BATCH_SORTED.getSubtitle(),
+                                        "725 uds.")
+                                    )
+                                ).build()
                         ))
                 ).build());
 
