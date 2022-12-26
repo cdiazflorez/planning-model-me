@@ -3,12 +3,9 @@ package com.mercadolibre.planning.model.me.usecases.backlog;
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogCurrentRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotosRequest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
@@ -21,7 +18,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
@@ -144,7 +140,7 @@ public class GetBacklogScheduled {
             null,
             Set.of(BacklogGrouper.PROCESS, BacklogGrouper.WORKFLOW),
             Instant.now()
-            ));
+        ));
 
     final List<Photo.Group> receivedInboundBacklog = photo == null ? Collections.emptyList() : photo.getGroups();
 
@@ -163,16 +159,16 @@ public class GetBacklogScheduled {
         .entrySet()
         .stream()
         .collect(
-        Collectors.toMap(
-            Map.Entry::getKey,
-            v -> v.getValue().stream().collect(
-                Collectors.toMap(
-                  photoGroup -> Instant.parse(photoGroup.getKey().get(BacklogGrouper.DATE_IN)),
-                  Photo.Group::getTotal,
-                  (firstPhotoValue, secondPhotoValue) -> firstPhotoValue
-                )
-            ))
-    );
+            Collectors.toMap(
+                Map.Entry::getKey,
+                v -> v.getValue().stream().collect(
+                    Collectors.toMap(
+                        photoGroup -> Instant.parse(photoGroup.getKey().get(BacklogGrouper.DATE_IN)),
+                        Photo.Group::getTotal,
+                        (firstPhotoValue, secondPhotoValue) -> firstPhotoValue
+                    )
+                ))
+        );
   }
 
   /**
