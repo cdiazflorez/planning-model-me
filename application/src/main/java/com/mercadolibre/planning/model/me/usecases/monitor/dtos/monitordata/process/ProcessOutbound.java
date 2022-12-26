@@ -22,7 +22,7 @@ public enum ProcessOutbound {
       asList(TOTAL_BACKLOG, IMMEDIATE_BACKLOG)),
   PICKING(
       "to_pick,to_route",
-      "Ready to Pick",
+      "Ready to Pick, Picking",
       "Picking",
       1,
       singletonList(TOTAL_BACKLOG)),
