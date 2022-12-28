@@ -9,7 +9,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.stream.IntStream;
 
@@ -64,9 +63,10 @@ public class DateUtils {
 
     public static String[] getDatesBetween(final String[] weekOfYear) {
         final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        final int weeksToDecrement = "2022".equals(weekOfYear[1]) ? 1 : 0;
 
         final ZonedDateTime dateFrom = firstDayOfYear(parseInt(weekOfYear[1]))
-                .plusWeeks(parseLong(weekOfYear[0])).minusWeeks(1);
+                .plusWeeks(parseLong(weekOfYear[0])).minusWeeks(weeksToDecrement);
 
         final ZonedDateTime dateTo = dateFrom.plusWeeks(1).minusMinutes(1);
 
