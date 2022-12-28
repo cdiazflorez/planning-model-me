@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.F
 import com.mercadolibre.planning.model.me.controller.backlog.exception.BacklogNotRespondingException;
 import com.mercadolibre.planning.model.me.controller.backlog.exception.EmptyStateException;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -11,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Handles exceptions thrown by the application and converts it into a proper API response.
@@ -78,32 +77,41 @@ public class ApiExceptionHandler {
             final ForecastNotFoundException exception,
             final HttpServletRequest request) {
 
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.NOT_FOUND)
-                .message(exception.getMessage())
-                .error("forecast_not_found")
-                .build();
+      final ErrorResponse errorResponse = ErrorResponse.builder()
+          .status(HttpStatus.NOT_FOUND)
+          .message(exception.getMessage())
+          .error("forecast_not_found")
+          .build();
 
-        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
-        log.error(exception.getMessage(), exception);
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+      request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+      log.error(exception.getMessage(), exception);
+      return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
     }
 
-    @ExceptionHandler(EmptyStateException.class)
-    public ResponseEntity<ErrorResponse> handleEmptyStateException(
-            final EmptyStateException exception,
-            final HttpServletRequest request) {
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+      final IllegalArgumentException exception,
+      final HttpServletRequest request) {
 
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.NOT_FOUND)
-                .message(exception.getMessage())
-                .error("empty_state")
-                .build();
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
 
-        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
-        log.error(exception.getMessage(), exception);
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+  @ExceptionHandler(EmptyStateException.class)
+  public ResponseEntity<ErrorResponse> handleEmptyStateException(
+      final EmptyStateException exception,
+      final HttpServletRequest request) {
+
+    final ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.NOT_FOUND)
+        .message(exception.getMessage())
+        .error("empty_state")
+        .build();
+
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+    log.error(exception.getMessage(), exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
 
     @ExceptionHandler(NoPlannedDataException.class)
     public ResponseEntity<ErrorResponse> handleNoPlannedDataException(

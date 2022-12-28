@@ -9,6 +9,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.PERCENTAGE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.CARRY_OVER;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.PROCESSED;
@@ -42,6 +43,7 @@ import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
+import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
@@ -123,8 +125,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
   private static final String PLANNING_DISTRIBUTION_URL =
       "/planning/model/workflows/%s/planning_distributions";
 
-  private static final String SUGGESTED_WAVES_URL =
-      "/planning/model/workflows/%s/projections/suggested_waves";
 
   private static final String DEVIATION_URL =
       "/planning/model/workflows/%s/deviations";
@@ -1239,7 +1239,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   @Nested
   @DisplayName("Test save deviation")
-  class SaveDeviationTest {
+  class SaveOutboundDeviationTest {
 
     @Test
     void testSaveDeviationOk() throws Exception {
@@ -1295,6 +1295,73 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
       // When
       final DeviationResponse deviationResponse = client.saveDeviation(saveDeviationInput);
+
+      // Then
+      assertNotNull(deviationResponse);
+      assertEquals(400, deviationResponse.getStatus());
+    }
+  }
+
+  @Nested
+  @DisplayName("Test new save deviation")
+  class NewSaveOutboundDeviationTest {
+
+    @Test
+    void testNewSaveDeviationOk() throws Exception {
+      // Given
+      final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
+          .workflow(FBM_WMS_INBOUND)
+          .warehouseId(WAREHOUSE_ID)
+          .dateFrom(now())
+          .dateTo(now().plusDays(1))
+          .type(DeviationType.UNITS)
+          .value(5.9)
+          .userId(USER_ID)
+          .build();
+
+      MockResponse.builder()
+          .withMethod(POST)
+          .withURL(format(BASE_URL + DEVIATION_URL + "/" + DeviationType.UNITS.getName() + "/save", FBM_WMS_INBOUND))
+          .withStatusCode(OK.value())
+          .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+          .withResponseBody(new JSONObject()
+              .put("status", OK.value())
+              .toString())
+          .build();
+
+      // When
+      final DeviationResponse deviationResponse = client.newSaveDeviation(saveDeviationInput);
+
+      // Then
+      assertNotNull(deviationResponse);
+      assertEquals(200, deviationResponse.getStatus());
+    }
+
+    @Test
+    void testNewSaveDeviationError() throws Exception {
+      // Given
+      final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
+          .workflow(FBM_WMS_INBOUND)
+          .warehouseId(WAREHOUSE_ID)
+          .dateFrom(now())
+          .dateTo(now().plusDays(1))
+          .type(DeviationType.UNITS)
+          .value(5.9)
+          .userId(USER_ID)
+          .build();
+
+      MockResponse.builder()
+          .withMethod(POST)
+          .withURL(format(BASE_URL + DEVIATION_URL + "/" + DeviationType.UNITS.getName() + "/save", FBM_WMS_INBOUND))
+          .withStatusCode(OK.value())
+          .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+          .withResponseBody(new JSONObject()
+              .put("status", BAD_REQUEST.value())
+              .toString())
+          .build();
+
+      // When
+      final DeviationResponse deviationResponse = client.newSaveDeviation(saveDeviationInput);
 
       // Then
       assertNotNull(deviationResponse);
@@ -1407,6 +1474,4 @@ class PlanningModelApiClientTest extends BaseClientTest {
           () -> client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID, A_DATE));
     }
   }
-
-
 }

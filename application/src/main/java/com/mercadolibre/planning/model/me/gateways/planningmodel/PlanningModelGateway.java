@@ -48,19 +48,21 @@ public interface PlanningModelGateway {
 
     List<ProjectionResult> runSimulation(SimulationRequest request);
 
-    List<ProjectionResult> saveSimulation(SimulationRequest request);
+  List<ProjectionResult> saveSimulation(SimulationRequest request);
 
-    List<BacklogProjectionResponse> getBacklogProjection(BacklogProjectionRequest request);
+  List<BacklogProjectionResponse> getBacklogProjection(BacklogProjectionRequest request);
 
-    Optional<ConfigurationResponse> getConfiguration(ConfigurationRequest request);
+  Optional<ConfigurationResponse> getConfiguration(ConfigurationRequest request);
 
-    List<PlanningDistributionResponse> getPlanningDistribution(PlanningDistributionRequest request);
+  List<PlanningDistributionResponse> getPlanningDistribution(PlanningDistributionRequest request);
 
-    DeviationResponse saveDeviation(SaveDeviationInput saveDeviationInput);
+  DeviationResponse saveDeviation(SaveDeviationInput saveDeviationInput);
 
-    DeviationResponse disableDeviation(DisableDeviationInput saveDeviationInput);
+  DeviationResponse newSaveDeviation(SaveDeviationInput saveDeviationInput);
 
-    GetDeviationResponse getDeviation(Workflow workflow, String warehouseId, ZonedDateTime date);
+  DeviationResponse disableDeviation(DisableDeviationInput saveDeviationInput);
 
-    Map<Workflow, Map<Instant, SlaProperties>> getCycleTime(String logisticCenterId, CycleTimeRequest cycleTimeRequest);
+  GetDeviationResponse getDeviation(Workflow workflow, String warehouseId, ZonedDateTime date);
+
+  Map<Workflow, Map<Instant, SlaProperties>> getCycleTime(String logisticCenterId, CycleTimeRequest cycleTimeRequest);
 }

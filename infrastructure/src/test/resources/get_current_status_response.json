@@ -35,7 +35,7 @@
           "metrics": [
             {
               "type": "backlog",
-              "title": "Backlog total en",
+              "title": "Total",
               "subtitle": "Ready to Wave",
               "value": "0 uds."
             }
@@ -46,7 +46,7 @@
           "metrics": [
             {
               "type": "backlog",
-              "title": "Backlog total en",
+              "title": "Total",
               "subtitle": "Ready to Pick, Picking",
               "value": "2.232 uds."
             }
@@ -57,7 +57,7 @@
           "metrics": [
             {
               "type": "backlog",
-              "title": "Backlog total en",
+              "title": "Total",
               "subtitle": "Ready to Pack",
               "value": "1.442 uds."
             }
@@ -68,7 +68,7 @@
           "metrics": [
             {
               "type": "backlog",
-              "title": "Backlog total en",
+              "title": "Total",
               "subtitle": "Ready to Group, Sorted, Grouping",
               "value": "725 uds."
             }
