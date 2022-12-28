@@ -85,6 +85,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
 
+  private static final String BASE_DEVIATIONS_URL = "/planning/model/workflows/%s/deviations/%s";
+
   private static final String CONFIGURATION_URL = "/planning/model/configuration";
 
   private static final String SIMULATIONS_PREFIX_URL = "/simulations";
@@ -416,7 +418,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, workflow)
-                 + DEVIATIONS_URL)
+            + DEVIATIONS_URL)
         .GET()
         .queryParams(params)
         .acceptedHttpStatuses(Set.of(OK, CREATED))
@@ -460,10 +462,24 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   @Trace
   @Override
+  @Deprecated
   public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, saveDeviationInput.getWorkflow())
-                 + DEVIATIONS_URL + SAVE)
+            + DEVIATIONS_URL + SAVE)
+        .POST(requestSupplier(saveDeviationInput))
+        .acceptedHttpStatuses(Set.of(OK, CREATED))
+        .build();
+
+    return send(request, response -> response.getData(new TypeReference<>() {
+    }));
+  }
+
+  @Trace
+  @Override
+  public DeviationResponse newSaveDeviation(final SaveDeviationInput saveDeviationInput) {
+    final HttpRequest request = HttpRequest.builder()
+        .url(format(BASE_DEVIATIONS_URL, saveDeviationInput.getWorkflow(), saveDeviationInput.getType().getName()) + SAVE)
         .POST(requestSupplier(saveDeviationInput))
         .acceptedHttpStatuses(Set.of(OK, CREATED))
         .build();
@@ -477,7 +493,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public DeviationResponse disableDeviation(DisableDeviationInput disableDeviationInput) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, disableDeviationInput.getWorkflow())
-                 + DEVIATIONS_URL + "/disable")
+            + DEVIATIONS_URL + "/disable")
         .POST(requestSupplier(disableDeviationInput))
         .acceptedHttpStatuses(Set.of(OK, CREATED))
         .build();

@@ -1,18 +1,17 @@
 package com.mercadolibre.planning.model.me.exception;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
-
-import javax.servlet.http.HttpServletRequest;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 class ApiExceptionHandlerTest {
 
@@ -81,39 +80,56 @@ class ApiExceptionHandlerTest {
     @Test
     @DisplayName("Handle ForecastNotFoundException")
     void handleForecastNotFoundException() {
-        // GIVEN
-        final ForecastNotFoundException exception = new ForecastNotFoundException();
-        final ErrorResponse expectedResponse = ErrorResponse.builder()
-                .error("forecast_not_found")
-                .message(exception.getMessage())
-                .status(HttpStatus.NOT_FOUND).build();
+      // GIVEN
+      final ForecastNotFoundException exception = new ForecastNotFoundException();
+      final ErrorResponse expectedResponse = ErrorResponse.builder()
+          .error("forecast_not_found")
+          .message(exception.getMessage())
+          .status(HttpStatus.NOT_FOUND).build();
 
-        // WHEN
-        response = apiExceptionHandler.handleForecastNotFoundException(exception, request);
+      // WHEN
+      response = apiExceptionHandler.handleForecastNotFoundException(exception, request);
 
-        // THEN
-        thenThrow(exception, expectedResponse);
+      // THEN
+      thenThrow(exception, expectedResponse);
     }
 
-    @Test
-    @DisplayName("Handle NoPlannedDataForecastNotFoundException")
-    void handleNoPlannedDataForecastNotFoundException() {
-        // GIVEN
-        final NoPlannedDataException exception =
-                new NoPlannedDataException();
+  @Test
+  @DisplayName("Handle IllegalArgumentException")
+  void handleIllegalArgumentExceptionException() {
+    // GIVEN
+    final IllegalArgumentException exception = new IllegalArgumentException("");
+    final ErrorResponse expectedResponse = ErrorResponse.builder()
+        .error("bad_request")
+        .message("")
+        .status(HttpStatus.BAD_REQUEST).build();
 
-        final ErrorResponse expectedResponse = ErrorResponse.builder()
-                .error("no_planned_data_forecast_not_found")
-                .message(exception.getMessage())
-                .status(HttpStatus.NOT_FOUND).build();
+    // WHEN
+    response = apiExceptionHandler.handleIllegalArgumentException(exception, request);
 
-        // WHEN
-        response = apiExceptionHandler.handleNoPlannedDataException(exception, request);
+    // THEN
+    thenThrow(exception, expectedResponse);
+  }
 
-        // THEN
-        thenThrow(exception, expectedResponse);
-    }
 
+  @Test
+  @DisplayName("Handle NoPlannedDataForecastNotFoundException")
+  void handleNoPlannedDataForecastNotFoundException() {
+    // GIVEN
+    final NoPlannedDataException exception =
+        new NoPlannedDataException();
+
+    final ErrorResponse expectedResponse = ErrorResponse.builder()
+        .error("no_planned_data_forecast_not_found")
+        .message(exception.getMessage())
+        .status(HttpStatus.NOT_FOUND).build();
+
+    // WHEN
+    response = apiExceptionHandler.handleNoPlannedDataException(exception, request);
+
+    // THEN
+    thenThrow(exception, expectedResponse);
+  }
 
     @Test
     @DisplayName("Handle Exception")
