@@ -1,11 +1,15 @@
 package com.mercadolibre.planning.model.me.entities.projection.monitoring;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Value;
 
 @Value
-@Builder
+@AllArgsConstructor
 public class Monitoring {
 
   EndDayDeferralCard endDayDeferralCard;
+
+  public Monitoring() {
+    this.endDayDeferralCard = new EndDayDeferralCard();
+  }
 }

@@ -16,4 +16,10 @@ public class EndDayDeferralCard {
     this.dateFrom = dateFrom;
     this.dateTo = dateFrom.with(LocalTime.MAX);
   }
+
+  public EndDayDeferralCard() {
+    this.totalUnits = null;
+    this.dateFrom = null;
+    this.dateTo = null;
+  }
 }

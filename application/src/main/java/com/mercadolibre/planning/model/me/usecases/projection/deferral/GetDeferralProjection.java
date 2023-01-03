@@ -184,9 +184,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
   private Monitoring getDataMonitoring(
       final EndDayDeferralCard endDayDeferralCard
   ) {
-    return Monitoring.builder()
-        .endDayDeferralCard(endDayDeferralCard)
-        .build();
+    return new Monitoring(endDayDeferralCard);
   }
 
   private EndDayDeferralCard getMonitoringEndDayDeferralCard(

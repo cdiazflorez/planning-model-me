@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.entities.projection;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.monitoring.Monitoring;
@@ -14,12 +15,13 @@ public class ResultData {
 
   List<Projection> projections;
 
+  @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Monitoring.class)
   Monitoring monitoring;
 
   public ResultData(ComplexTable complexTable1, List<Projection> projections) {
     this.complexTable1 = complexTable1;
     this.projections = projections;
-    this.monitoring = null;
+    this.monitoring = new Monitoring();
   }
 
   public ResultData(ComplexTable complexTable1, List<Projection> projections, Monitoring monitoring) {
