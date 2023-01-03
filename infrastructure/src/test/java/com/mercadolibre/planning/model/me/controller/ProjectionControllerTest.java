@@ -28,6 +28,8 @@ import com.mercadolibre.planning.model.me.entities.projection.complextable.Compl
 import com.mercadolibre.planning.model.me.entities.projection.complextable.Data;
 import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
 import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
+import com.mercadolibre.planning.model.me.entities.projection.monitoring.EndDayDeferralCard;
+import com.mercadolibre.planning.model.me.entities.projection.monitoring.Monitoring;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
@@ -99,7 +101,8 @@ public class ProjectionControllerTest {
                         .dateSelector(mockDateSelector())
                         .data(new ResultData(
                             mockComplexTable(),
-                            mockProjectionsCpt()))
+                            mockProjectionsCpt(),
+                            mockMonitoring()))
                         .build()
         );
 
@@ -328,5 +331,11 @@ public class ProjectionControllerTest {
     };
 
     return new DateSelector("Fecha:", dates);
+  }
+
+  private Monitoring mockMonitoring(){
+    return Monitoring.builder()
+        .endDayDeferralCard(new EndDayDeferralCard(0, CURRENT_DATE))
+        .build();
   }
 }

@@ -7,12 +7,12 @@ import lombok.Value;
 @Value
 public class EndDayDeferralCard {
 
-  Integer endDayDeferralTotal;
+  Integer totalUnits;
   ZonedDateTime dateFrom;
   ZonedDateTime dateTo;
 
   public EndDayDeferralCard(Integer endDayDeferralTotal, ZonedDateTime dateFrom) {
-    this.endDayDeferralTotal = endDayDeferralTotal;
+    this.totalUnits = endDayDeferralTotal;
     this.dateFrom = dateFrom;
     this.dateTo = dateFrom.with(LocalTime.MAX);
   }
