@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.google.common.collect.Lists;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.Content;
+import com.mercadolibre.planning.model.me.entities.projection.DeferralResultData;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ResultData;
@@ -101,8 +102,7 @@ public class ProjectionControllerTest {
             .dateSelector(mockDateSelector())
             .data(new ResultData(
                 mockComplexTable(),
-                mockProjectionsCpt(),
-                mockMonitoring()))
+                mockProjectionsCpt()))
             .build()
         );
 
@@ -155,9 +155,10 @@ public class ProjectionControllerTest {
         .thenReturn(PlanningView.builder()
             .currentDate(CURRENT_DATE)
             .dateSelector(mockDateSelector())
-            .data(new ResultData(
+            .data(new DeferralResultData(
                 mockComplexTable(),
-                mockProjectionsDeferral()))
+                mockProjectionsDeferral(),
+                mockMonitoring()))
             .build()
         );
 

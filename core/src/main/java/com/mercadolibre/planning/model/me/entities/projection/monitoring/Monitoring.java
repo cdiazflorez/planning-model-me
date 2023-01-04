@@ -9,7 +9,4 @@ public class Monitoring {
 
   EndDayDeferralCard endDayDeferralCard;
 
-  public Monitoring() {
-    this.endDayDeferralCard = new EndDayDeferralCard();
-  }
 }

@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
+import com.mercadolibre.planning.model.me.entities.projection.DeferralResultData;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.ResultData;
@@ -151,7 +152,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
       return PlanningView.builder()
           .currentDate(now().withZoneSameInstant(UTC).truncatedTo(ChronoUnit.SECONDS))
           .dateSelector(getDateSelector(dateFromToProject, dateFromToShow, SELECTOR_DAYS_TO_SHOW))
-          .data(new ResultData(
+          .data(new DeferralResultData(
               getThroughput(deferralBaseOutput.getConfiguration(),
                   input,
                   dateFromToShow.truncatedTo(ChronoUnit.HOURS),
