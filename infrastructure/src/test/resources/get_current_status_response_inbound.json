@@ -1,35 +1,61 @@
 {
-    "inbound": {
+  "request_date": "2022-12-23T10:15:30Z",
+  "scheduled": [
+    {
+      "date_from": "2022-12-23T10:15:30Z",
+      "date_to": "2022-12-23T10:15:30Z",
+      "inbound": {
         "expected": {
-            "shipments": 500,
-            "units": 15500
+          "shipments": 500,
+          "units": 15500
         },
         "received": {
-            "shipments": 350,
-            "units": 10850
-        },
-        "pending": {
-            "shipments": 2100,
-            "units": 65100
+          "shipments": 350,
+          "units": 10850
         },
         "deviation": {
-            "shipments": 150,
-            "units": 4650,
-            "percentage": 0.3
+          "shipments": 2100,
+          "units": 65100
         }
-    },
-    "inbound_transfer": {
+      },
+      "inbound_transfer": {
         "expected": {
-            "units": 500
+          "units": 500
         },
         "received": {
-            "units": 350
-        },
-        "pending": {
-            "units": 2100
+          "units": 350
         },
         "deviation": {
-            "units": 150
+          "units": 2100
         }
+      },
+      "total": {
+        "expected": {
+          "units": 500
+        },
+        "received": {
+          "units": 350
+        },
+        "deviation": {
+          "units": 2100
+        }
+      }
     }
+  ],
+  "check_in": {
+    "total": {
+      "units": 10240
+    },
+    "immediate": {
+      "units": 9930
+    }
+  },
+  "put_away": {
+    "total": {
+      "units": 10650
+    },
+    "immediate": {
+      "units": 10390
+    }
+  }
 }
