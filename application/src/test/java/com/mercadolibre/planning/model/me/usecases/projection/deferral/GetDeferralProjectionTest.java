@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.DeferralResultData;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
@@ -215,7 +216,7 @@ public class GetDeferralProjectionTest {
         .get(0).getTitle());
     assertTrue(projection.getData().getComplexTable1().getData()
         .get(0).getContent().get(0).get("column_2").isValid());
-    assertNotNull(projection.getData().getMonitoring());
+    assertNotNull(((DeferralResultData) projection.getData()).getMonitoring());
 
 
     //check if the first CPT and the current date are in the same hour and minute, if is the case then the CPT_0 have to be in the projection, otherwise
