@@ -8,7 +8,7 @@ import lombok.Getter;
 @Getter
 public class DeferralResultData extends ResultData {
 
-  Monitoring monitoring;
+  private final Monitoring monitoring;
 
   public DeferralResultData(ComplexTable complexTable1, List<Projection> projections, Monitoring monitoring) {
     super(complexTable1, projections);
