@@ -98,7 +98,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
 
     final ZonedDateTime requestDateTime = ZonedDateTime.ofInstant(requestClockGateway.now(), UTC);
 
-    final ZonedDateTime dateFromToProject = requestDateTime.truncatedTo(ChronoUnit.HOURS);
+    final ZonedDateTime dateFromToProject = requestDateTime.truncatedTo(ChronoUnit.SECONDS);
 
     final ZonedDateTime dateToToProject = dateFromToProject.plusDays(DEFERRAL_DAYS_TO_PROJECT);
 

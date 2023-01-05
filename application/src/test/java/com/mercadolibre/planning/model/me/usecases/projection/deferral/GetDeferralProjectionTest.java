@@ -56,7 +56,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class GetDeferralProjectionTest {
   private static final ZonedDateTime GET_CURRENT_UTC_DATE_TIME = now().withZoneSameInstant(UTC);
 
-  private static final ZonedDateTime CPT_0 = GET_CURRENT_UTC_DATE_TIME.truncatedTo(ChronoUnit.HOURS); //current hour
+  private static final ZonedDateTime CPT_0 = GET_CURRENT_UTC_DATE_TIME.truncatedTo(ChronoUnit.SECONDS); //current seconds
 
   private static final ZonedDateTime CPT_1 = CPT_0.plusHours(4);
 
@@ -204,7 +204,7 @@ public class GetDeferralProjectionTest {
         mockSimulations()));
 
     //THEN
-    assertEquals(3, projection.getData().getProjections().size());
+    assertEquals(4, projection.getData().getProjections().size());
     assertFalse(projection.getData().getProjections().get(0).isDeferred());
     assertFalse(projection.getData().getProjections().get(1).isDeferred());
     assertFalse(projection.getData().getProjections().get(2).isDeferred());
@@ -224,7 +224,7 @@ public class GetDeferralProjectionTest {
     final int expectedCPTs = cptAreSameHourMinuteWithCurrentDate ? 4 : 3;
     assertEquals(expectedCPTs, projectionFutureInputDate.getData().getProjections().size());
     assertEquals(3, projectionFutureInputDate.getData().getProjections().size());
-    assertEquals(3, projectionNullInputDate.getData().getProjections().size());
+    assertEquals(4, projectionNullInputDate.getData().getProjections().size());
   }
 
   @Test
@@ -373,14 +373,16 @@ public class GetDeferralProjectionTest {
         null));
 
     //THEN
-    assertEquals(3, projection.getData().getProjections().size());
+    assertEquals(4, projection.getData().getProjections().size());
     assertFalse(projection.getData().getProjections().get(0).isDeferred());
     assertFalse(projection.getData().getProjections().get(1).isDeferred());
     assertFalse(projection.getData().getProjections().get(2).isDeferred());
+      assertFalse(projection.getData().getProjections().get(3).isDeferred());
 
     assertEquals(0, projection.getData().getProjections().get(0).getDeferredUnits());
     assertEquals(0, projection.getData().getProjections().get(1).getDeferredUnits());
     assertEquals(0, projection.getData().getProjections().get(2).getDeferredUnits());
+    assertEquals(0, projection.getData().getProjections().get(3).getDeferredUnits());
 
     verify(dataDog).trackProjectionError("ARTW01", FBM_WMS_OUTBOUND, "deferral", "items_to_deferral");
   }
