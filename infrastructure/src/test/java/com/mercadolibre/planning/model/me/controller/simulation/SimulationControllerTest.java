@@ -6,6 +6,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
@@ -149,7 +150,7 @@ public class SimulationControllerTest {
     // WHEN
     final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
         .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/run")
-        .param("warehouse_id", WAREHOUSE_ID_ARTW01)
+        .param(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
         .param("caller.id", String.valueOf(USER_ID))
         .content(mockRunSimulationRequest())
         .contentType(APPLICATION_JSON)
@@ -201,7 +202,7 @@ public class SimulationControllerTest {
     // WHEN
     final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
         .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/simulations/save")
-        .param("warehouse_id", WAREHOUSE_ID_ARTW01)
+        .param(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
         .param("caller.id", String.valueOf(USER_ID))
         .content(mockRunSimulationRequest())
         .contentType(APPLICATION_JSON)
@@ -314,7 +315,7 @@ public class SimulationControllerTest {
 
   private String mockRunSimulationRequest() throws JSONException {
     return new JSONObject()
-        .put("warehouse_id", WAREHOUSE_ID_ARTW01)
+        .put(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
         .put("simulations", new JSONArray().put(new JSONObject()
             .put("process_name", "picking")
             .put("entities", new JSONArray().put(new JSONObject()
@@ -427,7 +428,7 @@ public class SimulationControllerTest {
 
   private String mockValidateSimulationRequest() throws JSONException {
     return new JSONObject()
-        .put("warehouse_id", WAREHOUSE_ID_ARTW01)
+        .put(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
         .put("simulations", new JSONArray().put(new JSONObject()
             .put("process_name", "global")
             .put("entities", new JSONArray().put(new JSONObject()
