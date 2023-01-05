@@ -30,7 +30,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.outboundunit.Outbo
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PICKING;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.mockCircuitBreaker;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -76,7 +76,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .put("group.etd_to", utcDateTo.toString())
                     .put("status", PICKING.getStatus())
                     .put("client.id", CLIENT_ID)
-                    .put("warehouse_id", WAREHOUSE_ID)
+                    .put("warehouse_id", WAREHOUSE_ID_ARTW01)
                     .build();
 
             final JSONObject responseBody = new JSONObject()
@@ -86,7 +86,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     GET,
-                    searchUnitUrl(requestParam, WAREHOUSE_ID),
+                    searchUnitUrl(requestParam, WAREHOUSE_ID_ARTW01),
                     null,
                     responseBody.toString()
             );
@@ -94,7 +94,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // WHEN
             final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(
                     new UnitProcessBacklogInput(PICKING.getStatus(),
-                    WAREHOUSE_ID,
+                        WAREHOUSE_ID_ARTW01,
                     utcDateFrom,
                     utcDateTo, null, "order"));
 
@@ -117,7 +117,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .put("group.etd_to", utcDateTo.toString())
                     .put("status", PACKING.getStatus())
                     .put("client.id", CLIENT_ID)
-                    .put("warehouse_id", WAREHOUSE_ID)
+                    .put("warehouse_id", WAREHOUSE_ID_ARTW01)
                     .put("address.area", "PW")
                     .build();
 
@@ -127,7 +127,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
 
             successfulResponse(
                     GET,
-                    searchUnitUrl(requestParam, WAREHOUSE_ID),
+                    searchUnitUrl(requestParam, WAREHOUSE_ID_ARTW01),
                     null,
                     responseBody.toString()
             );
@@ -135,7 +135,7 @@ public class OutboundUnitClientTest extends BaseClientTest {
             // WHEN
             final ProcessBacklog backlogs = outboundUnitClient.getUnitBacklog(
                     new UnitProcessBacklogInput(PACKING.getStatus(),
-                            WAREHOUSE_ID,
+                        WAREHOUSE_ID_ARTW01,
                             utcDateFrom,
                             utcDateTo, "PW", GROUP_TYPE));
 
@@ -157,17 +157,17 @@ public class OutboundUnitClientTest extends BaseClientTest {
                     .put("group.etd_to", utcDateTo.toString())
                     .put("status", PACKING.getStatus())
                     .put("client.id", CLIENT_ID)
-                    .put("warehouse_id", WAREHOUSE_ID)
+                    .put("warehouse_id", WAREHOUSE_ID_ARTW01)
                     .put("address.area", "PW")
                     .build();
-            unsuccessfulResponse(GET, searchUnitUrl(requestParam, WAREHOUSE_ID),
+            unsuccessfulResponse(GET, searchUnitUrl(requestParam, WAREHOUSE_ID_ARTW01),
                     INTERNAL_SERVER_ERROR);
 
             // WHEN
             final ClientException exception = assertThrows(ClientException.class,
                     () -> outboundUnitClient.getUnitBacklog(
                     new UnitProcessBacklogInput(PICKING.getStatus(),
-                            WAREHOUSE_ID,
+                        WAREHOUSE_ID_ARTW01,
                             utcDateFrom,
                             utcDateTo, null, GROUP_TYPE))
             );

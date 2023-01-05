@@ -193,9 +193,9 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
       final ZonedDateTime dateFromToShow
   ) {
     return new EndDayDeferralCard(itemsToDeferral.stream()
-        .filter(p ->
-            (ZonedDateTime.ofInstant(p.getDeferredAt(), UTC).isAfter(dateFromToShow)
-                && ZonedDateTime.ofInstant(p.getDeferredAt(), UTC).isBefore(dateFromToShow.with(LocalTime.MAX)))
+        .filter(deferralProjectionStatus ->
+            (ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isAfter(dateFromToShow)
+                && ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isBefore(dateFromToShow.with(LocalTime.MAX)))
         )
         .mapToInt(DeferralProjectionStatus::getDeferredUnits)
         .sum(),

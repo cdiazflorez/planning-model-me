@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.mockPostUrlSuccess;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.objectMapper;
 import static java.lang.String.format;
@@ -49,14 +49,14 @@ public class PlanningModelForecastClientTest extends BaseClientTest {
         final String date = new Date().toString();
         final Forecast forecast = Forecast.builder()
                 .metadata(List.of(
-                        new Metadata("warehouse_id", WAREHOUSE_ID)
+                        new Metadata("warehouse_id", WAREHOUSE_ID_ARTW01)
                 ))
                 .build();
         final JSONObject request = new JSONObject()
                 .put("workflow", FBM_WMS_OUTBOUND)
                 .put("last_update", date)
                 .put("metadata", new JSONArray()
-                        .put(new JSONObject().put("warehouse_id", WAREHOUSE_ID))
+                        .put(new JSONObject().put("warehouse_id", WAREHOUSE_ID_ARTW01))
                 );
 
         mockPostUrlSuccess(format(BASE_URL + POST_FORECAST_URL, FBM_WMS_OUTBOUND), request);
@@ -72,7 +72,7 @@ public class PlanningModelForecastClientTest extends BaseClientTest {
         this.client = new PlanningModelForecastClient(getRestTestClient(), mockedObjectMapper);
         final Forecast forecast = Forecast.builder()
                 .metadata(List.of(
-                        new Metadata("warehouse_id", WAREHOUSE_ID)
+                        new Metadata("warehouse_id", WAREHOUSE_ID_ARTW01)
                 ))
                 .build();
 

@@ -15,7 +15,7 @@ import static com.mercadolibre.planning.model.me.gateways.projection.backlog.Bac
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.PROCESSED;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.objectMapper;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
@@ -256,7 +256,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
     // GIVEN
     final ForecastMetadataRequest request = ForecastMetadataRequest.builder()
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .dateFrom(now())
         .dateTo(now().plusDays(1))
         .build();
@@ -294,7 +294,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   void testCreateForecastMetadataParams() {
     // GIVEN
     final ForecastMetadataRequest request = ForecastMetadataRequest.builder()
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .dateFrom(now())
         .dateTo(now().plusDays(1))
         .build();
@@ -484,7 +484,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     // GIVEN
     final ProjectionRequest request = ProjectionRequest.builder()
         .workflow(FBM_WMS_OUTBOUND)
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .type(ProjectionType.CPT)
         .processName(List.of(PICKING, PACKING))
         .dateFrom(now())
@@ -552,7 +552,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     // GIVEN
     final ProjectionRequest request = ProjectionRequest.builder()
         .workflow(FBM_WMS_OUTBOUND)
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .type(ProjectionType.CPT)
         .processName(List.of(PICKING, PACKING))
         .dateFrom(now())
@@ -737,7 +737,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   void testGetConfigurationOk() throws JSONException {
     // GIVEN
     final ConfigurationRequest request = ConfigurationRequest.builder()
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .key("estimated_delivery_time")
         .build();
 
@@ -778,7 +778,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     final ZonedDateTime cpt3 = currentTime.plusHours(6);
 
     final PlanningDistributionRequest request = new PlanningDistributionRequest(
-        WAREHOUSE_ID,
+        WAREHOUSE_ID_ARTW01,
         FBM_WMS_OUTBOUND,
         currentTime,
         currentTime,
@@ -857,7 +857,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     final ZonedDateTime currentTime = now().withMinute(0).withSecond(0).withNano(0);
 
     final PlanningDistributionRequest request = new PlanningDistributionRequest(
-        WAREHOUSE_ID,
+        WAREHOUSE_ID_ARTW01,
         FBM_WMS_OUTBOUND,
         currentTime,
         currentTime,
@@ -881,7 +881,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   public void testGetBacklogProjection() throws IOException {
     // GIVEN
     final BacklogProjectionRequest request = BacklogProjectionRequest.builder()
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .dateFrom(now())
         .dateTo(now().plusDays(1))
         .workflow(FBM_WMS_OUTBOUND)
@@ -1097,7 +1097,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     return SimulationRequest
         .builder()
         .workflow(FBM_WMS_OUTBOUND)
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .processName(List.of(PACKING, PICKING))
         .dateFrom(parse("2020-07-27T09:00:00Z"))
         .dateTo(parse("2020-07-28T09:00:00Z"))
@@ -1197,7 +1197,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         .withResponseBody("")
         .build();
 
-    client.deferralSaveSimulation(new SaveSimulationsRequest(FBM_WMS_OUTBOUND, WAREHOUSE_ID, emptyList(), 1L));
+    client.deferralSaveSimulation(new SaveSimulationsRequest(FBM_WMS_OUTBOUND, WAREHOUSE_ID_ARTW01, emptyList(), 1L));
 
   }
 
@@ -1227,7 +1227,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             FBM_WMS_OUTBOUND,
             List.of(PICKING, PACKING),
             List.of(new BacklogQuantity(Instant.parse("2022-07-27T09:00:00Z"), 3000)),
-            WAREHOUSE_ID,
+            WAREHOUSE_ID_ARTW01,
             "America/Buenos_Aires",
             true,
             emptyList());
@@ -1246,7 +1246,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
       // Given
       final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
           .workflow(FBM_WMS_OUTBOUND)
-          .warehouseId(WAREHOUSE_ID)
+          .warehouseId(WAREHOUSE_ID_ARTW01)
           .dateFrom(now())
           .dateTo(now().plusDays(1))
           .value(5.9)
@@ -1276,7 +1276,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
       // Given
       final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
           .workflow(FBM_WMS_OUTBOUND)
-          .warehouseId(WAREHOUSE_ID)
+          .warehouseId(WAREHOUSE_ID_ARTW01)
           .dateFrom(now())
           .dateTo(now().plusDays(1))
           .value(5.9)
@@ -1311,7 +1311,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
       // Given
       final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
           .workflow(FBM_WMS_INBOUND)
-          .warehouseId(WAREHOUSE_ID)
+          .warehouseId(WAREHOUSE_ID_ARTW01)
           .dateFrom(now())
           .dateTo(now().plusDays(1))
           .type(DeviationType.UNITS)
@@ -1342,7 +1342,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
       // Given
       final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
           .workflow(FBM_WMS_INBOUND)
-          .warehouseId(WAREHOUSE_ID)
+          .warehouseId(WAREHOUSE_ID_ARTW01)
           .dateFrom(now())
           .dateTo(now().plusDays(1))
           .type(DeviationType.UNITS)
@@ -1377,7 +1377,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     void testDisableDeviationOk() throws Exception {
       // Given
       final DisableDeviationInput disableDeviationInput =
-          new DisableDeviationInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND);
+          new DisableDeviationInput(WAREHOUSE_ID_ARTW01, FBM_WMS_OUTBOUND);
 
       MockResponse.builder()
           .withMethod(POST)
@@ -1402,7 +1402,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
     void testDisableDeviationError() throws Exception {
       // Given
       final DisableDeviationInput disableDeviationInput =
-          new DisableDeviationInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND);
+          new DisableDeviationInput(WAREHOUSE_ID_ARTW01, FBM_WMS_OUTBOUND);
 
       MockResponse.builder()
           .withMethod(POST)
@@ -1441,7 +1441,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
       // When
       final GetDeviationResponse getDeviationResponse =
-          client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID, A_DATE);
+          client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID_ARTW01, A_DATE);
 
       // Then
       assertNotNull(getDeviationResponse);
@@ -1471,7 +1471,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
       // Then
       assertThrows(ClientException.class,
-          () -> client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID, A_DATE));
+          () -> client.getDeviation(FBM_WMS_OUTBOUND, WAREHOUSE_ID_ARTW01, A_DATE));
     }
   }
 }

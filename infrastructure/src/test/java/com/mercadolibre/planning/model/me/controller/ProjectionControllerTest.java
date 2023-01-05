@@ -6,8 +6,14 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.CALLER_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.COLUMN_1;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.COLUMN_2;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.PACKING_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.PICKING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
@@ -109,8 +115,8 @@ public class ProjectionControllerTest {
     // WHEN
     final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
         .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/cpt")
-        .param("warehouse_id", WAREHOUSE_ID)
-        .param("caller.id", String.valueOf(USER_ID))
+        .param(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
+        .param(CALLER_ID, String.valueOf(USER_ID))
         .contentType(APPLICATION_JSON)
     );
 
@@ -120,7 +126,7 @@ public class ProjectionControllerTest {
 
     verify(getSlaProjection).execute(GetProjectionInputDto.builder()
         .workflow(FBM_WMS_OUTBOUND)
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .requestDate(now)
         .build()
     );
@@ -137,8 +143,8 @@ public class ProjectionControllerTest {
     // WHEN
     final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
         .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/cpt")
-        .param("warehouse_id", WAREHOUSE_ID)
-        .param("caller.id", String.valueOf(USER_ID))
+        .param(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
+        .param(CALLER_ID, String.valueOf(USER_ID))
         .contentType(APPLICATION_JSON)
     );
 
@@ -151,7 +157,7 @@ public class ProjectionControllerTest {
   void getDeferralProjection() throws Exception {
     // GIVEN
     when(getDeferralProjection.execute(
-        new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, any(), false, Collections.emptyList())))
+        new GetProjectionInput(WAREHOUSE_ID_ARTW01, FBM_WMS_OUTBOUND, null, any(), false, Collections.emptyList())))
         .thenReturn(PlanningView.builder()
             .currentDate(CURRENT_DATE)
             .dateSelector(mockDateSelector())
@@ -165,8 +171,8 @@ public class ProjectionControllerTest {
     // WHEN
     final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
         .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/deferral")
-        .param("warehouse_id", WAREHOUSE_ID)
-        .param("caller.id", String.valueOf(USER_ID))
+        .param(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
+        .param(CALLER_ID, String.valueOf(USER_ID))
         .contentType(APPLICATION_JSON)
     );
 
@@ -181,7 +187,7 @@ public class ProjectionControllerTest {
   void getDeferralProjection21Cap5Logic() throws Exception {
     // GIVEN
     when(getDeferralProjection.execute(
-        new GetProjectionInput(WAREHOUSE_ID, FBM_WMS_OUTBOUND, null, null, true, Collections.emptyList())))
+        new GetProjectionInput(WAREHOUSE_ID_ARTW01, FBM_WMS_OUTBOUND, null, null, true, Collections.emptyList())))
         .thenReturn(PlanningView.builder()
             .currentDate(CURRENT_DATE)
             .dateSelector(mockDateSelector())
@@ -194,9 +200,9 @@ public class ProjectionControllerTest {
     // WHEN
     final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
         .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/projections/deferral")
-        .param("warehouse_id", WAREHOUSE_ID)
+        .param(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
         .param("cap_5_to_pack", "true")
-        .param("caller.id", String.valueOf(USER_ID))
+        .param(CALLER_ID, String.valueOf(USER_ID))
         .contentType(APPLICATION_JSON)
     );
 
@@ -209,15 +215,15 @@ public class ProjectionControllerTest {
   private ComplexTable mockComplexTable() {
     return new ComplexTable(
         List.of(
-            new ColumnHeader("column_1", "Horas de Operación", null)
+            new ColumnHeader(COLUMN_1, "Horas de Operación", null)
         ),
         List.of(
             new Data(HEADCOUNT.getName(), "Headcount", true,
                 List.of(
                     Map.of(
-                        "column_1", new Content("Picking",
-                            null, null, "picking", true),
-                        "column_2", new Content(
+                        COLUMN_1, new Content("Picking",
+                            null, null, PICKING_PROCESS, true),
+                        COLUMN_2, new Content(
                             "30",
                             ZonedDateTime.parse("2020-07-27T10:00:00Z"),
                             Map.of(
@@ -230,9 +236,9 @@ public class ProjectionControllerTest {
                         )
                     ),
                     Map.of(
-                        "column_1", new Content("Packing",
-                            null, null, "packing", true),
-                        "column_2", new Content(
+                        COLUMN_1, new Content("Packing",
+                            null, null, PACKING_PROCESS, true),
+                        COLUMN_2, new Content(
                             "30",
                             ZonedDateTime.parse("2020-07-27T10:00:00Z"),
                             null, null, true)
@@ -242,9 +248,9 @@ public class ProjectionControllerTest {
             new Data(PRODUCTIVITY.getName(), "Productividad regular", true,
                 List.of(
                     Map.of(
-                        "column_1", new Content("Picking",
-                            null, null, "picking", true),
-                        "column_2", new Content("30", null,
+                        COLUMN_1, new Content("Picking",
+                            null, null, PICKING_PROCESS, true),
+                        COLUMN_2, new Content("30", null,
                             Map.of(
                                 "title_1",
                                 "Productividad polivalente",
@@ -255,9 +261,9 @@ public class ProjectionControllerTest {
                         )
                     ),
                     Map.of(
-                        "column_1", new Content("Packing",
-                            null, null, "packing", true),
-                        "column_2", new Content("30",
+                        COLUMN_1, new Content("Packing",
+                            null, null, PACKING_PROCESS, true),
+                        COLUMN_2, new Content("30",
                             null, null, null, true)
                     )
                 )
@@ -265,15 +271,15 @@ public class ProjectionControllerTest {
             new Data(THROUGHPUT.getName(), "Throughput", true,
                 List.of(
                     Map.of(
-                        "column_1", new Content("Picking",
-                            null, null, "picking", true),
-                        "column_2", new Content("1600",
+                        COLUMN_1, new Content("Picking",
+                            null, null, PICKING_PROCESS, true),
+                        COLUMN_2, new Content("1600",
                             null, null, null, true)
                     ),
                     Map.of(
-                        "column_1", new Content("Packing",
-                            null, null, "packing", true),
-                        "column_2", new Content("1600",
+                        COLUMN_1, new Content("Packing",
+                            null, null, PACKING_PROCESS, true),
+                        COLUMN_2, new Content("1600",
                             null, null, null, true)
                     )
                 )

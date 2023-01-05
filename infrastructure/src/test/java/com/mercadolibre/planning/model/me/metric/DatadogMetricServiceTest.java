@@ -14,7 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.mockRunSimulationRequest;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -155,7 +155,7 @@ public class DatadogMetricServiceTest {
         tags.add("projection_type", "CPT");
 
         // WHEN
-        service.trackProjectionRequest(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE);
+        service.trackProjectionRequest(WAREHOUSE_ID_ARTW01, WORKFLOW, PROJECTION_TYPE);
 
         // THEN
         thenCreatedTagsCorrectly("application.planning.model.projection", tags);
@@ -171,7 +171,7 @@ public class DatadogMetricServiceTest {
         tags.add("error_type", "some_error");
 
         // WHEN
-        service.trackProjectionError(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE, "some_error");
+        service.trackProjectionError(WAREHOUSE_ID_ARTW01, WORKFLOW, PROJECTION_TYPE, "some_error");
 
         // THEN
         thenCreatedTagsCorrectly("application.planning.model.projection.error", tags);
@@ -189,7 +189,7 @@ public class DatadogMetricServiceTest {
                 .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
 
         // WHEN - THEN
-        assertDoesNotThrow(() -> service.trackProjectionRequest(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE));
+        assertDoesNotThrow(() -> service.trackProjectionRequest(WAREHOUSE_ID_ARTW01, WORKFLOW, PROJECTION_TYPE));
     }
 
     @Test
@@ -197,10 +197,10 @@ public class DatadogMetricServiceTest {
     public void testForecastUploadInfo() {
         // GIVEN
         final MetricCollector.Tags tags = createTags();
-        tags.add("warehouse_id", WAREHOUSE_ID);
+        tags.add("warehouse_id", WAREHOUSE_ID_ARTW01);
 
         // WHEN
-        service.trackForecastUpload(WAREHOUSE_ID);
+        service.trackForecastUpload(WAREHOUSE_ID_ARTW01);
 
         // THEN
         thenCreatedTagsCorrectly("application.planning.model.forecast.upload", tags);
@@ -211,19 +211,19 @@ public class DatadogMetricServiceTest {
     public void testForecastUploadInfoFailure() {
         // GIVEN
         final MetricCollector.Tags tags = createTags();
-        tags.add("warehouse_id", WAREHOUSE_ID);
+        tags.add("warehouse_id", WAREHOUSE_ID_ARTW01);
 
         willThrow(new RuntimeException()).given(wrapper)
                 .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
 
         // WHEN - THEN
-        assertDoesNotThrow(() -> service.trackForecastUpload(WAREHOUSE_ID));
+        assertDoesNotThrow(() -> service.trackForecastUpload(WAREHOUSE_ID_ARTW01));
     }
 
     private MetricCollector.Tags createTags() {
         final MetricCollector.Tags tags = new MetricCollector.Tags();
 
-        tags.add("warehouse_id", WAREHOUSE_ID);
+        tags.add("warehouse_id", WAREHOUSE_ID_ARTW01);
         tags.add("scope", "development");
 
         return tags;

@@ -19,7 +19,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -63,7 +63,7 @@ public class OutboundUnitSearchClientTest extends BaseClientTest {
     private BacklogFilters createCptFilterRequest() {
         final ZonedDateTime dateTo = ZonedDateTime.of(2021, 2, 3, 16, 0, 0, 0, ZoneId.of("UTC"));
         return BacklogFilters.builder()
-                .warehouseId(WAREHOUSE_ID)
+                .warehouseId(WAREHOUSE_ID_ARTW01)
                 .cptFrom(dateTo.minusHours(28))
                 .cptTo(dateTo)
                 .timeZone(ZoneId.of("UTC"))
@@ -74,7 +74,7 @@ public class OutboundUnitSearchClientTest extends BaseClientTest {
 
         MockResponse.builder()
                 .withMethod(POST)
-                .withURL(BASE_URL + format(UNITS_SEARCH_URL, WAREHOUSE_ID,  9999))
+                .withURL(BASE_URL + format(UNITS_SEARCH_URL, WAREHOUSE_ID_ARTW01,  9999))
                 .withStatusCode(OK.value())
                 .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
                 .withRequestBody(getResourceAsString("unit_search_reports_request.json"))
