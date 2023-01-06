@@ -22,12 +22,12 @@ import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
 import com.mercadolibre.planning.model.me.entities.projection.DeferralResultData;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.Projection;
-import com.mercadolibre.planning.model.me.entities.projection.ResultData;
 import com.mercadolibre.planning.model.me.entities.projection.complextable.ComplexTable;
 import com.mercadolibre.planning.model.me.entities.projection.monitoring.EndDayDeferralCard;
 import com.mercadolibre.planning.model.me.entities.projection.monitoring.Monitoring;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.clock.RequestClockGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityRow;
@@ -53,6 +53,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.inject.Named;
@@ -96,6 +97,9 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
   private final ProjectionGateway projectionGateway;
 
   private final MetricsService metricsService;
+
+  private final LogisticCenterGateway logisticCenterGateway;
+
 
   @Override
   public PlanningView execute(final GetProjectionInput input) {
@@ -162,7 +166,8 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
                   dateToToShow,
                   backlogsToShow,
                   projectionsToShow),
-              getDataMonitoring(getMonitoringEndDayDeferralCard(itemsToDeferral, dateFromToShow))
+              getDataMonitoring(
+                  getMonitoringEndDayDeferralCard(itemsToDeferral, dateFromToShow, deferralBaseOutput.getConfiguration().getTimeZone()))
           ))
           .build();
 
@@ -190,12 +195,16 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
 
   private EndDayDeferralCard getMonitoringEndDayDeferralCard(
       final List<DeferralProjectionStatus> itemsToDeferral,
-      final ZonedDateTime dateFromToShow
+      final ZonedDateTime dateFromToShow,
+      final TimeZone logisticCenterZoneId
   ) {
+
     return new EndDayDeferralCard(itemsToDeferral.stream()
-        .filter(deferralProjectionStatus ->
-            (!ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isBefore(dateFromToShow)
-                && !ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isAfter(dateFromToShow.with(LocalTime.MAX)))
+        .filter(deferralProjectionStatus -> (
+                !ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isBefore(dateFromToShow)
+                    && !ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isAfter(
+                    dateFromToShow.withZoneSameInstant(logisticCenterZoneId.toZoneId()).with(LocalTime.MAX).withZoneSameInstant(UTC))
+            )
         )
         .mapToInt(DeferralProjectionStatus::getDeferredUnits)
         .sum(),
