@@ -167,7 +167,7 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
                   backlogsToShow,
                   projectionsToShow),
               getDataMonitoring(
-                  getMonitoringEndDayDeferralCard(itemsToDeferral, dateFromToShow, deferralBaseOutput.getConfiguration().getTimeZone()))
+                  getMonitoringEndDayDeferralCard(itemsToDeferral, requestDateTime, deferralBaseOutput.getConfiguration().getTimeZone()))
           ))
           .build();
 
