@@ -4,7 +4,7 @@ import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.Use
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
@@ -156,7 +156,7 @@ public class DeviationControllerTest {
       // GIVEN
       final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
           .workflow(FBM_WMS_INBOUND)
-          .warehouseId(WAREHOUSE_ID)
+          .warehouseId(WAREHOUSE_ID_ARTW01)
           .dateFrom(ZonedDateTime.parse("2021-01-21T15:00Z[UTC]"))
           .dateTo(ZonedDateTime.parse("2021-01-21T17:00Z[UTC]"))
           .type(DeviationType.UNITS)
@@ -230,7 +230,7 @@ public class DeviationControllerTest {
       result = mvc.perform(MockMvcRequestBuilders
           .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/disable")
           .param("caller.id", String.valueOf(USER_ID))
-          .param("warehouse_id", WAREHOUSE_ID)
+          .param("warehouse_id", WAREHOUSE_ID_ARTW01)
           .contentType(APPLICATION_JSON));
     }
   }
@@ -252,7 +252,7 @@ public class DeviationControllerTest {
       result = mvc.perform(MockMvcRequestBuilders
           .post(format(URL, FBM_WMS_INBOUND.getName()) + "/units/disable")
           .param("caller.id", String.valueOf(USER_ID))
-          .param("logistic_center_id", WAREHOUSE_ID)
+          .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
           .param("shipment_types", ShipmentType.COLLECT.getName(), ShipmentType.FTL.getName())
           .contentType(APPLICATION_JSON));
     }
