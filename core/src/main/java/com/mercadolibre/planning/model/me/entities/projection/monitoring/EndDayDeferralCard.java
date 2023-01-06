@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.entities.projection.monitoring;
 
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import lombok.Value;
 
 @Value
@@ -13,8 +14,8 @@ public class EndDayDeferralCard {
 
   public EndDayDeferralCard(Integer endDayDeferralTotal, ZonedDateTime dateFrom) {
     this.totalUnits = endDayDeferralTotal;
-    this.dateFrom = dateFrom;
-    this.dateTo = dateFrom.with(LocalTime.MAX);
+    this.dateFrom = dateFrom.truncatedTo(ChronoUnit.MINUTES);
+    this.dateTo = dateFrom.with(LocalTime.MAX).truncatedTo(ChronoUnit.SECONDS);
   }
 
 }

@@ -198,12 +198,15 @@ public class GetDeferralProjection implements UseCase<GetProjectionInput, Planni
       final ZonedDateTime dateFromToShow,
       final TimeZone logisticCenterZoneId
   ) {
+    final ZonedDateTime dateFrom = dateFromToShow.truncatedTo(ChronoUnit.MINUTES);
+    final ZonedDateTime EndDayLogisticCenterUtc = dateFromToShow.withZoneSameInstant(logisticCenterZoneId.toZoneId())
+        .with(LocalTime.MAX)
+        .withZoneSameInstant(UTC);
 
     return new EndDayDeferralCard(itemsToDeferral.stream()
         .filter(deferralProjectionStatus -> (
-                !ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isBefore(dateFromToShow)
-                    && !ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isAfter(
-                    dateFromToShow.withZoneSameInstant(logisticCenterZoneId.toZoneId()).with(LocalTime.MAX).withZoneSameInstant(UTC))
+                !ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isBefore(dateFrom)
+                    && !ZonedDateTime.ofInstant(deferralProjectionStatus.getDeferredAt(), UTC).isAfter(EndDayLogisticCenterUtc)
             )
         )
         .mapToInt(DeferralProjectionStatus::getDeferredUnits)
