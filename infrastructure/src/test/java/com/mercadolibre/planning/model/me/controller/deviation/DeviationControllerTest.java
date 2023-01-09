@@ -253,7 +253,6 @@ public class DeviationControllerTest {
           .post(format(URL, FBM_WMS_INBOUND.getName()) + "/units/disable")
           .param("caller.id", String.valueOf(USER_ID))
           .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-          .param("shipment_types", ShipmentType.COLLECT.getName(), ShipmentType.FTL.getName())
           .contentType(APPLICATION_JSON));
     }
   }
