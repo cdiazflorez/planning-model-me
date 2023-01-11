@@ -17,7 +17,9 @@ import static java.util.stream.Collectors.toMap;
 @AllArgsConstructor
 public enum Workflow {
     FBM_WMS_INBOUND(List.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER)),
-    FBM_WMS_OUTBOUND(List.of(BacklogWorkflow.OUTBOUND_ORDERS));
+    FBM_WMS_OUTBOUND(List.of(BacklogWorkflow.OUTBOUND_ORDERS)),
+    INBOUND_TRANSFER(List.of(BacklogWorkflow.INBOUND_TRANSFER)),
+    INBOUND(List.of(BacklogWorkflow.INBOUND));
 
     private List<BacklogWorkflow> backlogWorkflow;
 

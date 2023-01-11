@@ -7,7 +7,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.ResponseUtils.action;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static org.mockito.Mockito.verify;
@@ -56,13 +56,13 @@ public class EntitiesControllerTest {
         // GIVEN
         when(getEntities.execute(GetProjectionInputDto.builder()
                 .workflow(FBM_WMS_OUTBOUND)
-                .warehouseId(WAREHOUSE_ID)
+                .warehouseId(WAREHOUSE_ID_ARTW01)
                 .build()))
                 .thenReturn(mockComplexTable());
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, WAREHOUSE_ID, FBM_WMS_OUTBOUND.getName()) + "/entities")
+                .get(format(URL, WAREHOUSE_ID_ARTW01, FBM_WMS_OUTBOUND.getName()) + "/entities")
                 .param("caller.id", String.valueOf(USER_ID))
                 .contentType(APPLICATION_JSON)
         );
@@ -83,7 +83,7 @@ public class EntitiesControllerTest {
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, WAREHOUSE_ID, FBM_WMS_OUTBOUND.getName()) + "/entities")
+                .get(format(URL, WAREHOUSE_ID_ARTW01, FBM_WMS_OUTBOUND.getName()) + "/entities")
                 .param("caller.id", String.valueOf(USER_ID))
                 .contentType(APPLICATION_JSON)
         );

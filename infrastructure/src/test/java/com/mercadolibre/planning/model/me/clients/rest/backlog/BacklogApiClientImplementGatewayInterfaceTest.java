@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.clients.rest.backlog;
 
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
@@ -65,7 +65,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
         arguments(
             "",
             BacklogRequest.builder()
-                .warehouseId(WAREHOUSE_ID)
+                .warehouseId(WAREHOUSE_ID_ARTW01)
                 .build()),
         arguments(
             "?workflows=orders,withdrawal&"
@@ -74,7 +74,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
                 + "date_to=2021-08-12T05:00:00Z&"
                 + "group_by=workflow,process,area",
             BacklogRequest.builder()
-                .warehouseId(WAREHOUSE_ID)
+                .warehouseId(WAREHOUSE_ID_ARTW01)
                 .workflows(of("orders", "withdrawal"))
                 .processes(of("rtw", "picking"))
                 .dateFrom(DATE_FROM)
@@ -101,7 +101,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
   @MethodSource("testParameters")
   void testGetBacklogOK(String query, BacklogRequest request) throws JSONException {
     // GIVEN
-    final String url = String.format(URL, WAREHOUSE_ID) + query;
+    final String url = String.format(URL, WAREHOUSE_ID_ARTW01) + query;
     mockSuccessfulResponse(url, buildResponse());
 
     // WHEN
@@ -124,12 +124,12 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
   @Test
   void testGetCurrentBacklogOK() throws JSONException {
     // GIVEN
-    final String url = String.format(URL, WAREHOUSE_ID) + "/current";
+    final String url = String.format(URL, WAREHOUSE_ID_ARTW01) + "/current";
     mockSuccessfulResponse(url, buildResponse());
 
     // WHEN
     final List<Consolidation> result = client.getCurrentBacklog(
-        WAREHOUSE_ID,
+        WAREHOUSE_ID_ARTW01,
         null,
         null,
         null,
@@ -154,12 +154,12 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
   @Test
   void testGetCurrentBacklogWithDateInOK() throws JSONException {
     // GIVEN
-    final String url = String.format(URL, WAREHOUSE_ID) + "/current";
+    final String url = String.format(URL, WAREHOUSE_ID_ARTW01) + "/current";
     mockSuccessfulResponse(url, buildResponse());
 
     // WHEN
     final List<Consolidation> result = client.getCurrentBacklog(
-        new BacklogCurrentRequest(WAREHOUSE_ID)
+        new BacklogCurrentRequest(WAREHOUSE_ID_ARTW01)
     );
 
     // THEN
@@ -179,7 +179,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
   @Test
   void testGetLastPhoto() throws JSONException {
     // GIVEN
-    final String url = String.format(URL_LAST_PHOTO, WAREHOUSE_ID);
+    final String url = String.format(URL_LAST_PHOTO, WAREHOUSE_ID_ARTW01);
     var response = buildResponseLastPhoto();
 
     MockResponse.builder()
@@ -196,7 +196,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
     // WHEN
     final Photo photo = client.getLastPhoto(
         new BacklogLastPhotoRequest(
-            WAREHOUSE_ID,
+            WAREHOUSE_ID_ARTW01,
             Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
             Set.of(Step.TO_PICK),
             dateFrom,
@@ -217,7 +217,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
   @Test
   void testGetPhotos() throws JSONException {
     // GIVEN
-    final String url = String.format(URL_PHOTO, WAREHOUSE_ID);
+    final String url = String.format(URL_PHOTO, WAREHOUSE_ID_ARTW01);
     mockSuccessfulResponse(url, buildResponsePhotos());
 
     final Instant dateFrom = Instant.parse("2022-06-22T00:00:00Z");
@@ -226,7 +226,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
     // WHEN
     final List<Photo> photos = client.getPhotos(
         new BacklogPhotosRequest(
-            WAREHOUSE_ID,
+            WAREHOUSE_ID_ARTW01,
             Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
             Set.of(Step.TO_PICK),
             dateFrom,
@@ -249,7 +249,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
   @Test
   void testGetPhotosCached() throws JSONException {
     // GIVEN
-    final String url = String.format(URL_PHOTO, WAREHOUSE_ID);
+    final String url = String.format(URL_PHOTO, WAREHOUSE_ID_ARTW01);
     mockSuccessfulResponse(url, buildResponsePhotos());
 
     final Instant dateFrom = Instant.parse("2022-06-22T00:00:00Z");
@@ -258,7 +258,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
     // WHEN
     final List<Photo> photos = client.getPhotosCached(
         new BacklogPhotosRequest(
-            WAREHOUSE_ID,
+            WAREHOUSE_ID_ARTW01,
             Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
             Set.of(Step.TO_PICK),
             dateFrom,
@@ -284,7 +284,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
     mockErroneousResponse();
     BacklogRequest request = new BacklogRequest(
         DATE_CURRENT,
-        WAREHOUSE_ID,
+        WAREHOUSE_ID_ARTW01,
         of(WORKFLOW),
         of(),
         of(),
@@ -364,7 +364,7 @@ class BacklogApiClientImplementGatewayInterfaceTest extends BaseClientTest {
   }
 
   private void mockErroneousResponse() {
-    final String url = String.format(URL, WAREHOUSE_ID) + "?" + QUERY_PARAMS;
+    final String url = String.format(URL, WAREHOUSE_ID_ARTW01) + "?" + QUERY_PARAMS;
 
     MockResponse.builder()
         .withMethod(GET)
