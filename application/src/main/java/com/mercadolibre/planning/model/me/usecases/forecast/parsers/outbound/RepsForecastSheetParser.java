@@ -68,7 +68,7 @@ public class RepsForecastSheetParser implements SheetParser {
 
   private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 188;
 
-  private static final int HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET = 3;
+  private static final int HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET = 4;
 
   private static final int WAREHOUSE_ID_ROW = 3;
 
@@ -84,6 +84,12 @@ public class RepsForecastSheetParser implements SheetParser {
 
     validateIfWarehouseIdIsCorrect(warehouseId, sheet);
     validateIfWeekIsCorrect(week);
+
+    int columnSize = sheet.getRowsStartingFrom(PROCESSING_DISTRIBUTION_STARTING_ROW).stream()
+        .findFirst()
+        .get()
+        .getCells()
+        .size();
 
     final RepsDistributionDto repsDistributionDto = getProcessingDistribution(config, sheet);
 
