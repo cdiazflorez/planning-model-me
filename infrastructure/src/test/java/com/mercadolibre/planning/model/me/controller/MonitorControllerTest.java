@@ -72,7 +72,7 @@ class MonitorControllerTest {
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
                 .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/monitors")
-                .param("warehouse_id", WAREHOUSE_ID)
+                .param("warehouse_id", WAREHOUSE_ID_ARTW01)
                 .param("caller.id", String.valueOf(USER_ID))
                 .param("date_from", "2019-07-27T00:00:00.000-05:00")
                 .param("date_to", "2019-07-27T00:00:00.000-05:00")
@@ -90,7 +90,7 @@ class MonitorControllerTest {
         // GIVEN
         when(requestClock.now()).thenReturn(Instant.now());
         when(getBacklogScheduled.execute(
-                        WAREHOUSE_ID,
+            WAREHOUSE_ID_ARTW01,
                         requestClock.now()
         ))
                 .thenReturn(mockBacklogScheduled());
@@ -98,7 +98,7 @@ class MonitorControllerTest {
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
                 .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors")
-                .param("logistic_center_id", WAREHOUSE_ID)
+                .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
                 .param("caller.id", String.valueOf(USER_ID))
         );
 

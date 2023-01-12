@@ -61,11 +61,11 @@ public class ProjectionController {
     datadogMetricService.trackProjectionRequest(warehouseId, workflow, "CPT");
 
     return ResponseEntity.of(of(getSlaProjection.execute(GetProjectionInputDto.builder()
-                                                             .workflow(workflow)
-                                                             .warehouseId(warehouseId)
-                                                             .date(date)
-                                                             .requestDate(requestClock.now())
-                                                             .build())));
+        .workflow(workflow)
+        .warehouseId(warehouseId)
+        .date(date)
+        .requestDate(requestClock.now())
+        .build())));
   }
 
   @Trace

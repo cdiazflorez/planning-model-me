@@ -28,7 +28,13 @@ import org.springframework.http.HttpStatus;
 
 /** Build methods and constants to be used in testing. */
 public class TestUtils {
-  public static final String WAREHOUSE_ID = "ARTW01";
+  public static final String WAREHOUSE_ID_ARTW01 = "ARTW01";
+
+  public static final String WAREHOUSE_ID = "warehouse_id";
+
+  public static final String COLUMN_1 = "column_1";
+
+  public static final String COLUMN_2 = "column_2";
 
   public static final Long USER_ID = 1234L;
 
@@ -170,7 +176,7 @@ public class TestUtils {
   /**
    * Mocks a Run Simulation Request from known values:
    *
-   * <p>warehouseId: {@value WAREHOUSE_ID}
+   * <p>warehouseId: {@value WAREHOUSE_ID_ARTW01}
    *
    * <p>SimulationRequest.processName: {@value PICKING_PROCESS}
    *
@@ -180,7 +186,7 @@ public class TestUtils {
    */
   public static RunSimulationRequest mockRunSimulationRequest() {
     return RunSimulationRequest.builder()
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .simulations(
             List.of(
                 SimulationRequest.builder()
@@ -193,7 +199,7 @@ public class TestUtils {
   /**
    * Mocks a SaveSimulationRequest from known values:
    *
-   * <p>warehouseId: {@value WAREHOUSE_ID}
+   * <p>warehouseId: {@value WAREHOUSE_ID_ARTW01}
    *
    * <p>simulations(SimulationRequest.processName): {@value PICKING_PROCESS}
    *
@@ -203,7 +209,7 @@ public class TestUtils {
    */
   public static SaveSimulationRequest mockSaveSimulationRequest() {
     return SaveSimulationRequest.builder()
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .simulations(
             List.of(
                 SimulationRequest.builder()
@@ -216,7 +222,7 @@ public class TestUtils {
   /**
    * Mocks a DeviationRequest from known values:
    *
-   * <p>warehouseId: {@value WAREHOUSE_ID}
+   * <p>warehouseId: {@value WAREHOUSE_ID_ARTW01}
    *
    * <p>value: {@value DEVIATION_VALUE}.
    *
@@ -229,7 +235,7 @@ public class TestUtils {
     final ZonedDateTime dateTo = dateFrom.plusHours(hours);
 
     return DeviationRequest.builder()
-        .warehouseId(WAREHOUSE_ID)
+        .warehouseId(WAREHOUSE_ID_ARTW01)
         .value(DEVIATION_VALUE)
         .dateFrom(dateFrom)
         .dateTo(dateTo)

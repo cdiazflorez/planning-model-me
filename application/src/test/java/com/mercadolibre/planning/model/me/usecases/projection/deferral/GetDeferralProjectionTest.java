@@ -13,6 +13,7 @@ import static java.util.Collections.emptyList;
 import static java.util.TimeZone.getDefault;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.DeferralResultData;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
@@ -56,7 +58,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class GetDeferralProjectionTest {
   private static final ZonedDateTime GET_CURRENT_UTC_DATE_TIME = now().withZoneSameInstant(UTC);
 
-  private static final ZonedDateTime CPT_0 = GET_CURRENT_UTC_DATE_TIME.truncatedTo(ChronoUnit.HOURS); //current hour
+  private static final ZonedDateTime CPT_0 = GET_CURRENT_UTC_DATE_TIME.truncatedTo(ChronoUnit.SECONDS); //current seconds
 
   private static final ZonedDateTime CPT_1 = CPT_0.plusHours(4);
 
@@ -204,7 +206,7 @@ public class GetDeferralProjectionTest {
         mockSimulations()));
 
     //THEN
-    assertEquals(3, projection.getData().getProjections().size());
+    assertEquals(4, projection.getData().getProjections().size());
     assertFalse(projection.getData().getProjections().get(0).isDeferred());
     assertFalse(projection.getData().getProjections().get(1).isDeferred());
     assertFalse(projection.getData().getProjections().get(2).isDeferred());
@@ -214,6 +216,8 @@ public class GetDeferralProjectionTest {
         .get(0).getTitle());
     assertTrue(projection.getData().getComplexTable1().getData()
         .get(0).getContent().get(0).get("column_2").isValid());
+    assertNotNull(((DeferralResultData) projection.getData()).getMonitoring());
+
 
     //check if the first CPT and the current date are in the same hour and minute, if is the case then the CPT_0 have to be in the projection, otherwise
     //the CPT_0 shouldn't be because there is not in the date range anymore
@@ -224,7 +228,7 @@ public class GetDeferralProjectionTest {
     final int expectedCPTs = cptAreSameHourMinuteWithCurrentDate ? 4 : 3;
     assertEquals(expectedCPTs, projectionFutureInputDate.getData().getProjections().size());
     assertEquals(3, projectionFutureInputDate.getData().getProjections().size());
-    assertEquals(3, projectionNullInputDate.getData().getProjections().size());
+    assertEquals(4, projectionNullInputDate.getData().getProjections().size());
   }
 
   @Test
@@ -373,14 +377,16 @@ public class GetDeferralProjectionTest {
         null));
 
     //THEN
-    assertEquals(3, projection.getData().getProjections().size());
+    assertEquals(4, projection.getData().getProjections().size());
     assertFalse(projection.getData().getProjections().get(0).isDeferred());
     assertFalse(projection.getData().getProjections().get(1).isDeferred());
     assertFalse(projection.getData().getProjections().get(2).isDeferred());
+      assertFalse(projection.getData().getProjections().get(3).isDeferred());
 
     assertEquals(0, projection.getData().getProjections().get(0).getDeferredUnits());
     assertEquals(0, projection.getData().getProjections().get(1).getDeferredUnits());
     assertEquals(0, projection.getData().getProjections().get(2).getDeferredUnits());
+    assertEquals(0, projection.getData().getProjections().get(3).getDeferredUnits());
 
     verify(dataDog).trackProjectionError("ARTW01", FBM_WMS_OUTBOUND, "deferral", "items_to_deferral");
   }

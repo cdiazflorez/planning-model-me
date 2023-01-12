@@ -9,7 +9,7 @@ allprojects {
     apply plugin: 'jacoco'
 
     repositories {
-		maven { url "http://maven.artifacts.furycloud.io/repository/all" }
+		maven { url "https://maven.artifacts.furycloud.io/repository/all/" }
         mavenLocal()
 	}
 }

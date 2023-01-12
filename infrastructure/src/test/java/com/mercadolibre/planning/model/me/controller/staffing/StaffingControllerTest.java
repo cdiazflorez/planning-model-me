@@ -16,7 +16,7 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_AUDIT_PRO
 import static com.mercadolibre.planning.model.me.utils.TestUtils.STOCK_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.TRANSFER_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WITHDRAWALS_WORKFLOW;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
@@ -140,12 +140,12 @@ public class StaffingControllerTest {
   @Test
   public void testGetStaffing() throws Exception {
     // GIVEN
-    when(getStaffing.execute(new GetStaffingInput(WAREHOUSE_ID))).thenReturn(mockStaffing());
+    when(getStaffing.execute(new GetStaffingInput(WAREHOUSE_ID_ARTW01))).thenReturn(mockStaffing());
 
     // WHEN
     final ResultActions result =
         mockMvc.perform(
-            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID) + CURRENT_URL)
+            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID_ARTW01) + CURRENT_URL)
                 .param(CALLER_ID, String.valueOf(USER_ID))
                 .contentType(APPLICATION_JSON));
 
@@ -158,13 +158,13 @@ public class StaffingControllerTest {
   @Test
   public void testGetPlannedHeadcountOk() throws Exception {
     // GIVEN
-    when(getPlannedHeadcount.execute(new GetPlannedHeadcountInput(WAREHOUSE_ID)))
+    when(getPlannedHeadcount.execute(new GetPlannedHeadcountInput(WAREHOUSE_ID_ARTW01)))
         .thenReturn(mockPlannedHeadcount());
 
     // WHEN
     final ResultActions result =
         mockMvc.perform(
-            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID) + PLAN_URL)
+            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID_ARTW01) + PLAN_URL)
                 .param(CALLER_ID, String.valueOf(USER_ID))
                 .contentType(APPLICATION_JSON));
 
@@ -178,13 +178,13 @@ public class StaffingControllerTest {
   @Test
   public void testGetPlannedHeadcountError() throws Exception {
     // GIVEN
-    when(getPlannedHeadcount.execute(new GetPlannedHeadcountInput(WAREHOUSE_ID)))
+    when(getPlannedHeadcount.execute(new GetPlannedHeadcountInput(WAREHOUSE_ID_ARTW01)))
         .thenThrow(ForecastNotFoundException.class);
 
     // WHEN
     final ResultActions result =
         mockMvc.perform(
-            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID) + PLAN_URL)
+            MockMvcRequestBuilders.get(format(URL, WAREHOUSE_ID_ARTW01) + PLAN_URL)
                 .param(CALLER_ID, String.valueOf(USER_ID))
                 .contentType(APPLICATION_JSON));
 

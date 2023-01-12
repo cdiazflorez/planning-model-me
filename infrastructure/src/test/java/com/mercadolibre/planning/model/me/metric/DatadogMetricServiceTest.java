@@ -1,5 +1,14 @@
 package com.mercadolibre.planning.model.me.metric;
 
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.mockRunSimulationRequest;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.verify;
+
 import com.mercadolibre.metrics.MetricCollector;
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimulationRequest;
@@ -14,230 +23,219 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.mockRunSimulationRequest;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Mockito.verify;
-
 @ExtendWith(MockitoExtension.class)
 public class DatadogMetricServiceTest {
 
-    @Mock
-    private DatadogWrapper wrapper;
+  private static final Workflow WORKFLOW = Workflow.FBM_WMS_OUTBOUND;
+  private static final String PROJECTION_TYPE = "CPT";
+  @Mock
+  private DatadogWrapper wrapper;
+  @InjectMocks
+  private DatadogMetricService service;
 
-    @InjectMocks
-    private DatadogMetricService service;
+  @Test
+  @DisplayName("Send run simulation info")
+  public void testSendRunSimulationInfo() {
+    // GIVEN
+    final RunSimulationRequest runSimulationRequest =
+        mockRunSimulationRequest();
+    final MetricCollector.Tags tags = createTags();
+    tags.add("picking", "headcount");
 
-    private static final Workflow WORKFLOW = Workflow.FBM_WMS_OUTBOUND;
-    private static final String PROJECTION_TYPE = "CPT";
+    // WHEN
+    service.trackRunSimulation(runSimulationRequest);
 
-    @Test
-    @DisplayName("Send run simulation info")
-    public void testSendRunSimulationInfo() {
-        // GIVEN
-        final RunSimulationRequest runSimulationRequest =
-                mockRunSimulationRequest();
-        final MetricCollector.Tags tags = createTags();
-        tags.add("picking", "headcount");
+    // THEN
+    thenCreatedTagsCorrectly("application.planning.model.simulation.run", tags);
+  }
 
-        // WHEN
-        service.trackRunSimulation(runSimulationRequest);
+  @Test
+  @DisplayName("Run metric fails, but we catch the exception")
+  public void testSendRunSimulationInfoFailure() {
+    // GIVEN
+    final RunSimulationRequest runSimulationRequest = mockRunSimulationRequest();
+    final MetricCollector.Tags tags = createTags();
+    tags.add("picking", "headcount");
 
-        // THEN
-        thenCreatedTagsCorrectly("application.planning.model.simulation.run", tags);
-    }
+    willThrow(new RuntimeException()).given(wrapper)
+        .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
 
-    @Test
-    @DisplayName("Run metric fails, but we catch the exception")
-      public void testSendRunSimulationInfoFailure() {
-        // GIVEN
-        final RunSimulationRequest runSimulationRequest = mockRunSimulationRequest();
-        final MetricCollector.Tags tags = createTags();
-        tags.add("picking", "headcount");
+    // WHEN - THEN
+    assertDoesNotThrow(() -> service.trackRunSimulation(runSimulationRequest));
+  }
 
-        willThrow(new RuntimeException()).given(wrapper)
-                .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
+  @Test
+  @DisplayName("Send save simulation info")
+  public void testSendSaveSimulationInfo() {
+    // GIVEN
+    final SaveSimulationRequest saveSimulationRequest =
+        TestUtils.mockSaveSimulationRequest();
+    final MetricCollector.Tags tags = createTags();
+    tags.add("picking", "headcount");
 
-        // WHEN - THEN
-        assertDoesNotThrow(() -> service.trackRunSimulation(runSimulationRequest));
-    }
+    // WHEN
+    service.trackSaveSimulation(saveSimulationRequest);
 
-    @Test
-    @DisplayName("Send save simulation info")
-    public void testSendSaveSimulationInfo() {
-        // GIVEN
-        final SaveSimulationRequest saveSimulationRequest =
-                TestUtils.mockSaveSimulationRequest();
-        final MetricCollector.Tags tags = createTags();
-        tags.add("picking", "headcount");
+    // THEN
+    thenCreatedTagsCorrectly("application.planning.model.simulation.save", tags);
+  }
 
-        // WHEN
-        service.trackSaveSimulation(saveSimulationRequest);
+  @Test
+  @DisplayName("Save metric fails, but we catch the exception")
+  public void testSendSaveSimulationInfoFailure() {
+    // GIVEN
+    final SaveSimulationRequest saveSimulationRequest =
+        TestUtils.mockSaveSimulationRequest();
+    final MetricCollector.Tags tags = createTags();
+    tags.add("picking", "headcount");
 
-        // THEN
-        thenCreatedTagsCorrectly("application.planning.model.simulation.save", tags);
-    }
+    willThrow(new RuntimeException()).given(wrapper)
+        .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
 
-    @Test
-    @DisplayName("Save metric fails, but we catch the exception")
-    public void testSendSaveSimulationInfoFailure() {
-        // GIVEN
-        final SaveSimulationRequest saveSimulationRequest =
-                TestUtils.mockSaveSimulationRequest();
-        final MetricCollector.Tags tags = createTags();
-        tags.add("picking", "headcount");
+    // WHEN - THEN
+    assertDoesNotThrow(() -> service.trackSaveSimulation(saveSimulationRequest));
+  }
 
-        willThrow(new RuntimeException()).given(wrapper)
-                .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
+  @Test
+  @DisplayName("Send deviation to adjust forecast with 24-hour range")
+  public void testSendDeviation24RangeInfo() {
+    // GIVEN
+    final DeviationRequest deviationRequest =
+        TestUtils.mockDeviationRequest(24);
+    final MetricCollector.Tags tags = createTags();
+    tags.add("duration", "true");
 
-        // WHEN - THEN
-        assertDoesNotThrow(() -> service.trackSaveSimulation(saveSimulationRequest));
-    }
+    // WHEN
+    service.trackDeviationAdjustment(deviationRequest);
 
-    @Test
-    @DisplayName("Send deviation to adjust forecast with 24-hour range")
-    public void testSendDeviation24RangeInfo() {
-        // GIVEN
-        final DeviationRequest deviationRequest =
-                TestUtils.mockDeviationRequest(24);
-        final MetricCollector.Tags tags = createTags();
-        tags.add("duration", "true");
+    // THEN
+    thenCreatedTagsCorrectly("application.planning.model.deviation", tags);
+  }
 
-        // WHEN
-        service.trackDeviationAdjustment(deviationRequest);
+  @Test
+  @DisplayName("Send deviation to adjust forecast with non 24-hour range")
+  public void testSendDeviationNon24RangeInfo() {
+    // GIVEN
+    final DeviationRequest deviationRequest =
+        TestUtils.mockDeviationRequest(10);
+    final MetricCollector.Tags tags = createTags();
+    tags.add("duration", "false");
 
-        // THEN
-        thenCreatedTagsCorrectly("application.planning.model.deviation", tags);
-    }
+    // WHEN
+    service.trackDeviationAdjustment(deviationRequest);
 
-    @Test
-    @DisplayName("Send deviation to adjust forecast with non 24-hour range")
-    public void testSendDeviationNon24RangeInfo() {
-        // GIVEN
-        final DeviationRequest deviationRequest =
-                TestUtils.mockDeviationRequest(10);
-        final MetricCollector.Tags tags = createTags();
-        tags.add("duration", "false");
+    // THEN
+    thenCreatedTagsCorrectly("application.planning.model.deviation", tags);
+  }
 
-        // WHEN
-        service.trackDeviationAdjustment(deviationRequest);
+  @Test
+  @DisplayName("Send deviation metric fails, but we catch the exception")
+  public void testSendDeviationInfoFailure() {
+    // GIVEN
+    final DeviationRequest deviationRequest =
+        TestUtils.mockDeviationRequest(10);
+    final MetricCollector.Tags tags = createTags();
+    tags.add("duration", "false");
 
-        // THEN
-        thenCreatedTagsCorrectly("application.planning.model.deviation", tags);
-    }
+    willThrow(new RuntimeException()).given(wrapper)
+        .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
 
-    @Test
-    @DisplayName("Send deviation metric fails, but we catch the exception")
-    public void testSendDeviationInfoFailure() {
-        // GIVEN
-        final DeviationRequest deviationRequest =
-                TestUtils.mockDeviationRequest(10);
-        final MetricCollector.Tags tags = createTags();
-        tags.add("duration", "false");
+    // WHEN - THEN
+    assertDoesNotThrow(() -> service.trackDeviationAdjustment(deviationRequest));
+  }
 
-        willThrow(new RuntimeException()).given(wrapper)
-                .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
+  @Test
+  @DisplayName("Send projection")
+  public void testSendProjectionInfo() {
+    // GIVEN
+    final MetricCollector.Tags tags = createTags();
+    tags.add("workflow", "fbm-wms-outbound");
+    tags.add("projection_type", "CPT");
 
-        // WHEN - THEN
-        assertDoesNotThrow(() -> service.trackDeviationAdjustment(deviationRequest));
-    }
+    // WHEN
+    service.trackProjectionRequest(WAREHOUSE_ID_ARTW01, WORKFLOW, PROJECTION_TYPE);
 
-    @Test
-    @DisplayName("Send projection")
-    public void testSendProjectionInfo() {
-        // GIVEN
-        final MetricCollector.Tags tags = createTags();
-        tags.add("workflow", "fbm-wms-outbound");
-        tags.add("projection_type", "CPT");
+    // THEN
+    thenCreatedTagsCorrectly("application.planning.model.projection", tags);
+  }
 
-        // WHEN
-        service.trackProjectionRequest(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE);
+  @Test
+  @DisplayName("Send projection")
+  public void testSendProjectionError() {
+    // GIVEN
+    final MetricCollector.Tags tags = createTags();
+    tags.add("workflow", "fbm-wms-outbound");
+    tags.add("projection_type", "CPT");
+    tags.add("error_type", "some_error");
 
-        // THEN
-        thenCreatedTagsCorrectly("application.planning.model.projection", tags);
-    }
+    // WHEN
+    service.trackProjectionError(WAREHOUSE_ID_ARTW01, WORKFLOW, PROJECTION_TYPE, "some_error");
 
-    @Test
-    @DisplayName("Send projection")
-    public void testSendProjectionError() {
-        // GIVEN
-        final MetricCollector.Tags tags = createTags();
-        tags.add("workflow", "fbm-wms-outbound");
-        tags.add("projection_type", "CPT");
-        tags.add("error_type", "some_error");
+    // THEN
+    thenCreatedTagsCorrectly("application.planning.model.projection.error", tags);
+  }
 
-        // WHEN
-        service.trackProjectionError(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE, "some_error");
+  @Test
+  @DisplayName("Send projection metric fails, but we catch the exception")
+  public void testSendProjectionInfoFailure() {
+    // GIVEN
+    final MetricCollector.Tags tags = createTags();
+    tags.add("workflow", "fbm-wms-outbound");
+    tags.add("projection_type", "CPT");
 
-        // THEN
-        thenCreatedTagsCorrectly("application.planning.model.projection.error", tags);
-    }
+    willThrow(new RuntimeException()).given(wrapper)
+        .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
 
-    @Test
-    @DisplayName("Send projection metric fails, but we catch the exception")
-    public void testSendProjectionInfoFailure() {
-        // GIVEN
-        final MetricCollector.Tags tags = createTags();
-        tags.add("workflow", "fbm-wms-outbound");
-        tags.add("projection_type", "CPT");
+    // WHEN - THEN
+    assertDoesNotThrow(() -> service.trackProjectionRequest(WAREHOUSE_ID_ARTW01, WORKFLOW, PROJECTION_TYPE));
+  }
 
-        willThrow(new RuntimeException()).given(wrapper)
-                .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
+  @Test
+  @DisplayName("Send forecast upload info")
+  public void testForecastUploadInfo() {
+    // GIVEN
+    final MetricCollector.Tags tags = createTags();
+    tags.add("warehouse_id", WAREHOUSE_ID_ARTW01);
 
-        // WHEN - THEN
-        assertDoesNotThrow(() -> service.trackProjectionRequest(WAREHOUSE_ID, WORKFLOW, PROJECTION_TYPE));
-    }
+    // WHEN
+    service.trackForecastUpload(WAREHOUSE_ID_ARTW01);
 
-    @Test
-    @DisplayName("Send forecast upload info")
-    public void testForecastUploadInfo() {
-        // GIVEN
-        final MetricCollector.Tags tags = createTags();
-        tags.add("warehouse_id", WAREHOUSE_ID);
+    // THEN
+    thenCreatedTagsCorrectly("application.planning.model.forecast.upload", tags);
+  }
 
-        // WHEN
-        service.trackForecastUpload(WAREHOUSE_ID);
+  @Test
+  @DisplayName("Send forecast metric fails, but we catch the exception")
+  public void testForecastUploadInfoFailure() {
+    // GIVEN
+    final MetricCollector.Tags tags = createTags();
+    tags.add("warehouse_id", WAREHOUSE_ID_ARTW01);
 
-        // THEN
-        thenCreatedTagsCorrectly("application.planning.model.forecast.upload", tags);
-    }
+    willThrow(new RuntimeException()).given(wrapper)
+        .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
 
-    @Test
-    @DisplayName("Send forecast metric fails, but we catch the exception")
-    public void testForecastUploadInfoFailure() {
-        // GIVEN
-        final MetricCollector.Tags tags = createTags();
-        tags.add("warehouse_id", WAREHOUSE_ID);
+    // WHEN - THEN
+    assertDoesNotThrow(() -> service.trackForecastUpload(WAREHOUSE_ID_ARTW01));
+  }
 
-        willThrow(new RuntimeException()).given(wrapper)
-                .incrementCounter(any(String.class), any(MetricCollector.Tags.class));
+  private MetricCollector.Tags createTags() {
+    final MetricCollector.Tags tags = new MetricCollector.Tags();
 
-        // WHEN - THEN
-        assertDoesNotThrow(() -> service.trackForecastUpload(WAREHOUSE_ID));
-    }
+    tags.add("warehouse_id", WAREHOUSE_ID_ARTW01);
+    tags.add("scope", "development");
 
-    private MetricCollector.Tags createTags() {
-        final MetricCollector.Tags tags = new MetricCollector.Tags();
+    return tags;
+  }
 
-        tags.add("warehouse_id", WAREHOUSE_ID);
-        tags.add("scope", "development");
+  private void thenCreatedTagsCorrectly(final String counterName,
+                                        final MetricCollector.Tags tags) {
 
-        return tags;
-    }
+    final ArgumentCaptor<MetricCollector.Tags> captor = ArgumentCaptor
+        .forClass(MetricCollector.Tags.class);
+    verify(wrapper).incrementCounter(
+        eq(counterName),
+        captor.capture());
 
-    private void thenCreatedTagsCorrectly(final String counterName,
-                                          final MetricCollector.Tags tags) {
-
-        final ArgumentCaptor<MetricCollector.Tags> captor = ArgumentCaptor
-                .forClass(MetricCollector.Tags.class);
-        verify(wrapper).incrementCounter(
-                eq(counterName),
-                captor.capture());
-
-        assertArrayEquals(tags.toArray(), captor.getValue().toArray());
-    }
+    assertArrayEquals(tags.toArray(), captor.getValue().toArray());
+  }
 }

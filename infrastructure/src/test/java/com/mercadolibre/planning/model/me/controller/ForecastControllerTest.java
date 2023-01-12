@@ -3,7 +3,7 @@ package com.mercadolibre.planning.model.me.controller;
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static java.lang.String.format;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -59,19 +59,19 @@ public class ForecastControllerTest {
         .multipart(format(URL, FBM_WMS_OUTBOUND.getName()) + "/upload")
         .file(file)
         .param("caller.id", String.valueOf(USER_ID))
-        .param("warehouse_id", WAREHOUSE_ID));
+        .param("warehouse_id", WAREHOUSE_ID_ARTW01));
 
     // THEN
     result.andExpect(status().isOk());
     verify(uploadForecast).upload(
-        WAREHOUSE_ID,
+        WAREHOUSE_ID_ARTW01,
         FBM_WMS_OUTBOUND,
         Target.FBM_WMS_OUTBOUND.forecastParser,
         fileContent,
         1234L
     );
     verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_FORECAST)));
-    verify(datadogMetricService).trackForecastUpload(WAREHOUSE_ID);
+    verify(datadogMetricService).trackForecastUpload(WAREHOUSE_ID_ARTW01);
   }
 
   @Test

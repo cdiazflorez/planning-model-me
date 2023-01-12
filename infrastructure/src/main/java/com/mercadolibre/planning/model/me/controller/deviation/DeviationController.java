@@ -116,7 +116,6 @@ public class DeviationController {
         @PathVariable final DeviationType type,
         @PathVariable final Workflow workflow,
         @RequestParam final String logisticCenterId,
-        @RequestParam final List<ShipmentType> shipmentTypes,
         @RequestParam("caller.id") @NotNull final Long callerId) {
 
       DeviationResponse response = new DeviationResponse(OK.value(), "Schedule deviation disable");
@@ -127,6 +126,7 @@ public class DeviationController {
     @InitBinder
     public void initBinder(final PropertyEditorRegistry dataBinder) {
         dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
+        //TODO: you need to add the list as a parameter in the deviation request;
         dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
         dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
     }

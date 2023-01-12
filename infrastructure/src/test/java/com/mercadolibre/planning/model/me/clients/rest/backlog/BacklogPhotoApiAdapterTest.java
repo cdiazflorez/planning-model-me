@@ -5,7 +5,7 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PUT_AWAY;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.workflows.Area;
@@ -146,7 +146,7 @@ public class BacklogPhotoApiAdapterTest {
 
   private BacklogRequest createRequest(Set<ProcessName> processes, Workflow workflow) {
     return new BacklogRequest(
-        WAREHOUSE_ID,
+        WAREHOUSE_ID_ARTW01,
         Set.of(workflow),
         processes,
         DATE_FROM,
@@ -161,7 +161,7 @@ public class BacklogPhotoApiAdapterTest {
 
   private BacklogPhotosRequest createBacklogPhotoRequest(Set<Step> steps) {
     return new BacklogPhotosRequest(
-        WAREHOUSE_ID,
+        WAREHOUSE_ID_ARTW01,
         Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
         steps,
         DATE_FROM,
@@ -176,7 +176,7 @@ public class BacklogPhotoApiAdapterTest {
 
   private BacklogPhotosRequest createBacklogPhotoInboundRequest(Set<Step> steps) {
     return new BacklogPhotosRequest(
-        WAREHOUSE_ID,
+        WAREHOUSE_ID_ARTW01,
         Set.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER),
         steps,
         DATE_FROM,
