@@ -26,10 +26,12 @@ import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.Pr
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.DeviationGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Deviation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
@@ -81,7 +83,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway, EntityGateway, ProjectionGateway {
+public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway, EntityGateway, ProjectionGateway, DeviationGateway {
 
   private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
 
@@ -94,6 +96,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   private static final String PROJECTION_URL = "/planning/model/workflows/%s/projections/%s";
 
   private static final String DEVIATIONS_URL = "/deviations";
+
+  private static final String ACTIVE_DEVIATIONS_URL = "/deviations/active";
 
   private static final String WAREHOUSE_ID = "warehouse_id";
 
@@ -421,12 +425,30 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
             + DEVIATIONS_URL)
         .GET()
         .queryParams(params)
-        .acceptedHttpStatuses(Set.of(OK, CREATED))
+        .acceptedHttpStatuses(Set.of(OK))
         .build();
 
     return send(request, response -> response.getData(new TypeReference<>() {
     }));
   }
+
+    @Trace
+    @Override
+    public List<Deviation> getActiveDeviations(final Workflow workflow,
+                                               final String warehouseId,
+                                               final ZonedDateTime date) {
+        final Map<String, String> params = Map.of(WAREHOUSE_ID, warehouseId, "date", date.withFixedOffsetZone().toString());
+        final HttpRequest request = HttpRequest.builder()
+                .url(format(WORKFLOWS_URL, workflow)
+                        + ACTIVE_DEVIATIONS_URL)
+                .GET()
+                .queryParams(params)
+                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {
+        }));
+    }
 
   @Trace
   @Override

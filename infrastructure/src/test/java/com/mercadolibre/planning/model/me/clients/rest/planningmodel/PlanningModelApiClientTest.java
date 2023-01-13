@@ -46,6 +46,7 @@ import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistri
 import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Deviation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
@@ -125,9 +126,10 @@ class PlanningModelApiClientTest extends BaseClientTest {
   private static final String PLANNING_DISTRIBUTION_URL =
       "/planning/model/workflows/%s/planning_distributions";
 
-
   private static final String DEVIATION_URL =
       "/planning/model/workflows/%s/deviations";
+
+  private static final String ACTIVE_DEVIATIONS_URL = "/planning/model/workflows/%s/deviations/active";
 
   private static final String UNITS_DISTRIBUTION = "/planning/model/workflows/%s/entities/units_distribution";
 
@@ -1452,6 +1454,53 @@ class PlanningModelApiClientTest extends BaseClientTest {
       assertEquals(5.8, getDeviationResponse.getValue());
       assertEquals(PERCENTAGE, getDeviationResponse.getMetricUnit());
     }
+
+      @Test
+      void testGetListOfDeviationOk() throws Exception {
+          // Given
+          final Instant currentTime = Instant.parse("2022-01-11T15:00:00Z");
+          final JSONArray response = new JSONArray()
+                  .put(new JSONObject()
+                          .put("workflow", FBM_WMS_INBOUND.getName())
+                          .put("type", "minutes")
+                          .put("date_from", currentTime)
+                          .put("date_to", currentTime.plus(5, HOURS))
+                          .put("value", 5.8)
+                          .put("metric_unit", "percentage")
+                  )
+                  .put(new JSONObject()
+                          .put("workflow", FBM_WMS_INBOUND.getName())
+                          .put("type", "minutes")
+                          .put("date_from", currentTime.plus(1, HOURS))
+                          .put("date_to", currentTime.plus(6, HOURS))
+                          .put("value", 3.6)
+                          .put("metric_unit", "percentage")
+                  );
+
+          MockResponse.builder()
+                  .withMethod(GET)
+                  .withURL(format(BASE_URL + ACTIVE_DEVIATIONS_URL, FBM_WMS_INBOUND))
+                  .withStatusCode(OK.value())
+                  .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+                  .withResponseBody(response.toString())
+                  .build();
+
+          // When
+          final List<Deviation> getActiveDeviations =
+                  client.getActiveDeviations(FBM_WMS_INBOUND, WAREHOUSE_ID_ARTW01, A_DATE);
+          final Deviation firstElementInRepsonse = getActiveDeviations.get(0);
+          // Then
+
+          assertNotNull(getActiveDeviations);
+          assertEquals(
+                  ZonedDateTime.of(2022, 1, 11, 15, 0, 0, 0, ZoneId.of("Z")),
+                  firstElementInRepsonse.getDateFrom());
+          assertEquals(
+                  ZonedDateTime.of(2022, 1, 11, 20, 0, 0, 0, ZoneId.of("Z")),
+                  firstElementInRepsonse.getDateTo());
+          assertEquals(5.8, firstElementInRepsonse.getValue());
+          assertEquals(PERCENTAGE, firstElementInRepsonse.getMetricUnit());
+      }
 
     @Test
     void testGetDeviationWhenNotExistDeviation() throws Exception {
