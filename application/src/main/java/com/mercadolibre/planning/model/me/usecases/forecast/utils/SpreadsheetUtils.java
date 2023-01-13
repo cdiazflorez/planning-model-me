@@ -21,10 +21,12 @@ import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 import static java.lang.String.format;
 
+@Slf4j
 public final class SpreadsheetUtils {
 
     public static final DateTimeFormatter formatter =
@@ -264,6 +266,18 @@ public final class SpreadsheetUtils {
     public static String getCellAddress(final int column, final int row) {
         final char letter = (char) (CHAR_LETTER_A + column);
         return letter + "" + (row + 1);
+    }
+
+    public static SheetVersion getSheetVersion(final MeliSheet sheet,
+                                         final int row,
+                                         final int column) {
+
+        try {
+             return SheetVersion.from(sheet.getRowAt(row).getCellAt(column).getValue());
+        } catch (NullPointerException e) {
+            log.info("Error while trying to get version {}", getCellAddress(column, row));
+            return SheetVersion.CURRENT_VERSION;
+        }
     }
 
     private static MeliCell getCellAt(final MeliSheet sheet, final MeliRow row, final int column) {

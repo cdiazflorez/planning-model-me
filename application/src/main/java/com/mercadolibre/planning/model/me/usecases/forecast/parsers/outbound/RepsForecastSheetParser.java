@@ -20,6 +20,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntValueAtFromDuration;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getLongValueAt;
+import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getSheetVersion;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getStringValueAt;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
@@ -41,6 +42,7 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.mod
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProductivityProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.GenerateBacklogLimitUtil;
+import com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.time.ZoneId;
@@ -81,17 +83,11 @@ public class RepsForecastSheetParser implements SheetParser {
   public ForecastSheetDto parse(
       final String warehouseId, final MeliSheet sheet, final LogisticCenterConfiguration config) {
     final String week = getStringValueAt(sheet, 2, 2);
-
+    final SheetVersion version = getSheetVersion(sheet, 1, 10);
     validateIfWarehouseIdIsCorrect(warehouseId, sheet);
     validateIfWeekIsCorrect(week);
 
-    int columnSize = sheet.getRowsStartingFrom(PROCESSING_DISTRIBUTION_STARTING_ROW).stream()
-        .findFirst()
-        .get()
-        .getCells()
-        .size();
-
-    final RepsDistributionDto repsDistributionDto = getProcessingDistribution(config, sheet);
+    final RepsDistributionDto repsDistributionDto = getProcessingDistribution(config, sheet, version);
 
     final Map<String, Double> productivityPolyvalenceByProcessName =
         getPolyvalentProductivity(sheet).stream()
@@ -157,13 +153,13 @@ public class RepsForecastSheetParser implements SheetParser {
   }
 
   private RepsDistributionDto getProcessingDistribution(
-      final LogisticCenterConfiguration config, final MeliSheet sheet) {
+      final LogisticCenterConfiguration config, final MeliSheet sheet, final SheetVersion version) {
     // Columns
     final List<ProcessingDistribution> processingDistributions =
         ForecastProcessName.stream()
             .flatMap(
                 forecastProcessName ->
-                    forecastProcessName.getProcessTypes().stream()
+                    forecastProcessName.getProcessTypes(version).stream()
                         .map(
                             forecastProcessType ->
                                 new ProcessingDistribution(
@@ -195,7 +191,7 @@ public class RepsForecastSheetParser implements SheetParser {
 
       processingDistributions.forEach(
           processingDistribution -> {
-            final int columnIndex = getColumnIndex(processingDistribution);
+            final int columnIndex = getColumnIndex(processingDistribution, version);
             processingDistribution
                 .getData()
                 .add(
@@ -207,7 +203,7 @@ public class RepsForecastSheetParser implements SheetParser {
       headcountProductivities.forEach(
           headcountProductivity -> {
             final int columnIndex =
-                ForecastProcessName.from(headcountProductivity.getProcessName()).getStartingColumn()
+                ForecastProcessName.from(headcountProductivity.getProcessName()).getStartingColumn(version)
                     + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET;
             headcountProductivity
                 .getData()
@@ -237,9 +233,9 @@ public class RepsForecastSheetParser implements SheetParser {
         && MetricUnit.MINUTES == MetricUnit.from(processingDistribution.getQuantityMetricUnit());
   }
 
-  private int getColumnIndex(final ProcessingDistribution processingDistribution) {
-    return ForecastProcessName.from(processingDistribution.getProcessName()).getStartingColumn()
-        + ForecastProcessType.from(processingDistribution.getType()).getColumnOrder();
+  private int getColumnIndex(final ProcessingDistribution processingDistribution, final SheetVersion version) {
+    return ForecastProcessName.from(processingDistribution.getProcessName()).getStartingColumn(version)
+        + ForecastProcessType.from(processingDistribution.getType()).getColumnOrder(version);
   }
 
   private List<HeadcountDistribution> getHeadcountDistribution(final MeliSheet sheet) {
