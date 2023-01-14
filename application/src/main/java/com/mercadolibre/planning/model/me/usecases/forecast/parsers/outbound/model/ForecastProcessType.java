@@ -20,15 +20,15 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ForecastProcessType {
-  PERFORMED_PROCESSING(Map.of(CURRENT_VERSION, 0), UNITS),
-  REMAINING_PROCESSING(Map.of(CURRENT_VERSION, -2), MINUTES),
-  WORKERS(Map.of(CURRENT_VERSION, 1), MetricUnit.WORKERS),
-  ACTIVE_WORKERS(Map.of(CURRENT_VERSION, 2), MetricUnit.WORKERS),
+  PERFORMED_PROCESSING(Map.of(CURRENT_VERSION, 0, NON_SYSTEMIC_VERSION_OB, 0), UNITS),
+  REMAINING_PROCESSING(Map.of(CURRENT_VERSION, -2, NON_SYSTEMIC_VERSION_OB, -2), MINUTES),
+  WORKERS(Map.of(CURRENT_VERSION, 1, NON_SYSTEMIC_VERSION_OB, 1), MetricUnit.WORKERS),
+  ACTIVE_WORKERS(Map.of(CURRENT_VERSION, 2, NON_SYSTEMIC_VERSION_OB, 2), MetricUnit.WORKERS),
   TOTAL_WORKERS_NS(Map.of(NON_SYSTEMIC_VERSION_OB, 3), MetricUnit.WORKERS),
   HEADCOUNT_PRODUCTIVITY(Map.of(CURRENT_VERSION, 3, NON_SYSTEMIC_VERSION_OB, 4), UNITS_PER_HOUR),
-  MAX_CAPACITY(Map.of(CURRENT_VERSION, 0), UNITS_PER_HOUR),
-  BACKLOG_LOWER_LIMIT(Map.of(CURRENT_VERSION, 20), MINUTES),
-  BACKLOG_UPPER_LIMIT(Map.of(CURRENT_VERSION, 21), MINUTES);
+  MAX_CAPACITY(Map.of(CURRENT_VERSION, 0, NON_SYSTEMIC_VERSION_OB, 0), UNITS_PER_HOUR),
+  BACKLOG_LOWER_LIMIT(Map.of(CURRENT_VERSION, 20, NON_SYSTEMIC_VERSION_OB, 20), MINUTES),
+  BACKLOG_UPPER_LIMIT(Map.of(CURRENT_VERSION, 21, NON_SYSTEMIC_VERSION_OB, 21), MINUTES);
 
   private static final Map<String, ForecastProcessType> LOOKUP =
       Arrays.stream(values()).collect(toMap(ForecastProcessType::toString, Function.identity()));
@@ -47,9 +47,7 @@ public enum ForecastProcessType {
   }
 
   public int getColumnOrder(final SheetVersion version) {
-    return this.columnOrderByVersion.containsKey(version)
-        ? this.columnOrderByVersion.get(version)
-        : this.columnOrderByVersion.get(CURRENT_VERSION);
+    return this.columnOrderByVersion.get(version);
   }
 
   @Override

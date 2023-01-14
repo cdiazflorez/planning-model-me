@@ -97,9 +97,7 @@ public enum ForecastProcessName {
   }
 
   private ColumnByVersion getValidVersion(final SheetVersion version) {
-    return this.getStartingColumnByVersion().containsKey(version)
-        ? this.getStartingColumnByVersion().get(version)
-        : this.getStartingColumnByVersion().get(CURRENT_VERSION);
+    return this.getStartingColumnByVersion().get(version);
   }
 
   @Getter

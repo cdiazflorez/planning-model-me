@@ -70,7 +70,8 @@ public class RepsForecastSheetParser implements SheetParser {
 
   private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 188;
 
-  private static final int HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET = 4;
+  private static final Map<SheetVersion, Integer> HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET =
+      Map.of(SheetVersion.CURRENT_VERSION, 3, SheetVersion.NON_SYSTEMIC_VERSION_OB, 4);
 
   private static final int WAREHOUSE_ID_ROW = 3;
 
@@ -87,7 +88,8 @@ public class RepsForecastSheetParser implements SheetParser {
     validateIfWarehouseIdIsCorrect(warehouseId, sheet);
     validateIfWeekIsCorrect(week);
 
-    final RepsDistributionDto repsDistributionDto = getProcessingDistribution(config, sheet, version);
+    final RepsDistributionDto repsDistributionDto =
+        getProcessingDistribution(config, sheet, version);
 
     final Map<String, Double> productivityPolyvalenceByProcessName =
         getPolyvalentProductivity(sheet).stream()
@@ -134,7 +136,8 @@ public class RepsForecastSheetParser implements SheetParser {
             Map.entry(POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet)),
             Map.entry(HEADCOUNT_PRODUCTIVITY, repsDistributionDto.getHeadcountProductivities()),
             Map.entry(
-                BACKLOG_LIMITS, GenerateBacklogLimitUtil.generateBacklogLimitBody(config, sheet))));
+                BACKLOG_LIMITS,
+                GenerateBacklogLimitUtil.generateBacklogLimitBody(config, sheet, version))));
   }
 
   private void validateIfWarehouseIdIsCorrect(String warehouseId, MeliSheet sheet) {
@@ -170,17 +173,17 @@ public class RepsForecastSheetParser implements SheetParser {
                                     new ArrayList<>())))
             .collect(Collectors.toList());
 
-      final List<HeadcountProductivity> headcountProductivities =
-              ForecastProductivityProcessName.stream()
-                      .map(
-                           processName ->
-                               new HeadcountProductivity(
-                                   GLOBAL,
-                                   processName.name(),
-                                   MetricUnit.UNITS_PER_HOUR.getName(),
-                                   DEFAULT_ABILITY_LEVEL,
-                                   new ArrayList<>()))
-                      .collect(Collectors.toList());
+    final List<HeadcountProductivity> headcountProductivities =
+        ForecastProductivityProcessName.stream()
+            .map(
+                processName ->
+                    new HeadcountProductivity(
+                        GLOBAL,
+                        processName.name(),
+                        MetricUnit.UNITS_PER_HOUR.getName(),
+                        DEFAULT_ABILITY_LEVEL,
+                        new ArrayList<>()))
+            .collect(Collectors.toList());
 
     final ZoneId zoneId = config.getZoneId();
 
@@ -203,8 +206,9 @@ public class RepsForecastSheetParser implements SheetParser {
       headcountProductivities.forEach(
           headcountProductivity -> {
             final int columnIndex =
-                ForecastProcessName.from(headcountProductivity.getProcessName()).getStartingColumn(version)
-                    + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET;
+                ForecastProcessName.from(headcountProductivity.getProcessName())
+                        .getStartingColumn(version)
+                    + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET.get(version);
             headcountProductivity
                 .getData()
                 .add(
@@ -233,8 +237,10 @@ public class RepsForecastSheetParser implements SheetParser {
         && MetricUnit.MINUTES == MetricUnit.from(processingDistribution.getQuantityMetricUnit());
   }
 
-  private int getColumnIndex(final ProcessingDistribution processingDistribution, final SheetVersion version) {
-    return ForecastProcessName.from(processingDistribution.getProcessName()).getStartingColumn(version)
+  private int getColumnIndex(
+      final ProcessingDistribution processingDistribution, final SheetVersion version) {
+    return ForecastProcessName.from(processingDistribution.getProcessName())
+            .getStartingColumn(version)
         + ForecastProcessType.from(processingDistribution.getType()).getColumnOrder(version);
   }
 
