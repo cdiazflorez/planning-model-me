@@ -273,7 +273,8 @@ public final class SpreadsheetUtils {
                                          final int column) {
 
         try {
-             return SheetVersion.from(sheet.getRowAt(row).getCellAt(column).getValue());
+            String vs = sheet.getRowAt(row).getCellAt(column).getValue();
+             return SheetVersion.from(vs);
         } catch (NullPointerException e) {
             log.info("Error while trying to get version {}", getCellAddress(column, row));
             return SheetVersion.CURRENT_VERSION;

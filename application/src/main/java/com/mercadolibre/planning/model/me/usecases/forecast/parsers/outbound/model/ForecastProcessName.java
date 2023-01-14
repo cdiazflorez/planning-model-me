@@ -26,6 +26,8 @@ public enum ForecastProcessName {
   WAVING(
       Map.of(
           CURRENT_VERSION,
+          new ForecastProcessName.ColumnByVersion(2, List.of(PERFORMED_PROCESSING)),
+          NON_SYSTEMIC_VERSION_OB,
           new ForecastProcessName.ColumnByVersion(2, List.of(PERFORMED_PROCESSING)))),
   PICKING(
       Map.of(
@@ -65,9 +67,10 @@ public enum ForecastProcessName {
               29, List.of(WORKERS, ACTIVE_WORKERS, TOTAL_WORKERS_NS)))),
   GLOBAL(
       Map.of(
-          CURRENT_VERSION, new ForecastProcessName.ColumnByVersion(31, List.of(MAX_CAPACITY)),
+          CURRENT_VERSION,
+          new ForecastProcessName.ColumnByVersion(31, List.of(MAX_CAPACITY)),
           NON_SYSTEMIC_VERSION_OB,
-              new ForecastProcessName.ColumnByVersion(36, List.of(MAX_CAPACITY))));
+          new ForecastProcessName.ColumnByVersion(36, List.of(MAX_CAPACITY))));
 
   private static final Map<String, ForecastProcessName> LOOKUP =
       Arrays.stream(values()).collect(toMap(ForecastProcessName::toString, Function.identity()));

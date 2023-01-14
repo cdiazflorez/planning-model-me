@@ -15,13 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public enum SheetVersion {
 
+
   CURRENT_VERSION("1.0"),
   NON_SYSTEMIC_VERSION_OB("2.0");
 
   private String version;
 
   private static final Map<String, SheetVersion> LOOKUP =
-      Arrays.stream(values()).collect(toMap(SheetVersion::toString, Function.identity()));
+      Arrays.stream(values()).collect(toMap(SheetVersion::getVersion,  Function.identity()));
 
   public static SheetVersion from(final String version) {
     if (LOOKUP.containsKey(version)) {
