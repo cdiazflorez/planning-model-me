@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -67,12 +68,12 @@ public enum ForecastProcessName {
 
   @JsonCreator
   public static ForecastProcessName from(final String status) {
-    return LOOKUP.get(status.toLowerCase());
+    return LOOKUP.get(status.toLowerCase(Locale.ROOT));
   }
 
   @Override
   public String toString() {
-    return name().toLowerCase();
+    return name().toLowerCase(Locale.ROOT);
   }
 
   public List<ForecastProcessType> getProcessTypes(final SheetVersion version) {

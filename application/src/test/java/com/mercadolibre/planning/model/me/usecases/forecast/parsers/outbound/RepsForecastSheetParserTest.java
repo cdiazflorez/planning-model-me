@@ -39,7 +39,6 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.mod
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -231,10 +230,10 @@ class RepsForecastSheetParserTest {
             forecastSheetDto.getValues().get(ForecastColumnName.PROCESSING_DISTRIBUTION);
 
     thenForecastSheetDtoIsNotNull(forecastSheetDto);
-    Assertions.assertEquals(
+    assertEquals(
         5,
         processingDistributions.stream()
-            .filter(distribution -> distribution.getType().equals("total_workers_ns"))
+            .filter(distribution -> "total_workers_ns".equals(distribution.getType()))
             .count());
   }
 }
