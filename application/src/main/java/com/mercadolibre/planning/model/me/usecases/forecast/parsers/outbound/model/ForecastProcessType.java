@@ -3,8 +3,6 @@ package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.mo
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
-import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion.CURRENT_VERSION;
-import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion.NON_SYSTEMIC_VERSION_OB;
 import static java.util.stream.Collectors.toMap;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -20,15 +18,15 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ForecastProcessType {
-  PERFORMED_PROCESSING(Map.of(CURRENT_VERSION, 0, NON_SYSTEMIC_VERSION_OB, 0), UNITS),
-  REMAINING_PROCESSING(Map.of(CURRENT_VERSION, -2, NON_SYSTEMIC_VERSION_OB, -2), MINUTES),
-  WORKERS(Map.of(CURRENT_VERSION, 1, NON_SYSTEMIC_VERSION_OB, 1), MetricUnit.WORKERS),
-  ACTIVE_WORKERS(Map.of(CURRENT_VERSION, 2, NON_SYSTEMIC_VERSION_OB, 2), MetricUnit.WORKERS),
-  TOTAL_WORKERS_NS(Map.of(NON_SYSTEMIC_VERSION_OB, 3), MetricUnit.WORKERS),
-  HEADCOUNT_PRODUCTIVITY(Map.of(CURRENT_VERSION, 3, NON_SYSTEMIC_VERSION_OB, 4), UNITS_PER_HOUR),
-  MAX_CAPACITY(Map.of(CURRENT_VERSION, 0, NON_SYSTEMIC_VERSION_OB, 0), UNITS_PER_HOUR),
-  BACKLOG_LOWER_LIMIT(Map.of(CURRENT_VERSION, 20, NON_SYSTEMIC_VERSION_OB, 20), MINUTES),
-  BACKLOG_UPPER_LIMIT(Map.of(CURRENT_VERSION, 21, NON_SYSTEMIC_VERSION_OB, 21), MINUTES);
+  PERFORMED_PROCESSING(SheetVersion.mapping(0, 0), UNITS),
+  REMAINING_PROCESSING(SheetVersion.mapping(-2, -2), MINUTES),
+  WORKERS(SheetVersion.mapping(1, 1), MetricUnit.WORKERS),
+  ACTIVE_WORKERS(SheetVersion.mapping(2, 2), MetricUnit.WORKERS),
+  TOTAL_WORKERS_NS(SheetVersion.mapping(-99, 3), MetricUnit.WORKERS),
+  HEADCOUNT_PRODUCTIVITY(SheetVersion.mapping(3, 4), UNITS_PER_HOUR),
+  MAX_CAPACITY(SheetVersion.mapping(0, 0), UNITS_PER_HOUR),
+  BACKLOG_LOWER_LIMIT(SheetVersion.mapping(20, 20), MINUTES),
+  BACKLOG_UPPER_LIMIT(SheetVersion.mapping(21, 21), MINUTES);
 
   private static final Map<String, ForecastProcessType> LOOKUP =
       Arrays.stream(values()).collect(toMap(ForecastProcessType::toString, Function.identity()));

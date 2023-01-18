@@ -6,8 +6,6 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.REMAINING_PROCESSING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.TOTAL_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.WORKERS;
-import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion.CURRENT_VERSION;
-import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion.NON_SYSTEMIC_VERSION_OB;
 import static java.util.stream.Collectors.toMap;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -24,52 +22,38 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ForecastProcessName {
   WAVING(
-      Map.of(
-          CURRENT_VERSION,
+      SheetVersion.mapping(
           new ForecastProcessName.ColumnByVersion(2, List.of(PERFORMED_PROCESSING)),
-          NON_SYSTEMIC_VERSION_OB,
           new ForecastProcessName.ColumnByVersion(2, List.of(PERFORMED_PROCESSING)))),
   PICKING(
-      Map.of(
-          CURRENT_VERSION,
+      SheetVersion.mapping(
           new ForecastProcessName.ColumnByVersion(
               5, List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS)),
-          NON_SYSTEMIC_VERSION_OB,
           new ForecastProcessName.ColumnByVersion(
               5, List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS, TOTAL_WORKERS_NS)))),
   PACKING(
-      Map.of(
-          CURRENT_VERSION,
+      SheetVersion.mapping(
           new ForecastProcessName.ColumnByVersion(10, List.of(WORKERS, ACTIVE_WORKERS)),
-          NON_SYSTEMIC_VERSION_OB,
           new ForecastProcessName.ColumnByVersion(
               11, List.of(WORKERS, ACTIVE_WORKERS, TOTAL_WORKERS_NS)))),
   BATCH_SORTER(
-      Map.of(
-          CURRENT_VERSION,
+      SheetVersion.mapping(
           new ForecastProcessName.ColumnByVersion(15, List.of(WORKERS, ACTIVE_WORKERS)),
-          NON_SYSTEMIC_VERSION_OB,
           new ForecastProcessName.ColumnByVersion(
               17, List.of(WORKERS, ACTIVE_WORKERS, TOTAL_WORKERS_NS)))),
   WALL_IN(
-      Map.of(
-          CURRENT_VERSION,
+      SheetVersion.mapping(
           new ForecastProcessName.ColumnByVersion(20, List.of(WORKERS, ACTIVE_WORKERS)),
-          NON_SYSTEMIC_VERSION_OB,
           new ForecastProcessName.ColumnByVersion(
               23, List.of(WORKERS, ACTIVE_WORKERS, TOTAL_WORKERS_NS)))),
   PACKING_WALL(
-      Map.of(
-          CURRENT_VERSION,
+      SheetVersion.mapping(
           new ForecastProcessName.ColumnByVersion(25, List.of(WORKERS, ACTIVE_WORKERS)),
-          NON_SYSTEMIC_VERSION_OB,
           new ForecastProcessName.ColumnByVersion(
               29, List.of(WORKERS, ACTIVE_WORKERS, TOTAL_WORKERS_NS)))),
   GLOBAL(
-      Map.of(
-          CURRENT_VERSION,
+      SheetVersion.mapping(
           new ForecastProcessName.ColumnByVersion(31, List.of(MAX_CAPACITY)),
-          NON_SYSTEMIC_VERSION_OB,
           new ForecastProcessName.ColumnByVersion(36, List.of(MAX_CAPACITY))));
 
   private static final Map<String, ForecastProcessName> LOOKUP =

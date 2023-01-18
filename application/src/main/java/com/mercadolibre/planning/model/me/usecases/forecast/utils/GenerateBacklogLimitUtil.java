@@ -133,78 +133,22 @@ public class GenerateBacklogLimitUtil {
   @Getter
   @AllArgsConstructor
   private enum BacklogLimitConf {
-    WAVING_LOWER_LIMIT(
-        WAVING,
-        BACKLOG_LOWER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 4, SheetVersion.NON_SYSTEMIC_VERSION_OB, 4),
-        0.0,
-        24.0),
-    WAVING_UPPER_LIMIT(
-        WAVING,
-        BACKLOG_UPPER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 5, SheetVersion.NON_SYSTEMIC_VERSION_OB, 5),
-        0.0,
-        24.0),
-    PICKING_LOWER_LIMIT(
-        PICKING,
-        BACKLOG_LOWER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 9, SheetVersion.NON_SYSTEMIC_VERSION_OB, 10),
-        0.0,
-        5.0),
-    PICKING_UPPER_LIMIT(
-        PICKING,
-        BACKLOG_UPPER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 10, SheetVersion.NON_SYSTEMIC_VERSION_OB, 11),
-        0.0,
-        5.0),
-    PACKING_LOWER_LIMIT(
-        PACKING,
-        BACKLOG_LOWER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 14, SheetVersion.NON_SYSTEMIC_VERSION_OB, 16),
-        0.0,
-        5.0),
-    PACKING_UPPER_LIMIT(
-        PACKING,
-        BACKLOG_UPPER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 15, SheetVersion.NON_SYSTEMIC_VERSION_OB, 17),
-        0.0,
-        5.0),
+    WAVING_LOWER_LIMIT(WAVING, BACKLOG_LOWER_LIMIT, SheetVersion.mapping(4, 4), 0.0, 24.0),
+    WAVING_UPPER_LIMIT(WAVING, BACKLOG_UPPER_LIMIT, SheetVersion.mapping(5, 5), 0.0, 24.0),
+    PICKING_LOWER_LIMIT(PICKING, BACKLOG_LOWER_LIMIT, SheetVersion.mapping(9, 10), 0.0, 5.0),
+    PICKING_UPPER_LIMIT(PICKING, BACKLOG_UPPER_LIMIT, SheetVersion.mapping(10, 11), 0.0, 5.0),
+    PACKING_LOWER_LIMIT(PACKING, BACKLOG_LOWER_LIMIT, SheetVersion.mapping(14, 16), 0.0, 5.0),
+    PACKING_UPPER_LIMIT(PACKING, BACKLOG_UPPER_LIMIT, SheetVersion.mapping(15, 17), 0.0, 5.0),
     BATCH_SORTER_LOWER_LIMIT(
-        BATCH_SORTER,
-        BACKLOG_LOWER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 19, SheetVersion.NON_SYSTEMIC_VERSION_OB, 22),
-        0.0,
-        5.0),
+        BATCH_SORTER, BACKLOG_LOWER_LIMIT, SheetVersion.mapping(19, 22), 0.0, 5.0),
     BATCH_SORTER_UPPER_LIMIT(
-        BATCH_SORTER,
-        BACKLOG_UPPER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 20, SheetVersion.NON_SYSTEMIC_VERSION_OB, 23),
-        0.0,
-        5.0),
-    WALL_IN_LOWER_LIMIT(
-        WALL_IN,
-        BACKLOG_LOWER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 24, SheetVersion.NON_SYSTEMIC_VERSION_OB, 28),
-        0.0,
-        5.0),
-    WALL_IN_UPPER_LIMIT(
-        WALL_IN,
-        BACKLOG_UPPER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 25, SheetVersion.NON_SYSTEMIC_VERSION_OB, 29),
-        0.0,
-        5.0),
+        BATCH_SORTER, BACKLOG_UPPER_LIMIT, SheetVersion.mapping(20, 23), 0.0, 5.0),
+    WALL_IN_LOWER_LIMIT(WALL_IN, BACKLOG_LOWER_LIMIT, SheetVersion.mapping(24, 28), 0.0, 5.0),
+    WALL_IN_UPPER_LIMIT(WALL_IN, BACKLOG_UPPER_LIMIT, SheetVersion.mapping(25, 29), 0.0, 5.0),
     PACKING_WALL_LOWER_LIMIT(
-        PACKING_WALL,
-        BACKLOG_LOWER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 29, SheetVersion.NON_SYSTEMIC_VERSION_OB, 34),
-        0.0,
-        5.0),
+        PACKING_WALL, BACKLOG_LOWER_LIMIT, SheetVersion.mapping(29, 34), 0.0, 5.0),
     PACKING_WALL_UPPER_LIMIT(
-        PACKING_WALL,
-        BACKLOG_UPPER_LIMIT,
-        Map.of(SheetVersion.CURRENT_VERSION, 30, SheetVersion.NON_SYSTEMIC_VERSION_OB, 35),
-        0.0,
-        5.0);
+        PACKING_WALL, BACKLOG_UPPER_LIMIT, SheetVersion.mapping(30, 35), 0.0, 5.0);
 
     final ForecastProcessName process;
 

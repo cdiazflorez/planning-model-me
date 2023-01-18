@@ -31,10 +31,14 @@ public final class SpreadsheetUtils {
 
     public static final DateTimeFormatter formatter =
             DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
+    public static final int PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW = 6;
+    public static final int NON_SYSTEMIC_COLUMN_COUNT = 5;
+    public static final String NON_SYSTEMIC_COLUMN_NAME = "No Sistemicos";
     private static final char CHAR_LETTER_A = 'A';
     private static final String HOUR_MINUTE_FORMAT_PATTERN = "^([0]?[0-9]|[0-9][0-9]):[0-5][0-9]$";
     private static final String PARSE_ERROR_MESSAGE = "Error while trying to parse "
             + "cell (%s) for sheet: %s";
+
     private static final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.FRANCE);
 
     private SpreadsheetUtils() {
@@ -266,19 +270,6 @@ public final class SpreadsheetUtils {
     public static String getCellAddress(final int column, final int row) {
         final char letter = (char) (CHAR_LETTER_A + column);
         return letter + "" + (row + 1);
-    }
-
-    public static SheetVersion getSheetVersion(final MeliSheet sheet,
-                                         final int row,
-                                         final int column) {
-
-        try {
-            String vs = sheet.getRowAt(row).getCellAt(column).getValue();
-             return SheetVersion.from(vs);
-        } catch (NullPointerException e) {
-            log.info("Error while trying to get version {}", getCellAddress(column, row));
-            return SheetVersion.CURRENT_VERSION;
-        }
     }
 
     private static MeliCell getCellAt(final MeliSheet sheet, final MeliRow row, final int column) {
