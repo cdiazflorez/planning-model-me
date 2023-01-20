@@ -58,195 +58,197 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 @WebMvcTest(controllers = MonitorController.class)
 class MonitorControllerTest {
 
-    private static final String URL = "/planning/model/middleend/workflows/%s";
+  private static final String URL = "/planning/model/middleend/workflows/%s";
 
-    private static final Instant VIEW_DATE = Instant.parse("2023-01-17T10:00:00Z");
+  private static final Instant VIEW_DATE = Instant.parse("2023-01-17T10:00:00Z");
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-    @MockBean
-    private GetMonitor getMonitor;
+  @MockBean
+  private GetMonitor getMonitor;
 
-    @MockBean
-    private GetBacklogScheduled getBacklogScheduled;
+  @MockBean
+  private GetBacklogScheduled getBacklogScheduled;
 
-    @MockBean
-    private GetActiveDeviations getActiveDeviations;
+  @MockBean
+  private GetActiveDeviations getActiveDeviations;
 
-    @MockBean
-    private RequestClock requestClock;
+  @MockBean
+  private RequestClock requestClock;
 
-    @MockBean
-    private AuthorizeUser authorizeUser;
+  @MockBean
+  private AuthorizeUser authorizeUser;
 
-    @Test
-    void testGetOutboundMonitors() throws Exception {
-        // GIVEN
-        when(getMonitor.execute(any()))
-                .thenReturn(mockCurrentStatus());
+  @Test
+  void testGetOutboundMonitors() throws Exception {
+    // GIVEN
+    when(getMonitor.execute(any()))
+        .thenReturn(mockCurrentStatus());
 
-        // WHEN
-        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/monitors")
-                .param("warehouse_id", WAREHOUSE_ID_ARTW01)
-                .param("caller.id", String.valueOf(USER_ID))
-                .param("date_from", "2019-07-27T00:00:00.000-05:00")
-                .param("date_to", "2019-07-27T00:00:00.000-05:00")
-        );
+    // WHEN
+    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+        .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/monitors")
+        .param("warehouse_id", WAREHOUSE_ID_ARTW01)
+        .param("caller.id", String.valueOf(USER_ID))
+        .param("date_from", "2019-07-27T00:00:00.000-05:00")
+        .param("date_to", "2019-07-27T00:00:00.000-05:00")
+    );
 
-        // THEN
-        result.andExpect(status().isOk());
-        result.andExpect(content().json(getResourceAsString("get_current_status_response.json")));
+    // THEN
+    result.andExpect(status().isOk());
+    result.andExpect(content().json(getResourceAsString("get_current_status_response.json")));
 
-        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
-    }
+    verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+  }
 
-    @Test
-    void testGetInboundMonitors() throws Exception {
-        // GIVEN
-        when(requestClock.now()).thenReturn(Instant.now());
-        when(getBacklogScheduled.execute(
-            WAREHOUSE_ID_ARTW01,
-            requestClock.now()
-        ))
-            .thenReturn(mockBacklogScheduled());
+  @Test
+  void testGetInboundMonitors() throws Exception {
+    // GIVEN
+    when(requestClock.now()).thenReturn(Instant.now());
+    when(getBacklogScheduled.execute(
+        WAREHOUSE_ID_ARTW01,
+        VIEW_DATE
+    ))
+        .thenReturn(mockBacklogScheduled());
+    when(getActiveDeviations.execute(WAREHOUSE_ID_ARTW01, VIEW_DATE)).thenReturn(mockActiveDeviations());
 
-        // WHEN
-        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-            .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors")
-            .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-            .param("caller.id", String.valueOf(USER_ID))
-        );
-
-
-        // THEN
-        result.andExpect(status().isOk());
-        result.andExpect(content().json(getResourceAsString("get_current_status_response_inbound.json")));
-
-        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
-    }
+    // WHEN
+    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+        .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors/new")
+        .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+        .param("caller.id", String.valueOf(USER_ID))
+        .param("view_date", String.valueOf(VIEW_DATE))
+    );
 
 
-    @Test
-    void testGetInboundMonitorsNew() throws Exception {
-        // GIVEN
-        when(requestClock.now()).thenReturn(Instant.now());
-        when(getBacklogScheduled.execute(
-            WAREHOUSE_ID_ARTW01,
-                        VIEW_DATE
-        ))
-                .thenReturn(mockBacklogScheduled());
-        when(getActiveDeviations.execute(WAREHOUSE_ID_ARTW01, VIEW_DATE)).thenReturn(mockActiveDeviations());
+    // THEN
+    result.andExpect(status().isOk());
+    result.andExpect(content().json(getResourceAsString("get_current_status_response_inbound_new.json")));
 
-        // WHEN
-        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors/new")
-                .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-                .param("caller.id", String.valueOf(USER_ID))
-                .param("view_date", String.valueOf(VIEW_DATE))
-        );
+    verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+  }
 
 
-        // THEN
-        result.andExpect(status().isOk());
-        result.andExpect(content().json(getResourceAsString("get_current_status_response_inbound_new.json")));
+  @Test
+  void testGetInboundMonitorsNew() throws Exception {
+    // GIVEN
+    when(requestClock.now()).thenReturn(Instant.now());
+    when(getBacklogScheduled.execute(
+        WAREHOUSE_ID_ARTW01,
+        VIEW_DATE
+    ))
+        .thenReturn(mockBacklogScheduled());
+    when(getActiveDeviations.execute(WAREHOUSE_ID_ARTW01, VIEW_DATE)).thenReturn(mockActiveDeviations());
 
-        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
-    }
+    // WHEN
+    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+        .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors/new")
+        .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+        .param("caller.id", String.valueOf(USER_ID))
+        .param("view_date", String.valueOf(VIEW_DATE))
+    );
 
-    private Map<String, BacklogScheduled> mockBacklogScheduled() {
-        return Map.of("inbound", new BacklogScheduled(
+
+    // THEN
+    result.andExpect(status().isOk());
+    result.andExpect(content().json(getResourceAsString("get_current_status_response_inbound_new.json")));
+
+    verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+  }
+
+  private Map<String, BacklogScheduled> mockBacklogScheduled() {
+    return Map.of("inbound", new BacklogScheduled(
             Indicator.builder().shipments(500).units(15500).build(),
             Indicator.builder().shipments(350).units(10850).build(),
             Indicator.builder().shipments(2100).units(65100).build(),
             Indicator.builder().shipments(150).units(4650).percentage(0.3).build()),
-            "inbound_transfer", new BacklogScheduled(
+        "inbound_transfer", new BacklogScheduled(
             Indicator.builder().units(500).build(),
             Indicator.builder().units(350).build(),
             Indicator.builder().units(2100).build(),
             Indicator.builder().units(150).percentage(0.3).build()
         ));
-    }
+  }
 
-    private List<ScheduleAdjustment> mockActiveDeviations() {
-        return List.of(
-                new ScheduleAdjustment(
-                        List.of(FBM_WMS_INBOUND),
-                        DeviationType.MINUTES,
-                        null,
-                        0.1,
-                        200,
-                        VIEW_DATE,
-                        VIEW_DATE.plus(1, ChronoUnit.DAYS)
-                )
-        );
-    }
+  private List<ScheduleAdjustment> mockActiveDeviations() {
+    return List.of(
+        new ScheduleAdjustment(
+            List.of(FBM_WMS_INBOUND),
+            DeviationType.MINUTES,
+            null,
+            0.1,
+            200,
+            VIEW_DATE,
+            VIEW_DATE.plus(1, ChronoUnit.DAYS)
+        )
+    );
+  }
 
-    private Monitor mockCurrentStatus() {
-        Map<ProcessOutbound, String> processMap = new HashMap<>();
-        processMap.put(OUTBOUND_PLANNING, "0 uds.");
-        processMap.put(PICKING, "2.232 uds.");
-        processMap.put(PACKING, "1.442 uds.");
-        processMap.put(WALL_IN, "725 uds.");
+  private Monitor mockCurrentStatus() {
+    Map<ProcessOutbound, String> processMap = new HashMap<>();
+    processMap.put(OUTBOUND_PLANNING, "0 uds.");
+    processMap.put(PICKING, "2.232 uds.");
+    processMap.put(PACKING, "1.442 uds.");
+    processMap.put(WALL_IN, "725 uds.");
 
-        TreeSet<Process> processes = processMap.entrySet().stream().map(entry -> {
-                    final Metric metric = Metric.builder()
-                            .type(TOTAL_BACKLOG.getType())
-                            .title(TOTAL_BACKLOG.getTitle())
-                            .subtitle(entry.getKey().getSubtitle())
-                            .value(entry.getValue())
-                            .build();
-                    return Process.builder()
-                            .metrics(List.of(metric))
-                            .title(entry.getKey().getTitle())
-                            .build();
-                }
-        ).collect(Collectors.toCollection(TreeSet::new));
+    TreeSet<Process> processes = processMap.entrySet().stream().map(entry -> {
+          final Metric metric = Metric.builder()
+              .type(TOTAL_BACKLOG.getType())
+              .title(TOTAL_BACKLOG.getTitle())
+              .subtitle(entry.getKey().getSubtitle())
+              .value(entry.getValue())
+              .build();
+          return Process.builder()
+              .metrics(List.of(metric))
+              .title(entry.getKey().getTitle())
+              .build();
+        }
+    ).collect(Collectors.toCollection(TreeSet::new));
 
-        return Monitor.builder()
-                .title("Modelo de Priorización")
-                .subtitle1("Estado Actual")
-                .subtitle2("Última actualización: Today...")
-                .monitorData(List.of(
-                        getDeviationData(),
-                        CurrentStatusData.builder().processes(processes).build()
-                ))
-                .build();
-    }
+    return Monitor.builder()
+        .title("Modelo de Priorización")
+        .subtitle1("Estado Actual")
+        .subtitle2("Última actualización: Today...")
+        .monitorData(List.of(
+            getDeviationData(),
+            CurrentStatusData.builder().processes(processes).build()
+        ))
+        .build();
+  }
 
-    private DeviationData getDeviationData() {
-        DeviationData deviationData = new DeviationData(DeviationMetric.builder()
-                .deviationPercentage(Metric.builder()
-                        .title("% Desviación FCST / Ventas")
-                        .value("-5.1%")
-                        .icon("arrow_down")
-                        .build())
-                    .deviationUnits(DeviationUnit.builder()
-                        .title("Desviación en unidades")
-                        .value("137 uds.")
-                        .detail(DeviationUnitDetail.builder()
-                            .forecastUnits(Metric.builder()
-                                .title("Cantidad Forecast")
-                                .value("1042 uds.")
-                                .build())
-                            .currentUnits(Metric.builder()
-                                .title("Cantidad Real")
-                                .value("905 uds.")
-                                .build())
-                            .build())
-                        .build())
-                    .build(),
-                DeviationActions.builder()
-                        .applyLabel("Ajustar forecast")
-                        .unapplyLabel("Volver al forecast")
-                        .appliedData(DeviationAppliedData.builder()
-                                .title("Se ajustó el forecast 5.80%s de 02:30 a 12:30")
-                                .icon("info")
-                                .build())
-                        .build());
-        deviationData.setType(DEVIATION.getType());
-        return deviationData;
-    }
+  private DeviationData getDeviationData() {
+    DeviationData deviationData = new DeviationData(DeviationMetric.builder()
+        .deviationPercentage(Metric.builder()
+            .title("% Desviación FCST / Ventas")
+            .value("-5.1%")
+            .icon("arrow_down")
+            .build())
+        .deviationUnits(DeviationUnit.builder()
+            .title("Desviación en unidades")
+            .value("137 uds.")
+            .detail(DeviationUnitDetail.builder()
+                .forecastUnits(Metric.builder()
+                    .title("Cantidad Forecast")
+                    .value("1042 uds.")
+                    .build())
+                .currentUnits(Metric.builder()
+                    .title("Cantidad Real")
+                    .value("905 uds.")
+                    .build())
+                .build())
+            .build())
+        .build(),
+        DeviationActions.builder()
+            .applyLabel("Ajustar forecast")
+            .unapplyLabel("Volver al forecast")
+            .appliedData(DeviationAppliedData.builder()
+                .title("Se ajustó el forecast 5.80%s de 02:30 a 12:30")
+                .icon("info")
+                .build())
+            .build());
+    deviationData.setType(DEVIATION.getType());
+    return deviationData;
+  }
 
 }
