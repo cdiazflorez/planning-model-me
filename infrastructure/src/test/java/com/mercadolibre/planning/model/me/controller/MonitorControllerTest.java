@@ -1,19 +1,52 @@
 package com.mercadolibre.planning.model.me.controller;
 
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.DEVIATION;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.OUTBOUND_PLANNING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PACKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.PICKING;
+import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.WALL_IN;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
+import static java.lang.String.format;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.mercadolibre.planning.model.me.controller.monitor.MonitorController;
+import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.ScheduleAdjustment;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.backlog.GetActiveDeviations;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogScheduled;
 import com.mercadolibre.planning.model.me.usecases.monitor.GetMonitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.Monitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.CurrentStatusData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.*;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationActions;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationAppliedData;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationMetric;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnit;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Process;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -22,31 +55,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorDataType.DEVIATION;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.MetricType.TOTAL_BACKLOG;
-import static com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.ProcessOutbound.*;
-import static com.mercadolibre.planning.model.me.utils.TestUtils.*;
-import static java.lang.String.format;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @WebMvcTest(controllers = MonitorController.class)
 class MonitorControllerTest {
 
     private static final String URL = "/planning/model/middleend/workflows/%s";
+
+    private static final Instant VIEW_DATE = Instant.parse("2023-01-17T10:00:00Z");
 
     @Autowired
     private MockMvc mockMvc;
@@ -56,6 +70,9 @@ class MonitorControllerTest {
 
     @MockBean
     private GetBacklogScheduled getBacklogScheduled;
+
+    @MockBean
+    private GetActiveDeviations getActiveDeviations;
 
     @MockBean
     private RequestClock requestClock;
@@ -91,21 +108,49 @@ class MonitorControllerTest {
         when(requestClock.now()).thenReturn(Instant.now());
         when(getBacklogScheduled.execute(
             WAREHOUSE_ID_ARTW01,
-                        requestClock.now()
+            requestClock.now()
         ))
-                .thenReturn(mockBacklogScheduled());
+            .thenReturn(mockBacklogScheduled());
 
         // WHEN
         final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-                .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors")
-                .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-                .param("caller.id", String.valueOf(USER_ID))
+            .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors")
+            .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+            .param("caller.id", String.valueOf(USER_ID))
         );
 
 
         // THEN
         result.andExpect(status().isOk());
         result.andExpect(content().json(getResourceAsString("get_current_status_response_inbound.json")));
+
+        verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
+    }
+
+
+    @Test
+    void testGetInboundMonitorsNew() throws Exception {
+        // GIVEN
+        when(requestClock.now()).thenReturn(Instant.now());
+        when(getBacklogScheduled.execute(
+            WAREHOUSE_ID_ARTW01,
+                        VIEW_DATE
+        ))
+                .thenReturn(mockBacklogScheduled());
+        when(getActiveDeviations.execute(WAREHOUSE_ID_ARTW01, VIEW_DATE)).thenReturn(mockActiveDeviations());
+
+        // WHEN
+        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+                .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors/new")
+                .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+                .param("caller.id", String.valueOf(USER_ID))
+                .param("view_date", String.valueOf(VIEW_DATE))
+        );
+
+
+        // THEN
+        result.andExpect(status().isOk());
+        result.andExpect(content().json(getResourceAsString("get_current_status_response_inbound_new.json")));
 
         verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
     }
@@ -122,6 +167,20 @@ class MonitorControllerTest {
             Indicator.builder().units(2100).build(),
             Indicator.builder().units(150).percentage(0.3).build()
         ));
+    }
+
+    private List<ScheduleAdjustment> mockActiveDeviations() {
+        return List.of(
+                new ScheduleAdjustment(
+                        List.of(FBM_WMS_INBOUND),
+                        DeviationType.MINUTES,
+                        null,
+                        0.1,
+                        200,
+                        VIEW_DATE,
+                        VIEW_DATE.plus(1, ChronoUnit.DAYS)
+                )
+        );
     }
 
     private Monitor mockCurrentStatus() {

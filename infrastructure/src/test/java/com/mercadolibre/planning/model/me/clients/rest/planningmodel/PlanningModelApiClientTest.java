@@ -92,6 +92,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -1462,7 +1463,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
           final JSONArray response = new JSONArray()
                   .put(new JSONObject()
                           .put("workflow", FBM_WMS_INBOUND.getName())
-                          .put("type", "minutes")
+                          .put("type", "UNITS")
                           .put("date_from", currentTime)
                           .put("date_to", currentTime.plus(5, HOURS))
                           .put("value", 5.8)
@@ -1470,7 +1471,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                   )
                   .put(new JSONObject()
                           .put("workflow", FBM_WMS_INBOUND.getName())
-                          .put("type", "minutes")
+                          .put("type", "MINUTES")
                           .put("date_from", currentTime.plus(1, HOURS))
                           .put("date_to", currentTime.plus(6, HOURS))
                           .put("value", 3.6)
@@ -1485,21 +1486,21 @@ class PlanningModelApiClientTest extends BaseClientTest {
                   .withResponseBody(response.toString())
                   .build();
 
+          var workflow = Set.of(FBM_WMS_INBOUND);
           // When
           final List<Deviation> getActiveDeviations =
-                  client.getActiveDeviations(FBM_WMS_INBOUND, WAREHOUSE_ID_ARTW01, A_DATE);
+                  client.getActiveDeviations(workflow, WAREHOUSE_ID_ARTW01, A_DATE.toInstant());
           final Deviation firstElementInRepsonse = getActiveDeviations.get(0);
           // Then
 
           assertNotNull(getActiveDeviations);
           assertEquals(
-                  ZonedDateTime.of(2022, 1, 11, 15, 0, 0, 0, ZoneId.of("Z")),
+              Instant.parse("2022-01-11T15:00:00Z"),
                   firstElementInRepsonse.getDateFrom());
           assertEquals(
-                  ZonedDateTime.of(2022, 1, 11, 20, 0, 0, 0, ZoneId.of("Z")),
+              Instant.parse("2022-01-11T20:00:00Z"),
                   firstElementInRepsonse.getDateTo());
           assertEquals(5.8, firstElementInRepsonse.getValue());
-          assertEquals(PERCENTAGE, firstElementInRepsonse.getMetricUnit());
       }
 
     @Test

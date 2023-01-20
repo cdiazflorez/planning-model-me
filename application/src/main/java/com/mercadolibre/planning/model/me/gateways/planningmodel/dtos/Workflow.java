@@ -21,7 +21,7 @@ public enum Workflow {
     INBOUND_TRANSFER(List.of(BacklogWorkflow.INBOUND_TRANSFER)),
     INBOUND(List.of(BacklogWorkflow.INBOUND));
 
-    private List<BacklogWorkflow> backlogWorkflow;
+    private final List<BacklogWorkflow> backlogWorkflow;
 
     private static final Map<String, Workflow> LOOKUP = Arrays.stream(values()).collect(
             toMap(Workflow::toString, Function.identity())

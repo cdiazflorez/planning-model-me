@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.gateways.backlog.dto;
 
+import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import java.time.Instant;
 import java.util.List;
@@ -21,6 +23,12 @@ public class Photo {
    */
   @Value
   public static class Group {
+
+    static Map<BacklogWorkflow, Workflow> toWorkflow = Map.of(
+        BacklogWorkflow.INBOUND, Workflow.FBM_WMS_INBOUND,
+        BacklogWorkflow.INBOUND_TRANSFER, Workflow.INBOUND_TRANSFER,
+        BacklogWorkflow.OUTBOUND_ORDERS, Workflow.FBM_WMS_OUTBOUND
+    );
     Map<BacklogGrouper, String> key;
 
     int total;
@@ -32,6 +40,13 @@ public class Photo {
       return Optional.ofNullable(key.get(grouper));
     }
 
+    public Optional<Workflow> getWorkflow(final BacklogGrouper grouper) {
+      return getGroupValue(grouper).flatMap(BacklogWorkflow::from).map(toWorkflow::get);
+    }
+
+    public Optional<Instant> getDateIn(final BacklogGrouper grouper) {
+      return getGroupValue(grouper).map(Instant::parse);
+    }
   }
 }
 

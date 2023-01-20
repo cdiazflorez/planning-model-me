@@ -1,23 +1,20 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.mercadolibre.planning.model.me.utils.CustomDateZoneDeserializer;
-import java.time.ZonedDateTime;
-import lombok.Builder;
-import lombok.Value;
+import com.mercadolibre.planning.model.me.enums.DeviationType;
+import java.time.Instant;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-@Value
-@Builder
+/**
+ * This class represents the adjustment that was made from a deviation detected.
+ */
+@AllArgsConstructor
+@Getter
 public class Deviation {
 
-    Workflow workflow;
-    String type;
-    @JsonDeserialize(using = CustomDateZoneDeserializer.class)
-    ZonedDateTime dateFrom;
-    @JsonDeserialize(using = CustomDateZoneDeserializer.class)
-    ZonedDateTime dateTo;
-    double value;
-    MetricUnit metricUnit;
-
+    private Workflow workflow;
+    private DeviationType type;
+    private Instant dateFrom;
+    private Instant dateTo;
+    private double value;
 }
-
