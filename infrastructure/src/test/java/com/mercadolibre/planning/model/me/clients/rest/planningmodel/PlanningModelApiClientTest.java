@@ -133,6 +133,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   private static final String UNITS_DISTRIBUTION = "/planning/model/workflows/%s/entities/units_distribution";
 
+  private static final String TYPE_FIELD = "type";
+
   private PlanningModelApiClient client;
 
   private static Stream<Arguments> entityRequests() {
@@ -190,7 +192,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateFrom().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "picking")
-            .put("type", "active_workers")
+            .put(TYPE_FIELD, "active_workers")
             .put("value", "30")
             .put("source", "forecast")
             .put("metric_unit", "minutes")
@@ -199,7 +201,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "packing")
-            .put("type", "active_workers")
+            .put(TYPE_FIELD, "active_workers")
             .put("value", "20")
             .put("source", "simulation")
             .put("metric_unit", "percentage")
@@ -398,7 +400,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("value", "30")
             .put("source", "forecast")
             .put("metric_unit", "minutes")
-            .put("type", "performed_processing")
+            .put(TYPE_FIELD, "performed_processing")
         )
         .put(new JSONObject()
             .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
@@ -407,7 +409,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("value", "20")
             .put("source", "forecast")
             .put("metric_unit", "percentage")
-            .put("type", "performed_processing")
+            .put(TYPE_FIELD, "performed_processing")
         );
 
     mockGetPerformedProcessing(apiResponse);
@@ -1464,7 +1466,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
           final JSONArray response = new JSONArray()
                   .put(new JSONObject()
                           .put("workflow", FBM_WMS_INBOUND.getName())
-                          .put("type", "minutes")
+                          .put(TYPE_FIELD, "minutes")
                           .put("date_from", currentTime)
                           .put("date_to", currentTime.plus(5, HOURS))
                           .put("value", 5.8)
@@ -1472,7 +1474,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                   )
                   .put(new JSONObject()
                           .put("workflow", FBM_WMS_INBOUND.getName())
-                          .put("type", "minutes")
+                          .put(TYPE_FIELD, "minutes")
                           .put("date_from", currentTime.plus(1, HOURS))
                           .put("date_to", currentTime.plus(6, HOURS))
                           .put("value", 3.6)
