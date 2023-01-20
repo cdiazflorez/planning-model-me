@@ -1,0 +1,50 @@
+{
+  "request_date": "2023-01-17T10:00:00Z",
+  "deviations_applied": [
+    {
+      "workflow": [
+        "fbm-wms-inbound"
+      ],
+      "type": "minutes",
+      "value": 0.1,
+      "units": 200,
+      "date_from": "2023-01-17T10:00:00Z",
+      "date_to": "2023-01-18T10:00:00Z"
+    }
+  ],
+  "scheduled": {
+    "inbound": {
+      "expected": {
+        "shipments": 500,
+        "units": 15500
+      },
+      "received": {
+        "shipments": 350,
+        "units": 10850
+      },
+      "pending": {
+        "shipments": 2100,
+        "units": 65100
+      },
+      "deviation": {
+        "shipments": 150,
+        "units": 4650,
+        "percentage": 0.3
+      }
+    },
+    "inbound_transfer": {
+      "expected": {
+        "units": 500
+      },
+      "received": {
+        "units": 350
+      },
+      "pending": {
+        "units": 2100
+      },
+      "deviation": {
+        "units": 150
+      }
+    }
+  }
+}

@@ -28,8 +28,6 @@ import org.apache.commons.math3.util.Precision;
 @AllArgsConstructor
 public class GetBacklogScheduled {
   private static final Set<BacklogWorkflow> INBOUND_WORKFLOWS = Set.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER);
-  private static final String WORKFLOW_KEY = "workflow";
-  private static final String DATE_IN_KEY = "date_in";
   private static final int SCALE_DECIMAL = 2;
 
   private static final int AMOUNT_TO_ADD_MINUTES = 5;

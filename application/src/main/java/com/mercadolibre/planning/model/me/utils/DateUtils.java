@@ -23,11 +23,11 @@ import static java.time.temporal.WeekFields.SUNDAY_START;
 
 public class DateUtils {
 
-    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM");
+    public static final DateTimeFormatter DATE_FORMATTER = ofPattern("dd/MM");
 
-    public static final DateTimeFormatter HOUR_MINUTES_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    public static final DateTimeFormatter HOUR_MINUTES_FORMATTER = ofPattern("HH:mm");
 
-    public static final DateTimeFormatter DATE_HOUR_MINUTES_FORMATTER = DateTimeFormatter.ofPattern("HH:mm - dd/MM");
+    public static final DateTimeFormatter DATE_HOUR_MINUTES_FORMATTER = ofPattern("HH:mm - dd/MM");
 
     public static final DateTimeFormatter FORMATTER_NAME = ofPattern("dd/MM/yyyy");
 
@@ -53,6 +53,17 @@ public class DateUtils {
         return date == null ? null : date.withZoneSameInstant(zoneId);
     }
 
+    public static boolean isBetweenInclusive(
+        final Instant date,
+        final Instant lowerDateRange,
+        final Instant upperDateRange
+    ) {
+        return (
+            (date.isAfter(lowerDateRange) || date.equals(lowerDateRange))
+                && (date.isBefore(upperDateRange) || date.equals(upperDateRange))
+        );
+    }
+
     public static ZonedDateTime convertToUtc(final ZonedDateTime date) {
         return date.withZoneSameInstant(UTC);
     }
@@ -62,7 +73,7 @@ public class DateUtils {
     }
 
     public static String[] getDatesBetween(final String[] weekOfYear) {
-        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        final DateTimeFormatter formatter = ofPattern("dd/MM/yyyy");
         final int weeksToDecrement = "2022".equals(weekOfYear[1]) ? 1 : 0;
 
         final ZonedDateTime dateFrom = firstDayOfYear(parseInt(weekOfYear[1]))
