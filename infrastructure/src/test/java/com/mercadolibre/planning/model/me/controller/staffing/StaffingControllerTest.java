@@ -281,7 +281,9 @@ public class StaffingControllerTest {
                 PROCESS_BUSY_WORKERS,
                 PROCESS_NON_SYS_WORKERS,
                 FORECAST_PLANNED_WORKERS,
-                delta))
+                null,
+                delta,
+                null))
         .targetProductivity(PROCESS_TARGET_PRODUCTIVITY)
         .throughput(PROCESS_THROUGHPUT)
         .areas(
