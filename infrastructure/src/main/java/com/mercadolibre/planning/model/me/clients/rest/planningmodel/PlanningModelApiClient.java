@@ -42,6 +42,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
@@ -619,6 +620,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
         .processName(ProcessName.from(response.getProcessName()))
         .workflow(Workflow.from(response.getWorkflow()).orElseThrow())
+        .type(ProcessingType.from(response.getType()))
         .value(response.getValue())
         .source(Source.from(response.getSource()))
         .metricUnit(MetricUnit.from(response.getMetricUnit()))
