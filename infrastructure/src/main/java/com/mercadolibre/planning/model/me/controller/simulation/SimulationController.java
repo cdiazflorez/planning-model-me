@@ -76,7 +76,6 @@ public class SimulationController {
         .userId(callerId)
         .warehouseId(request.getWarehouseId())
         .simulations(fromRequest(request.getSimulations()))
-        .date(request.getDate())
         .requestDate(requestClock.now())
         .build()))
     );
@@ -98,7 +97,6 @@ public class SimulationController {
         .warehouseId(request.getWarehouseId())
         .userId(callerId)
         .simulations(fromRequest(request.getSimulations()))
-        .date(request.getDate())
         .requestDate(requestClock.now())
         .build())));
   }
