@@ -13,6 +13,8 @@ public class EntityResponse {
 
     private String processName;
 
+    private String type;
+
     private int value;
 
     private String source;

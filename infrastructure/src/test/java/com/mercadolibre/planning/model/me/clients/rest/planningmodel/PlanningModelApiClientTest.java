@@ -134,6 +134,10 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   private static final String UNITS_DISTRIBUTION = "/planning/model/workflows/%s/entities/units_distribution";
 
+  private static final String TYPE_FIELD = "type";
+
+  private static final String VALUE_FIELD = "value";
+
   private PlanningModelApiClient client;
 
   private static Stream<Arguments> entityRequests() {
@@ -191,7 +195,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateFrom().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "picking")
-            .put("value", "30")
+            .put(TYPE_FIELD, "active_workers")
+            .put(VALUE_FIELD, "30")
             .put("source", "forecast")
             .put("metric_unit", "minutes")
         )
@@ -199,7 +204,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "packing")
-            .put("value", "20")
+            .put(TYPE_FIELD, "active_workers")
+            .put(VALUE_FIELD, "20")
             .put("source", "simulation")
             .put("metric_unit", "percentage")
         );
@@ -337,7 +343,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateFrom().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "picking")
-            .put("value", "30")
+            .put(VALUE_FIELD, "30")
             .put("source", "forecast")
             .put("metric_unit", "minutes")
             .put("ability_level", 1)
@@ -346,7 +352,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "packing")
-            .put("value", "20")
+            .put(VALUE_FIELD, "20")
             .put("source", "simulation")
             .put("metric_unit", "percentage")
             .put("ability_level", 2)
@@ -394,19 +400,19 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateFrom().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "waving")
-            .put("value", "30")
+            .put(VALUE_FIELD, "30")
             .put("source", "forecast")
             .put("metric_unit", "minutes")
-            .put("type", "performed_processing")
+            .put(TYPE_FIELD, "performed_processing")
         )
         .put(new JSONObject()
             .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "waving")
-            .put("value", "20")
+            .put(VALUE_FIELD, "20")
             .put("source", "forecast")
             .put("metric_unit", "percentage")
-            .put("type", "performed_processing")
+            .put(TYPE_FIELD, "performed_processing")
         );
 
     mockGetPerformedProcessing(apiResponse);
@@ -745,7 +751,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
         .build();
 
     final JSONObject response = new JSONObject()
-        .put("value", "60")
+        .put(VALUE_FIELD, "60")
         .put("metric_unit", "minutes");
 
     MockResponse.builder()
@@ -1463,18 +1469,20 @@ class PlanningModelApiClientTest extends BaseClientTest {
           final JSONArray response = new JSONArray()
                   .put(new JSONObject()
                           .put("workflow", FBM_WMS_INBOUND.getName())
+                          .put(TYPE_FIELD, "minutes")
                           .put("type", "UNITS")
                           .put("date_from", currentTime)
                           .put("date_to", currentTime.plus(5, HOURS))
-                          .put("value", 5.8)
+                          .put(VALUE_FIELD, 5.8)
                           .put("metric_unit", "percentage")
                   )
                   .put(new JSONObject()
                           .put("workflow", FBM_WMS_INBOUND.getName())
+                          .put(TYPE_FIELD, "minutes")
                           .put("type", "MINUTES")
                           .put("date_from", currentTime.plus(1, HOURS))
                           .put("date_to", currentTime.plus(6, HOURS))
-                          .put("value", 3.6)
+                          .put(VALUE_FIELD, 3.6)
                           .put("metric_unit", "percentage")
                   );
 
