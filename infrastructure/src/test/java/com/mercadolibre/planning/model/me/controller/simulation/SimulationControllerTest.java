@@ -316,6 +316,7 @@ public class SimulationControllerTest {
   private String mockRunSimulationRequest() throws JSONException {
     return new JSONObject()
         .put(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
+        .put("date", "2020-07-29T03:00:00Z")
         .put("simulations", new JSONArray().put(new JSONObject()
             .put("process_name", "picking")
             .put("entities", new JSONArray().put(new JSONObject()

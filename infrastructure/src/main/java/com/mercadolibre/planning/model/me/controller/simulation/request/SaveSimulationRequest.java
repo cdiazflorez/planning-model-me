@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.simulation.request;
 
+import java.time.ZonedDateTime;
 import lombok.Builder;
 import lombok.Value;
 
@@ -19,4 +20,7 @@ public class SaveSimulationRequest {
     @Valid
     @NotEmpty
     private List<SimulationRequest> simulations;
+
+    @NotNull
+    private ZonedDateTime date;
 }
