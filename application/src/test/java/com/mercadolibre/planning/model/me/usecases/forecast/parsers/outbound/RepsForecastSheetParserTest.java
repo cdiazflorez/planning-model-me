@@ -30,8 +30,10 @@ import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
+import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType;
 import java.util.List;
@@ -58,6 +60,9 @@ class RepsForecastSheetParserTest {
 
   private static final String LIMITS_OUT_OF_BOUND_PATH =
       "outbound_forecast_backlog_limits_out_of_bound.xlsx";
+
+  private static final String VALID_NON_SYSTEMIC_FILE_PATH =
+      "outbound_forecast_non_systemic_workers.xlsx";
 
   private static final LogisticCenterConfiguration CONF =
       new LogisticCenterConfiguration(TimeZone.getDefault());
@@ -207,5 +212,28 @@ class RepsForecastSheetParserTest {
     final var message = exception.getMessage();
     assertNotNull(exception.getMessage());
     assertTrue(message.contains("Week"));
+  }
+
+  @Test
+  @DisplayName("Excel Parsed with non systemic workers Ok")
+  void parseForecastWithNonSystemicWorkersOk() {
+    // GIVEN
+    // a valid sheet
+    final var sheet = getMeliSheetFrom(WORKERS.getName(), VALID_NON_SYSTEMIC_FILE_PATH);
+
+    // WHEN
+    final var forecastSheetDto = repsForecastSheetParser.parse("ARBA01", sheet, CONF);
+
+    // THEN
+    final List<ProcessingDistribution> processingDistributions =
+        (List<ProcessingDistribution>)
+            forecastSheetDto.getValues().get(ForecastColumnName.PROCESSING_DISTRIBUTION);
+
+    thenForecastSheetDtoIsNotNull(forecastSheetDto);
+    assertEquals(
+        5,
+        processingDistributions.stream()
+            .filter(distribution -> "total_workers_ns".equals(distribution.getType()))
+            .count());
   }
 }

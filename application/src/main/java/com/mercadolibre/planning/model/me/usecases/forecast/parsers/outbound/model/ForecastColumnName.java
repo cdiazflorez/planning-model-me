@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
 
 public enum ForecastColumnName implements ForecastColumn {
   WEEK,
+  VERSION,
   MONO_ORDER_DISTRIBUTION,
   MULTI_ORDER_DISTRIBUTION,
   MULTI_BATCH_DISTRIBUTION,
