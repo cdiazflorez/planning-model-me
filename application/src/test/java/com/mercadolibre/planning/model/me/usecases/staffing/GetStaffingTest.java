@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.usecases.staffing;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.TOTAL_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_MZ1;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_RKL;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.BATCH_SORTER_PROCESS;
@@ -236,11 +237,21 @@ class GetStaffingTest {
 
   private static final Integer FORECAST_HEADCOUNT_PICKING = 4;
 
+  private static final Integer SIMULATION_HEADCOUNT_PICKING = 2;
+
+  private static final Integer FORECAST_HEADCOUNT_NS_PICKING = 4;
+
   private static final Integer FORECAST_HEADCOUNT_PACKING_WALL = 0;
+
+  private static final Integer FORECAST_HEADCOUNT_NS_PACKING_WALL = 2;
 
   private static final Integer FORECAST_HEADCOUNT_PACKING = 10;
 
+  private static final Integer FORECAST_HEADCOUNT_NS_PACKING = 5;
+
   private static final Integer FORECAST_HEADCOUNT_BATCH_SORTER = 1;
+
+  private static final Integer FORECAST_HEADCOUNT_NS_BATCH_SORTER = 2;
 
   private static final Integer FORECAST_HEADCOUNT_CHECK_IN = 4;
 
@@ -254,9 +265,17 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_DELTA_PICKING = 22;
 
+  private static final Integer EXPECTED_NS_DELTA_PICKING = 1;
+
+  private static final Integer EXPECTED_SIMULATION_DELTA_PICKING = 24;
+
   private static final Integer EXPECTED_DELTA_PACKING = 6;
 
+  private static final Integer EXPECTED_NS_DELTA_PACKING = 5;
+
   private static final Integer EXPECTED_DELTA_PACKING_WALL = 40;
+
+  private static final Integer EXPECTED_NS_DELTA_PACKING_WALL = 8;
 
   @InjectMocks private GetStaffing useCase;
 
@@ -623,7 +642,7 @@ class GetStaffingTest {
         .thenReturn(mockStaffingResponseWithoutSomeWorkflow());
 
     givenSearchTrajectoriesWithProductivityForecast();
-    givenSearchTrajectoriesWithHeadcountForecast();
+    givenSearchTrajectoriesWithHeadcountForecast(0, 1);
 
     // WHEN
     final Staffing staffing = useCase.execute(input);
@@ -669,6 +688,74 @@ class GetStaffingTest {
     assertNull(withdrawals.getProcesses().get(1).getWorkers().getPlanned());
     assertNull(withdrawals.getProcesses().get(0).getWorkers().getDelta());
     assertNull(withdrawals.getProcesses().get(1).getWorkers().getDelta());
+  }
+
+  @Test
+  void testExecuteWithNonSystemicPlannedWorkers() {
+    // GIVEN
+    final GetStaffingInput input = new GetStaffingInput(WAREHOUSE_ID);
+
+    when(staffingGateway.getStaffing(WAREHOUSE_ID))
+        .thenReturn(mockStaffingResponseWithoutSomeWorkflow());
+
+    givenSearchTrajectoriesWithProductivityForecast();
+    givenSearchTrajectoriesWithHeadcountForecast(0, 2);
+
+    // WHEN
+    final Staffing staffing = useCase.execute(input);
+
+    // THEN
+    final List<StaffingWorkflow> staffingWorkflows =
+        staffing.getWorkflows().stream()
+            .sorted(Comparator.comparing(StaffingWorkflow::getWorkflow))
+            .collect(Collectors.toList());
+    final StaffingWorkflow inbound = staffingWorkflows.get(0);
+    final StaffingWorkflow outbound = staffingWorkflows.get(1);
+
+    // Inbound
+    assertNull(inbound.getProcesses().get(0).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_CHECK_IN, inbound.getProcesses().get(1).getWorkers().getPlanned());
+    assertEquals(
+        SIMULATION_HEADCOUNT_PUT_AWAY, inbound.getProcesses().get(2).getWorkers().getPlanned());
+
+    assertNull(inbound.getProcesses().get(0).getWorkers().getDelta());
+    assertEquals(EXPECTED_DELTA_CHECK_IN, inbound.getProcesses().get(1).getWorkers().getDelta());
+    assertEquals(EXPECTED_DELTA_PUT_AWAY, inbound.getProcesses().get(2).getWorkers().getDelta());
+
+    // Outbound
+    final var outboundProcesses = outbound.getProcesses();
+    assertEquals(SIMULATION_HEADCOUNT_PICKING, outboundProcesses.get(0).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_NS_PICKING,
+        outboundProcesses.get(0).getWorkers().getNonSystemicPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_BATCH_SORTER, outboundProcesses.get(1).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_NS_BATCH_SORTER,
+        outboundProcesses.get(1).getWorkers().getNonSystemicPlanned());
+    assertNull(outboundProcesses.get(2).getWorkers().getPlanned());
+    assertEquals(FORECAST_HEADCOUNT_PACKING, outboundProcesses.get(3).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_NS_PACKING,
+        outboundProcesses.get(3).getWorkers().getNonSystemicPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_PACKING_WALL, outboundProcesses.get(4).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_NS_PACKING_WALL,
+        outboundProcesses.get(4).getWorkers().getNonSystemicPlanned());
+
+    assertEquals(
+        EXPECTED_SIMULATION_DELTA_PICKING, outboundProcesses.get(0).getWorkers().getDelta());
+    assertEquals(
+        EXPECTED_NS_DELTA_PICKING, outboundProcesses.get(0).getWorkers().getNonSystemicDelta());
+    assertNull(outboundProcesses.get(1).getWorkers().getNonSystemicDelta());
+    assertNull(outboundProcesses.get(2).getWorkers().getNonSystemicDelta());
+    assertEquals(
+        EXPECTED_NS_DELTA_PACKING, outboundProcesses.get(3).getWorkers().getNonSystemicDelta());
+    assertEquals(
+        EXPECTED_NS_DELTA_PACKING_WALL,
+        outboundProcesses.get(4).getWorkers().getNonSystemicDelta());
   }
 
   private void assertEqualsWorkflow(
@@ -905,7 +992,8 @@ class GetStaffingTest {
         .thenThrow(MockitoException.class);
   }
 
-  private void givenSearchTrajectoriesWithHeadcountForecast() {
+  private void givenSearchTrajectoriesWithHeadcountForecast(
+      int ibMockPosition, int obMockPosition) {
     final ZonedDateTime now = ZonedDateTime.now(UTC).withSecond(0).withNano(0);
 
     when(planningModelGateway.searchTrajectories(
@@ -926,9 +1014,11 @@ class GetStaffingTest {
                 .entityFilters(
                     Map.of(
                         HEADCOUNT,
-                        Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
+                        Map.of(
+                            PROCESSING_TYPE.toJson(),
+                            List.of(ACTIVE_WORKERS.getName(), TOTAL_WORKERS_NS.getName()))))
                 .build()))
-        .thenReturn(mockHeadcountForecastEntities().get(1));
+        .thenReturn(mockHeadcountForecastEntities().get(obMockPosition));
 
     when(planningModelGateway.searchTrajectories(
             SearchTrajectoriesRequest.builder()
@@ -943,9 +1033,11 @@ class GetStaffingTest {
                 .entityFilters(
                     Map.of(
                         HEADCOUNT,
-                        Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
+                        Map.of(
+                            PROCESSING_TYPE.toJson(),
+                            List.of(ACTIVE_WORKERS.getName(), TOTAL_WORKERS_NS.getName()))))
                 .build()))
-        .thenReturn(mockHeadcountForecastEntities().get(0));
+        .thenReturn(mockHeadcountForecastEntities().get(ibMockPosition));
   }
 
   private List<Map<MagnitudeType, List<MagnitudePhoto>>> mockHeadcountForecastEntities() {
@@ -957,15 +1049,18 @@ class GetStaffingTest {
                     .processName(ProcessName.CHECK_IN)
                     .value(FORECAST_HEADCOUNT_CHECK_IN)
                     .source(Source.FORECAST)
+                    .type(ACTIVE_WORKERS)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PUT_AWAY)
                     .source(Source.FORECAST)
+                    .type(ACTIVE_WORKERS)
                     .value(FORECAST_HEADCOUNT_PUT_AWAY)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PUT_AWAY)
                     .source(Source.SIMULATION)
+                    .type(ACTIVE_WORKERS)
                     .value(SIMULATION_HEADCOUNT_PUT_AWAY)
                     .build())),
         Map.of(
@@ -974,21 +1069,82 @@ class GetStaffingTest {
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PICKING)
                     .value(FORECAST_HEADCOUNT_PICKING)
+                    .type(ACTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING_WALL)
                     .value(FORECAST_HEADCOUNT_PACKING_WALL)
+                    .type(ACTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING)
                     .value(FORECAST_HEADCOUNT_PACKING)
+                    .type(ACTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.BATCH_SORTER)
                     .value(FORECAST_HEADCOUNT_BATCH_SORTER)
+                    .type(ACTIVE_WORKERS)
+                    .source(Source.FORECAST)
+                    .build())),
+        Map.of(
+            HEADCOUNT,
+            List.of(
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.PICKING)
+                    .value(FORECAST_HEADCOUNT_PICKING)
+                    .type(ACTIVE_WORKERS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.PICKING)
+                    .value(SIMULATION_HEADCOUNT_PICKING)
+                    .type(ACTIVE_WORKERS)
+                    .source(Source.SIMULATION)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.PICKING)
+                    .value(FORECAST_HEADCOUNT_NS_PICKING)
+                    .type(TOTAL_WORKERS_NS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.PACKING_WALL)
+                    .value(FORECAST_HEADCOUNT_PACKING_WALL)
+                    .type(ACTIVE_WORKERS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.PACKING_WALL)
+                    .value(FORECAST_HEADCOUNT_NS_PACKING_WALL)
+                    .type(TOTAL_WORKERS_NS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.PACKING)
+                    .value(FORECAST_HEADCOUNT_PACKING)
+                    .type(ACTIVE_WORKERS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.PACKING)
+                    .value(FORECAST_HEADCOUNT_NS_PACKING)
+                    .type(TOTAL_WORKERS_NS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.BATCH_SORTER)
+                    .value(FORECAST_HEADCOUNT_BATCH_SORTER)
+                    .type(ACTIVE_WORKERS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.BATCH_SORTER)
+                    .value(FORECAST_HEADCOUNT_NS_BATCH_SORTER)
+                    .type(TOTAL_WORKERS_NS)
                     .source(Source.FORECAST)
                     .build())));
   }

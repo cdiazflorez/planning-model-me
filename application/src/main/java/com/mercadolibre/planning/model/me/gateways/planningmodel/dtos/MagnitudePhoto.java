@@ -20,6 +20,9 @@ public class MagnitudePhoto {
     /** The name of the process to which the variable corresponds. */
     private ProcessName processName;
 
+    /** The type of the process to which the variable corresponds. */
+    private ProcessingType type;
+
     /** The value of the variable when the photo was taken. */
     private int value;
 
