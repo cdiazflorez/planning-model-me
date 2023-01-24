@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Deviation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Deprecated
 public interface PlanningModelGateway {
 
     List<MagnitudePhoto> getTrajectories(TrajectoriesRequest request);

@@ -26,10 +26,12 @@ import com.mercadolibre.planning.model.me.clients.rest.planningmodel.response.Pr
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.DeviationGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Deviation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
@@ -81,7 +83,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway, EntityGateway, ProjectionGateway {
+public class PlanningModelApiClient extends HttpClient implements PlanningModelGateway, EntityGateway, ProjectionGateway, DeviationGateway {
 
   private static final String WORKFLOWS_URL = "/planning/model/workflows/%s";
 
@@ -95,6 +97,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private static final String DEVIATIONS_URL = "/deviations";
 
+  private static final String ACTIVE_DEVIATIONS_URL = "/deviations/active";
+
   private static final String WAREHOUSE_ID = "warehouse_id";
 
   private static final String DATE_FROM = "date_from";
@@ -104,6 +108,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   private static final String UNITS_DISTRIBUTION = "/entities/units_distribution";
 
   private static final String SAVE = "/save";
+  private static final String DELIMITER = ",";
 
   private final ObjectMapper objectMapper;
 
@@ -421,14 +426,37 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
             + DEVIATIONS_URL)
         .GET()
         .queryParams(params)
-        .acceptedHttpStatuses(Set.of(OK, CREATED))
+        .acceptedHttpStatuses(Set.of(OK))
         .build();
 
     return send(request, response -> response.getData(new TypeReference<>() {
     }));
   }
 
-  @Trace
+    @Trace
+    @Override
+    public List<Deviation> getActiveDeviations(final Set<Workflow> workflows,
+                                               final String warehouseId,
+                                               final Instant date) {
+        final Map<String, String> params = Map.of(
+                WAREHOUSE_ID, warehouseId,
+                "date", date.toString(),
+                "workflows", workflows.stream().map(Workflow::getName).collect(joining(DELIMITER))
+        );
+        final HttpRequest request = HttpRequest.builder()
+                //TODO delete this when traffic route is active.
+                .url(format(WORKFLOWS_URL, Workflow.FBM_WMS_INBOUND)
+                        + ACTIVE_DEVIATIONS_URL)
+                .GET()
+                .queryParams(params)
+                .acceptedHttpStatuses(Set.of(OK))
+                .build();
+
+        return send(request, response -> response.getData(new TypeReference<>() {
+        }));
+    }
+
+    @Trace
   @Override
   public SaveUnitsResponse saveShareDistribution(final List<ShareDistribution> shareDistributionList, final Workflow workflow) {
     final HttpRequest request = HttpRequest.builder()
@@ -573,7 +601,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private String getEnumNamesAsString(final List<? extends Enum> namedEnums) {
     return namedEnums.stream().map(Enum::name).map(String::toLowerCase)
-        .collect(joining(","));
+        .collect(joining(DELIMITER));
   }
 
   private List<MagnitudePhoto> executeGetEntities(HttpRequest request) {
