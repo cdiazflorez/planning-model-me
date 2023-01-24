@@ -39,63 +39,67 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/planning/model/middleend/workflows")
 public class MonitorController {
 
-    private final GetMonitor getMonitor;
-    private final AuthorizeUser authorizeUser;
-    private final GetBacklogScheduled getBacklogScheduled;
+  private final GetMonitor getMonitor;
 
-    private final GetActiveDeviations getActiveDeviations;
+  private final AuthorizeUser authorizeUser;
 
-    private final RequestClock requestClock;
+  private final GetBacklogScheduled getBacklogScheduled;
+
+  private final GetActiveDeviations getActiveDeviations;
+
+  private final RequestClock requestClock;
 
 
-    @Trace
-    @GetMapping("/fbm-wms-outbound/monitors")
-    public ResponseEntity<Monitor> getMonitorOutbound(
-            @RequestParam("caller.id") @NotNull final Long callerId,
-            @RequestParam @NotNull @NotBlank final String warehouseId,
-            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            final ZonedDateTime dateFrom,
-            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            final ZonedDateTime dateTo) {
+  @Trace
+  @GetMapping("/fbm-wms-outbound/monitors")
+  public ResponseEntity<Monitor> getMonitorOutbound(
+      @RequestParam("caller.id") @NotNull final Long callerId,
+      @RequestParam @NotNull @NotBlank final String warehouseId,
+      @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime dateFrom,
+      @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime dateTo) {
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+    authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
 
-        return ResponseEntity.of(Optional.of(getMonitor.execute(
-                        GetMonitorInput.builder()
-                                .workflow(FBM_WMS_OUTBOUND)
-                                .warehouseId(warehouseId)
-                                .dateFrom(dateFrom)
-                                .dateTo(dateTo)
-                                .build()
-                ))
-        );
-    }
+    return ResponseEntity.of(Optional.of(getMonitor.execute(
+            GetMonitorInput.builder()
+                .workflow(FBM_WMS_OUTBOUND)
+                .warehouseId(warehouseId)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .build()
+        ))
+    );
+  }
 
-    @Trace
-    @GetMapping("/fbm-wms-inbound/monitors/new")
-    //TODO Interim endpoint migrate this behavior to /fbm-wms-inbound/monitors endpoint.
-    public ResponseEntity<ScheduleBacklogResponse> getMonitorInbound(
-            @RequestParam("caller.id") @NotNull final Long callerId,
-            @RequestParam @NotNull @NotBlank final String logisticCenterId,
-            @RequestParam @NotNull final Instant viewDate) {
+  @Trace
+  @GetMapping("/fbm-wms-inbound/monitors/new")
+  //TODO Interim endpoint migrate this behavior to /fbm-wms-inbound/monitors endpoint.
+  public ResponseEntity<ScheduleBacklogResponse> getMonitorInboundNew(
+      @RequestParam("caller.id") @NotNull final Long callerId,
+      @RequestParam @NotNull @NotBlank final String logisticCenterId,
+      @RequestParam @NotNull final Instant viewDate) {
 
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
-        final Map<String, BacklogScheduled> backlogScheduledMap = getBacklogScheduled.execute(logisticCenterId, viewDate);
-        final List<ScheduleAdjustment> scheduleAdjustments = getActiveDeviations.execute(logisticCenterId, viewDate);
-        return ResponseEntity.ok(new ScheduleBacklogResponse(viewDate, scheduleAdjustments, backlogScheduledMap));
-    }
+    authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+    final Map<String, BacklogScheduled> backlogScheduledMap = getBacklogScheduled.execute(logisticCenterId, viewDate);
+    final List<ScheduleAdjustment> scheduleAdjustments = getActiveDeviations.execute(logisticCenterId, viewDate);
+    return ResponseEntity.ok(new ScheduleBacklogResponse(viewDate, scheduleAdjustments, backlogScheduledMap));
+  }
 
-    @Trace
-    @GetMapping("/fbm-wms-inbound/monitors")
-    public ResponseEntity<Map<String, BacklogScheduled>> getMonitorInbound(
-        @RequestParam("caller.id") @NotNull final Long callerId,
-        @RequestParam @NotNull @NotBlank final String logisticCenterId) {
-        authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
-        return ResponseEntity.ok(getBacklogScheduled.execute(logisticCenterId, requestClock.now()));
-    }
+  @Trace
+  @GetMapping("/fbm-wms-inbound/monitors")
+  public ResponseEntity<ScheduleBacklogResponse> getMonitorInbound(
+      @RequestParam("caller.id") @NotNull final Long callerId,
+      @RequestParam @NotNull @NotBlank final String logisticCenterId,
+      @RequestParam @NotNull final Instant viewDate
+  ) {
+    authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
+    final Map<String, BacklogScheduled> backlogScheduledMap = getBacklogScheduled.execute(logisticCenterId, viewDate);
+    final List<ScheduleAdjustment> scheduleAdjustments = getActiveDeviations.execute(logisticCenterId, viewDate);
+    return ResponseEntity.ok(new ScheduleBacklogResponse(viewDate, scheduleAdjustments, backlogScheduledMap));
+  }
 
-    @InitBinder
-    public void initBinder(final PropertyEditorRegistry dataBinder) {
-        dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
-    }
+  @InitBinder
+  public void initBinder(final PropertyEditorRegistry dataBinder) {
+    dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
+  }
 }
