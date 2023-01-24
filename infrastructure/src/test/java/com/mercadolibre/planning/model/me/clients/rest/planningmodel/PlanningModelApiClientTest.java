@@ -138,6 +138,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   private static final String VALUE_FIELD = "value";
 
+  private static final String PERFORMED_PROCESSING = "performed_processing";
+
   private PlanningModelApiClient client;
 
   private static Stream<Arguments> entityRequests() {
@@ -456,7 +458,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
     MockResponse.builder()
         .withMethod(GET)
-        .withURL(format(BASE_URL + ENTITIES_URL, "performed_processing"))
+        .withURL(format(BASE_URL + ENTITIES_URL, PERFORMED_PROCESSING))
         .withStatusCode(NOT_FOUND.value())
         .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
         .withResponseBody(response)
@@ -1095,7 +1097,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   private void mockGetPerformedProcessing(final JSONArray response) {
     MockResponse.builder()
         .withMethod(GET)
-        .withURL(format(BASE_URL + ENTITIES_URL, "performed_processing"))
+        .withURL(format(BASE_URL + ENTITIES_URL, PERFORMED_PROCESSING))
         .withStatusCode(OK.value())
         .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
         .withResponseBody(response.toString())

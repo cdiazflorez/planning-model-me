@@ -9,7 +9,6 @@ import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.staffing.Area;
 import com.mercadolibre.planning.model.me.entities.staffing.NonSystemicWorkers;
-import com.mercadolibre.planning.model.me.entities.staffing.PlannedWorker;
 import com.mercadolibre.planning.model.me.entities.staffing.Process;
 import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
