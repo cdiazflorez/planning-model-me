@@ -2,6 +2,8 @@ package com.mercadolibre.planning.model.me.usecases.staffing;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.util.stream.Collectors.toList;
 
@@ -193,9 +195,9 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final ProcessTotals totals = processStaffing.getTotals();
 
     final Integer systemicWorkersPlanned =
-        plannedHeadcount.get(ProcessingType.ACTIVE_WORKERS).orElse(null);
+        plannedHeadcount.get(ACTIVE_WORKERS).orElse(null);
     final Integer nonSystemicWorkersPlanned =
-        plannedHeadcount.get(ProcessingType.TOTAL_WORKERS_NS).orElse(null);
+        plannedHeadcount.get(ACTIVE_WORKERS_NS).orElse(null);
 
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
@@ -298,10 +300,9 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
             : Collections.emptyList();
 
     return Map.of(
-        ProcessingType.ACTIVE_WORKERS,
-            getHeadcountByProcessingType(staffingHeadcount, ProcessingType.ACTIVE_WORKERS),
-        ProcessingType.TOTAL_WORKERS_NS,
-            getHeadcountByProcessingType(staffingHeadcount, ProcessingType.TOTAL_WORKERS_NS));
+            ACTIVE_WORKERS, getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS),
+            ACTIVE_WORKERS_NS, getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS_NS)
+    );
   }
 
   private Optional<Integer> getHeadcountByProcessingType(

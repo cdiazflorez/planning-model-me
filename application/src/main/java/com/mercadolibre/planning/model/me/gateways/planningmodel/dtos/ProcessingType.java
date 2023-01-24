@@ -8,7 +8,6 @@ import lombok.Getter;
 public enum ProcessingType {
     ACTIVE_WORKERS,
     ACTIVE_WORKERS_NS,
-    TOTAL_WORKERS_NS,
     PERFORMED_PROCESSING,
     REMAINING_PROCESSING,
     WORKERS,
