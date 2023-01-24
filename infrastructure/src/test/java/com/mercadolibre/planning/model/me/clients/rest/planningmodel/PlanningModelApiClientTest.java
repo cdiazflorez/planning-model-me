@@ -405,7 +405,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put(VALUE_FIELD, "30")
             .put("source", "forecast")
             .put("metric_unit", "minutes")
-            .put(TYPE_FIELD, PERFORMED_PROCESSING)
+            .put(TYPE_FIELD, "performed_processing")
         )
         .put(new JSONObject()
             .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
@@ -414,7 +414,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put(VALUE_FIELD, "20")
             .put("source", "forecast")
             .put("metric_unit", "percentage")
-            .put(TYPE_FIELD, PERFORMED_PROCESSING)
+            .put(TYPE_FIELD, "performed_processing")
         );
 
     mockGetPerformedProcessing(apiResponse);

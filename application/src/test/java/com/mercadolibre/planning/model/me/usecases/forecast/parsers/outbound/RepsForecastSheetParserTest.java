@@ -233,7 +233,7 @@ class RepsForecastSheetParserTest {
     assertEquals(
         5,
         processingDistributions.stream()
-            .filter(distribution -> "total_workers_ns".equals(distribution.getType()))
+            .filter(distribution -> "active_workers_ns".equals(distribution.getType()))
             .count());
   }
 }
