@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType.CPT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -10,6 +12,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
@@ -63,53 +66,69 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
                                                  final List<Backlog> backlogs,
                                                  final LogisticCenterConfiguration config) {
 
-    final var currentBacklog = getCurrentBacklog(input, dateFrom, dateTo);
+    if (featureSwitches.isProjectionLibEnabled(input.getWarehouseId())) {
 
-    final var deferralProjectionOutput = this.getSimpleDeferralProjection.execute(
-        new GetProjectionInput(
-            input.getWarehouseId(),
-            input.getWorkflow(),
-            input.getDate(),
-            backlogs,
-            false,
-            emptyList())).getProjections();
+      final var currentBacklog = getCurrentBacklog(input, dateFrom, dateTo);
 
-
-    final var deferredStatusBySla = deferralProjectionOutput.stream()
-        .collect(toMap(ProjectionResult::getDate, ProjectionResult::isDeferred, (a, b) -> a, TreeMap::new));
+      final var deferralProjectionOutput = this.getSimpleDeferralProjection.execute(
+          new GetProjectionInput(
+              input.getWarehouseId(),
+              input.getWorkflow(),
+              input.getDate(),
+              backlogs,
+              false,
+              emptyList())).getProjections();
 
 
-    final var plannedBacklog = getExpectedBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
+      final var deferredStatusBySla = deferralProjectionOutput.stream()
+          .collect(toMap(ProjectionResult::getDate, ProjectionResult::isDeferred, (a, b) -> a, TreeMap::new));
 
 
-    final var filteredPlannedBacklogByDeferralStatus = getFilteredPlannedBacklogByDeferralStatus(
-        deferredStatusBySla,
-        plannedBacklog
-    );
+      final var plannedBacklog = getExpectedBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
 
-    final var defaultSlas = getSlas(input, dateFrom, dateTo, currentBacklog, plannedBacklog, config.getTimeZone().getID());
-    final var packingRatio = getPackingRatio(
-        input.getWarehouseId(),
-        config.isPutToWall(),
-        input.getRequestDate(),
-        dateTo.toInstant().plus(2, HOURS),
-        dateFrom.toInstant(),
-        dateTo.toInstant()
-    );
 
-    return calculateProjection.execute(
-            input.getRequestDate(),
-            Instant.from(dateFrom),
-            Instant.from(dateTo),
-            input.getWorkflow(),
-            getThroughputByProcess(input, dateFrom, dateTo, emptyList()),
-            currentBacklog,
-            filteredPlannedBacklogByDeferralStatus,
-            defaultSlas,
-            packingRatio
-        )
-        .stream()
-        .sorted(Comparator.comparing(ProjectionResult::getDate))
-        .collect(toList());
+      final var filteredPlannedBacklogByDeferralStatus = getFilteredPlannedBacklogByDeferralStatus(
+          deferredStatusBySla,
+          plannedBacklog
+      );
+
+      final var defaultSlas = getSlas(input, dateFrom, dateTo, currentBacklog, plannedBacklog, config.getTimeZone().getID());
+      final var packingRatio = getPackingRatio(
+          input.getWarehouseId(),
+          config.isPutToWall(),
+          input.getRequestDate(),
+          dateTo.toInstant().plus(2, HOURS),
+          dateFrom.toInstant(),
+          dateTo.toInstant()
+      );
+
+      return calculateProjection.execute(
+              input.getRequestDate(),
+              Instant.from(dateFrom),
+              Instant.from(dateTo),
+              input.getWorkflow(),
+              getThroughputByProcess(input, dateFrom, dateTo, emptyList()),
+              currentBacklog,
+              filteredPlannedBacklogByDeferralStatus,
+              defaultSlas,
+              packingRatio
+          )
+          .stream()
+          .sorted(Comparator.comparing(ProjectionResult::getDate))
+          .collect(toList());
+    } else {
+      return planningModelGateway.runProjection(ProjectionRequest.builder()
+          .warehouseId(input.getWarehouseId())
+          .workflow(input.getWorkflow())
+          .processName(ProjectionWorkflow.getProcesses(FBM_WMS_OUTBOUND))
+          .type(CPT)
+          .dateFrom(dateFrom)
+          .dateTo(dateTo)
+          .backlog(backlogs)
+          .userId(input.getUserId())
+          .applyDeviation(true)
+          .timeZone(config.getTimeZone().getID())
+          .build());
+    }
   }
 }

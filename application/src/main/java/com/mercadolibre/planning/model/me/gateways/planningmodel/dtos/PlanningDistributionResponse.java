@@ -23,6 +23,4 @@ public class PlanningDistributionResponse {
     private MetricUnit metricUnit;
 
     private long total;
-
-    private boolean isDeferred;
 }
