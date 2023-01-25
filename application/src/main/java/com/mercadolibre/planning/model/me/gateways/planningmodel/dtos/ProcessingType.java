@@ -1,5 +1,8 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
 import lombok.Getter;
 
 @Getter
@@ -16,10 +19,15 @@ public enum ProcessingType {
     BACKLOG_LOWER_LIMIT,
     BACKLOG_UPPER_LIMIT;
 
+    @JsonCreator
     public static ProcessingType from(final String value) {
-        return valueOf(value.toUpperCase());
+        return Arrays.stream(values())
+                .filter(v -> v.getName().equals(value))
+                .findFirst()
+                .orElse(null);
     }
 
+    @JsonValue
     public String getName() {
         return name().toLowerCase();
     }

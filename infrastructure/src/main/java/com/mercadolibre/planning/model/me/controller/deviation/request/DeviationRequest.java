@@ -1,9 +1,11 @@
 package com.mercadolibre.planning.model.me.controller.deviation.request;
 
 import com.mercadolibre.planning.model.me.enums.DeviationType;
+import com.mercadolibre.planning.model.me.enums.ShipmentType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import java.time.ZonedDateTime;
+import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -23,6 +25,7 @@ public class DeviationRequest {
   Double value;
   @NotNull
   long userId;
+  List<ShipmentType> shipmentTypes;
 
   public SaveDeviationInput toDeviationInput(final Workflow workflow, final DeviationType type) {
     return SaveDeviationInput.builder()
@@ -33,6 +36,7 @@ public class DeviationRequest {
         .value(value)
         .type(type)
         .userId(userId)
+        .shipmentTypes(shipmentTypes)
         .build();
   }
 }

@@ -42,6 +42,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
@@ -108,6 +109,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   private static final String UNITS_DISTRIBUTION = "/entities/units_distribution";
 
   private static final String SAVE = "/save";
+  private static final String DELIMITER = ",";
 
   private final ObjectMapper objectMapper;
 
@@ -434,23 +436,28 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
     @Trace
     @Override
-    public List<Deviation> getActiveDeviations(final Workflow workflow,
+    public List<Deviation> getActiveDeviations(final Set<Workflow> workflows,
                                                final String warehouseId,
-                                               final ZonedDateTime date) {
-        final Map<String, String> params = Map.of(WAREHOUSE_ID, warehouseId, "date", date.withFixedOffsetZone().toString());
+                                               final Instant date) {
+        final Map<String, String> params = Map.of(
+                WAREHOUSE_ID, warehouseId,
+                "date", date.toString(),
+                "workflows", workflows.stream().map(Workflow::getName).collect(joining(DELIMITER))
+        );
         final HttpRequest request = HttpRequest.builder()
-                .url(format(WORKFLOWS_URL, workflow)
+                //TODO delete this when traffic route is active.
+                .url(format(WORKFLOWS_URL, Workflow.FBM_WMS_INBOUND)
                         + ACTIVE_DEVIATIONS_URL)
                 .GET()
                 .queryParams(params)
-                .acceptedHttpStatuses(Set.of(OK, CREATED))
+                .acceptedHttpStatuses(Set.of(OK))
                 .build();
 
         return send(request, response -> response.getData(new TypeReference<>() {
         }));
     }
 
-  @Trace
+    @Trace
   @Override
   public SaveUnitsResponse saveShareDistribution(final List<ShareDistribution> shareDistributionList, final Workflow workflow) {
     final HttpRequest request = HttpRequest.builder()
@@ -595,7 +602,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private String getEnumNamesAsString(final List<? extends Enum> namedEnums) {
     return namedEnums.stream().map(Enum::name).map(String::toLowerCase)
-        .collect(joining(","));
+        .collect(joining(DELIMITER));
   }
 
   private List<MagnitudePhoto> executeGetEntities(HttpRequest request) {
@@ -619,6 +626,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         .date(ZonedDateTime.parse(response.getDate(), ISO_OFFSET_DATE_TIME))
         .processName(ProcessName.from(response.getProcessName()))
         .workflow(Workflow.from(response.getWorkflow()).orElseThrow())
+        .type(ProcessingType.from(response.getType()))
         .value(response.getValue())
         .source(Source.from(response.getSource()))
         .metricUnit(MetricUnit.from(response.getMetricUnit()))

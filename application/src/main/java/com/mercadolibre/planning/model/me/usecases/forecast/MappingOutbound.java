@@ -14,6 +14,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.WORKERS;
@@ -40,18 +41,21 @@ final class MappingOutbound {
 
   private static final String WAREHOUSE_ID = "warehouse_id";
 
-  private static final String INVALID_DATES_ERROR_MESSAGE = "`Reps` sheet dates must match `PP - Staffing` sheet dates";
+  private static final String INVALID_DATES_ERROR_MESSAGE =
+      "`Reps` sheet dates must match `PP - Staffing` sheet dates";
 
-  private MappingOutbound() {
-  }
+  private MappingOutbound() {}
 
-  static List<HeadcountProductivity> buildHeadcountProductivity(final Map<ForecastColumn, Object> parsedValues) {
+  static List<HeadcountProductivity> buildHeadcountProductivity(
+      final Map<ForecastColumn, Object> parsedValues) {
     if (!parsedValues.containsKey(HEADCOUNT_PRODUCTIVITY_PP)) {
       return (List<HeadcountProductivity>) parsedValues.get(HEADCOUNT_PRODUCTIVITY);
     }
 
-    final List<HeadcountProductivity> hcProductivityPP = (List<HeadcountProductivity>) parsedValues.get(HEADCOUNT_PRODUCTIVITY_PP);
-    final List<HeadcountProductivity> hcProductivity = (List<HeadcountProductivity>) parsedValues.get(HEADCOUNT_PRODUCTIVITY);
+    final List<HeadcountProductivity> hcProductivityPP =
+        (List<HeadcountProductivity>) parsedValues.get(HEADCOUNT_PRODUCTIVITY_PP);
+    final List<HeadcountProductivity> hcProductivity =
+        (List<HeadcountProductivity>) parsedValues.get(HEADCOUNT_PRODUCTIVITY);
 
     final List<HeadcountProductivity> headcountProductivities = new ArrayList<>(hcProductivity);
 
@@ -61,9 +65,9 @@ final class MappingOutbound {
   }
 
   static List<ProcessingDistribution> buildProcessingDistribution(
-      final Map<ForecastColumn, Object> parsedValues
-  ) {
-    final List<ProcessingDistribution> processingDistribution = (List<ProcessingDistribution>) parsedValues.get(PROCESSING_DISTRIBUTION);
+      final Map<ForecastColumn, Object> parsedValues) {
+    final List<ProcessingDistribution> processingDistribution =
+        (List<ProcessingDistribution>) parsedValues.get(PROCESSING_DISTRIBUTION);
 
     validateActiveAndPresentWorkersColumns(processingDistribution);
 
@@ -73,26 +77,30 @@ final class MappingOutbound {
 
     final List<HeadcountRatio> ratiosPP = (List<HeadcountRatio>) parsedValues.get(HEADCOUNT_RATIO);
 
-    final var pickingGlobalHeadcount = processingDistribution.stream()
-        .filter(processing -> PICKING.getName().equals(processing.getProcessName())
-            && processing.getType().equals(ACTIVE_WORKERS.toString()))
-        .findFirst()
-        .orElseThrow();
+    final var pickingGlobalHeadcount =
+        processingDistribution.stream()
+            .filter(
+                processing ->
+                    PICKING.getName().equals(processing.getProcessName())
+                        && processing.getType().equals(ACTIVE_WORKERS.toString()))
+            .findFirst()
+            .orElseThrow();
 
     checkRatioDates(ratiosPP, pickingGlobalHeadcount);
 
     final var ratioByProcessPathAndDate = buildRatioByProcessPathAndDate(ratiosPP);
 
-    final var pdPickingRatio = ratioByProcessPathAndDate.entrySet()
-        .stream()
-        .map(entry -> new ProcessingDistribution(
-            pickingGlobalHeadcount.getType(),
-            pickingGlobalHeadcount.getQuantityMetricUnit(),
-            pickingGlobalHeadcount.getProcessName(),
-            entry.getKey(),
-            buildDataWithRatio(entry.getValue(), pickingGlobalHeadcount.getData())
-        ))
-        .collect(Collectors.toList());
+    final var pdPickingRatio =
+        ratioByProcessPathAndDate.entrySet().stream()
+            .map(
+                entry ->
+                    new ProcessingDistribution(
+                        pickingGlobalHeadcount.getType(),
+                        pickingGlobalHeadcount.getQuantityMetricUnit(),
+                        pickingGlobalHeadcount.getProcessName(),
+                        entry.getKey(),
+                        buildDataWithRatio(entry.getValue(), pickingGlobalHeadcount.getData())))
+            .collect(Collectors.toList());
 
     var newProcessingDistribution = new ArrayList<>(processingDistribution);
 
@@ -101,26 +109,25 @@ final class MappingOutbound {
     return newProcessingDistribution;
   }
 
-  private static void checkRatioDates(final List<HeadcountRatio> ratiosPP, final ProcessingDistribution pickingHeadcount) {
-    final var somePpRatio = ratiosPP.stream()
-        .findAny()
-        .map(HeadcountRatio::getData);
+  private static void checkRatioDates(
+      final List<HeadcountRatio> ratiosPP, final ProcessingDistribution pickingHeadcount) {
+    final var somePpRatio = ratiosPP.stream().findAny().map(HeadcountRatio::getData);
 
     if (somePpRatio.isEmpty()) {
       return;
     }
 
-    final var ppRatioDates = somePpRatio.get()
-        .stream()
-        .map(HeadcountRatio.HeadcountRatioData::getDate)
-        .map(ZonedDateTime::toInstant)
-        .collect(Collectors.toSet());
+    final var ppRatioDates =
+        somePpRatio.get().stream()
+            .map(HeadcountRatio.HeadcountRatioData::getDate)
+            .map(ZonedDateTime::toInstant)
+            .collect(Collectors.toSet());
 
-    final var pickingDates = pickingHeadcount.getData()
-        .stream()
-        .map(ProcessingDistributionData::getDate)
-        .map(ZonedDateTime::toInstant)
-        .collect(Collectors.toSet());
+    final var pickingDates =
+        pickingHeadcount.getData().stream()
+            .map(ProcessingDistributionData::getDate)
+            .map(ZonedDateTime::toInstant)
+            .collect(Collectors.toSet());
 
     if ((pickingDates.size() != ppRatioDates.size()) || !(pickingDates.containsAll(ppRatioDates))) {
       throw new ForecastParsingException(INVALID_DATES_ERROR_MESSAGE);
@@ -128,21 +135,23 @@ final class MappingOutbound {
   }
 
   private static List<ProcessingDistributionData> buildDataWithRatio(
-      final Map<ZonedDateTime, Double> ratioByDate,
-      final List<ProcessingDistributionData> pdData) {
+      final Map<ZonedDateTime, Double> ratioByDate, final List<ProcessingDistributionData> pdData) {
 
-    return pdData.stream().map(data ->
-        new ProcessingDistributionData(
-            data.getDate(),
-            Format.decimalTruncate(data.getQuantity() * ratioByDate.get(data.getDate()), DECIMAL_QUANTITY)
-        )
-    ).collect(Collectors.toList());
+    return pdData.stream()
+        .map(
+            data ->
+                new ProcessingDistributionData(
+                    data.getDate(),
+                    Format.decimalTruncate(
+                        data.getQuantity() * ratioByDate.get(data.getDate()), DECIMAL_QUANTITY)))
+        .collect(Collectors.toList());
   }
 
   static List<Metadata> buildForecastMetadata(
       final String warehouseId, final Map<ForecastColumn, Object> parsedValues) {
 
     final String week = String.valueOf(parsedValues.get(WEEK));
+    final String version = String.valueOf(parsedValues.get(VERSION));
     final String monoOrder = String.valueOf(parsedValues.get(MONO_ORDER_DISTRIBUTION));
     final String multiOrder = String.valueOf(parsedValues.get(MULTI_ORDER_DISTRIBUTION));
     final String multiBatch = String.valueOf(parsedValues.get(MULTI_BATCH_DISTRIBUTION));
@@ -160,6 +169,7 @@ final class MappingOutbound {
     return List.of(
         new Metadata(WAREHOUSE_ID, warehouseId),
         new Metadata(WEEK.getName(), adaptWeekFormat(week)),
+        new Metadata(VERSION.getName(), version),
         new Metadata(MONO_ORDER_DISTRIBUTION.getName(), monoOrder),
         new Metadata(MULTI_ORDER_DISTRIBUTION.getName(), multiOrder),
         new Metadata(MULTI_BATCH_DISTRIBUTION.getName(), multiBatch),
@@ -170,13 +180,18 @@ final class MappingOutbound {
         new Metadata(OUTBOUND_PACKING_WALL_PRODUCTIVITY.getName(), packingWallPolivalence));
   }
 
-  private static Map<ProcessPath, Map<ZonedDateTime, Double>> buildRatioByProcessPathAndDate(final List<HeadcountRatio> ratiosPP) {
+  private static Map<ProcessPath, Map<ZonedDateTime, Double>> buildRatioByProcessPathAndDate(
+      final List<HeadcountRatio> ratiosPP) {
     return ratiosPP.stream()
-        .collect(Collectors.toMap(HeadcountRatio::getProcessPath,
-                hcRatio -> hcRatio.getData().stream()
-                    .collect(Collectors.toMap(HeadcountRatio.HeadcountRatioData::getDate, HeadcountRatio.HeadcountRatioData::getRatio))
-            )
-        );
+        .collect(
+            Collectors.toMap(
+                HeadcountRatio::getProcessPath,
+                hcRatio ->
+                    hcRatio.getData().stream()
+                        .collect(
+                            Collectors.toMap(
+                                HeadcountRatio.HeadcountRatioData::getDate,
+                                HeadcountRatio.HeadcountRatioData::getRatio))));
   }
 
   private static void validateActiveAndPresentWorkersColumns(
@@ -186,7 +201,7 @@ final class MappingOutbound {
             .filter(
                 distribution ->
                     (distribution.getType().equals(WORKERS.toString())
-                        || distribution.getType().equals(ACTIVE_WORKERS.toString()))
+                            || distribution.getType().equals(ACTIVE_WORKERS.toString()))
                         && distribution.getData().stream().anyMatch(qty -> qty.getQuantity() < 0.0))
             .map(workers -> workers.getProcessName() + "-" + workers.getType())
             .collect(Collectors.toList());
@@ -197,5 +212,4 @@ final class MappingOutbound {
           CodeError.SBO001.getName());
     }
   }
-
 }

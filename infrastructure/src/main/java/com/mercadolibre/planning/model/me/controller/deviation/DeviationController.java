@@ -11,6 +11,7 @@ import com.mercadolibre.planning.model.me.controller.editor.ShipmentTypeEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.enums.ShipmentType;
+import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
@@ -21,7 +22,7 @@ import com.mercadolibre.planning.model.me.usecases.deviation.SaveDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.SaveOutboundDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.newrelic.api.agent.Trace;
-import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -43,9 +44,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/planning/model/middleend/workflows/{workflow}/deviations")
 public class DeviationController {
+
+  // TODO: Update Permissions when inbound-edition adoption improves
+  private static final Map<Workflow, UserPermission> EDIT_PERMISSION_BY_WORKFLOW = Map.of(
+      Workflow.FBM_WMS_OUTBOUND, OUTBOUND_SIMULATION,
+      Workflow.FBM_WMS_INBOUND, OUTBOUND_SIMULATION,
+      Workflow.INBOUND, OUTBOUND_SIMULATION,
+      Workflow.INBOUND_TRANSFER, OUTBOUND_SIMULATION
+  );
+
   private final SaveOutboundDeviation saveOutboundDeviation;
+
   private final SaveDeviation saveDeviation;
+
   private final DisableDeviation disableDeviation;
+
   private final AuthorizeUser authorizeUser;
 
   private final DatadogMetricService datadogMetricService;
@@ -85,49 +98,43 @@ public class DeviationController {
 
     saveDeviation.execute(deviationRequest.toDeviationInput(workflow, type));
 
-    return new ResponseEntity<HttpStatus>(OK);
+    return new ResponseEntity<>(OK);
   }
 
   @Trace
   @PostMapping("/disable")
-  public ResponseEntity<DeviationResponse> disable(
+  public ResponseEntity<Void> disable(
       @PathVariable final Workflow workflow,
       @RequestParam final String warehouseId,
-      @RequestParam("caller.id") @NotNull final Long callerId) {
+      @RequestParam("caller.id") @NotNull final Long callerId
+  ) {
 
     authorizeUser.execute(new AuthorizeUserDto(callerId, singletonList(OUTBOUND_SIMULATION)));
 
-    DeviationResponse response;
+    disableDeviation.execute(new DisableDeviationInput(warehouseId, workflow));
+    return ResponseEntity.status(OK).build();
+  }
 
-    try {
-      response = disableDeviation.execute(new DisableDeviationInput(warehouseId, workflow));
-    } catch (Exception e) {
-      response = new DeviationResponse(INTERNAL_SERVER_ERROR.value(),
-          "Error disabling forecast deviation");
-    }
+  @Trace
+  @PostMapping("/{type}/disable")
+  public ResponseEntity<Void> disable(
+      @RequestParam final String logisticCenterId,
+      @PathVariable final Workflow workflow,
+      @PathVariable final DeviationType type,
+      @RequestParam("caller.id") @NotNull final Long callerId
+  ) {
+    final var permission = EDIT_PERMISSION_BY_WORKFLOW.get(workflow);
+    authorizeUser.execute(new AuthorizeUserDto(callerId, singletonList(permission)));
 
-        return ResponseEntity.status(response.getStatus())
-            .body(response);
-    }
+    disableDeviation.execute(new DisableDeviationInput(logisticCenterId, workflow));
+    return ResponseEntity.status(OK).build();
+  }
 
-    @Trace
-    @PostMapping("/{type}/disable")
-    public ResponseEntity<DeviationResponse> disable(
-        @PathVariable final DeviationType type,
-        @PathVariable final Workflow workflow,
-        @RequestParam final String logisticCenterId,
-        @RequestParam("caller.id") @NotNull final Long callerId) {
-
-      DeviationResponse response = new DeviationResponse(OK.value(), "Schedule deviation disable");
-
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
-
-    @InitBinder
-    public void initBinder(final PropertyEditorRegistry dataBinder) {
-        dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
-        //TODO: you need to add the list as a parameter in the deviation request;
-        dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
-        dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
-    }
+  @InitBinder
+  public void initBinder(final PropertyEditorRegistry dataBinder) {
+    dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
+    //TODO: you need to add the list as a parameter in the deviation request;
+    dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
+    dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
+  }
 }

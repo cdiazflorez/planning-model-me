@@ -21,18 +21,24 @@ import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 
 import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
 import static java.lang.String.format;
 
+@Slf4j
 public final class SpreadsheetUtils {
 
     public static final DateTimeFormatter formatter =
             DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
+    public static final int PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW = 6;
+    public static final int NON_SYSTEMIC_COLUMN_COUNT = 5;
+    public static final String NON_SYSTEMIC_COLUMN_NAME = "No Sistemicos";
     private static final char CHAR_LETTER_A = 'A';
     private static final String HOUR_MINUTE_FORMAT_PATTERN = "^([0]?[0-9]|[0-9][0-9]):[0-5][0-9]$";
     private static final String PARSE_ERROR_MESSAGE = "Error while trying to parse "
             + "cell (%s) for sheet: %s";
+
     private static final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.FRANCE);
 
     private SpreadsheetUtils() {
