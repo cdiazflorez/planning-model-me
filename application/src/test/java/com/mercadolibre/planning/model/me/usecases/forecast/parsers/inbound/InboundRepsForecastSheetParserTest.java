@@ -31,8 +31,6 @@ class InboundRepsForecastSheetParserTest {
 
   private static final String VALID_FILE_PATH = "inbound_planning_ok.xlsx";
 
-  private static final String VALID_FILE_WITHOUT_CHECK_IN = "inbound_planning_without_check_in.xlsx";
-
   private static final String ERRONEOUS_FILE_PATH = "inbound_planning_with_errors.xlsx";
 
   private static final LogisticCenterConfiguration CONF =
@@ -40,7 +38,7 @@ class InboundRepsForecastSheetParserTest {
 
   private static final ZonedDateTime FIRST_DATE = ZonedDateTime.parse("2021-11-07T00:00Z", ISO_OFFSET_DATE_TIME);
 
-  private final InboundRepsForecastSheetParser parser = new InboundRepsForecastSheetParser(logisticCenter -> true);
+  private final InboundRepsForecastSheetParser parser = new InboundRepsForecastSheetParser();
 
   @Test
   @DisplayName("Excel Parsed Ok")
@@ -53,20 +51,6 @@ class InboundRepsForecastSheetParserTest {
 
     // THEN
     assertSuccessResults(result, true);
-  }
-
-  @Test
-  @DisplayName("Excel Parsed Ok without check_in")
-  void parseOkWithoutCheckIn() {
-    // GIVEN
-    final InboundRepsForecastSheetParser parserToggle = new InboundRepsForecastSheetParser(logisticCenter -> false);
-    final MeliSheet repsSheet = getMeliSheetFrom(parserToggle.name(), VALID_FILE_WITHOUT_CHECK_IN);
-
-    // WHEN
-    final ForecastSheetDto result = parserToggle.parse("ARBA01", repsSheet, CONF);
-
-    // THEN
-    assertSuccessResults(result, false);
   }
 
   @Test

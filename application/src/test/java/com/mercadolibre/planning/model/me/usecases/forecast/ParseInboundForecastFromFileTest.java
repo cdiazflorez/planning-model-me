@@ -33,7 +33,7 @@ class ParseInboundForecastFromFileTest {
     var document = createMeliDocumentFrom(getResource(VALID_FILE_PATH));
 
     // WHEN
-    final Forecast forecast = ParseInboundForecastFromFile.parse("ARBA01", document, 1234L, CONFIG, logisticCenter -> true);
+    final Forecast forecast = ParseInboundForecastFromFile.parse("ARBA01", document, 1234L, CONFIG);
 
     // THEN
     final List<Metadata> metadata = forecast.getMetadata();
@@ -52,6 +52,6 @@ class ParseInboundForecastFromFileTest {
 
     //THEN
     assertThrows(ForecastWorkersInvalidException.class,
-        () -> ParseInboundForecastFromFile.parse("ARTW01", document, 1234L, CONFIG, logisticCenter -> false));
+        () -> ParseInboundForecastFromFile.parse("ARTW01", document, 1234L, CONFIG));
   }
 }
