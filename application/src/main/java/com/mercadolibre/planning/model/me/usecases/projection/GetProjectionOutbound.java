@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -66,7 +67,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class GetProjectionOutbound extends GetProjection {
 
-  private final GetSimpleDeferralProjection getSimpleDeferralProjection;
+  final GetSimpleDeferralProjection getSimpleDeferralProjection;
 
   private final BacklogApiGateway backlogGateway;
 
@@ -192,6 +193,25 @@ public abstract class GetProjectionOutbound extends GetProjection {
         .dateOutTo(dateTo)
         .applyDeviation(true)
         .build());
+  }
+
+
+  protected List<PlanningDistributionResponse> getFilteredPlannedBacklogByDeferralStatus(
+      final TreeMap<ZonedDateTime, Boolean> deferredStatusBySla,
+      final List<PlanningDistributionResponse> plannedBacklog) {
+
+    return plannedBacklog.stream()
+        .filter(plannedDistribution -> {
+          var deferredStatus = deferredStatusBySla.get(plannedDistribution.getDateOut());
+          if (Boolean.FALSE.equals(deferredStatus) && plannedDistribution.getDateOut().isAfter(deferredStatusBySla.firstKey())) {
+            return true;
+          }
+          if (deferredStatus == null) {
+            return plannedDistribution.getDateOut().isAfter(deferredStatusBySla.firstKey());
+          }
+          return false;
+        })
+        .collect(toList());
   }
 
 
