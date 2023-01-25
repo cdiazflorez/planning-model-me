@@ -6,6 +6,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.ScheduleAdjustment;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.ScheduleBacklogResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -13,6 +14,8 @@ import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetActiveDeviations;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogScheduled;
+import com.mercadolibre.planning.model.me.usecases.backlog.entities.BacklogScheduledMetrics;
+import com.mercadolibre.planning.model.me.usecases.backlog.entities.InboundBacklogMonitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.GetMonitor;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.Monitor;
@@ -22,6 +25,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -80,26 +84,66 @@ public class MonitorController {
       @RequestParam @NotNull final Instant viewDate) {
 
     authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
-    final Map<String, BacklogScheduled> backlogScheduledMap = getBacklogScheduled.execute(logisticCenterId, viewDate);
+    final InboundBacklogMonitor backlogScheduled = getBacklogScheduled.execute(logisticCenterId, viewDate);
+    final Map<String, BacklogScheduled> backlogScheduledMap = getMapBacklogScheduled(backlogScheduled);
     final List<ScheduleAdjustment> scheduleAdjustments = getActiveDeviations.execute(logisticCenterId, viewDate);
+
     return ResponseEntity.ok(new ScheduleBacklogResponse(viewDate, scheduleAdjustments, backlogScheduledMap));
   }
 
   @Trace
   @GetMapping("/fbm-wms-inbound/monitors")
-  public ResponseEntity<ScheduleBacklogResponse> getMonitorInbound(
+  public ResponseEntity<InboundBacklogMonitor> getMonitorInbound(
       @RequestParam("caller.id") @NotNull final Long callerId,
       @RequestParam @NotNull @NotBlank final String logisticCenterId,
-      @RequestParam @NotNull final Instant viewDate
-  ) {
+      @RequestParam @NotNull final Instant viewDate) {
+
     authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
-    final Map<String, BacklogScheduled> backlogScheduledMap = getBacklogScheduled.execute(logisticCenterId, viewDate);
+    final InboundBacklogMonitor backlogScheduled = getBacklogScheduled.execute(logisticCenterId, viewDate);
     final List<ScheduleAdjustment> scheduleAdjustments = getActiveDeviations.execute(logisticCenterId, viewDate);
-    return ResponseEntity.ok(new ScheduleBacklogResponse(viewDate, scheduleAdjustments, backlogScheduledMap));
+    return ResponseEntity.ok(new InboundBacklogMonitor(
+        viewDate,
+        scheduleAdjustments,
+        backlogScheduled.getScheduled(),
+        backlogScheduled.getCheckIn(),
+        backlogScheduled.getPutAway()));
+  }
+
+  private Map<String, BacklogScheduled> getMapBacklogScheduled(final InboundBacklogMonitor inboundBacklogMonitor) {
+
+    Map<String, BacklogScheduled> backlogScheduledMap = new ConcurrentHashMap<>();
+    if (!inboundBacklogMonitor.getScheduled().isEmpty() && inboundBacklogMonitor.getScheduled().size() >= 2) {
+      BacklogScheduledMetrics inboundMetrics = inboundBacklogMonitor.getScheduled().get(0).getInbound();
+      BacklogScheduledMetrics transferMetrics = inboundBacklogMonitor.getScheduled().get(0).getInboundTransfer();
+      BacklogScheduledMetrics totalMetrics = inboundBacklogMonitor.getScheduled().get(1).getTotal();
+
+      BacklogScheduled backlogInbound = toBacklogScheduled(inboundMetrics);
+      BacklogScheduled backlogTransfer = toBacklogScheduled(transferMetrics);
+
+      backlogScheduledMap.put("total", backlogInbound);
+      backlogScheduledMap.put("inbound", backlogInbound);
+      backlogScheduledMap.put("inbound_transfer", backlogTransfer);
+
+    }
+
+    return backlogScheduledMap;
+
+  }
+
+  private BacklogScheduled toBacklogScheduled(final BacklogScheduledMetrics inboundMetrics) {
+    final int received = inboundMetrics.getReceived() == null ? 0 : inboundMetrics.getReceived().getUnits();
+    final int expected = inboundMetrics.getExpected() == null ? 0 : inboundMetrics.getExpected().getUnits();
+
+    return new BacklogScheduled(
+        inboundMetrics.getExpected(),
+        inboundMetrics.getReceived(),
+        Indicator.builder().units(Math.max(expected - received, 0)).build(),
+        inboundMetrics.getDeviation());
   }
 
   @InitBinder
   public void initBinder(final PropertyEditorRegistry dataBinder) {
     dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
   }
+
 }

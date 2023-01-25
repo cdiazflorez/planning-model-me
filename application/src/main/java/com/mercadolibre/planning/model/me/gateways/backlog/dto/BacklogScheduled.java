@@ -4,8 +4,8 @@ import lombok.Value;
 
 @Value
 public class BacklogScheduled {
-    Indicator expected;
-    Indicator received;
-    Indicator pending;
-    Indicator deviation;
+  Indicator expected;
+  Indicator received;
+  Indicator pending;
+  Indicator deviation;
 }

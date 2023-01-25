@@ -5,23 +5,26 @@ import static java.time.ZoneOffset.UTC;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogPhotosRequest;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
+import com.mercadolibre.planning.model.me.gateways.inboundreports.InboundReportsApiGateway;
+import com.mercadolibre.planning.model.me.gateways.inboundreports.dto.InboundResponse;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
+import com.mercadolibre.planning.model.me.usecases.backlog.entities.BacklogScheduledMetrics;
+import com.mercadolibre.planning.model.me.usecases.backlog.entities.InboundBacklogMonitor;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,159 +34,274 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class GetBacklogScheduledTest {
 
-    private static final int AMOUNT_TO_ADD_MINUTES = 5;
-    private static final int QUANTITY_BACKLOG = 500;
-    private static final int QUANTITY_BACKLOG_CURRENT = 275;
+  private static final int QUANTITY_BACKLOG_CURRENT = 200;
+  private static final String IB = "inbound";
+  private static final String IB_TRANSFER = "INBOUND-TRANSFER";
+  private static final String TOTAL_SHIPPED = "total_shipped_quantity";
+  private static final Instant INITIAL = Instant.parse("2022-12-27T00:00:00Z");
+  private static final Instant NOW = Instant.parse("2022-12-27T08:00:00Z");
+  private static final Instant TODAY = Instant.parse("2022-12-27T00:00:00Z");
+  private static final Instant TOMORROW = Instant.parse("2022-12-28T00:00:00Z");
 
-    @InjectMocks
-    private GetBacklogScheduled getBacklogScheduled;
+  @InjectMocks
+  private GetBacklogScheduled getBacklogScheduled;
 
-    @Mock
-    private BacklogApiGateway backlogGateway;
+  @Mock
+  private BacklogApiGateway backlogGateway;
 
-    @Mock
-    private LogisticCenterGateway logisticCenterGateway;
+  @Mock
+  private LogisticCenterGateway logisticCenterGateway;
 
-    private Instant now;
-    private Instant today;
-    @BeforeEach
-    public void init() {
-        now = Instant.now();
-        today = ZonedDateTime.ofInstant(now, UTC)
-                .withZoneSameInstant(TimeZone.getDefault().toZoneId())
-                .truncatedTo(ChronoUnit.DAYS)
-                .toInstant();
-    }
+  @Mock
+  private InboundReportsApiGateway inboundReportsApiGateway;
 
-    @Test
-    public void getBacklogScheduledTest() {
-        //GIVEN
+  @Test
+  public void backlogScheduledTest() {
+    //WHEN
+    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+        .thenReturn(new LogisticCenterConfiguration(TimeZone.getTimeZone(UTC)));
 
-        final Instant photoDateTo = today.plus(AMOUNT_TO_ADD_MINUTES, ChronoUnit.MINUTES);
+    when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(responseGetCurrentBacklog(true));
 
-        //WHEN
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-                .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+    when(inboundReportsApiGateway.getUnitsReceived(WAREHOUSE_ID, INITIAL, NOW, null))
+        .thenReturn(new InboundResponse(List.of(new InboundResponse.Aggregation(TOTAL_SHIPPED, 1600))));
+    when(inboundReportsApiGateway.getUnitsReceived(WAREHOUSE_ID, INITIAL, NOW, "transfer"))
+        .thenReturn(new InboundResponse(List.of(new InboundResponse.Aggregation(TOTAL_SHIPPED, 800))));
 
-        //first photo of day
-      when(backlogGateway.getPhotos(any(BacklogPhotosRequest.class))).thenReturn(responseGetBacklog(true));
+    final InboundBacklogMonitor response = getBacklogScheduled.execute(WAREHOUSE_ID, NOW);
 
-      when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(responseGetCurrentBacklog(true));
+    //expected
+    BacklogScheduledMetrics expectedBacklogInbound = BacklogScheduledMetrics.builder()
+        .expected(Indicator.builder().units(1200).build())
+        .received(Indicator.builder().units(800).build())
+        .deviation(Indicator.builder().units(400).percentage(-0.33).build())
+        .build();
 
-        final Map<String, BacklogScheduled> response = getBacklogScheduled.execute(WAREHOUSE_ID, now);
+    BacklogScheduledMetrics expectedBacklogInboundTransfer = BacklogScheduledMetrics.builder()
+        .expected(Indicator.builder().units(1200).build())
+        .received(Indicator.builder().units(800).build())
+        .deviation(Indicator.builder().units(400).percentage(-0.33).build())
+        .build();
 
-        //expected
-        BacklogScheduled expectedBacklogInbound = new BacklogScheduled(
-                Indicator.builder().units(500).build(),
-                Indicator.builder().units(275).build(),
-                Indicator.builder().units(0).build(),
-                Indicator.builder().units(225).percentage(-0.45).build()
-        );
+    BacklogScheduledMetrics expectedTotalBacklog = BacklogScheduledMetrics.builder()
+        .expected(Indicator.builder().units(2400).build())
+        .received(Indicator.builder().units(1600).build())
+        .deviation(Indicator.builder().units(800).percentage(-0.33).build())
+        .build();
 
-        BacklogScheduled expectedBacklogInboundTransfer = new BacklogScheduled(
-            Indicator.builder().units(650).build(),
-            Indicator.builder().units(150).build(),
-            Indicator.builder().units(0).build(),
-            Indicator.builder().units(500).percentage(-0.77).build()
-        );
+    //verify
+    Assertions.assertEquals(3, response.getScheduled().size());
+    Assertions.assertEquals(expectedBacklogInbound, response.getScheduled().get(0).getInbound());
+    Assertions.assertEquals(expectedBacklogInboundTransfer, response.getScheduled().get(0).getInboundTransfer());
+    Assertions.assertEquals(expectedTotalBacklog, response.getScheduled().get(0).getTotal());
+  }
 
-        BacklogScheduled expectedTotalBacklog = new BacklogScheduled(
-            Indicator.builder().units(1150).build(),
-            Indicator.builder().units(425).build(),
-            Indicator.builder().units(0).build(),
-            Indicator.builder().units(725).percentage(-0.63).build()
-        );
+  @Test
+  public void testBacklogScheduledWithoutTransferBacklog() {
+    //WHEN
+    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+        .thenReturn(new LogisticCenterConfiguration(TimeZone.getTimeZone(UTC)));
 
-        //verify
-        Assertions.assertEquals(expectedBacklogInbound, response.get("inbound"));
-        Assertions.assertEquals(expectedBacklogInboundTransfer, response.get("inbound_transfer"));
-        Assertions.assertEquals(expectedTotalBacklog, response.get("total"));
-    }
+    when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(responseGetCurrentBacklog(false));
+    when(inboundReportsApiGateway.getUnitsReceived(WAREHOUSE_ID, INITIAL, NOW, null))
+        .thenReturn(new InboundResponse(List.of(new InboundResponse.Aggregation(TOTAL_SHIPPED, 800))));
+    when(inboundReportsApiGateway.getUnitsReceived(WAREHOUSE_ID, INITIAL, NOW, "transfer"))
+        .thenReturn(new InboundResponse(List.of()));
 
-    @Test
-    public void testBacklogScheduledWithoutTransferBacklog() {
-        //WHEN
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-            .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
-        when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
-            .thenReturn(new LogisticCenterConfiguration(TimeZone.getDefault()));
+    final InboundBacklogMonitor response = getBacklogScheduled.execute(WAREHOUSE_ID, NOW);
 
-        //first photo of day
-      when(backlogGateway.getPhotos(any(BacklogPhotosRequest.class))).thenReturn(responseGetBacklog(false));
+    //expected
+    BacklogScheduledMetrics expectedBacklogInbound = BacklogScheduledMetrics.builder()
+        .expected(Indicator.builder().units(1200).build())
+        .received(Indicator.builder().units(800).build())
+        .deviation(Indicator.builder().units(400).percentage(-0.33).build())
+        .build();
 
-      when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class))).thenReturn(null);
+    BacklogScheduledMetrics expectedBacklogInboundTransfer = BacklogScheduledMetrics.builder()
+        .expected(Indicator.builder().units(0).build())
+        .received(Indicator.builder().units(0).build())
+        .deviation(Indicator.builder().units(0).percentage(0.0).build())
+        .build();
 
-        final Map<String, BacklogScheduled> response = getBacklogScheduled.execute(WAREHOUSE_ID, now);
-
-        //expected
-        BacklogScheduled expectedBacklogSeller = new BacklogScheduled(
-            Indicator.builder().units(500).build(),
-            Indicator.builder().units(0).build(),
-            Indicator.builder().units(0).build(),
-            Indicator.builder().units(500).percentage(-1.0).build()
-        );
-
-        BacklogScheduled expectedBacklogTransfer = new BacklogScheduled(
-            Indicator.builder().units(0).build(),
-            Indicator.builder().units(0).build(),
-            Indicator.builder().units(0).build(),
-            Indicator.builder().units(0).percentage(0.0).build()
-        );
-
-      //verify
-      Assertions.assertEquals(expectedBacklogSeller, response.get("inbound"));
-      Assertions.assertEquals(expectedBacklogTransfer, response.get("inbound_transfer"));
-      Assertions.assertEquals(response.get("inbound"), response.get("total"));
-    }
-
-  private List<Photo> responseGetBacklog(boolean transfer) {
-
-    return transfer
-        ? List.of(new Photo(
-        Instant.now(),
-        List.of(
-            new Photo.Group(
-                Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
-                QUANTITY_BACKLOG,
-                0
-            ),
-            new Photo.Group(
-                Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"),
-                QUANTITY_BACKLOG + 150,
-                0
-            )
-        )
-    ))
-        : List.of(new Photo(
-        Instant.now(),
-        List.of(
-            new Photo.Group(
-                Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
-                QUANTITY_BACKLOG,
-                0
-            )
-        )
-    ));
+    //verify
+    Assertions.assertEquals(3, response.getScheduled().size());
+    Assertions.assertEquals(expectedBacklogInbound, response.getScheduled().get(0).getInbound());
+    Assertions.assertEquals(expectedBacklogInboundTransfer, response.getScheduled().get(0).getInboundTransfer());
+    Assertions.assertEquals(expectedBacklogInbound, response.getScheduled().get(0).getTotal());
   }
 
   private Photo responseGetCurrentBacklog(boolean transfer) {
-    return new Photo(Instant.now(),
-        transfer
-            ? List.of(new Photo.Group(
-                Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
-                QUANTITY_BACKLOG_CURRENT,
-                0
-            ),
-            new Photo.Group(Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"),
-                QUANTITY_BACKLOG_CURRENT - 125,
-                0))
-            : List.of(new Photo.Group(
-            Map.of(BacklogGrouper.DATE_IN, today.toString(), BacklogGrouper.WORKFLOW, "inbound"),
+
+    final Photo photo = new Photo(NOW, Stream.of(
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, TODAY.toString(),
+                BacklogGrouper.DATE_OUT, TODAY.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.SCHEDULED.getName()),
             QUANTITY_BACKLOG_CURRENT,
             0
-        ))
-    );
+        ),
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, TODAY.toString(),
+                BacklogGrouper.DATE_OUT, TODAY.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.CHECK_IN.getName()),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        ),
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, TODAY.toString(),
+                BacklogGrouper.DATE_OUT, TODAY.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.PUT_AWAY.getName()),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        ),
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, NOW.toString(),
+                BacklogGrouper.DATE_OUT, NOW.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.SCHEDULED.getName()),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        ),
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, NOW.toString(),
+                BacklogGrouper.DATE_OUT, NOW.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.CHECK_IN.getName()),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        ),
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, NOW.toString(),
+                BacklogGrouper.DATE_OUT, NOW.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.PUT_AWAY.getName()),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        ),
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, TOMORROW.toString(),
+                BacklogGrouper.DATE_OUT, TOMORROW.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.SCHEDULED.getName()),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        ),
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, TOMORROW.toString(),
+                BacklogGrouper.DATE_OUT, TOMORROW.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.CHECK_IN.getName()),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        ),
+        new Photo.Group(
+            Map.of(
+                BacklogGrouper.DATE_IN, TOMORROW.toString(),
+                BacklogGrouper.DATE_OUT, TOMORROW.plus(1, ChronoUnit.DAYS).toString(),
+                BacklogGrouper.WORKFLOW, IB,
+                BacklogGrouper.STEP, Step.PUT_AWAY.getName()),
+            QUANTITY_BACKLOG_CURRENT,
+            0
+        )
+    ).collect(Collectors.toList()));
+
+    if (transfer) {
+      photo.getGroups().addAll(List.of(
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, TODAY.toString(),
+                  BacklogGrouper.DATE_OUT, TODAY.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.SCHEDULED.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          ),
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, TODAY.toString(),
+                  BacklogGrouper.DATE_OUT, TODAY.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.CHECK_IN.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          ),
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, TODAY.toString(),
+                  BacklogGrouper.DATE_OUT, TODAY.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.PUT_AWAY.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          ),
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, NOW.toString(),
+                  BacklogGrouper.DATE_OUT, NOW.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.SCHEDULED.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          ),
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, NOW.toString(),
+                  BacklogGrouper.DATE_OUT, NOW.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.CHECK_IN.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          ),
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, NOW.toString(),
+                  BacklogGrouper.DATE_OUT, NOW.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.PUT_AWAY.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          ),
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, TOMORROW.toString(),
+                  BacklogGrouper.DATE_OUT, TOMORROW.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.SCHEDULED.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          ),
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, TOMORROW.toString(),
+                  BacklogGrouper.DATE_OUT, TOMORROW.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.CHECK_IN.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          ),
+          new Photo.Group(
+              Map.of(
+                  BacklogGrouper.DATE_IN, TOMORROW.toString(),
+                  BacklogGrouper.DATE_OUT, TOMORROW.plus(1, ChronoUnit.DAYS).toString(),
+                  BacklogGrouper.WORKFLOW, IB_TRANSFER,
+                  BacklogGrouper.STEP, Step.PUT_AWAY.getName()),
+              QUANTITY_BACKLOG_CURRENT,
+              0
+          )
+      ));
+    }
+
+    return photo;
   }
 }

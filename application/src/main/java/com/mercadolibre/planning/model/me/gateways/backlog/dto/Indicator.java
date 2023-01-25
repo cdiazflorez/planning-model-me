@@ -5,7 +5,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class Indicator{
+public class Indicator {
 
     Integer shipments;
     Integer units;

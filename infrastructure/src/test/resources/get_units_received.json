@@ -1,0 +1,8 @@
+{
+  "aggregations": [
+    {
+      "name": "total_shipped_quantity",
+      "value": 197026
+    }
+  ]
+}
