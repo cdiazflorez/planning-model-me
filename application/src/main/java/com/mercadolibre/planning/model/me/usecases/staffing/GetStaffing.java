@@ -2,11 +2,14 @@ package com.mercadolibre.planning.model.me.usecases.staffing;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.staffing.Area;
 import com.mercadolibre.planning.model.me.entities.staffing.NonSystemicWorkers;
+import com.mercadolibre.planning.model.me.entities.staffing.PlannedWorker;
 import com.mercadolibre.planning.model.me.entities.staffing.Process;
 import com.mercadolibre.planning.model.me.entities.staffing.Staffing;
 import com.mercadolibre.planning.model.me.entities.staffing.StaffingWorkflow;
@@ -15,6 +18,7 @@ import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -175,18 +179,32 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return planned == null || working == null || idle == null ? null : (working + idle) - planned;
   }
 
+  private Integer calculateNonSystemicHeadcountDelta(
+      final Integer nonSystemicWorkers, final Integer nonSystemicPlanned) {
+    return nonSystemicPlanned == null || nonSystemicWorkers == null
+        ? null
+        : nonSystemicWorkers - nonSystemicPlanned;
+  }
+
   private Process toProcess(
       final String process,
       final StaffingProcess processStaffing,
       final Integer targetProductivity,
-      final Integer planned) {
+      final Map<ProcessingType, Optional<Integer>> plannedHeadcount) {
 
     final ProcessTotals totals = processStaffing.getTotals();
+
+    final Integer systemicWorkersPlanned =
+        plannedHeadcount.get(ACTIVE_WORKERS).orElse(null);
+    final Integer nonSystemicWorkersPlanned =
+        plannedHeadcount.get(ACTIVE_WORKERS_NS).orElse(null);
 
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
     final Integer nonSystemicWorkers = totals.getWorkingNonSystemic();
-    final Integer delta = calculateHeadcountDelta(working, idle, planned);
+    final Integer delta = calculateHeadcountDelta(working, idle, systemicWorkersPlanned);
+    final Integer nonSystemicDelta =
+        calculateNonSystemicHeadcountDelta(nonSystemicWorkers, nonSystemicWorkersPlanned);
 
     final Double productivity = getProductivity(process, totals);
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
@@ -215,7 +233,15 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return Process.builder()
         .process(process)
         .netProductivity(realProductivity)
-        .workers(new Worker(idle, working, nonSystemicWorkers, planned, delta))
+        .workers(
+            new PlannedWorker(
+                idle,
+                working,
+                nonSystemicWorkers,
+                systemicWorkersPlanned,
+                nonSystemicWorkersPlanned,
+                delta,
+                nonSystemicDelta))
         .areas(areas)
         .throughput(realThroughput)
         .targetProductivity(targetProductivity)
@@ -263,7 +289,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return productivity.isPresent() ? (int) productivity.getAsDouble() : null;
   }
 
-  private Integer filterHeadcount(
+  private Map<ProcessingType, Optional<Integer>> filterHeadcount(
       final Map<MagnitudeType, List<MagnitudePhoto>> plannedStaffing, final String process) {
 
     final List<MagnitudePhoto> staffingHeadcount =
@@ -273,18 +299,32 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
                 .collect(toList())
             : Collections.emptyList();
 
+    return Map.of(
+            ACTIVE_WORKERS, getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS),
+            ACTIVE_WORKERS_NS, getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS_NS)
+    );
+  }
+
+  private Optional<Integer> getHeadcountByProcessingType(
+      final List<MagnitudePhoto> staffingHeadcount, final ProcessingType processingType) {
     Optional<MagnitudePhoto> magnitudePhoto =
         staffingHeadcount.stream()
-            .filter(entity -> entity.getSource().equals(Source.SIMULATION))
+            .filter(
+                entity ->
+                    entity.getSource().equals(Source.SIMULATION)
+                        && entity.getType().equals(processingType))
             .findAny();
 
     if (magnitudePhoto.isEmpty()) {
       magnitudePhoto =
           staffingHeadcount.stream()
-              .filter(entity -> entity.getSource().equals(Source.FORECAST))
+              .filter(
+                  entity ->
+                      entity.getSource().equals(Source.FORECAST)
+                          && entity.getType().equals(processingType))
               .findAny();
     }
 
-    return magnitudePhoto.map(MagnitudePhoto::getValue).orElse(null);
+    return magnitudePhoto.map(MagnitudePhoto::getValue);
   }
 }

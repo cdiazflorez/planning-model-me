@@ -22,7 +22,7 @@ public enum ForecastProcessType {
   REMAINING_PROCESSING(SheetVersion.mapping(-2, -2), MINUTES),
   WORKERS(SheetVersion.mapping(1, 1), MetricUnit.WORKERS),
   ACTIVE_WORKERS(SheetVersion.mapping(2, 2), MetricUnit.WORKERS),
-  TOTAL_WORKERS_NS(SheetVersion.mapping(-99, 3), MetricUnit.WORKERS),
+  ACTIVE_WORKERS_NS(SheetVersion.mapping(-99, 3), MetricUnit.WORKERS),
   HEADCOUNT_PRODUCTIVITY(SheetVersion.mapping(3, 4), UNITS_PER_HOUR),
   MAX_CAPACITY(SheetVersion.mapping(0, 0), UNITS_PER_HOUR),
   BACKLOG_LOWER_LIMIT(SheetVersion.mapping(20, 20), MINUTES),
