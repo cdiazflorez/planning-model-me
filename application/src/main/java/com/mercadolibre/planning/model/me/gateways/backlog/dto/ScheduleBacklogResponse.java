@@ -8,10 +8,10 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public class ScheduleBacklogResponse {
-    @JsonProperty("request_date")
-    Instant viewDate;
-    @JsonProperty("deviations_applied")
-    List<ScheduleAdjustment> scheduleAdjustments;
-    @JsonProperty("scheduled")
-    Map<String, BacklogScheduled> backlogScheduled;
+  @JsonProperty("request_date")
+  Instant viewDate;
+  @JsonProperty("deviations_applied")
+  List<ScheduleAdjustment> scheduleAdjustments;
+  @JsonProperty("scheduled")
+  Map<String, BacklogScheduled> backlogScheduled;
 }

@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.clients.rest.config;
 
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AUTHORIZATION;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.BACKLOG;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.INBOUND_REPORTS;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_SETTING;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT;
@@ -35,7 +36,8 @@ import org.springframework.context.annotation.Configuration;
     RestClientConfig.OutboundUnitSearchClientProperties.class,
     RestClientConfig.StaffingClientProperties.class,
     RestClientConfig.BacklogClientProperties.class,
-    RestClientConfig.OutboundSettingsClientProperties.class
+    RestClientConfig.OutboundSettingsClientProperties.class,
+    RestClientConfig.InboundReportsClientProperties.class
 })
 public class RestClientConfig {
   private static final int LOCAL_CACHE_LOGISTIC_CENTER = 30;
@@ -51,6 +53,7 @@ public class RestClientConfig {
   private StaffingClientProperties staffingClientProperties;
   private BacklogClientProperties backlogClientProperties;
   private OutboundSettingsClientProperties outboundSettingsClientProperties;
+  private InboundReportsClientProperties inboundReportsClientProperties;
 
   @Bean
   public MeliRestClient restClient() throws IOException {
@@ -72,7 +75,8 @@ public class RestClientConfig {
             restPool(STAFFING.name(), staffingClientProperties, localCache(
                 "staffing", LOCAL_CACHE_STAFFING)),
             restPool(BACKLOG.name(), backlogClientProperties),
-            restPool(OUTBOUND_SETTING.name(), outboundSettingsClientProperties)
+            restPool(OUTBOUND_SETTING.name(), outboundSettingsClientProperties),
+            restPool(INBOUND_REPORTS.name(), inboundReportsClientProperties)
         )
         .build();
   }
@@ -145,5 +149,9 @@ public class RestClientConfig {
 
   @ConfigurationProperties("restclient.pool.outbound-settings")
   public static class OutboundSettingsClientProperties extends RestClientProperties {
+  }
+
+  @ConfigurationProperties("restclient.pool.inbound-reports")
+  public static class InboundReportsClientProperties extends RestClientProperties {
   }
 }

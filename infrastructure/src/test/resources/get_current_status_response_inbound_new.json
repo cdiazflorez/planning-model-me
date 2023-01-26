@@ -13,6 +13,23 @@
     }
   ],
   "scheduled": {
+    "total": {
+      "expected": {
+        "shipments": 500,
+        "units": 15500
+      },
+      "received": {
+        "shipments": 350,
+        "units": 10850
+      },
+      "pending": {
+        "units": 4650
+      },
+      "deviation": {
+        "shipments": 2100,
+        "units": 65100
+      }
+    },
     "inbound": {
       "expected": {
         "shipments": 500,
@@ -23,13 +40,11 @@
         "units": 10850
       },
       "pending": {
-        "shipments": 2100,
-        "units": 65100
+        "units": 4650
       },
       "deviation": {
-        "shipments": 150,
-        "units": 4650,
-        "percentage": 0.3
+        "shipments": 2100,
+        "units": 65100
       }
     },
     "inbound_transfer": {
@@ -40,10 +55,10 @@
         "units": 350
       },
       "pending": {
-        "units": 2100
+        "units": 150
       },
       "deviation": {
-        "units": 150
+        "units": 2100
       }
     }
   }
