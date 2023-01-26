@@ -1332,7 +1332,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
       MockResponse.builder()
           .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/" + DeviationType.UNITS.getName() + "/save", FBM_WMS_INBOUND))
+          .withURL(format(BASE_URL + DEVIATION_URL + "/save/" + DeviationType.UNITS.getName() , FBM_WMS_INBOUND))
           .withStatusCode(OK.value())
           .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
           .withResponseBody(new JSONObject()
@@ -1363,7 +1363,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
       MockResponse.builder()
           .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/" + DeviationType.UNITS.getName() + "/save", FBM_WMS_INBOUND))
+          .withURL(format(BASE_URL + DEVIATION_URL + "/save/" + DeviationType.UNITS.getName(), FBM_WMS_INBOUND))
           .withStatusCode(OK.value())
           .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
           .withResponseBody(new JSONObject()

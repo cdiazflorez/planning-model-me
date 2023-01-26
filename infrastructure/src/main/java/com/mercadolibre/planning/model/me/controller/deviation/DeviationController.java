@@ -88,7 +88,7 @@ public class DeviationController {
   }
 
   @Trace
-  @PostMapping("/{type}/save")
+  @PostMapping("/save/{type}")
   public ResponseEntity<HttpStatus> save(
       @PathVariable final DeviationType type,
       @PathVariable final Workflow workflow,
@@ -116,7 +116,7 @@ public class DeviationController {
   }
 
   @Trace
-  @PostMapping("/{type}/disable")
+  @PostMapping("/disable/{type}")
   public ResponseEntity<Void> disable(
       @RequestParam final String logisticCenterId,
       @PathVariable final Workflow workflow,
