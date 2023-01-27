@@ -71,6 +71,7 @@ public class GetSlaProjectionOutboundTest {
   private BacklogApiGateway backlogGateway;
 
   @Test
+  @Deprecated
   void testExecuteWithError() {
     // Given
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
@@ -89,23 +90,6 @@ public class GetSlaProjectionOutboundTest {
     final List<Backlog> mockedBacklog = mockBacklog();
 
     final List<ProcessName> processes = of(PICKING, PACKING, PACKING_WALL);
-
-    when(planningModelGateway.runProjection(
-        createProjectionRequestOutbound(mockedBacklog, processes, utcDateTimeFrom, utcDateTimeTo)))
-        .thenThrow(RuntimeException.class);
-
-    when(backlogGateway.getCurrentBacklog(
-        WAREHOUSE_ID,
-        of("outbound-orders"),
-        STATUSES,
-        now().truncatedTo(ChronoUnit.HOURS).toInstant(),
-        now().truncatedTo(ChronoUnit.HOURS).plusDays(1).plusHours(1).toInstant(),
-        of("date_out"))
-    ).thenReturn(of(
-        new Consolidation(null, Map.of("date_out", CPT_1.toString()), 150, true),
-        new Consolidation(null, Map.of("date_out", CPT_2.toString()), 235, true),
-        new Consolidation(null, Map.of("date_out", CPT_3.toString()), 300, true),
-        new Consolidation(null, Map.of("date_out", CPT_4.toString()), 120, true)));
 
     // When
     final PlanningView planningView = getSlaProjectionOutbound.execute(input);

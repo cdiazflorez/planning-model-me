@@ -147,18 +147,7 @@ public class RunSimulationOutboundTest {
         createSimulationRequest(mockedBacklog, utcCurrentTime, processes)))
         .thenReturn(mockProjections(utcCurrentTime));
 
-
     when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
-
-    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-        utcCurrentTime,
-        mockedBacklog,
-        false,
-        emptyList())))
-        .thenReturn(new GetSimpleDeferralProjectionOutput(
-            mockProjections(utcCurrentTime),
-            new LogisticCenterConfiguration(TIME_ZONE)));
 
     when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class)))
         .thenReturn(generatePhoto(Instant.now()));
@@ -198,19 +187,6 @@ public class RunSimulationOutboundTest {
     final ZonedDateTime utcDateTimeTo = UTC_CURRENT_DATE.plusDays(1).plusHours(1);
 
     when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
-
-    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-        UTC_CURRENT_DATE,
-        mockedBacklog,
-        false,
-        emptyList())))
-        .thenReturn(new GetSimpleDeferralProjectionOutput(
-            mockProjections(UTC_CURRENT_DATE),
-            new LogisticCenterConfiguration(TIME_ZONE)));
-
-    when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class)))
-        .thenReturn(generatePhoto(Instant.now()));
 
     when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedPlanningBacklog);
 
@@ -268,6 +244,22 @@ public class RunSimulationOutboundTest {
                 slaFrom,
                 slaTo,
                 Set.of(STEP, DATE_OUT, AREA),
+                slaTo
+            )
+        )
+    ).thenReturn(
+        generatePhoto(photoDate)
+    );
+
+    when(backlogGateway.getLastPhoto(new BacklogLastPhotoRequest(
+                WAREHOUSE_ID,
+                Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+                getSteps(FBM_WMS_OUTBOUND),
+                null,
+                null,
+                slaFrom,
+                slaTo,
+                Set.of(DATE_OUT),
                 slaTo
             )
         )

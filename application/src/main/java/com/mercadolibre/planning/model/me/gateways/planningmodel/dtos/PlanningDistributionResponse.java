@@ -24,4 +24,17 @@ public class PlanningDistributionResponse {
   private long total;
 
   private boolean isDeferred;
+
+  public PlanningDistributionResponse(
+      ZonedDateTime dateIn,
+      ZonedDateTime dateOut,
+      MetricUnit metricUnit,
+      long total
+  ) {
+    this.dateIn = dateIn;
+    this.dateOut = dateOut;
+    this.metricUnit = metricUnit;
+    this.total = total;
+    this.isDeferred = false;
+  }
 }
