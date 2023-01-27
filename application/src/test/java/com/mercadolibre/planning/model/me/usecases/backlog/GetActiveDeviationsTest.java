@@ -155,13 +155,13 @@ class GetActiveDeviationsTest {
             ),
             new Photo.Group(Map.of(
                 BacklogGrouper.DATE_IN, VIEW_DATE.plus(1, ChronoUnit.HOURS).toString(),
-                BacklogGrouper.WORKFLOW, BacklogWorkflow.INBOUND_TRANSFER.name()
+                BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"
             ),
                 20000,
                 25000),
             new Photo.Group(Map.of(
                 BacklogGrouper.DATE_IN, VIEW_DATE.plus(2, ChronoUnit.HOURS).toString(),
-                BacklogGrouper.WORKFLOW, BacklogWorkflow.INBOUND_TRANSFER.name()
+                BacklogGrouper.WORKFLOW, "INBOUND-TRANSFER"
             ),
                 20000,
                 25000))

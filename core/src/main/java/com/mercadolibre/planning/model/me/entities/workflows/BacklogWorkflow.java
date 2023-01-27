@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.entities.workflows;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,9 @@ public enum BacklogWorkflow {
 
   private final String jsonProperty;
 
-  public static Optional<BacklogWorkflow> from(final String value) {
-    return Optional.of(BacklogWorkflow.valueOf(value.toUpperCase(Locale.ENGLISH)));
+  public static Optional<BacklogWorkflow> from(final String name) {
+    return Arrays.stream(BacklogWorkflow.values())
+            .filter(b -> name.equalsIgnoreCase(b.getName()))
+            .findFirst();
   }
 }
