@@ -14,6 +14,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.WEEK;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.VERSION;
 
 import com.mercadolibre.planning.model.me.enums.CodeError;
 import com.mercadolibre.planning.model.me.exception.ForecastWorkersInvalidException;
@@ -71,6 +72,7 @@ public interface ParseInboundForecastFromFile {
     return List.of(
         new Metadata(WAREHOUSE_ID.getName(), warehouseId),
         new Metadata(WEEK.getName(), adaptWeekFormat(String.valueOf(parsedValues.get(WEEK)))),
+        new Metadata(VERSION.getName(), String.valueOf(parsedValues.get(VERSION))),
         new Metadata(
             INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES.getName(),
             String.valueOf(parsedValues.get(INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES))),

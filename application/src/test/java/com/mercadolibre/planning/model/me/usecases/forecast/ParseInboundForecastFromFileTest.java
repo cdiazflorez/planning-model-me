@@ -38,11 +38,11 @@ class ParseInboundForecastFromFileTest {
     // THEN
     final List<Metadata> metadata = forecast.getMetadata();
     assertNotNull(forecast);
-    assertEquals(5, metadata.size());
+    assertEquals(6, metadata.size());
     assertEquals("ARBA01", metadata.get(0).getValue());
-    assertEquals(INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES.getName(), metadata.get(2).getKey());
-    assertEquals(INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES.getName(), metadata.get(3).getKey());
-    assertEquals(INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES.getName(), metadata.get(4).getKey());
+    assertEquals(INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES.getName(), metadata.get(3).getKey());
+    assertEquals(INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES.getName(), metadata.get(4).getKey());
+    assertEquals(INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES.getName(), metadata.get(5).getKey());
   }
 
   @Test
