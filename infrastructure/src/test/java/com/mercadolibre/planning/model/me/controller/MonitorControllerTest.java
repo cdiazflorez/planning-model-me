@@ -109,13 +109,12 @@ class MonitorControllerTest {
   @Test
   void testGetInboundMonitors() throws Exception {
     // GIVEN
-      final Instant now = Instant.parse("2022-12-23T10:15:30.00Z");
-    when(requestClock.now()).thenReturn(Instant.now());
+    when(requestClock.now()).thenReturn(VIEW_DATE);
     when(getBacklogScheduled.execute(
         WAREHOUSE_ID_ARTW01,
         VIEW_DATE
     ))
-        .thenReturn(mockBacklogScheduled(now));
+        .thenReturn(mockBacklogScheduled(VIEW_DATE));
     when(getActiveDeviations.execute(WAREHOUSE_ID_ARTW01, VIEW_DATE)).thenReturn(mockActiveDeviations());
 
     // WHEN
