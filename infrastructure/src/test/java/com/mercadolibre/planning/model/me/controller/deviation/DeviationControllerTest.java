@@ -165,7 +165,7 @@ public class DeviationControllerTest {
 
       // WHEN
       mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/units/save")
+          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units")
           .content(getResourceAsString("post_save_deviation_request.json"))
           .contentType(APPLICATION_JSON));
 
@@ -257,7 +257,7 @@ public class DeviationControllerTest {
 
     private ResultActions whenDisableDeviationInboundUnits() throws Exception {
       return mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/units/disable")
+          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/disable/units")
           .param("caller.id", String.valueOf(USER_ID))
           .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
           .contentType(APPLICATION_JSON));

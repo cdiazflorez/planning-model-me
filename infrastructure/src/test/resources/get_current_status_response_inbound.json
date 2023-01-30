@@ -1,6 +1,6 @@
 {
   "request_date": "2023-01-17T10:00:00Z",
-  "schedule_adjustments": [
+  "deviations_applied": [
     {
       "workflow": [
         "fbm-wms-inbound"

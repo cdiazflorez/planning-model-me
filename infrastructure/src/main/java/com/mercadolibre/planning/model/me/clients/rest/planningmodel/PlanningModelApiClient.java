@@ -108,7 +108,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private static final String UNITS_DISTRIBUTION = "/entities/units_distribution";
 
-  private static final String SAVE = "/save";
+  private static final String SAVE = "save/";
+
   private static final String DELIMITER = ",";
 
   private final ObjectMapper objectMapper;
@@ -267,7 +268,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public List<ProjectionResult> saveSimulation(final SimulationRequest simulationRequest) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
-                 + SIMULATIONS_PREFIX_URL + SAVE)
+                 + SIMULATIONS_PREFIX_URL + "/save")
         .POST(requestSupplier(simulationRequest))
         .acceptedHttpStatuses(Set.of(OK))
         .build();
@@ -495,7 +496,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, saveDeviationInput.getWorkflow())
-            + DEVIATIONS_URL + SAVE)
+            + DEVIATIONS_URL + "/save")
         .POST(requestSupplier(saveDeviationInput))
         .acceptedHttpStatuses(Set.of(OK, CREATED))
         .build();
@@ -508,7 +509,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   @Override
   public DeviationResponse newSaveDeviation(final SaveDeviationInput saveDeviationInput) {
     final HttpRequest request = HttpRequest.builder()
-        .url(format(BASE_DEVIATIONS_URL, saveDeviationInput.getWorkflow(), saveDeviationInput.getType().getName()) + SAVE)
+        .url(format(BASE_DEVIATIONS_URL, saveDeviationInput.getWorkflow(), SAVE + saveDeviationInput.getType().getName()))
         .POST(requestSupplier(saveDeviationInput))
         .acceptedHttpStatuses(Set.of(OK, CREATED))
         .build();
