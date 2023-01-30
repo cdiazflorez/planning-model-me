@@ -84,7 +84,7 @@ public enum SheetVersion {
           final long systemicReceiving = meliSheet.getRowAt(PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW).getCells().stream()
                   .map(MeliCell::getValue)
                   .filter(Objects::nonNull)
-                  .filter(v  -> v.contains(SYSTEMIC_RECEIVING_COLUMN_NAME))
+                  .filter(v -> v.contains(SYSTEMIC_RECEIVING_COLUMN_NAME))
                   .count();
           return SYSTEMIC_RECEIVING_COLUMN_COUNT == systemicReceiving;
       };

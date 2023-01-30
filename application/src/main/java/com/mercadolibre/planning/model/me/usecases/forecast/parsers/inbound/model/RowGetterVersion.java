@@ -78,7 +78,7 @@ public enum RowGetterVersion {
         return getDoubleCellValueAt(sheet, row, column.getColumnIdByVersion().get(sheetVersion));
     }
 
-    public static class RowGetterInitial implements RowGetter{
+    public static class RowGetterInitial implements RowGetter {
 
 
         @Override
