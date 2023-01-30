@@ -99,10 +99,10 @@ public class MonitorController {
       @RequestParam @NotNull final Instant viewDate) {
 
     authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
-    final InboundBacklogMonitor backlogScheduled = getBacklogScheduled.execute(logisticCenterId, viewDate);
+    final InboundBacklogMonitor backlogScheduled = getBacklogScheduled.execute(logisticCenterId, requestClock.now());
     final List<ScheduleAdjustment> scheduleAdjustments = getActiveDeviations.execute(logisticCenterId, viewDate);
     return ResponseEntity.ok(new InboundBacklogMonitor(
-        viewDate,
+        backlogScheduled.getRequestDate(),
         scheduleAdjustments,
         backlogScheduled.getScheduled(),
         backlogScheduled.getCheckIn(),
