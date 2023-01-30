@@ -2,7 +2,9 @@ package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.mod
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
+import com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
+import java.util.Map;
 import lombok.Getter;
 
 import java.util.function.Function;
@@ -24,49 +26,51 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 
 @Getter
 public enum ProcessingDistributionColumn {
-    RECEIVING_TARGET(2, THROUGHPUT, RECEIVING, UNITS_PER_HOUR, RepsRow::getReceivingWorkload),
-    CHECK_IN_TARGET(3, THROUGHPUT, CHECK_IN, UNITS_PER_HOUR, RepsRow::getCheckInWorkload),
-    PUT_AWAY_TARGET(4, THROUGHPUT, PUT_AWAY, UNITS_PER_HOUR, RepsRow::getPutAwayWorkload),
-    STAGE_IN_TARGET(5, PERFORMED_PROCESSING, STAGE_IN, UNITS_PER_HOUR, RepsRow::getStageInWorkload),
-    ACTIVE_RECEIVING_NS(7, ACTIVE_WORKERS_NS, RECEIVING, WORKERS, RepsRow::getActiveNsRepsReceiving),
-    ACTIVE_CHECK_IN(8, ACTIVE_WORKERS, CHECK_IN, WORKERS, RepsRow::getActiveRepsCheckIn),
-    ACTIVE_CHECK_IN_NS(9, ACTIVE_WORKERS_NS, CHECK_IN, WORKERS, RepsRow::getActiveNsRepsCheckIn),
-    ACTIVE_PUT_AWAY(10, ACTIVE_WORKERS, PUT_AWAY, WORKERS, RepsRow::getActiveRepsPutAway),
-    ACTIVE_PUT_AWAY_NS(11, ACTIVE_WORKERS_NS, PUT_AWAY, WORKERS, RepsRow::getActiveNsRepsPutAway),
-    PRESENT_RECEIVING_NS(12, WORKERS_NS, RECEIVING, WORKERS, RepsRow::getPresentNsRepsReceiving),
-    PRESENT_CHECK_IN(13, ProcessingType.WORKERS, CHECK_IN, WORKERS, RepsRow::getPresentRepsCheckIn),
-    PRESENT_CHECK_IN_NS(14, WORKERS_NS, CHECK_IN, WORKERS, RepsRow::getPresentNsRepsCheckIn),
-    PRESENT_PUT_AWAY(15, ProcessingType.WORKERS, PUT_AWAY, WORKERS, RepsRow::getPresentRepsPutAway),
-    PRESENT_PUT_AWAY_NS(16, WORKERS_NS, PUT_AWAY, WORKERS, RepsRow::getPresentNsRepsPutAway),
-    BACKLOG_LOWER_LIMIT_CHECK_IN(20, BACKLOG_LOWER_LIMIT, CHECK_IN, MINUTES, RepsRow::getBacklogLowerLimitCheckin),
-    BACKLOG_UPPER_LIMIT_CHECK_IN(21, BACKLOG_UPPER_LIMIT, CHECK_IN, MINUTES, RepsRow::getBacklogUpperLimitCheckin),
-    BACKLOG_LOWER_LIMIT_PUT_AWAY(22, BACKLOG_LOWER_LIMIT, PUT_AWAY, MINUTES, RepsRow::getBacklogLowerLimitPutAway),
-    BACKLOG_UPPER_LIMIT_PUT_AWAY(23, BACKLOG_UPPER_LIMIT, PUT_AWAY, MINUTES, RepsRow::getBacklogUpperLimitPutAway);
+    RECEIVING_TARGET(SheetVersion.mapping(2, 2), THROUGHPUT, RECEIVING, UNITS_PER_HOUR, RepsRow::getReceivingWorkload),
+    CHECK_IN_TARGET(SheetVersion.mapping(3, 3), THROUGHPUT, CHECK_IN, UNITS_PER_HOUR, RepsRow::getCheckInWorkload),
+    PUT_AWAY_TARGET(SheetVersion.mapping(4, 4), THROUGHPUT, PUT_AWAY, UNITS_PER_HOUR, RepsRow::getPutAwayWorkload),
+    STAGE_IN_TARGET(SheetVersion.mapping(5, 5), PERFORMED_PROCESSING, STAGE_IN, UNITS_PER_HOUR, RepsRow::getStageInWorkload),
+    ACTIVE_RECEIVING(SheetVersion.mapping(-1, 7), ACTIVE_WORKERS, RECEIVING, WORKERS, RepsRow::getActiveRepsReceiving),
+    ACTIVE_RECEIVING_NS(SheetVersion.mapping(7, 8), ACTIVE_WORKERS_NS, RECEIVING, WORKERS, RepsRow::getActiveNsRepsReceiving),
+    ACTIVE_CHECK_IN(SheetVersion.mapping(8, 9), ACTIVE_WORKERS, CHECK_IN, WORKERS, RepsRow::getActiveRepsCheckIn),
+    ACTIVE_CHECK_IN_NS(SheetVersion.mapping(9, 10), ACTIVE_WORKERS_NS, CHECK_IN, WORKERS, RepsRow::getActiveNsRepsCheckIn),
+    ACTIVE_PUT_AWAY(SheetVersion.mapping(10, 11), ACTIVE_WORKERS, PUT_AWAY, WORKERS, RepsRow::getActiveRepsPutAway),
+    ACTIVE_PUT_AWAY_NS(SheetVersion.mapping(11, 12), ACTIVE_WORKERS_NS, PUT_AWAY, WORKERS, RepsRow::getActiveNsRepsPutAway),
+    PRESENT_RECEIVING(SheetVersion.mapping(-1,13), ProcessingType.WORKERS, RECEIVING, WORKERS, RepsRow::getPresentRepsReceiving),
+    PRESENT_RECEIVING_NS(SheetVersion.mapping(12, 14), WORKERS_NS, RECEIVING, WORKERS, RepsRow::getPresentNsRepsReceiving),
+    PRESENT_CHECK_IN(SheetVersion.mapping(13, 15), ProcessingType.WORKERS, CHECK_IN, WORKERS, RepsRow::getPresentRepsCheckIn),
+    PRESENT_CHECK_IN_NS(SheetVersion.mapping(14, 16), WORKERS_NS, CHECK_IN, WORKERS, RepsRow::getPresentNsRepsCheckIn),
+    PRESENT_PUT_AWAY(SheetVersion.mapping(15, 17), ProcessingType.WORKERS, PUT_AWAY, WORKERS, RepsRow::getPresentRepsPutAway),
+    PRESENT_PUT_AWAY_NS(SheetVersion.mapping(16, 18), WORKERS_NS, PUT_AWAY, WORKERS, RepsRow::getPresentNsRepsPutAway),
+    BACKLOG_LOWER_LIMIT_CHECK_IN(SheetVersion.mapping(20, 22), BACKLOG_LOWER_LIMIT, CHECK_IN, MINUTES, RepsRow::getBacklogLowerLimitCheckin),
+    BACKLOG_UPPER_LIMIT_CHECK_IN(SheetVersion.mapping(21, 23), BACKLOG_UPPER_LIMIT, CHECK_IN, MINUTES, RepsRow::getBacklogUpperLimitCheckin),
+    BACKLOG_LOWER_LIMIT_PUT_AWAY(SheetVersion.mapping(22, 24), BACKLOG_LOWER_LIMIT, PUT_AWAY, MINUTES, RepsRow::getBacklogLowerLimitPutAway),
+    BACKLOG_UPPER_LIMIT_PUT_AWAY(SheetVersion.mapping(23, 25), BACKLOG_UPPER_LIMIT, PUT_AWAY, MINUTES, RepsRow::getBacklogUpperLimitPutAway);
 
-    private Integer columnId;
-    private ProcessingType type;
-    private Process process;
-    private MetricUnit unit;
-    private Function<RepsRow, Integer> mapper;
+    private final Map<SheetVersion, Integer> columnIdByVersion;
+    private final ProcessingType type;
+    private final Process process;
+    private final MetricUnit unit;
+    private final Function<RepsRow, Integer> mapper;
 
-    ProcessingDistributionColumn(final Integer columnId,
+    ProcessingDistributionColumn(final Map<SheetVersion, Integer> columnIdByVersion,
                                  final ProcessingType type,
                                  final Process process,
                                  final MetricUnit unit,
                                  final IntegerMapper mapper) {
-        this.columnId = columnId;
+        this.columnIdByVersion = columnIdByVersion;
         this.type = type;
         this.process = process;
         this.unit = unit;
         this.mapper = row -> mapper.apply(row).getValue();
     }
 
-    ProcessingDistributionColumn(final Integer columnId,
+    ProcessingDistributionColumn(final Map<SheetVersion, Integer> columnIdByVersion,
                                  final ProcessingType type,
                                  final Process process,
                                  final MetricUnit unit,
                                  final DoubleMapper mapper) {
-        this.columnId = columnId;
+        this.columnIdByVersion = columnIdByVersion;
         this.type = type;
         this.process = process;
         this.unit = unit;

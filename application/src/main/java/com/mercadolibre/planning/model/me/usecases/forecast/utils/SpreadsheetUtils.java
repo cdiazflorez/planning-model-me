@@ -31,9 +31,7 @@ public final class SpreadsheetUtils {
 
     public static final DateTimeFormatter formatter =
             DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
-    public static final int PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW = 6;
-    public static final int NON_SYSTEMIC_COLUMN_COUNT = 5;
-    public static final String NON_SYSTEMIC_COLUMN_NAME = "No Sistemicos";
+
     private static final char CHAR_LETTER_A = 'A';
     private static final String HOUR_MINUTE_FORMAT_PATTERN = "^([0]?[0-9]|[0-9][0-9]):[0-5][0-9]$";
     private static final String PARSE_ERROR_MESSAGE = "Error while trying to parse "
