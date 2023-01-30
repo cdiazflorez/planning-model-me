@@ -28,6 +28,8 @@ import static java.util.List.of;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyListOf;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
@@ -47,6 +49,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -99,6 +102,8 @@ public class RunSimulationOutboundTest {
   private static final ZonedDateTime CPT_2 = UTC_CURRENT_DATE.plusHours(2);
 
   private static final ZonedDateTime CPT_3 = UTC_CURRENT_DATE.plusHours(3);
+
+  private static final List<ProjectionResult> PROJECTION_RESULTS = projectionResults();
 
   @InjectMocks
   private RunSimulationOutbound runSimulationOutbound;
@@ -304,7 +309,7 @@ public class RunSimulationOutboundTest {
             CPT_3.toInstant(), new ProcessingTime(60, MINUTES.getName())
         )),
         generatePackingRatioByHour(UTC_CURRENT_DATE.toInstant(), utcDateTimeTo.toInstant()))
-    ).thenReturn(projectionResults());
+    ).thenReturn(PROJECTION_RESULTS);
 
     // When
     final PlanningView planningView =
@@ -502,7 +507,7 @@ public class RunSimulationOutboundTest {
             MagnitudePhoto::getValue)));
   }
 
-  private List<ProjectionResult> projectionResults() {
+  private static List<ProjectionResult> projectionResults() {
     return of(
         new ProjectionResult(
             ZonedDateTime.ofInstant(CPT_1.toInstant(), ZoneId.of("UTC")),
@@ -510,7 +515,7 @@ public class RunSimulationOutboundTest {
             null,
             415,
             new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
-            false,
+            true,
             false,
             null,
             0,

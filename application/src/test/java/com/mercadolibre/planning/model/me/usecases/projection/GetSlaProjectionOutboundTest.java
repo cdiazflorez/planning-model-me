@@ -4,6 +4,8 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
+import static com.mercadolibre.planning.model.me.usecases.projection.ProjectionWorkflow.getSteps;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static java.time.ZonedDateTime.now;
@@ -13,8 +15,10 @@ import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.PlanningView;
+import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
+import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -27,6 +31,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,6 +77,34 @@ public class GetSlaProjectionOutboundTest {
 
   @Test
   @Deprecated
+  void testExecute() {
+    // Given
+    final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
+    final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
+    final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(4);
+    final GetProjectionInputDto input = GetProjectionInputDto.builder()
+        .workflow(FBM_WMS_OUTBOUND)
+        .warehouseId(WAREHOUSE_ID)
+        .date(utcDateTimeFrom)
+        .requestDate(currentUtcDateTime.toInstant())
+        .build();
+
+    when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
+        .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
+
+    final List<Backlog> mockedBacklog = mockBacklog();
+
+    final List<ProcessName> processes = of(PICKING, PACKING, PACKING_WALL);
+
+    // When
+    final PlanningView planningView = getSlaProjectionOutbound.execute(input);
+
+    // Then
+    assertNull(planningView.getData());
+  }
+
+  @Test
+  @Deprecated
   void testExecuteWithError() {
     // Given
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
@@ -83,6 +116,7 @@ public class GetSlaProjectionOutboundTest {
         .date(utcDateTimeFrom)
         .requestDate(currentUtcDateTime.toInstant())
         .build();
+
 
     when(logisticCenterGateway.getConfiguration(WAREHOUSE_ID))
         .thenReturn(new LogisticCenterConfiguration(TIME_ZONE));
