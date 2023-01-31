@@ -1,14 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
-import com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion;
-import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
-import java.util.Map;
-import lombok.Getter;
-
-import java.util.function.Function;
-
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.WORKERS;
@@ -24,6 +15,14 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.Process.RECEIVING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.Process.STAGE_IN;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion.mapping;
+
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
+import com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion;
+import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
+import java.util.Map;
+import lombok.Getter;
+import java.util.function.Function;
 
 @Getter
 public enum ProcessingDistributionColumn {
