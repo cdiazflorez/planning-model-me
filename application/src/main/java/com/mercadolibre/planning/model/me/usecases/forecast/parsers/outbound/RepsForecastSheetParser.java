@@ -18,6 +18,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
+import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.NON_EXISTENT_COLUMN_IN_VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntValueAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getIntValueAtFromDuration;
@@ -52,6 +53,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RepsForecastSheetParser implements SheetParser {
 
@@ -72,7 +74,7 @@ public class RepsForecastSheetParser implements SheetParser {
   private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 188;
 
   private static final Map<SheetVersion, Integer> HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET =
-      Map.of(SheetVersion.INITIAL_VERSION, 3, SheetVersion.SECOND_VERSION, 4);
+      SheetVersion.mapping(3, 4);
 
   private static final int WAREHOUSE_ID_ROW = 3;
 
@@ -94,7 +96,7 @@ public class RepsForecastSheetParser implements SheetParser {
         getProcessingDistribution(config, sheet, version);
 
     final Map<String, Double> productivityPolyvalenceByProcessName =
-        getPolyvalentProductivity(sheet).stream()
+        getPolyvalentProductivity(sheet, version).stream()
             .collect(
                 Collectors.toMap(
                     PolyvalentProductivity::getProcessName,
@@ -136,7 +138,7 @@ public class RepsForecastSheetParser implements SheetParser {
                     ForecastProductivityProcessName.PACKING_WALL.getName())),
             Map.entry(PROCESSING_DISTRIBUTION, repsDistributionDto.getProcessingDistributions()),
             Map.entry(HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet)),
-            Map.entry(POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet)),
+            Map.entry(POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet, version)),
             Map.entry(HEADCOUNT_PRODUCTIVITY, repsDistributionDto.getHeadcountProductivities()),
             Map.entry(
                 BACKLOG_LIMITS,
@@ -163,6 +165,7 @@ public class RepsForecastSheetParser implements SheetParser {
     // Columns
     final List<ProcessingDistribution> processingDistributions =
         ForecastProcessName.stream()
+            .filter(forecastProcessName -> forecastProcessName.getStartingColumn(version) != NON_EXISTENT_COLUMN_IN_VERSION)
             .flatMap(
                 forecastProcessName ->
                     forecastProcessName.getProcessTypes(version).stream()
@@ -177,7 +180,7 @@ public class RepsForecastSheetParser implements SheetParser {
             .collect(Collectors.toList());
 
     final List<HeadcountProductivity> headcountProductivities =
-        ForecastProductivityProcessName.stream()
+        forecastProductivityProcessNameByVersion(version)
             .map(
                 processName ->
                     new HeadcountProductivity(
@@ -273,8 +276,9 @@ public class RepsForecastSheetParser implements SheetParser {
         .collect(Collectors.toList());
   }
 
-  private List<PolyvalentProductivity> getPolyvalentProductivity(final MeliSheet sheet) {
-    return Arrays.stream(ForecastProductivityProcessName.values())
+  private List<PolyvalentProductivity> getPolyvalentProductivity(
+      final MeliSheet sheet, final SheetVersion version) {
+    return forecastProductivityProcessNameByVersion(version)
         .map(
             productivityProcess ->
                 PolyvalentProductivity.builder()
@@ -285,8 +289,14 @@ public class RepsForecastSheetParser implements SheetParser {
                         getDoubleValueAt(
                             sheet,
                             POLYVALENT_PRODUCTIVITY_STARTING_ROW,
-                            productivityProcess.getColumnIndex()))
+                            productivityProcess.getColumnIndex(version)))
                     .build())
         .collect(Collectors.toList());
+  }
+
+  private Stream<ForecastProductivityProcessName> forecastProductivityProcessNameByVersion(
+      final SheetVersion version) {
+    return Arrays.stream(ForecastProductivityProcessName.values())
+        .filter(forecastProdProcessName -> forecastProdProcessName.getColumnIndex(version) != NON_EXISTENT_COLUMN_IN_VERSION);
   }
 }

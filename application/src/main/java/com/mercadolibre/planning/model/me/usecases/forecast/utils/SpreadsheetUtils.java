@@ -1,5 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.utils;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
+import static java.lang.String.format;
+
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.exception.NullValueAtCellException;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
@@ -10,7 +13,6 @@ import com.mercadolibre.spreadsheet.MeliDocument;
 import com.mercadolibre.spreadsheet.MeliRow;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import com.mercadolibre.spreadsheet.implementations.poi.PoiDocument;
-
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.Duration;
@@ -23,19 +25,21 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToUtc;
-import static java.lang.String.format;
-
 @Slf4j
 public final class SpreadsheetUtils {
 
-    public static final DateTimeFormatter formatter =
-            DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
-
-    private static final char CHAR_LETTER_A = 'A';
-    private static final String HOUR_MINUTE_FORMAT_PATTERN = "^([0]?[0-9]|[0-9][0-9]):[0-5][0-9]$";
-    private static final String PARSE_ERROR_MESSAGE = "Error while trying to parse "
-            + "cell (%s) for sheet: %s";
+  public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
+  public static final int PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW = 6;
+  public static final int NON_SYSTEMIC_COLUMN_COUNT = 7;
+  public static final int POST_PACKING_COLUMN_COUNT = 2;
+  public static final String NON_SYSTEMIC_COLUMN_NAME = "No Sistemicos";
+  public static final String HU_ASSEMBLY_COLUMN_NAME = "HU Armado";
+  public static final String SALES_DISPATCH_COLUMN_NAME = "Despacho";
+  public static final int NON_EXISTENT_COLUMN_IN_VERSION = -99;
+  private static final char CHAR_LETTER_A = 'A';
+  private static final String HOUR_MINUTE_FORMAT_PATTERN = "^([0]?[0-9]|[0-9][0-9]):[0-5][0-9]$";
+  private static final String PARSE_ERROR_MESSAGE =
+      "Error while trying to parse " + "cell (%s) for sheet: %s";
 
     private static final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.FRANCE);
 
@@ -183,7 +187,7 @@ public final class SpreadsheetUtils {
 
             return convertToUtc(ZonedDateTime.parse(
                     value,
-                    formatter.withZone(zoneId)));
+                    DATE_TIME_FORMATTER.withZone(zoneId)));
         } catch (DateTimeParseException e) {
             throw new ForecastParsingException(
                     format(PARSE_ERROR_MESSAGE,
@@ -201,7 +205,7 @@ public final class SpreadsheetUtils {
 
             return convertToUtc(ZonedDateTime.parse(
                     value,
-                    formatter.withZone(zoneId)));
+                    DATE_TIME_FORMATTER.withZone(zoneId)));
         } catch (DateTimeParseException | NullPointerException e) {
             throw new ForecastParsingException(
                     format(PARSE_ERROR_MESSAGE,

@@ -11,11 +11,14 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.BATCH_SORTER;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.HU_ASSEMBLY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.SALES_DISPATCH;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.WAVING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_LOWER_LIMIT;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_UPPER_LIMIT;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastSheet.WORKERS;
@@ -30,6 +33,8 @@ import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PolyvalentProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingDistribution;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
@@ -231,9 +236,71 @@ class RepsForecastSheetParserTest {
 
     thenForecastSheetDtoIsNotNull(forecastSheetDto);
     assertEquals(
-        5,
+        7,
         processingDistributions.stream()
-            .filter(distribution -> "active_workers_ns".equals(distribution.getType()))
+            .filter(distribution -> ACTIVE_WORKERS_NS.toString().equals(distribution.getType()))
+            .count());
+  }
+
+  @Test
+  @DisplayName("Excel Parsed with non systemic workers Ok")
+  void parseForecastWithPostPackingProcessOk() {
+    // GIVEN
+    // a valid sheet
+    final var sheet = getMeliSheetFrom(WORKERS.getName(), VALID_NON_SYSTEMIC_FILE_PATH);
+
+    // WHEN
+    final var forecastSheetDto = repsForecastSheetParser.parse("ARBA01", sheet, CONF);
+
+    // THEN
+    final List<ProcessingDistribution> processingDistributions =
+        (List<ProcessingDistribution>)
+            forecastSheetDto.getValues().get(ForecastColumnName.PROCESSING_DISTRIBUTION);
+    final List<HeadcountProductivity> headcountProductivity =
+        (List<HeadcountProductivity>)
+            forecastSheetDto.getValues().get(ForecastColumnName.HEADCOUNT_PRODUCTIVITY);
+    final List<PolyvalentProductivity> plivalentProductivity =
+        (List<PolyvalentProductivity>)
+            forecastSheetDto.getValues().get(ForecastColumnName.POLYVALENT_PRODUCTIVITY);
+    final List<BacklogLimit> backlogLimits =
+        (List<BacklogLimit>) forecastSheetDto.getValues().get(BACKLOG_LIMITS);
+
+    thenForecastSheetDtoIsNotNull(forecastSheetDto);
+    assertTrue(
+        processingDistributions.stream()
+            .anyMatch(
+                distribution -> HU_ASSEMBLY.toString().equals(distribution.getProcessName())));
+    assertTrue(
+        processingDistributions.stream()
+            .anyMatch(
+                distribution -> SALES_DISPATCH.toString().equals(distribution.getProcessName())));
+    assertTrue(
+        headcountProductivity.stream()
+            .anyMatch(distribution -> HU_ASSEMBLY.name().equals(distribution.getProcessName())));
+    assertTrue(
+        headcountProductivity.stream()
+            .anyMatch(distribution -> SALES_DISPATCH.name().equals(distribution.getProcessName())));
+    assertTrue(
+        plivalentProductivity.stream()
+            .anyMatch(
+                distribution ->
+                    HU_ASSEMBLY.toString().equals(distribution.getProcessName())
+                        && distribution.getProductivity() == 0.0));
+    assertTrue(
+        plivalentProductivity.stream()
+            .anyMatch(
+                distribution ->
+                    SALES_DISPATCH.toString().equals(distribution.getProcessName())
+                        && distribution.getProductivity() == 0.0));
+    assertEquals(
+        2,
+        backlogLimits.stream()
+            .filter(distribution -> HU_ASSEMBLY.equals(distribution.getProcessName()))
+            .count());
+    assertEquals(
+        2,
+        backlogLimits.stream()
+            .filter(distribution -> SALES_DISPATCH.equals(distribution.getProcessName()))
             .count());
   }
 }

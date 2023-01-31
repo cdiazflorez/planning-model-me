@@ -1,13 +1,16 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.utils;
 
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.BATCH_SORTER;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.HU_ASSEMBLY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PACKING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PACKING_WALL;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.PICKING;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.SALES_DISPATCH;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_LOWER_LIMIT;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_UPPER_LIMIT;
+import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.NON_EXISTENT_COLUMN_IN_VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getCellAddress;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDateTimeAt;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getDoubleValueAt;
@@ -50,6 +53,9 @@ public class GenerateBacklogLimitUtil {
       final LogisticCenterConfiguration config, final MeliSheet sheet, final SheetVersion version) {
     final ZoneId zoneId = config.getZoneId();
     return Arrays.stream(BacklogLimitConf.values())
+        .filter(
+            backlogLimitConf ->
+                backlogLimitConf.getColumn(version) != NON_EXISTENT_COLUMN_IN_VERSION)
         .map(
             conf ->
                 new BacklogLimit(
@@ -148,7 +154,31 @@ public class GenerateBacklogLimitUtil {
     PACKING_WALL_LOWER_LIMIT(
         PACKING_WALL, BACKLOG_LOWER_LIMIT, SheetVersion.mapping(29, 34), 0.0, 5.0),
     PACKING_WALL_UPPER_LIMIT(
-        PACKING_WALL, BACKLOG_UPPER_LIMIT, SheetVersion.mapping(30, 35), 0.0, 5.0);
+        PACKING_WALL, BACKLOG_UPPER_LIMIT, SheetVersion.mapping(30, 35), 0.0, 5.0),
+    HU_ASSEMBLY_LOWER_LIMIT(
+        HU_ASSEMBLY,
+        BACKLOG_LOWER_LIMIT,
+        SheetVersion.mapping(NON_EXISTENT_COLUMN_IN_VERSION, 40),
+        0.0,
+        5.0),
+    HU_ASSEMBLY_UPPER_LIMIT(
+        HU_ASSEMBLY,
+        BACKLOG_UPPER_LIMIT,
+        SheetVersion.mapping(NON_EXISTENT_COLUMN_IN_VERSION, 41),
+        0.0,
+        5.0),
+    SALES_DISPATCH_LOWER_LIMIT(
+        SALES_DISPATCH,
+        BACKLOG_LOWER_LIMIT,
+        SheetVersion.mapping(NON_EXISTENT_COLUMN_IN_VERSION, 46),
+        0.0,
+        5.0),
+    SALES_DISPATCH_UPPER_LIMIT(
+        SALES_DISPATCH,
+        BACKLOG_UPPER_LIMIT,
+        SheetVersion.mapping(NON_EXISTENT_COLUMN_IN_VERSION, 47),
+        0.0,
+        5.0);
 
     final ForecastProcessName process;
 
