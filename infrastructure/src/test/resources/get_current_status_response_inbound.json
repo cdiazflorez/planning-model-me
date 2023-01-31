@@ -14,8 +14,8 @@
   ],
   "scheduled": [
     {
-      "date_from": "2022-12-23T10:15:30Z",
-      "date_to": "2022-12-23T10:15:30Z",
+      "date_from": "2023-01-17T10:00:00Z",
+      "date_to": "2023-01-17T10:00:00Z",
       "inbound": {
         "expected": {
           "shipments": 500,
@@ -54,8 +54,8 @@
       }
     },
     {
-      "date_from": "2022-12-23T10:15:30Z",
-      "date_to": "2022-12-23T10:15:30Z",
+      "date_from": "2023-01-17T10:00:00Z",
+      "date_to": "2023-01-17T10:00:00Z",
       "inbound": {
         "expected": {
           "shipments": 600,
