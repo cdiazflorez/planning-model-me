@@ -47,7 +47,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
@@ -175,7 +174,7 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
 
   protected List<PlanningDistributionResponse> getFilteredPlannedBacklogByDeferralStatus(
-      final TreeMap<ZonedDateTime, Boolean> deferredStatusBySla,
+      final Map<ZonedDateTime, Boolean> deferredStatusBySla,
       final List<PlanningDistributionResponse> plannedBacklog) {
 
     return plannedBacklog.stream()

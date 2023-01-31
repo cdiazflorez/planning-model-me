@@ -8,12 +8,9 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.DATE_OUT;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static java.time.ZonedDateTime.now;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyList;
-import static java.util.List.of;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
@@ -36,24 +33,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-public class OutboundProjectionTestUtils {
-
-  private static final List<String> STATUSES = of("pending", "to_route", "to_pick", "picked", "to_sort",
-      "sorted", "to_group", "grouping", "grouped", "to_pack");
+public final class OutboundProjectionTestUtils {
 
   public static final String BA_ZONE = "America/Argentina/Buenos_Aires";
-
   public static final TimeZone TIME_ZONE = TimeZone.getTimeZone(BA_ZONE);
-
   public static final ZonedDateTime UTC_CURRENT_DATE = getCurrentUtcDate();
-
   public static final ZonedDateTime CPT_1 = UTC_CURRENT_DATE.minusHours(1);
-
   public static final ZonedDateTime CPT_2 = UTC_CURRENT_DATE.plusHours(2);
-
   public static final ZonedDateTime CPT_3 = UTC_CURRENT_DATE.plusHours(3);
 
   private OutboundProjectionTestUtils() {
@@ -67,23 +55,10 @@ public class OutboundProjectionTestUtils {
     );
   }
 
-  public static List<Backlog> mockPlanningBacklog(final ZonedDateTime currentTime) {
-    final ZonedDateTime truncatedDate = convertToTimeZone(TIME_ZONE.toZoneId(), currentTime.minusHours(1))
-        .truncatedTo(ChronoUnit.DAYS);
-
-    final ZonedDateTime overdueSla = convertToTimeZone(ZoneId.of("Z"), truncatedDate);
-
-    return List.of(
-        new Backlog(overdueSla, 150),
-        new Backlog(currentTime.plusHours(2), 235),
-        new Backlog(currentTime.plusHours(3), 300)
-    );
-  }
-
   public static Photo generateMockPhoto(final Instant photoDate) {
     return new Photo(
         photoDate,
-        of(
+        List.of(
             new Photo.Group(
                 Map.of(DATE_OUT, CPT_1.toString()),
                 150,
@@ -104,7 +79,7 @@ public class OutboundProjectionTestUtils {
   }
 
   public static List<ProjectionResult> mockProjectionResults() {
-    return of(
+    return List.of(
         new ProjectionResult(
             ZonedDateTime.ofInstant(CPT_1.toInstant(), ZoneId.of("UTC")),
             null,
@@ -145,13 +120,13 @@ public class OutboundProjectionTestUtils {
   }
 
   public static List<PlanningDistributionResponse> mockExpectedBacklog() {
-    return of(
+    return List.of(
         new PlanningDistributionResponse(
             CPT_1.minusHours(1),
             CPT_1,
             MetricUnit.UNITS,
             10
-            ),
+        ),
         new PlanningDistributionResponse(
             CPT_2.minusHours(1),
             CPT_2,
@@ -167,12 +142,16 @@ public class OutboundProjectionTestUtils {
     );
   }
 
-  public static Map<Instant, PackingRatioCalculator.PackingRatio> generateMockPackingRatioByHour(final Instant currentDate, final Instant dateTo) {
+  public static Map<Instant, PackingRatioCalculator.PackingRatio> generateMockPackingRatioByHour(
+      final Instant currentDate,
+      final Instant dateTo
+  ) {
     Instant date = currentDate.truncatedTo(HOURS);
     final HashMap<Instant, PackingRatioCalculator.PackingRatio> ratioByHour = new HashMap<>();
+    final PackingRatioCalculator.PackingRatio packingRatio = new PackingRatioCalculator.PackingRatio(1.0, 0.0);
 
     while (date.isBefore(dateTo) || date.equals(dateTo)) {
-      ratioByHour.put(date, new PackingRatioCalculator.PackingRatio(1.0, 0.0));
+      ratioByHour.put(date, packingRatio);
 
       date = date.plus(1, HOURS);
     }
@@ -180,11 +159,13 @@ public class OutboundProjectionTestUtils {
     return ratioByHour;
   }
 
-  public static Map<MagnitudeType, List<MagnitudePhoto>> generateMockMagnitudesPhoto(final ZonedDateTime currentDate, final ZonedDateTime dateTo) {
-
+  public static Map<MagnitudeType, List<MagnitudePhoto>> generateMockMagnitudesPhoto(
+      final ZonedDateTime currentDate,
+      final ZonedDateTime dateTo
+  ) {
     ZonedDateTime date = currentDate.truncatedTo(HOURS);
     final List<MagnitudePhoto> magnitudesPhoto = new ArrayList<>();
-    final var processNames = of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL);
+    final var processNames = List.of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL);
 
     while (date.isBefore(dateTo) || date.equals(dateTo)) {
       ZonedDateTime finalDate = date;

@@ -28,7 +28,6 @@ import static com.mercadolibre.planning.model.me.usecases.projection.ProjectionW
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WORKFLOW;
-import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -54,7 +53,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTraj
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SlaProperties;
 import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
-import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.services.projection.CalculateProjectionService;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
@@ -67,8 +65,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
-import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -86,13 +82,7 @@ public class GetSlaProjectionOutboundTest {
   private GetSlaProjectionOutbound getSlaProjectionOutbound;
 
   @Mock
-  private GetProjectionOutbound getProjectionOutbound;
-
-  @Mock
   private PlanningModelGateway planningModelGateway;
-
-  @Mock
-  private RatioService ratioService;
 
   @Mock
   private CalculateProjectionService calculateProjection;
@@ -103,9 +93,6 @@ public class GetSlaProjectionOutboundTest {
 
   @Mock
   private LogisticCenterGateway logisticCenterGateway;
-
-  @Mock
-  private FeatureSwitches featureSwitches;
 
   @Mock
   private BacklogApiGateway backlogGateway;

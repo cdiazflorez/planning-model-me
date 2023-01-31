@@ -28,8 +28,6 @@ import static java.util.List.of;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyListOf;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
@@ -49,7 +47,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -62,9 +59,7 @@ import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculato
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.services.projection.CalculateProjectionService;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
-import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
@@ -134,6 +129,47 @@ public class RunSimulationOutboundTest {
 
   @Mock
   private CalculateProjectionService calculateProjection;
+
+  private static List<ProjectionResult> projectionResults() {
+    return of(
+        new ProjectionResult(
+            ZonedDateTime.ofInstant(CPT_1.toInstant(), ZoneId.of("UTC")),
+            null,
+            null,
+            415,
+            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
+            true,
+            false,
+            null,
+            0,
+            null
+        ),
+        new ProjectionResult(
+            ZonedDateTime.ofInstant(CPT_2.toInstant(), ZoneId.of("UTC")),
+            null,
+            null,
+            500,
+            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
+            false,
+            false,
+            null,
+            0,
+            null
+        ),
+        new ProjectionResult(
+            ZonedDateTime.ofInstant(CPT_3.toInstant(), ZoneId.of("UTC")),
+            null,
+            null,
+            950,
+            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
+            false,
+            false,
+            null,
+            0,
+            null
+        )
+    );
+  }
 
   @Test
   public void testExecute() {
@@ -505,46 +541,5 @@ public class RunSimulationOutboundTest {
         Collectors.toMap(
             entry -> entry.getDate().toInstant(),
             MagnitudePhoto::getValue)));
-  }
-
-  private static List<ProjectionResult> projectionResults() {
-    return of(
-        new ProjectionResult(
-            ZonedDateTime.ofInstant(CPT_1.toInstant(), ZoneId.of("UTC")),
-            null,
-            null,
-            415,
-            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
-            true,
-            false,
-            null,
-            0,
-            null
-        ),
-        new ProjectionResult(
-            ZonedDateTime.ofInstant(CPT_2.toInstant(), ZoneId.of("UTC")),
-            null,
-            null,
-            500,
-            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
-            false,
-            false,
-            null,
-            0,
-            null
-        ),
-        new ProjectionResult(
-            ZonedDateTime.ofInstant(CPT_3.toInstant(), ZoneId.of("UTC")),
-            null,
-            null,
-            950,
-            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
-            false,
-            false,
-            null,
-            0,
-            null
-        )
-    );
   }
 }

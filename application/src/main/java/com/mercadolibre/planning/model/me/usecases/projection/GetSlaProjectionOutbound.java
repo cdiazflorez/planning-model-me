@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
@@ -119,14 +118,14 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
         .sorted(Comparator.comparing(ProjectionResult::getDate))
         .collect(toList());
 
-    return setIsDeferred(projectionsSla, deferralProjectionOutput);
+    return getProjectionsWithItsDeferralStatus(projectionsSla, deferralProjectionOutput);
   }
 
-  private List<ProjectionResult> setIsDeferred(final List<ProjectionResult> slaProjections,
-                                               final List<ProjectionResult> deferralProjections) {
+  private List<ProjectionResult> getProjectionsWithItsDeferralStatus(final List<ProjectionResult> slaProjections,
+                                                                     final List<ProjectionResult> deferralProjections) {
 
     final Map<Instant, ProjectionResult> deferralProjectionsByDateOut =
-        deferralProjections.stream().collect(Collectors.toMap(
+        deferralProjections.stream().collect(toMap(
             pt -> pt.getDate().toInstant(),
             Function.identity(),
             (pd1, pd2) -> pd2
