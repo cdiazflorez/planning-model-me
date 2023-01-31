@@ -190,13 +190,9 @@ public class GetSlaProjectionInboundTest {
   }
 
   private List<Backlog> mockPlanningBacklog() {
-    final ZonedDateTime truncatedDate = convertToTimeZone(TIME_ZONE.toZoneId(), SLA_1)
-        .truncatedTo(ChronoUnit.DAYS);
-
-    final ZonedDateTime sla1 = convertToTimeZone(ZoneId.of("Z"), truncatedDate);
 
     return List.of(
-        new Backlog(sla1, 50),
+        new Backlog(SLA_1, 50),
         new Backlog(SLA_3, 150),
         new Backlog(SLA_4, 235),
         new Backlog(SLA_5, 300),
