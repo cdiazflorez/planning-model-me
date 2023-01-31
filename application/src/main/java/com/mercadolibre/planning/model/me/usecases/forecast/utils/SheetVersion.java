@@ -41,15 +41,15 @@ public enum SheetVersion {
   }
 
   private static Predicate<MeliSheet> validateNonSystemicVersion() {
-    return (MeliSheet meliSheet) -> {
-      final long nonSystemicCount =
-          meliSheet.getRowAt(PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW).getCells().stream()
-              .map(MeliCell::getValue)
-              .filter(Objects::nonNull)
-              .filter(s -> s.contains(NON_SYSTEMIC_COLUMN_NAME))
-              .count();
+    return (MeliSheet meliSheet) ->
+        getNonSystemicColumnCount(meliSheet) == NON_SYSTEMIC_COLUMN_COUNT;
+  }
 
-      return nonSystemicCount == NON_SYSTEMIC_COLUMN_COUNT;
-    };
+  private static long getNonSystemicColumnCount(final MeliSheet meliSheet) {
+    return meliSheet.getRowAt(PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW).getCells().stream()
+        .map(MeliCell::getValue)
+        .filter(Objects::nonNull)
+        .filter(s -> s.contains(NON_SYSTEMIC_COLUMN_NAME))
+        .count();
   }
 }
