@@ -35,7 +35,7 @@ public enum SheetVersion {
 
   public static final int PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW = 6;
 
-  public static final int NON_SYSTEMIC_COLUMN_COUNT = 5;
+  public static final int NON_SYSTEMIC_COLUMN_COUNT = 7;
 
   public static final String NON_SYSTEMIC_COLUMN_NAME = "No Sistemicos";
 
