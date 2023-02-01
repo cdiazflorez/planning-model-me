@@ -10,6 +10,7 @@ import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
@@ -88,7 +89,7 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
     final var plannedBacklog = getExpectedBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
 
 
-    final var filteredPlannedBacklogByDeferralStatus = getFilteredPlannedBacklogByDeferralStatus(
+    final var filteredPlannedBacklogByDeferralStatus = filterPlannedBacklogByDeferralStatus(
         deferredStatusBySla,
         plannedBacklog
     );
@@ -119,6 +120,15 @@ public class GetSlaProjectionOutbound extends GetProjectionOutbound {
         .collect(toList());
 
     return getProjectionsWithItsDeferralStatus(projectionsSla, deferralProjectionOutput);
+  }
+
+  private List<PlanningDistributionResponse> filterPlannedBacklogByDeferralStatus(
+      final Map<ZonedDateTime, Boolean> deferredStatusBySla,
+      final List<PlanningDistributionResponse> plannedBacklog) {
+
+    return plannedBacklog.stream()
+        .filter(plannedDistribution -> Boolean.FALSE.equals(deferredStatusBySla.get(plannedDistribution.getDateOut())))
+        .collect(toList());
   }
 
   private List<ProjectionResult> getProjectionsWithItsDeferralStatus(final List<ProjectionResult> slaProjections,

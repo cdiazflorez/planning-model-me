@@ -172,17 +172,6 @@ public abstract class GetProjectionOutbound extends GetProjection {
         .build());
   }
 
-
-  protected List<PlanningDistributionResponse> getFilteredPlannedBacklogByDeferralStatus(
-      final Map<ZonedDateTime, Boolean> deferredStatusBySla,
-      final List<PlanningDistributionResponse> plannedBacklog) {
-
-    return plannedBacklog.stream()
-        .filter(plannedDistribution -> Boolean.FALSE.equals(deferredStatusBySla.get(plannedDistribution.getDateOut())))
-        .collect(toList());
-  }
-
-
   protected Map<Instant, ProcessingTime> getSlas(final GetProjectionInputDto input,
                                                  final ZonedDateTime dateFrom,
                                                  final ZonedDateTime dateTo,
