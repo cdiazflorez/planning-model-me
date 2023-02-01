@@ -54,13 +54,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
-  private static final String HU_ASSEMBLY_PROCESS = "hu_assembly";
-
-  private static final String SALES_DISPATCH_PROCESS = "sales_dispatch";
-
-  private static final List<String> PROCESSES_WITHOUT_METRICS_FORECAST =
-      List.of(HU_ASSEMBLY_PROCESS, SALES_DISPATCH_PROCESS);
-
   private static final List<String> EFFECTIVE_PROCESSES =
       List.of(ProcessName.PACKING.getName(), ProcessName.PACKING_WALL.getName());
 
@@ -88,24 +81,16 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     for (StaffingWorkflowConfig workflowConfig : StaffingWorkflowConfig.values()) {
       final List<String> processNames = workflowConfig.getProcesses();
       final String workflow = workflowConfig.getName();
-      final List<String> processNamesToGetTargetMetrics =
-          Workflow.FBM_WMS_OUTBOUND.getName().equals(workflow)
-              ? processNames.stream()
-                  .filter(process -> !PROCESSES_WITHOUT_METRICS_FORECAST.contains(process))
-                  .collect(toList())
-              : processNames;
 
       /* TODO: Ajustar la configuración de Workflow cuando planning model api devuelva otros workflows */
       final Map<MagnitudeType, List<MagnitudePhoto>> forecastStaffing =
           workflowConfig.isShouldRetrieveProductivity()
-              ? getForecastStaffing(
-                  logisticCenterId, workflow, processNamesToGetTargetMetrics, now, PRODUCTIVITY)
+              ? getForecastStaffing(logisticCenterId, workflow, processNames, now, PRODUCTIVITY)
               : Map.of(PRODUCTIVITY, Collections.emptyList());
 
       final Map<MagnitudeType, List<MagnitudePhoto>> plannedStaffing =
           workflowConfig.isShouldRetrieveHeadcount()
-              ? getForecastStaffing(
-                  logisticCenterId, workflow, processNamesToGetTargetMetrics, now, HEADCOUNT)
+              ? getForecastStaffing(logisticCenterId, workflow, processNames, now, HEADCOUNT)
               : Map.of(HEADCOUNT, Collections.emptyList());
 
       final StaffingWorkflowResponse staffingWorkflow = staffingByWorkflow.get(workflow);
@@ -194,10 +179,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
     final ProcessTotals totals = processStaffing.getTotals();
 
-    final Integer systemicWorkersPlanned =
-        plannedHeadcount.get(ACTIVE_WORKERS).orElse(null);
-    final Integer nonSystemicWorkersPlanned =
-        plannedHeadcount.get(ACTIVE_WORKERS_NS).orElse(null);
+    final Integer systemicWorkersPlanned = plannedHeadcount.get(ACTIVE_WORKERS).orElse(null);
+    final Integer nonSystemicWorkersPlanned = plannedHeadcount.get(ACTIVE_WORKERS_NS).orElse(null);
 
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
@@ -279,12 +262,10 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
   private Integer filterProductivity(
       final Map<MagnitudeType, List<MagnitudePhoto>> staffingForecast, final String process) {
     final OptionalDouble productivity =
-        !PROCESSES_WITHOUT_METRICS_FORECAST.contains(process)
-            ? staffingForecast.get(PRODUCTIVITY).stream()
-                .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-                .mapToInt(MagnitudePhoto::getValue)
-                .average()
-            : OptionalDouble.empty();
+        staffingForecast.get(PRODUCTIVITY).stream()
+            .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
+            .mapToInt(MagnitudePhoto::getValue)
+            .average();
 
     return productivity.isPresent() ? (int) productivity.getAsDouble() : null;
   }
@@ -293,16 +274,13 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
       final Map<MagnitudeType, List<MagnitudePhoto>> plannedStaffing, final String process) {
 
     final List<MagnitudePhoto> staffingHeadcount =
-        !PROCESSES_WITHOUT_METRICS_FORECAST.contains(process)
-            ? plannedStaffing.get(HEADCOUNT).stream()
-                .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
-                .collect(toList())
-            : Collections.emptyList();
+        plannedStaffing.get(HEADCOUNT).stream()
+            .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
+            .collect(toList());
 
     return Map.of(
-            ACTIVE_WORKERS, getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS),
-            ACTIVE_WORKERS_NS, getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS_NS)
-    );
+        ACTIVE_WORKERS, getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS),
+        ACTIVE_WORKERS_NS, getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS_NS));
   }
 
   private Optional<Integer> getHeadcountByProcessingType(

@@ -996,6 +996,9 @@ class GetStaffingTest {
       int ibMockPosition, int obMockPosition) {
     final ZonedDateTime now = ZonedDateTime.now(UTC).withSecond(0).withNano(0);
 
+    final Map<MagnitudeType, List<MagnitudePhoto>> obHeadcountForecastEntities = mockHeadcountForecastEntities().get(obMockPosition);
+    final Map<MagnitudeType, List<MagnitudePhoto>> ibHeadcountForecastEntities = mockHeadcountForecastEntities().get(ibMockPosition);
+
     when(planningModelGateway.searchTrajectories(
             SearchTrajectoriesRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
@@ -1018,7 +1021,7 @@ class GetStaffingTest {
                             PROCESSING_TYPE.toJson(),
                             List.of(ACTIVE_WORKERS.getName(), ACTIVE_WORKERS_NS.getName()))))
                 .build()))
-        .thenReturn(mockHeadcountForecastEntities().get(obMockPosition));
+        .thenReturn(obHeadcountForecastEntities);
 
     when(planningModelGateway.searchTrajectories(
             SearchTrajectoriesRequest.builder()
@@ -1037,7 +1040,7 @@ class GetStaffingTest {
                             PROCESSING_TYPE.toJson(),
                             List.of(ACTIVE_WORKERS.getName(), ACTIVE_WORKERS_NS.getName()))))
                 .build()))
-        .thenReturn(mockHeadcountForecastEntities().get(ibMockPosition));
+        .thenReturn(ibHeadcountForecastEntities);
   }
 
   private List<Map<MagnitudeType, List<MagnitudePhoto>>> mockHeadcountForecastEntities() {
