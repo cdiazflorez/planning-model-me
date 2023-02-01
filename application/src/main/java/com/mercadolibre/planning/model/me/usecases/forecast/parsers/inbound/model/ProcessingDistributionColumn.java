@@ -21,8 +21,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Processing
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
 import java.util.Map;
-import lombok.Getter;
 import java.util.function.Function;
+import lombok.Getter;
 
 @Getter
 public enum ProcessingDistributionColumn {
