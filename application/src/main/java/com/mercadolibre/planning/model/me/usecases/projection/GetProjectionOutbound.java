@@ -31,15 +31,12 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeR
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.PackingRatio;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
-import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import java.time.Duration;
@@ -47,11 +44,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class GetProjectionOutbound extends GetProjection {
 
-  private final GetSimpleDeferralProjection getSimpleDeferralProjection;
+  final GetSimpleDeferralProjection getSimpleDeferralProjection;
 
   private final BacklogApiGateway backlogGateway;
 
@@ -87,21 +82,30 @@ public abstract class GetProjectionOutbound extends GetProjection {
     this.ratioService = ratioService;
   }
 
-  @Override
-  protected final List<ProjectionResult> decorateProjection(final GetProjectionInputDto input,
-                                                            final List<Backlog> backlogsToProject,
-                                                            final List<ProjectionResult> projectionsSla) {
+  protected Map<ProcessName, Map<Instant, Integer>> getThroughputByProcess(final GetProjectionInputDto input,
+                                                                           final ZonedDateTime dateFrom,
+                                                                           final ZonedDateTime dateTo,
+                                                                           final List<Simulation> simulations) {
 
-    final GetSimpleDeferralProjectionOutput deferralProjectionOutput = getSimpleDeferralProjection.execute(
-        new GetProjectionInput(
-            input.getWarehouseId(),
-            input.getWorkflow(),
-            input.getDate(),
-            backlogsToProject,
-            false,
-            emptyList()));
+    final var magnitudes = planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
+        .warehouseId(input.getWarehouseId())
+        .workflow(input.getWorkflow())
+        .processName(of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL))
+        .entityTypes(of(THROUGHPUT))
+        .dateFrom(dateFrom)
+        .dateTo(dateTo)
+        .source(SIMULATION)
+        .simulations(simulations)
+        .build()).get(THROUGHPUT);
 
-    return setIsDeferred(projectionsSla, deferralProjectionOutput.getProjections());
+    return magnitudes.stream()
+        .collect(Collectors.groupingBy(
+                MagnitudePhoto::getProcessName,
+                Collectors.toMap(
+                    entry -> entry.getDate().toInstant(),
+                    MagnitudePhoto::getValue)
+            )
+        );
   }
 
   @Override
@@ -133,32 +137,6 @@ public abstract class GetProjectionOutbound extends GetProjection {
             ZonedDateTime.parse(photo.getKey().get(DATE_OUT)),
             photo.getTotal()
         )).collect(toList());
-  }
-
-  protected Map<ProcessName, Map<Instant, Integer>> getThroughputByProcess(final GetProjectionInputDto input,
-                                                                           final ZonedDateTime dateFrom,
-                                                                           final ZonedDateTime dateTo,
-                                                                           final List<Simulation> simulations) {
-
-    final var magnitudes = planningModelGateway.searchTrajectories(SearchTrajectoriesRequest.builder()
-        .warehouseId(input.getWarehouseId())
-        .workflow(input.getWorkflow())
-        .processName(of(WAVING, PICKING, PACKING, BATCH_SORTER, WALL_IN, PACKING_WALL))
-        .entityTypes(of(THROUGHPUT))
-        .dateFrom(dateFrom)
-        .dateTo(dateTo)
-        .source(SIMULATION)
-        .simulations(simulations)
-        .build()).get(THROUGHPUT);
-
-    return magnitudes.stream()
-        .collect(Collectors.groupingBy(
-                MagnitudePhoto::getProcessName,
-                Collectors.toMap(
-                    entry -> entry.getDate().toInstant(),
-                    MagnitudePhoto::getValue)
-            )
-        );
   }
 
   protected List<Photo.Group> getCurrentBacklog(final GetProjectionInputDto input,
@@ -193,7 +171,6 @@ public abstract class GetProjectionOutbound extends GetProjection {
         .applyDeviation(true)
         .build());
   }
-
 
   protected Map<Instant, ProcessingTime> getSlas(final GetProjectionInputDto input,
                                                  final ZonedDateTime dateFrom,
@@ -249,30 +226,5 @@ public abstract class GetProjectionOutbound extends GetProjection {
             i -> dateFrom.plus(i, ChronoUnit.HOURS),
             i -> new PackingRatio(1.0, 0.0)));
   }
-
-  private List<ProjectionResult> setIsDeferred(final List<ProjectionResult> slaProjections,
-                                               final List<ProjectionResult> deferralProjections) {
-
-    final Map<Instant, ProjectionResult> deferralProjectionsByDateOut =
-        deferralProjections.stream().collect(Collectors.toMap(
-            pt -> pt.getDate().toInstant(),
-            Function.identity(),
-            (pd1, pd2) -> pd2
-        ));
-
-    final List<ProjectionResult> newSlaProjections = new ArrayList<>(slaProjections);
-
-    for (ProjectionResult slaProjection : newSlaProjections) {
-      final ProjectionResult deferralProjection =
-          deferralProjectionsByDateOut.get(slaProjection.getDate().toInstant());
-      if (deferralProjection != null) {
-        slaProjection.setDeferred(deferralProjection.isDeferred());
-      } else {
-        log.info("Not found cptProjection [{}] in cptDeferral", slaProjection.getDate()
-            .toInstant());
-      }
-    }
-
-    return newSlaProjections;
-  }
 }
+
