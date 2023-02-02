@@ -15,8 +15,8 @@ public enum StaffingWorkflowConfig {
           ProcessName.WALL_IN.getName(),
           ProcessName.PACKING.getName(),
           ProcessName.PACKING_WALL.getName(),
-          "hu_assembly",
-          "sales_dispatch"),
+          ProcessName.HU_ASSEMBLY.getName(),
+          ProcessName.SALES_DISPATCH.getName()),
       true,
       true),
   FBM_WMS_INBOUND(
