@@ -59,9 +59,7 @@ import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculato
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.services.projection.CalculateProjectionService;
 import com.mercadolibre.planning.model.me.usecases.projection.GetEntities;
-import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
-import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjectionOutput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
@@ -100,6 +98,8 @@ public class RunSimulationOutboundTest {
 
   private static final ZonedDateTime CPT_3 = UTC_CURRENT_DATE.plusHours(3);
 
+  private static final List<ProjectionResult> PROJECTION_RESULTS = projectionResults();
+
   @InjectMocks
   private RunSimulationOutbound runSimulationOutbound;
 
@@ -130,6 +130,47 @@ public class RunSimulationOutboundTest {
   @Mock
   private CalculateProjectionService calculateProjection;
 
+  private static List<ProjectionResult> projectionResults() {
+    return of(
+        new ProjectionResult(
+            ZonedDateTime.ofInstant(CPT_1.toInstant(), ZoneId.of("UTC")),
+            null,
+            null,
+            415,
+            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
+            true,
+            false,
+            null,
+            0,
+            null
+        ),
+        new ProjectionResult(
+            ZonedDateTime.ofInstant(CPT_2.toInstant(), ZoneId.of("UTC")),
+            null,
+            null,
+            500,
+            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
+            false,
+            false,
+            null,
+            0,
+            null
+        ),
+        new ProjectionResult(
+            ZonedDateTime.ofInstant(CPT_3.toInstant(), ZoneId.of("UTC")),
+            null,
+            null,
+            950,
+            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
+            false,
+            false,
+            null,
+            0,
+            null
+        )
+    );
+  }
+
   @Test
   public void testExecute() {
     // Given
@@ -147,18 +188,7 @@ public class RunSimulationOutboundTest {
         createSimulationRequest(mockedBacklog, utcCurrentTime, processes)))
         .thenReturn(mockProjections(utcCurrentTime));
 
-
     when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
-
-    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-        utcCurrentTime,
-        mockedBacklog,
-        false,
-        emptyList())))
-        .thenReturn(new GetSimpleDeferralProjectionOutput(
-            mockProjections(utcCurrentTime),
-            new LogisticCenterConfiguration(TIME_ZONE)));
 
     when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class)))
         .thenReturn(generatePhoto(Instant.now()));
@@ -198,19 +228,6 @@ public class RunSimulationOutboundTest {
     final ZonedDateTime utcDateTimeTo = UTC_CURRENT_DATE.plusDays(1).plusHours(1);
 
     when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
-
-    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-        UTC_CURRENT_DATE,
-        mockedBacklog,
-        false,
-        emptyList())))
-        .thenReturn(new GetSimpleDeferralProjectionOutput(
-            mockProjections(UTC_CURRENT_DATE),
-            new LogisticCenterConfiguration(TIME_ZONE)));
-
-    when(backlogGateway.getLastPhoto(any(BacklogLastPhotoRequest.class)))
-        .thenReturn(generatePhoto(Instant.now()));
 
     when(getSales.execute(any(GetSalesInputDto.class))).thenReturn(mockedPlanningBacklog);
 
@@ -275,6 +292,22 @@ public class RunSimulationOutboundTest {
         generatePhoto(photoDate)
     );
 
+    when(backlogGateway.getLastPhoto(new BacklogLastPhotoRequest(
+                WAREHOUSE_ID,
+                Set.of(BacklogWorkflow.OUTBOUND_ORDERS),
+                getSteps(FBM_WMS_OUTBOUND),
+                null,
+                null,
+                slaFrom,
+                slaTo,
+                Set.of(DATE_OUT),
+                slaTo
+            )
+        )
+    ).thenReturn(
+        generatePhoto(photoDate)
+    );
+
     when(ratioService.getPackingRatio(
             WAREHOUSE_ID,
             Instant.from(UTC_CURRENT_DATE),
@@ -312,7 +345,7 @@ public class RunSimulationOutboundTest {
             CPT_3.toInstant(), new ProcessingTime(60, MINUTES.getName())
         )),
         generatePackingRatioByHour(UTC_CURRENT_DATE.toInstant(), utcDateTimeTo.toInstant()))
-    ).thenReturn(projectionResults());
+    ).thenReturn(PROJECTION_RESULTS);
 
     // When
     final PlanningView planningView =
@@ -508,46 +541,5 @@ public class RunSimulationOutboundTest {
         Collectors.toMap(
             entry -> entry.getDate().toInstant(),
             MagnitudePhoto::getValue)));
-  }
-
-  private List<ProjectionResult> projectionResults() {
-    return of(
-        new ProjectionResult(
-            ZonedDateTime.ofInstant(CPT_1.toInstant(), ZoneId.of("UTC")),
-            null,
-            null,
-            415,
-            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
-            false,
-            false,
-            null,
-            0,
-            null
-        ),
-        new ProjectionResult(
-            ZonedDateTime.ofInstant(CPT_2.toInstant(), ZoneId.of("UTC")),
-            null,
-            null,
-            500,
-            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
-            false,
-            false,
-            null,
-            0,
-            null
-        ),
-        new ProjectionResult(
-            ZonedDateTime.ofInstant(CPT_3.toInstant(), ZoneId.of("UTC")),
-            null,
-            null,
-            950,
-            new ProcessingTime(10, ChronoUnit.MINUTES.toString()),
-            false,
-            false,
-            null,
-            0,
-            null
-        )
-    );
   }
 }

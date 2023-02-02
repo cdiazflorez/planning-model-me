@@ -294,16 +294,6 @@ class SaveSimulationOutboundTest {
 
     when(getEntities.execute(any(GetProjectionInputDto.class))).thenReturn(mockComplexTable());
 
-    when(getSimpleDeferralProjection.execute(new GetProjectionInput(
-        WAREHOUSE_ID, FBM_WMS_OUTBOUND,
-        utcDateTimeFrom,
-        mockBacklog(),
-        false,
-        emptyList())))
-        .thenReturn(new GetSimpleDeferralProjectionOutput(
-            mockProjections(utcCurrentTime),
-            new LogisticCenterConfiguration(TIME_ZONE)));
-
     when(backlogGateway.getLastPhoto(any())
     ).thenReturn(generatePhoto(Instant.now()));
 
