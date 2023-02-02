@@ -235,6 +235,10 @@ class GetStaffingTest {
 
   private static final Integer FORECAST_PACKING = 35;
 
+  private static final Integer FORECAST_HU_ASSEMBLY = 25;
+
+  private static final Integer FORECAST_SALES_DISPATCH = 28;
+
   private static final Integer FORECAST_HEADCOUNT_PICKING = 4;
 
   private static final Integer SIMULATION_HEADCOUNT_PICKING = 2;
@@ -252,6 +256,14 @@ class GetStaffingTest {
   private static final Integer FORECAST_HEADCOUNT_BATCH_SORTER = 1;
 
   private static final Integer FORECAST_HEADCOUNT_NS_BATCH_SORTER = 2;
+
+  private static final Integer FORECAST_HEADCOUNT_HU_ASSEMBLY = 5;
+
+  private static final Integer FORECAST_HEADCOUNT_NS_HU_ASSEMBLY = 3;
+
+  private static final Integer FORECAST_HEADCOUNT_SALES_DISPATCH = 8;
+
+  private static final Integer FORECAST_HEADCOUNT_NS_SALES_DISPATCH = 6;
 
   private static final Integer FORECAST_HEADCOUNT_CHECK_IN = 4;
 
@@ -276,6 +288,14 @@ class GetStaffingTest {
   private static final Integer EXPECTED_DELTA_PACKING_WALL = 40;
 
   private static final Integer EXPECTED_NS_DELTA_PACKING_WALL = 8;
+
+  private static final Integer EXPECTED_DELTA_HU_ASSEMBLY = 35;
+
+  private static final Integer EXPECTED_NS_DELTA_HU_ASSEMBLY = 7;
+
+  private static final Integer EXPECTED_DELTA_SALES_DISPATCH = 32;
+
+  private static final Integer EXPECTED_NS_DELTA_SALES_DISPATCH = 4;
 
   @InjectMocks private GetStaffing useCase;
 
@@ -744,6 +764,16 @@ class GetStaffingTest {
     assertEquals(
         FORECAST_HEADCOUNT_NS_PACKING_WALL,
         outboundProcesses.get(4).getWorkers().getNonSystemicPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_HU_ASSEMBLY, outboundProcesses.get(5).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_NS_HU_ASSEMBLY,
+        outboundProcesses.get(5).getWorkers().getNonSystemicPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_SALES_DISPATCH, outboundProcesses.get(6).getWorkers().getPlanned());
+    assertEquals(
+        FORECAST_HEADCOUNT_NS_SALES_DISPATCH,
+        outboundProcesses.get(6).getWorkers().getNonSystemicPlanned());
 
     assertEquals(
         EXPECTED_SIMULATION_DELTA_PICKING, outboundProcesses.get(0).getWorkers().getDelta());
@@ -756,6 +786,18 @@ class GetStaffingTest {
     assertEquals(
         EXPECTED_NS_DELTA_PACKING_WALL,
         outboundProcesses.get(4).getWorkers().getNonSystemicDelta());
+
+    assertEquals(EXPECTED_DELTA_HU_ASSEMBLY, outboundProcesses.get(5).getWorkers().getDelta());
+    assertEquals(EXPECTED_DELTA_SALES_DISPATCH, outboundProcesses.get(6).getWorkers().getDelta());
+
+    assertEquals(
+        EXPECTED_NS_DELTA_HU_ASSEMBLY, outboundProcesses.get(5).getWorkers().getNonSystemicDelta());
+    assertEquals(
+        EXPECTED_NS_DELTA_SALES_DISPATCH,
+        outboundProcesses.get(6).getWorkers().getNonSystemicDelta());
+
+    assertEquals(FORECAST_HU_ASSEMBLY, outboundProcesses.get(5).getTargetProductivity());
+    assertEquals(FORECAST_SALES_DISPATCH, outboundProcesses.get(6).getTargetProductivity());
   }
 
   private void assertEqualsWorkflow(
@@ -880,6 +922,14 @@ class GetStaffingTest {
             MagnitudePhoto.builder()
                 .processName(ProcessName.PACKING)
                 .value(FORECAST_PACKING)
+                .build(),
+            MagnitudePhoto.builder()
+                .processName(ProcessName.HU_ASSEMBLY)
+                .value(FORECAST_HU_ASSEMBLY)
+                .build(),
+            MagnitudePhoto.builder()
+                .processName(ProcessName.SALES_DISPATCH)
+                .value(FORECAST_SALES_DISPATCH)
                 .build()));
   }
 
@@ -942,7 +992,9 @@ class GetStaffingTest {
                         ProcessName.BATCH_SORTER,
                         ProcessName.WALL_IN,
                         ProcessName.PACKING,
-                        ProcessName.PACKING_WALL))
+                        ProcessName.PACKING_WALL,
+                        ProcessName.HU_ASSEMBLY,
+                        ProcessName.SALES_DISPATCH))
                 .entityFilters(
                     Map.of(
                         MagnitudeType.PRODUCTIVITY,
@@ -996,6 +1048,11 @@ class GetStaffingTest {
       int ibMockPosition, int obMockPosition) {
     final ZonedDateTime now = ZonedDateTime.now(UTC).withSecond(0).withNano(0);
 
+    final Map<MagnitudeType, List<MagnitudePhoto>> obHeadcountForecastEntities =
+        mockHeadcountForecastEntities().get(obMockPosition);
+    final Map<MagnitudeType, List<MagnitudePhoto>> ibHeadcountForecastEntities =
+        mockHeadcountForecastEntities().get(ibMockPosition);
+
     when(planningModelGateway.searchTrajectories(
             SearchTrajectoriesRequest.builder()
                 .warehouseId(WAREHOUSE_ID)
@@ -1010,7 +1067,9 @@ class GetStaffingTest {
                         ProcessName.BATCH_SORTER,
                         ProcessName.WALL_IN,
                         ProcessName.PACKING,
-                        ProcessName.PACKING_WALL))
+                        ProcessName.PACKING_WALL,
+                        ProcessName.HU_ASSEMBLY,
+                        ProcessName.SALES_DISPATCH))
                 .entityFilters(
                     Map.of(
                         HEADCOUNT,
@@ -1018,7 +1077,7 @@ class GetStaffingTest {
                             PROCESSING_TYPE.toJson(),
                             List.of(ACTIVE_WORKERS.getName(), ACTIVE_WORKERS_NS.getName()))))
                 .build()))
-        .thenReturn(mockHeadcountForecastEntities().get(obMockPosition));
+        .thenReturn(obHeadcountForecastEntities);
 
     when(planningModelGateway.searchTrajectories(
             SearchTrajectoriesRequest.builder()
@@ -1037,7 +1096,7 @@ class GetStaffingTest {
                             PROCESSING_TYPE.toJson(),
                             List.of(ACTIVE_WORKERS.getName(), ACTIVE_WORKERS_NS.getName()))))
                 .build()))
-        .thenReturn(mockHeadcountForecastEntities().get(ibMockPosition));
+        .thenReturn(ibHeadcountForecastEntities);
   }
 
   private List<Map<MagnitudeType, List<MagnitudePhoto>>> mockHeadcountForecastEntities() {
@@ -1144,6 +1203,30 @@ class GetStaffingTest {
                 MagnitudePhoto.builder()
                     .processName(ProcessName.BATCH_SORTER)
                     .value(FORECAST_HEADCOUNT_NS_BATCH_SORTER)
+                    .type(ACTIVE_WORKERS_NS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.HU_ASSEMBLY)
+                    .value(FORECAST_HEADCOUNT_HU_ASSEMBLY)
+                    .type(ACTIVE_WORKERS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.HU_ASSEMBLY)
+                    .value(FORECAST_HEADCOUNT_NS_HU_ASSEMBLY)
+                    .type(ACTIVE_WORKERS_NS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.SALES_DISPATCH)
+                    .value(FORECAST_HEADCOUNT_SALES_DISPATCH)
+                    .type(ACTIVE_WORKERS)
+                    .source(Source.FORECAST)
+                    .build(),
+                MagnitudePhoto.builder()
+                    .processName(ProcessName.SALES_DISPATCH)
+                    .value(FORECAST_HEADCOUNT_NS_SALES_DISPATCH)
                     .type(ACTIVE_WORKERS_NS)
                     .source(Source.FORECAST)
                     .build())));

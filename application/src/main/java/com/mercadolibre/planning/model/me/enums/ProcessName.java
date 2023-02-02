@@ -35,7 +35,9 @@ public enum ProcessName {
   CHECK_IN(false, false, new Single("CHECK_IN"), List.of(Step.CHECK_IN)),
   SCHEDULED(false, false, new Single("SCHEDULED"), List.of(Step.SCHEDULED)),
   PUT_AWAY(false, false, new Single("PUT_AWAY"), List.of(Step.PUT_AWAY)),
-  RECEIVING(false, false, new Single("RECEIVING"));
+  RECEIVING(false, false, new Single("RECEIVING")),
+  HU_ASSEMBLY(false, false, new Single("HU_ASSEMBLY")),
+  SALES_DISPATCH(false, false, new Single("SALES_DISPATCH"));
 
   private static final Map<ProcessName, List<Step>> PROCESS_BY_STEP = Arrays.stream(values())
       .filter(process -> process.getSteps() != null && !process.getSteps().contains(Step.TO_PACK))
