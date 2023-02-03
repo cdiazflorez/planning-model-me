@@ -3,12 +3,15 @@ package com.mercadolibre.planning.model.me.controller.deviation;
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND_TRANSFER;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID_ARTW01;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.verify;
 import static org.mockito.Mockito.doThrow;
@@ -21,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.mercadolibre.planning.model.me.enums.DeviationType;
+import com.mercadolibre.planning.model.me.enums.ShipmentType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.metric.DatadogMetricService;
 import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
@@ -172,7 +176,76 @@ public class DeviationControllerTest {
       // THEN
       verify(saveDeviation).execute(saveDeviationInput);
     }
+
+    @Test
+    void testSaveDeviationsOk() throws Exception {
+      // WHEN
+      final var response = mvc.perform(MockMvcRequestBuilders
+          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units/all")
+          .content(getResourceAsString("post_save_all_deviation_request.json"))
+          .contentType(APPLICATION_JSON));
+
+      // THEN
+      response.andExpect(status().isNoContent());
+
+      final var dateFrom = ZonedDateTime.parse("2021-01-21T15:00Z[UTC]");
+      final var dateTo = ZonedDateTime.parse("2021-01-21T17:00Z[UTC]");
+
+      final List<SaveDeviationInput> input = List.of(
+          SaveDeviationInput.builder()
+              .warehouseId(WAREHOUSE_ID_ARTW01)
+              .workflow(INBOUND)
+              .paths(List.of(ShipmentType.SPD, ShipmentType.PRIVATE))
+              .dateFrom(dateFrom)
+              .dateTo(dateTo)
+              .type(DeviationType.UNITS)
+              .value(0.1)
+              .userId(USER_ID)
+              .build(),
+          SaveDeviationInput.builder()
+              .warehouseId(WAREHOUSE_ID_ARTW01)
+              .workflow(INBOUND_TRANSFER)
+              .dateFrom(dateFrom)
+              .dateTo(dateTo)
+              .type(DeviationType.UNITS)
+              .value(0.1)
+              .userId(USER_ID)
+              .build()
+      );
+
+      verify(saveDeviation).save(input);
+    }
+
+  @Test
+  void testSaveDeviationsError() throws Exception {
+    // GIVEN
+    doThrow(RuntimeException.class).when(saveDeviation).save(anyList());
+
+    // WHEN
+    final var response = mvc.perform(MockMvcRequestBuilders
+        .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units/all")
+        .content(getResourceAsString("post_save_all_deviation_request.json"))
+        .contentType(APPLICATION_JSON));
+
+    // THEN
+    response.andExpect(status().isInternalServerError());
   }
+
+    @Test
+    void testSaveDeviationsWithInvalidBody() throws Exception {
+      // GIVEN
+      doThrow(RuntimeException.class).when(saveDeviation).save(anyList());
+
+      // WHEN
+      final var response = mvc.perform(MockMvcRequestBuilders
+          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units/all")
+          .content("[]")
+          .contentType(APPLICATION_JSON));
+
+      // THEN
+      response.andExpect(status().isBadRequest());
+    }
+}
 
   @Nested
   @DisplayName("Test disable deviation")

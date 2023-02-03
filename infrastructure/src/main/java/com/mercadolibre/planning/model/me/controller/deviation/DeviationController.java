@@ -6,6 +6,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.OK;
 
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
+import com.mercadolibre.planning.model.me.controller.deviation.request.SaveDeviationRequest;
 import com.mercadolibre.planning.model.me.controller.editor.DeviationTypeEditor;
 import com.mercadolibre.planning.model.me.controller.editor.ShipmentTypeEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
@@ -22,14 +23,18 @@ import com.mercadolibre.planning.model.me.usecases.deviation.SaveDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.SaveOutboundDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
 import com.newrelic.api.agent.Trace;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @AllArgsConstructor
+@Validated
 @RestController
 @RequestMapping("/planning/model/middleend/workflows/{workflow}/deviations")
 public class DeviationController {
@@ -63,8 +69,12 @@ public class DeviationController {
 
   private final DatadogMetricService datadogMetricService;
 
+  /**
+   * @deprecated use {@link #save(DeviationType, Workflow, List)}
+   */
   @Trace
   @PostMapping("/save")
+  @Deprecated
   public ResponseEntity<DeviationResponse> save(
       @PathVariable final Workflow workflow,
       @RequestBody @Valid final DeviationRequest deviationRequest) {
@@ -87,8 +97,12 @@ public class DeviationController {
         .body(response);
   }
 
+  /**
+   * @deprecated use {@link #save(DeviationType, Workflow, List)}
+   */
   @Trace
   @PostMapping("/save/{type}")
+  @Deprecated
   public ResponseEntity<HttpStatus> save(
       @PathVariable final DeviationType type,
       @PathVariable final Workflow workflow,
@@ -99,6 +113,22 @@ public class DeviationController {
     saveDeviation.execute(deviationRequest.toDeviationInput(workflow, type));
 
     return new ResponseEntity<>(OK);
+  }
+
+  @Trace
+  @PostMapping("/save/{type}/all")
+  public ResponseEntity<Object> save(
+      @PathVariable final DeviationType type,
+      @PathVariable final Workflow workflow,
+      @RequestBody @Valid @NotEmpty final List<SaveDeviationRequest> deviations
+  ) {
+    final var devs = deviations.stream()
+        .map(deviation -> deviation.toDeviationInput(type))
+        .collect(Collectors.toList());
+
+    saveDeviation.save(devs);
+
+    return ResponseEntity.noContent().build();
   }
 
   @Trace
@@ -133,7 +163,6 @@ public class DeviationController {
   @InitBinder
   public void initBinder(final PropertyEditorRegistry dataBinder) {
     dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
-    //TODO: you need to add the list as a parameter in the deviation request;
     dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
     dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
   }

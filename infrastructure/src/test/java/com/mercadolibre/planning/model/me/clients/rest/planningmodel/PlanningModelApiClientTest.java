@@ -11,6 +11,8 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Met
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND_TRANSFER;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.CARRY_OVER;
 import static com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogProcessStatus.PROCESSED;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.A_DATE;
@@ -28,6 +30,7 @@ import static java.time.ZonedDateTime.parse;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyList;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -40,10 +43,12 @@ import static org.springframework.http.HttpStatus.OK;
 
 import com.mercadolibre.fbm.wms.outbound.commons.rest.exception.ClientException;
 import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
+import com.mercadolibre.planning.model.me.clients.rest.TestInterceptor;
 import com.mercadolibre.planning.model.me.clients.rest.planningmodel.exception.ForecastNotFoundException;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.entities.sharedistribution.ShareDistribution;
 import com.mercadolibre.planning.model.me.enums.DeviationType;
+import com.mercadolibre.planning.model.me.enums.ShipmentType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Deviation;
@@ -139,6 +144,32 @@ class PlanningModelApiClientTest extends BaseClientTest {
   private static final String VALUE_FIELD = "value";
 
   private static final String PERFORMED_PROCESSING = "performed_processing";
+
+  private static final ZonedDateTime DATE_FROM = parse("2021-01-21T15:00Z[UTC]");
+
+  private static final ZonedDateTime DATE_TO = parse("2021-01-21T17:00Z[UTC]");
+
+  private static final List<SaveDeviationInput> DEVIATIONS = List.of(
+      SaveDeviationInput.builder()
+          .warehouseId(WAREHOUSE_ID_ARTW01)
+          .workflow(INBOUND)
+          .paths(List.of(ShipmentType.SPD, ShipmentType.PRIVATE))
+          .dateFrom(DATE_FROM)
+          .dateTo(DATE_TO)
+          .type(DeviationType.UNITS)
+          .value(0.1)
+          .userId(USER_ID)
+          .build(),
+      SaveDeviationInput.builder()
+          .warehouseId(WAREHOUSE_ID_ARTW01)
+          .workflow(INBOUND_TRANSFER)
+          .dateFrom(DATE_FROM)
+          .dateTo(DATE_TO)
+          .type(DeviationType.UNITS)
+          .value(0.1)
+          .userId(USER_ID)
+          .build()
+  );
 
   private PlanningModelApiClient client;
 
@@ -889,7 +920,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   }
 
   @Test
-  public void testGetBacklogProjection() throws IOException {
+  void testGetBacklogProjection() throws IOException {
     // GIVEN
     final BacklogProjectionRequest request = BacklogProjectionRequest.builder()
         .warehouseId(WAREHOUSE_ID_ARTW01)
@@ -1141,7 +1172,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   }
 
   @Test
-  public void saveShareDistributionTest() throws JSONException {
+  void saveShareDistributionTest() throws JSONException {
 
     //GIVEN
     List<ShareDistribution> shareDistributionList = List.of(ShareDistribution.builder().build());
@@ -1167,7 +1198,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   }
 
   @Test
-  public void testGetShareDistribution() throws JSONException {
+  void testGetShareDistribution() throws JSONException {
 
     //GIVEN
     final JSONArray apiResponse = new JSONArray()
@@ -1198,7 +1229,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
   }
 
   @Test
-  public void saveSimulationsTest() {
+  void saveSimulationsTest() {
     //GIVEN
     MockResponse.builder()
         .withMethod(POST)
@@ -1212,41 +1243,41 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   }
 
-    @Test
-    public void deferralStatusProjectionTest() throws JSONException {
+  @Test
+  void deferralStatusProjectionTest() throws JSONException {
 
-        //GIVEN
-        final JSONArray apiResponse = new JSONArray()
-            .put(new JSONObject()
-                .put("sla", "2022-07-27T09:00:00Z")
-                .put("deferred_at", "2022-07-27T08:00:00Z")
-                .put("deferred_units", "5")
-                .put("deferral_status", "deferred_cap_max")
-            );
+    //GIVEN
+    final JSONArray apiResponse = new JSONArray()
+        .put(new JSONObject()
+            .put("sla", "2022-07-27T09:00:00Z")
+            .put("deferred_at", "2022-07-27T08:00:00Z")
+            .put("deferred_units", "5")
+            .put("deferral_status", "deferred_cap_max")
+        );
 
-        MockResponse.builder()
-            .withMethod(POST)
-            .withURL(BASE_URL + format(RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND, "cpts/deferral_time"))
-            .withStatusCode(OK.value())
-            .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-            .withResponseBody(apiResponse.toString())
-            .build();
+    MockResponse.builder()
+        .withMethod(POST)
+        .withURL(BASE_URL + format(RUN_PROJECTIONS_URL, FBM_WMS_OUTBOUND, "cpts/deferral_time"))
+        .withStatusCode(OK.value())
+        .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+        .withResponseBody(apiResponse.toString())
+        .build();
 
-        List<DeferralProjectionStatus> response = client.getDeferralProjectionStatus(
-            Instant.parse("2022-07-27T00:00:00Z"),
-            Instant.parse("2022-07-27T23:00:00Z"),
-            FBM_WMS_OUTBOUND,
-            List.of(PICKING, PACKING),
-            List.of(new BacklogQuantity(Instant.parse("2022-07-27T09:00:00Z"), 3000)),
-            WAREHOUSE_ID_ARTW01,
-            "America/Buenos_Aires",
-            true,
-            emptyList());
+    List<DeferralProjectionStatus> response = client.getDeferralProjectionStatus(
+        Instant.parse("2022-07-27T00:00:00Z"),
+        Instant.parse("2022-07-27T23:00:00Z"),
+        FBM_WMS_OUTBOUND,
+        List.of(PICKING, PACKING),
+        List.of(new BacklogQuantity(Instant.parse("2022-07-27T09:00:00Z"), 3000)),
+        WAREHOUSE_ID_ARTW01,
+        "America/Buenos_Aires",
+        true,
+        emptyList());
 
-        assertNotNull(response);
-        assertEquals(1, response.size());
+    assertNotNull(response);
+    assertEquals(1, response.size());
 
-    }
+  }
 
   @Nested
   @DisplayName("Test save deviation")
@@ -1314,9 +1345,8 @@ class PlanningModelApiClientTest extends BaseClientTest {
   }
 
   @Nested
-  @DisplayName("Test new save deviation")
-  class NewSaveOutboundDeviationTest {
-
+  @DisplayName("Save deviations test")
+  class SaveDeviationsTest {
     @Test
     void testNewSaveDeviationOk() throws Exception {
       // Given
@@ -1332,7 +1362,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
       MockResponse.builder()
           .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/save/" + DeviationType.UNITS.getName() , FBM_WMS_INBOUND))
+          .withURL(format(BASE_URL + DEVIATION_URL + "/save/" + DeviationType.UNITS.getName(), FBM_WMS_INBOUND))
           .withStatusCode(OK.value())
           .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
           .withResponseBody(new JSONObject()
@@ -1378,6 +1408,27 @@ class PlanningModelApiClientTest extends BaseClientTest {
       assertNotNull(deviationResponse);
       assertEquals(400, deviationResponse.getStatus());
     }
+
+    @Test
+    void testSaveDeviationsOk() throws Exception {
+      // GIVEN
+      final var interceptor = new TestInterceptor();
+      MockResponse.builder()
+          .withMethod(POST)
+          .withURL(format(BASE_URL + DEVIATION_URL + "/save/all", FBM_WMS_INBOUND))
+          .withStatusCode(OK.value())
+          .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+          .withMockInterceptor(interceptor)
+          .withResponseBody(new JSONObject()
+              .put("status", OK.value())
+              .toString())
+          .build();
+
+      // WHEN
+      assertDoesNotThrow(() -> client.save(DEVIATIONS));
+      assertEquals(getResourceAsString("save_all_deviations_expected_request.json"), interceptor.getRequestBody());
+    }
+
   }
 
   @Nested
@@ -1464,54 +1515,53 @@ class PlanningModelApiClientTest extends BaseClientTest {
       assertEquals(PERCENTAGE, getDeviationResponse.getMetricUnit());
     }
 
-      @Test
-      void testGetListOfDeviationOk() throws Exception {
-          // Given
-          final Instant currentTime = Instant.parse("2022-01-11T15:00:00Z");
-          final JSONArray response = new JSONArray()
-                  .put(new JSONObject()
-                          .put("workflow", FBM_WMS_INBOUND.getName())
-                          .put(TYPE_FIELD, "minutes")
-                          .put("type", "UNITS")
-                          .put("date_from", currentTime)
-                          .put("date_to", currentTime.plus(5, HOURS))
-                          .put(VALUE_FIELD, 5.8)
-                          .put("metric_unit", "percentage")
-                  )
-                  .put(new JSONObject()
-                          .put("workflow", FBM_WMS_INBOUND.getName())
-                          .put(TYPE_FIELD, "minutes")
-                          .put("type", "MINUTES")
-                          .put("date_from", currentTime.plus(1, HOURS))
-                          .put("date_to", currentTime.plus(6, HOURS))
-                          .put(VALUE_FIELD, 3.6)
-                          .put("metric_unit", "percentage")
-                  );
+    @Test
+    void testGetListOfDeviationOk() throws Exception {
+      // GIVEN
+      final Instant currentTime = Instant.parse("2022-01-11T15:00:00Z");
+      final JSONArray response = new JSONArray()
+          .put(new JSONObject()
+              .put("workflow", FBM_WMS_INBOUND.getName())
+              .put(TYPE_FIELD, "minutes")
+              .put("type", "UNITS")
+              .put("date_from", currentTime)
+              .put("date_to", currentTime.plus(5, HOURS))
+              .put(VALUE_FIELD, 5.8)
+              .put("metric_unit", "percentage")
+          )
+          .put(new JSONObject()
+              .put("workflow", FBM_WMS_INBOUND.getName())
+              .put(TYPE_FIELD, "minutes")
+              .put("type", "MINUTES")
+              .put("date_from", currentTime.plus(1, HOURS))
+              .put("date_to", currentTime.plus(6, HOURS))
+              .put(VALUE_FIELD, 3.6)
+              .put("metric_unit", "percentage")
+          );
 
-          MockResponse.builder()
-                  .withMethod(GET)
-                  .withURL(format(BASE_URL + ACTIVE_DEVIATIONS_URL, FBM_WMS_INBOUND))
-                  .withStatusCode(OK.value())
-                  .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-                  .withResponseBody(response.toString())
-                  .build();
+      MockResponse.builder()
+          .withMethod(GET)
+          .withURL(format(BASE_URL + ACTIVE_DEVIATIONS_URL, FBM_WMS_INBOUND))
+          .withStatusCode(OK.value())
+          .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+          .withResponseBody(response.toString())
+          .build();
 
-          var workflow = Set.of(FBM_WMS_INBOUND);
-          // When
-          final List<Deviation> getActiveDeviations =
-                  client.getActiveDeviations(workflow, WAREHOUSE_ID_ARTW01, A_DATE.toInstant());
-          final Deviation firstElementInRepsonse = getActiveDeviations.get(0);
-          // Then
+      final var workflow = Set.of(FBM_WMS_INBOUND);
 
-          assertNotNull(getActiveDeviations);
-          assertEquals(
-              Instant.parse("2022-01-11T15:00:00Z"),
-                  firstElementInRepsonse.getDateFrom());
-          assertEquals(
-              Instant.parse("2022-01-11T20:00:00Z"),
-                  firstElementInRepsonse.getDateTo());
-          assertEquals(5.8, firstElementInRepsonse.getValue());
-      }
+      // WHEN
+      final List<Deviation> getActiveDeviations = client.getActiveDeviations(workflow, WAREHOUSE_ID_ARTW01, A_DATE.toInstant());
+
+      // THEN
+      final Deviation firstElementInRepsonse = getActiveDeviations.get(0);
+      final var dateFrom = Instant.parse("2022-01-11T15:00:00Z");
+      final var dateTo = Instant.parse("2022-01-11T20:00:00Z");
+
+      assertNotNull(getActiveDeviations);
+      assertEquals(dateFrom, firstElementInRepsonse.getDateFrom());
+      assertEquals(dateTo, firstElementInRepsonse.getDateTo());
+      assertEquals(5.8, firstElementInRepsonse.getValue());
+    }
 
     @Test
     void testGetDeviationWhenNotExistDeviation() throws Exception {

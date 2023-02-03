@@ -5,6 +5,7 @@ import com.mercadolibre.planning.model.me.controller.backlog.exception.BacklogNo
 import com.mercadolibre.planning.model.me.controller.backlog.exception.EmptyStateException;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -91,6 +92,15 @@ public class ApiExceptionHandler {
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
       final IllegalArgumentException exception,
+      final HttpServletRequest request) {
+
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
+
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalConstraintViolationException(
+      final ConstraintViolationException exception,
       final HttpServletRequest request) {
 
     log.error(exception.getMessage(), exception);
