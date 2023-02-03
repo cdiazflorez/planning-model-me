@@ -8,6 +8,10 @@ import java.util.function.Function;
 @Getter
 @AllArgsConstructor
 public enum Productivity {
+    RECEIVING(Process.RECEIVING,
+            reps -> reps.getActiveRepsReceiving().getValue().equals(0)
+                    ? 0
+                    : reps.getReceivingWorkload().getValue() / reps.getActiveRepsReceiving().getValue()),
     CHECK_IN(Process.CHECK_IN,
             reps -> reps.getActiveRepsCheckIn().getValue().equals(0)
                     ? 0

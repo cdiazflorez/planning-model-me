@@ -85,7 +85,7 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
     final List<Backlog> backlogsToShow = filterBacklogsInRange(dateFromToShow, dateToToShow, backlogsToProject);
 
     try {
-      List<ProjectionResult> projectionsSlaAux = getProjection(
+      List<ProjectionResult> projectionsSla = getProjection(
           input,
           /* Note that the zone is not necessary but the getProjection method requires it to no avail. */
           dateFromToProject.atZone(UTC),
@@ -93,9 +93,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
           backlogsToProject,
           config
       );
-
-      final List<ProjectionResult> projectionsSla =
-          decorateProjection(input, backlogsToProject, projectionsSlaAux);
 
       final List<ProjectionResult> projectionsToShow =
           filterProjectionsInRange(dateFromToShow, dateToToShow, projectionsSla);

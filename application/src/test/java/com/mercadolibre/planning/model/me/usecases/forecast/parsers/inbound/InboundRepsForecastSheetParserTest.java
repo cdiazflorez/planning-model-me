@@ -5,6 +5,10 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbou
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.INBOUND_PUTAWAY_PRODUCTIVITY_POLIVALENCES;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.INBOUND_RECEIVING_PRODUCTIVITY_POLYVALENCES;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.VERSION;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.CHECK_IN_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.PUT_AWAY_PROCESS;
+import static com.mercadolibre.planning.model.me.utils.TestUtils.RECEIVING_PROCESS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getMeliSheetFrom;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,9 +25,13 @@ import com.mercadolibre.spreadsheet.MeliSheet;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,42 +39,35 @@ class InboundRepsForecastSheetParserTest {
 
   private static final String VALID_FILE_PATH = "inbound_planning_ok.xlsx";
 
-  private static final String VALID_FILE_WITHOUT_CHECK_IN = "inbound_planning_without_check_in.xlsx";
+  private static final String VALID_FILE_PATH_V2 = "inbound_planning_v2_ok.xlsx";
 
   private static final String ERRONEOUS_FILE_PATH = "inbound_planning_with_errors.xlsx";
+
+  private static final String FIRST_VERSION = "1.0";
+
+  private static final String SECOND_VERSION = "2.0";
 
   private static final LogisticCenterConfiguration CONF =
       new LogisticCenterConfiguration(TimeZone.getTimeZone("UTC"));
 
   private static final ZonedDateTime FIRST_DATE = ZonedDateTime.parse("2021-11-07T00:00Z", ISO_OFFSET_DATE_TIME);
 
-  private final InboundRepsForecastSheetParser parser = new InboundRepsForecastSheetParser(logisticCenter -> true);
+  private static final ZonedDateTime FIRST_DATE_FOR_RECEIVING = ZonedDateTime.parse("2021-11-07T23:00Z", ISO_OFFSET_DATE_TIME);
 
-  @Test
+  private final InboundRepsForecastSheetParser parser = new InboundRepsForecastSheetParser();
+
   @DisplayName("Excel Parsed Ok")
-  void parseOk() {
+  @ParameterizedTest
+  @MethodSource("provideFileForParsing")
+  void parseOk(final String file, final boolean isLastVersion) {
     // GIVEN
-    final MeliSheet repsSheet = getMeliSheetFrom(parser.name(), VALID_FILE_PATH);
+    final MeliSheet repsSheet = getMeliSheetFrom(parser.name(), file);
 
     // WHEN
     final ForecastSheetDto result = parser.parse("ARBA01", repsSheet, CONF);
 
     // THEN
-    assertSuccessResults(result, true);
-  }
-
-  @Test
-  @DisplayName("Excel Parsed Ok without check_in")
-  void parseOkWithoutCheckIn() {
-    // GIVEN
-    final InboundRepsForecastSheetParser parserToggle = new InboundRepsForecastSheetParser(logisticCenter -> false);
-    final MeliSheet repsSheet = getMeliSheetFrom(parserToggle.name(), VALID_FILE_WITHOUT_CHECK_IN);
-
-    // WHEN
-    final ForecastSheetDto result = parserToggle.parse("ARBA01", repsSheet, CONF);
-
-    // THEN
-    assertSuccessResults(result, false);
+    assertSuccessResults(result, isLastVersion);
   }
 
   @Test
@@ -96,17 +97,24 @@ class InboundRepsForecastSheetParserTest {
     assertTrue(exceptionWarehouse.getMessage().contains("Warehouse id ARTW01 is different from warehouse id ARBA01 from file.\n"));
   }
 
-  private void assertSuccessResults(final ForecastSheetDto result, final boolean hasCheckIn) {
+  private static Stream<Arguments> provideFileForParsing() {
+      return Stream.of(
+              Arguments.of(VALID_FILE_PATH, false),
+              Arguments.of(VALID_FILE_PATH_V2, true)
+      );
+  }
+
+  private void assertSuccessResults(final ForecastSheetDto result, final boolean isLastVersion) {
     assertNotNull(result);
     assertEquals("Plan de staffing", result.getSheetName());
-    assertEquals(7, result.getValues().size());
+    assertEquals(8, result.getValues().size());
+    final String version = (String) result.getValues().get(VERSION);
 
     // PROCESSING DISTRIBUTIONS
     final var processingDistributions = (List<ProcessingDistribution>) result.getValues()
-        .get(PROCESSING_DISTRIBUTION);
+            .get(PROCESSING_DISTRIBUTION);
 
     assertNotNull(processingDistributions);
-    assertEquals(18, processingDistributions.size());
 
     final var receivingTarget = processingDistributions.get(0);
     assertEquals("receiving", receivingTarget.getProcessName());
@@ -118,30 +126,68 @@ class InboundRepsForecastSheetParserTest {
 
     // PRODUCTIVITY
     final var productivities = (List<HeadcountProductivity>) result.getValues()
-        .get(HEADCOUNT_PRODUCTIVITY);
+              .get(HEADCOUNT_PRODUCTIVITY);
 
     assertNotNull(productivities);
-    assertEquals(2, productivities.size());
 
-    final var checkInProductivities = productivities.get(0);
-    assertEquals("check_in", checkInProductivities.getProcessName());
-    assertEquals(168, checkInProductivities.getData().size());
+    if (isLastVersion) {
 
-    final var checkInProductivity = checkInProductivities.getData().get(0);
-    assertEquals(FIRST_DATE, checkInProductivity.getDayTime());
-    if (hasCheckIn) {
-      assertEquals(244, checkInProductivity.getProductivity());
+        assertEquals(SECOND_VERSION, version);
+
+        assertEquals(20, processingDistributions.size());
+
+        assertEquals(3, productivities.size());
+
+        final var receivingProductivities = productivities.get(0);
+        assertEquals(RECEIVING_PROCESS, receivingProductivities.getProcessName());
+        assertEquals(168, receivingProductivities.getData().size());
+
+        final var receivingProductivity = receivingProductivities.getData().get(23);
+        assertEquals(FIRST_DATE_FOR_RECEIVING, receivingProductivity.getDayTime());
+        assertEquals(278, receivingProductivity.getProductivity());
+
+        final var checkInProductivities = productivities.get(1);
+        assertEquals(CHECK_IN_PROCESS, checkInProductivities.getProcessName());
+        assertEquals(168, checkInProductivities.getData().size());
+
+        final var checkInProductivity = checkInProductivities.getData().get(0);
+        assertEquals(FIRST_DATE, checkInProductivity.getDayTime());
+        assertEquals(244, checkInProductivity.getProductivity());
+
+        final var putAwayProductivities = productivities.get(2);
+        assertEquals(PUT_AWAY_PROCESS, putAwayProductivities.getProcessName());
+        assertEquals(168, putAwayProductivities.getData().size());
+
+        final var putAwayProductivity = putAwayProductivities.getData().get(0);
+        assertEquals(FIRST_DATE, putAwayProductivity.getDayTime());
+        assertEquals(313, putAwayProductivity.getProductivity());
+
     } else {
-      assertEquals(407, checkInProductivity.getProductivity());
+
+        assertEquals(FIRST_VERSION, version);
+
+        assertEquals(18, processingDistributions.size());
+
+        assertEquals(2, productivities.size());
+
+        final var checkInProductivities = productivities.get(0);
+        assertEquals(CHECK_IN_PROCESS, checkInProductivities.getProcessName());
+        assertEquals(168, checkInProductivities.getData().size());
+
+        final var checkInProductivity = checkInProductivities.getData().get(0);
+        assertEquals(FIRST_DATE, checkInProductivity.getDayTime());
+        assertEquals(244, checkInProductivity.getProductivity());
+
+
+        final var putAwayProductivities = productivities.get(1);
+        assertEquals(PUT_AWAY_PROCESS, putAwayProductivities.getProcessName());
+        assertEquals(168, putAwayProductivities.getData().size());
+
+        final var putAwayProductivity = putAwayProductivities.getData().get(0);
+        assertEquals(FIRST_DATE, putAwayProductivity.getDayTime());
+        assertEquals(313, putAwayProductivity.getProductivity());
+
     }
-
-    final var putAwayProductivities = productivities.get(1);
-    assertEquals("put_away", putAwayProductivities.getProcessName());
-    assertEquals(168, putAwayProductivities.getData().size());
-
-    final var putAwayProductivity = putAwayProductivities.getData().get(0);
-    assertEquals(FIRST_DATE, putAwayProductivity.getDayTime());
-    assertEquals(313, putAwayProductivity.getProductivity());
 
     // POLYVALENCES
     assertTrue(result.getValues().containsKey(INBOUND_CHECKIN_PRODUCTIVITY_POLYVALENCES));
