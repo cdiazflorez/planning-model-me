@@ -8,35 +8,41 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
 import lombok.Value;
 
 @Value
-@Builder(toBuilder = true)
-public class DeviationRequest {
+public class SaveDeviationRequest {
 
   @NotEmpty
   String warehouseId;
+
   @NotNull
-  ZonedDateTime dateFrom;
-  @NotNull
-  ZonedDateTime dateTo;
-  @NotNull
-  Double value;
-  @NotNull
-  long userId;
+  Workflow workflow;
+
   List<ShipmentType> shipmentTypes;
 
-  public SaveDeviationInput toDeviationInput(final Workflow workflow, final DeviationType type) {
-    return SaveDeviationInput.builder()
-        .workflow(workflow)
-        .warehouseId(warehouseId)
-        .dateFrom(dateFrom)
-        .dateTo(dateTo)
-        .value(value)
-        .type(type)
-        .userId(userId)
-        .paths(shipmentTypes)
-        .build();
+  @NotNull
+  ZonedDateTime dateFrom;
+
+  @NotNull
+  ZonedDateTime dateTo;
+
+  @NotNull
+  Double value;
+
+  @NotNull
+  long userId;
+
+  public SaveDeviationInput toDeviationInput(final DeviationType type) {
+    return new SaveDeviationInput(
+        warehouseId,
+        workflow,
+        shipmentTypes,
+        dateFrom,
+        dateTo,
+        type,
+        value,
+        userId
+    );
   }
 }

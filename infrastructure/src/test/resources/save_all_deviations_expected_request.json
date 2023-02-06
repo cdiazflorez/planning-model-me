@@ -1,0 +1,1 @@
+[{"date_from":"2021-01-21T15:00:00Z","date_to":"2021-01-21T17:00:00Z","paths":["spd","private"],"type":"units","user_id":1234,"value":0.1,"warehouse_id":"ARTW01","workflow":"inbound"},{"date_from":"2021-01-21T15:00:00Z","date_to":"2021-01-21T17:00:00Z","paths":null,"type":"units","user_id":1234,"value":0.1,"warehouse_id":"ARTW01","workflow":"inbound-transfer"}]

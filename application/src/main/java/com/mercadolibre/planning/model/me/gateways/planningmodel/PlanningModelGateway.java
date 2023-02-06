@@ -3,7 +3,6 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Deviation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
@@ -31,24 +30,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * @deprecated use any of {@link com.mercadolibre.planning.model.me.gateways.entity.EntityGateway},
+ *     {@link  com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway},
+ *     {@link DeviationGateway} or create a new Gateway if needed.
+ */
 @Deprecated
 public interface PlanningModelGateway {
 
-    List<MagnitudePhoto> getTrajectories(TrajectoriesRequest request);
+  List<MagnitudePhoto> getTrajectories(TrajectoriesRequest request);
 
-    List<Metadata> getForecastMetadata(Workflow workflow, ForecastMetadataRequest request);
+  List<Metadata> getForecastMetadata(Workflow workflow, ForecastMetadataRequest request);
 
-    List<Productivity> getProductivity(ProductivityRequest request);
+  List<Productivity> getProductivity(ProductivityRequest request);
 
-    List<MagnitudePhoto> getPerformedProcessing(TrajectoriesRequest request);
+  List<MagnitudePhoto> getPerformedProcessing(TrajectoriesRequest request);
 
-    Map<MagnitudeType, List<MagnitudePhoto>> searchTrajectories(SearchTrajectoriesRequest request);
+  Map<MagnitudeType, List<MagnitudePhoto>> searchTrajectories(SearchTrajectoriesRequest request);
 
-    List<ProjectionResult> runProjection(ProjectionRequest request);
+  List<ProjectionResult> runProjection(ProjectionRequest request);
 
-    List<ProjectionResult> runDeferralProjection(ProjectionRequest request);
+  List<ProjectionResult> runDeferralProjection(ProjectionRequest request);
 
-    List<ProjectionResult> runSimulation(SimulationRequest request);
+  List<ProjectionResult> runSimulation(SimulationRequest request);
 
   List<ProjectionResult> saveSimulation(SimulationRequest request);
 

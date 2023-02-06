@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Optional.ofNullable;
@@ -9,6 +10,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -112,6 +114,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private static final String DELIMITER = ",";
 
+  private static final String SAVE_ALL_DEVIATIONS = "/planning/model/workflows/%s/deviations/save/all";
+
   private final ObjectMapper objectMapper;
 
   public PlanningModelApiClient(MeliRestClient client, ObjectMapper objectMapper) {
@@ -124,8 +128,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public List<MagnitudePhoto> getTrajectories(final TrajectoriesRequest trajectoriesRequest) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL + "/entities/%s",
-                    trajectoriesRequest.getWorkflow().getName(),
-                    trajectoriesRequest.getEntityType().getName()))
+            trajectoriesRequest.getWorkflow().getName(),
+            trajectoriesRequest.getEntityType().getName()))
         .POST(requestSupplier(trajectoriesRequest))
         .queryParams(createEntityParams(trajectoriesRequest))
         .acceptedHttpStatuses(Set.of(OK))
@@ -159,7 +163,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public List<Productivity> getProductivity(final ProductivityRequest productivityRequest) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL + "/entities/productivity",
-                    productivityRequest.getWorkflow().getName()))
+            productivityRequest.getWorkflow().getName()))
         .POST(requestSupplier(productivityRequest))
         .queryParams(createEntityParams(productivityRequest))
         .acceptedHttpStatuses(Set.of(OK))
@@ -177,7 +181,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public List<MagnitudePhoto> getPerformedProcessing(final TrajectoriesRequest request) {
     final HttpRequest httpRequest = HttpRequest.builder()
         .url(format(WORKFLOWS_URL + "/entities/performed_processing",
-                    request.getWorkflow().getName()))
+            request.getWorkflow().getName()))
         .GET()
         .queryParams(createEntityParams(request))
         .acceptedHttpStatuses(Set.of(OK))
@@ -254,7 +258,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public List<ProjectionResult> runSimulation(final SimulationRequest simulationRequest) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
-                 + SIMULATIONS_PREFIX_URL + "/run")
+            + SIMULATIONS_PREFIX_URL + "/run")
         .POST(requestSupplier(simulationRequest))
         .acceptedHttpStatuses(Set.of(OK))
         .build();
@@ -268,7 +272,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public List<ProjectionResult> saveSimulation(final SimulationRequest simulationRequest) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, simulationRequest.getWorkflow())
-                 + SIMULATIONS_PREFIX_URL + "/save")
+            + SIMULATIONS_PREFIX_URL + "/save")
         .POST(requestSupplier(simulationRequest))
         .acceptedHttpStatuses(Set.of(OK))
         .build();
@@ -371,7 +375,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public void deferralSaveSimulation(SaveSimulationsRequest saveSimulationsRequest) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(WORKFLOWS_URL, saveSimulationsRequest.getWorkflow())
-                 + SIMULATIONS_PREFIX_URL + "/deferral/save")
+            + SIMULATIONS_PREFIX_URL + "/deferral/save")
         .POST(requestSupplier(saveSimulationsRequest))
         .acceptedHttpStatuses(Set.of(OK))
         .build();
@@ -435,30 +439,29 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
-    @Trace
-    @Override
-    public List<Deviation> getActiveDeviations(final Set<Workflow> workflows,
-                                               final String warehouseId,
-                                               final Instant date) {
-        final Map<String, String> params = Map.of(
-                WAREHOUSE_ID, warehouseId,
-                "date", date.toString(),
-                "workflows", workflows.stream().map(Workflow::getName).collect(joining(DELIMITER))
-        );
-        final HttpRequest request = HttpRequest.builder()
-                //TODO delete this when traffic route is active.
-                .url(format(WORKFLOWS_URL, Workflow.FBM_WMS_INBOUND)
-                        + ACTIVE_DEVIATIONS_URL)
-                .GET()
-                .queryParams(params)
-                .acceptedHttpStatuses(Set.of(OK))
-                .build();
+  @Trace
+  @Override
+  public List<Deviation> getActiveDeviations(final Set<Workflow> workflows,
+                                             final String warehouseId,
+                                             final Instant date) {
+    final Map<String, String> params = Map.of(
+        WAREHOUSE_ID, warehouseId,
+        "date", date.toString(),
+        "workflows", workflows.stream().map(Workflow::getName).collect(joining(DELIMITER))
+    );
+    final HttpRequest request = HttpRequest.builder()
+        //TODO delete this when traffic route is active.
+        .url(format(WORKFLOWS_URL, FBM_WMS_INBOUND) + ACTIVE_DEVIATIONS_URL)
+        .GET()
+        .queryParams(params)
+        .acceptedHttpStatuses(Set.of(OK))
+        .build();
 
-        return send(request, response -> response.getData(new TypeReference<>() {
-        }));
-    }
+    return send(request, response -> response.getData(new TypeReference<>() {
+    }));
+  }
 
-    @Trace
+  @Trace
   @Override
   public SaveUnitsResponse saveShareDistribution(final List<ShareDistribution> shareDistributionList, final Workflow workflow) {
     final HttpRequest request = HttpRequest.builder()
@@ -490,6 +493,9 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  /**
+   * @deprecated use {@link #save(List)}
+   */
   @Trace
   @Override
   @Deprecated
@@ -505,8 +511,12 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
+  /**
+   * @deprecated use {@link #save(List)}
+   */
   @Trace
   @Override
+  @Deprecated
   public DeviationResponse newSaveDeviation(final SaveDeviationInput saveDeviationInput) {
     final HttpRequest request = HttpRequest.builder()
         .url(format(BASE_DEVIATIONS_URL, saveDeviationInput.getWorkflow(), SAVE + saveDeviationInput.getType().getName()))
@@ -515,6 +525,18 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
         .build();
 
     return send(request, response -> response.getData(new TypeReference<>() {
+    }));
+  }
+
+  @Trace
+  @Override
+  public void save(final List<SaveDeviationInput> deviations) {
+    final HttpRequest request = HttpRequest.builder()
+        .url(format(SAVE_ALL_DEVIATIONS, FBM_WMS_INBOUND))
+        .POST(requestSupplier(deviations))
+        .acceptedHttpStatuses(Set.of(OK, CREATED, NO_CONTENT))
+        .build();
+    send(request, response -> response.getData(new TypeReference<>() {
     }));
   }
 
@@ -547,8 +569,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   protected Map<String, String> createEntityParams(final TrajectoriesRequest request) {
     final Map<String, String> params = getBaseParam(request.getWarehouseId(),
-                                                    request.getDateFrom(),
-                                                    request.getDateTo());
+        request.getDateFrom(),
+        request.getDateTo());
     params.put("process_name", getEnumNamesAsString(request.getProcessName()));
     if (request.getProcessingType() != null) {
       params.put("processing_type", getEnumNamesAsString(request.getProcessingType()));
