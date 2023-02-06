@@ -6,17 +6,22 @@ import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZo
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogByDateInbound;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogByDateDto;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionDataInput;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -86,4 +91,28 @@ public abstract class GetProjectionInbound extends GetProjection {
   protected long getDatesToShowShift() {
     return DAYS_TO_SHOW_LOOKBACK;
   }
+
+  @Override
+  protected List<Projection> getProjectionData(
+      final GetProjectionInputDto input,
+      final ZonedDateTime dateFrom,
+      final ZonedDateTime dateTo,
+      final List<Backlog> backlogs,
+      final List<ProjectionResult> projection) {
+
+    final List<Backlog> sales = getRealBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
+
+    return ProjectionDataMapper.map(GetProjectionDataInput.builder()
+        .workflow(input.getWorkflow())
+        .warehouseId(input.getWarehouseId())
+        .dateFrom(dateFrom)
+        .dateTo(dateTo)
+        .sales(sales)
+        .planningDistribution(Collections.emptyList())
+        .projections(projection)
+        .backlogs(backlogs)
+        .showDeviation(true)
+        .build());
+  }
+
 }

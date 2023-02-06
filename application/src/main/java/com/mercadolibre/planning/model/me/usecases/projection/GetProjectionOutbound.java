@@ -19,6 +19,7 @@ import static java.util.List.of;
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.entities.projection.Projection;
 import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTime;
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
@@ -31,12 +32,14 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeR
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.PackingRatio;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
+import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionDataInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import java.time.Duration;
@@ -215,6 +218,30 @@ public abstract class GetProjectionOutbound extends GetProjection {
       return getPickingRatioForTotePacking(dateFrom, dateTo);
     }
 
+  }
+
+  protected List<Projection> getProjectionData(final GetProjectionInputDto input,
+                                               final ZonedDateTime dateFrom,
+                                               final ZonedDateTime dateTo,
+                                               final List<Backlog> backlogs,
+                                               final List<ProjectionResult> projection) {
+
+    final List<Backlog> sales = getRealBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
+
+    final List<PlanningDistributionResponse> planningDistribution =
+        getForecastedBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
+
+    return ProjectionDataMapper.map(GetProjectionDataInput.builder()
+        .workflow(input.getWorkflow())
+        .warehouseId(input.getWarehouseId())
+        .dateFrom(dateFrom)
+        .dateTo(dateTo)
+        .sales(sales)
+        .planningDistribution(planningDistribution)
+        .projections(projection)
+        .backlogs(backlogs)
+        .showDeviation(true)
+        .build());
   }
 
   private Map<Instant, PackingRatio> getPickingRatioForTotePacking(final Instant dateFrom, final Instant dateTo) {

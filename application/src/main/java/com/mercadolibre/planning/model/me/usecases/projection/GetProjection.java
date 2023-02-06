@@ -18,7 +18,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionDataInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
@@ -163,30 +162,6 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
     return projectionsSla;
   }
 
-  private List<Projection> getProjectionData(final GetProjectionInputDto input,
-                                             final ZonedDateTime dateFrom,
-                                             final ZonedDateTime dateTo,
-                                             final List<Backlog> backlogs,
-                                             final List<ProjectionResult> projection) {
-
-    final List<Backlog> sales = getRealBacklog(input.getWarehouseId(), input.getWorkflow(), dateFrom, dateTo);
-
-    final List<PlanningDistributionResponse> planningDistribution = getForecastedBacklog(input.getWarehouseId(),
-        input.getWorkflow(), dateFrom, dateTo);
-
-    return ProjectionDataMapper.map(GetProjectionDataInput.builder()
-        .workflow(input.getWorkflow())
-        .warehouseId(input.getWarehouseId())
-        .dateFrom(dateFrom)
-        .dateTo(dateTo)
-        .sales(sales)
-        .planningDistribution(planningDistribution)
-        .projections(projection)
-        .backlogs(backlogs)
-        .showDeviation(true)
-        .build());
-  }
-
   protected List<PlanningDistributionResponse> getForecastedBacklog(final String warehouseId,
                                                                     final Workflow workflow,
                                                                     final ZonedDateTime dateFrom,
@@ -203,10 +178,10 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
         .build());
   }
 
-  private List<Backlog> getRealBacklog(final String warehouseId,
-                                       final Workflow workflow,
-                                       final ZonedDateTime dateFrom,
-                                       final ZonedDateTime dateTo) {
+  protected List<Backlog> getRealBacklog(final String warehouseId,
+                                         final Workflow workflow,
+                                         final ZonedDateTime dateFrom,
+                                         final ZonedDateTime dateTo) {
     return getSales.execute(GetSalesInputDto.builder()
         .dateCreatedFrom(dateFrom.minusHours(SELLING_PERIOD_HOURS))
         .dateCreatedTo(dateFrom)
@@ -234,4 +209,11 @@ public abstract class GetProjection implements UseCase<GetProjectionInputDto, Pl
                                               Instant dateToToProject,
                                               ZoneId zoneId,
                                               Instant requestDate);
+
+  protected abstract List<Projection> getProjectionData(
+      GetProjectionInputDto input,
+      ZonedDateTime dateFrom,
+      ZonedDateTime dateTo,
+      List<Backlog> backlogs,
+      List<ProjectionResult> projection);
 }
