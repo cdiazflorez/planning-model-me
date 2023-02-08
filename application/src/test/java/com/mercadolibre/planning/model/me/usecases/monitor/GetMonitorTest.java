@@ -96,8 +96,8 @@ class GetMonitorTest {
 
         final CurrentStatusData currentStatusData = (CurrentStatusData) monitorDataList.get(1);
         final Set<Process> processes = currentStatusData.getProcesses();
-      assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
-      assertEquals(6, processes.size());
+        assertEquals(CURRENT_STATUS.getType(), currentStatusData.getType());
+        assertEquals(6, processes.size());
 
         List<Process> processList = new ArrayList<>(currentStatusData.getProcesses());
 
@@ -210,25 +210,25 @@ class GetMonitorTest {
                                                 List.of(createMetric(TOTAL_BACKLOG.getTitle(),
                                                         TOTAL_BACKLOG.getType(),
                                                         PACKING_WALL.getSubtitle(),
-                                                    "981 uds.")
+                                                        "981 uds.")
                                                 )
                                         ).build(),
-                            Process.builder().title(WALL_IN.getTitle())
-                                .metrics(
-                                    List.of(createMetric(TOTAL_BACKLOG.getTitle(),
-                                        TOTAL_BACKLOG.getType(),
-                                        WALL_IN.getSubtitle(),
-                                        "725 uds.")
-                                    )
-                                ).build(),
-                            Process.builder().title(BATCH_SORTED.getTitle())
-                                .metrics(
-                                    List.of(createMetric(TOTAL_BACKLOG.getTitle(),
-                                        TOTAL_BACKLOG.getType(),
-                                        BATCH_SORTED.getSubtitle(),
-                                        "725 uds.")
-                                    )
-                                ).build()
+                                Process.builder().title(WALL_IN.getTitle())
+                                        .metrics(
+                                                List.of(createMetric(TOTAL_BACKLOG.getTitle(),
+                                                        TOTAL_BACKLOG.getType(),
+                                                        WALL_IN.getSubtitle(),
+                                                        "725 uds.")
+                                                )
+                                        ).build(),
+                                Process.builder().title(BATCH_SORTED.getTitle())
+                                        .metrics(
+                                                List.of(createMetric(TOTAL_BACKLOG.getTitle(),
+                                                        TOTAL_BACKLOG.getType(),
+                                                        BATCH_SORTED.getSubtitle(),
+                                                        "725 uds.")
+                                                )
+                                        ).build()
                         ))
                 ).build());
 
@@ -269,7 +269,7 @@ class GetMonitorTest {
                                 .title("Se ajustó el forecast 5.80%s de 02:30 a 12:30")
                                 .icon("info")
                                 .build())
-                .build());
+                        .build());
     }
 
     private Metric createMetric(final String title, final String type, final String subtitle,
