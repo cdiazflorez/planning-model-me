@@ -107,6 +107,25 @@ class MonitorControllerTest {
   }
 
   @Test
+  void testOutboundMonitorsDataError() throws Exception {
+    // GIVEN
+    when(getMonitor.execute(any()))
+        .thenReturn(mockCurrentStatus());
+
+    // WHEN
+    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+        .get(format(URL, FBM_WMS_OUTBOUND.getName()) + "/monitors")
+        .param(WAREHOUSE_ID, WAREHOUSE_ID_ARTW01)
+        .param("caller.id", String.valueOf(USER_ID))
+        .param("date_from", "2019-07-28T00:00:00.000-05:00")
+        .param("date_to", "2019-07-27T00:00:00.000-05:00")
+    );
+
+    // THEN
+    result.andExpect(status().isBadRequest());
+  }
+
+  @Test
   void testGetInboundMonitors() throws Exception {
     // GIVEN
     when(requestClock.now()).thenReturn(VIEW_DATE);
@@ -133,24 +152,24 @@ class MonitorControllerTest {
     verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, List.of(OUTBOUND_PROJECTION)));
   }
 
-    @Test
-    void testGetInboundMonitorsNew() throws Exception {
-        // GIVEN
-        when(requestClock.now()).thenReturn(Instant.now());
-        when(getBacklogScheduled.execute(
-            WAREHOUSE_ID_ARTW01,
-            VIEW_DATE
-        ))
-            .thenReturn(mockBacklogScheduled(VIEW_DATE));
-        when(getActiveDeviations.execute(WAREHOUSE_ID_ARTW01, VIEW_DATE)).thenReturn(mockActiveDeviations());
+  @Test
+  void testGetInboundMonitorsNew() throws Exception {
+    // GIVEN
+    when(requestClock.now()).thenReturn(Instant.now());
+    when(getBacklogScheduled.execute(
+        WAREHOUSE_ID_ARTW01,
+        VIEW_DATE
+    ))
+        .thenReturn(mockBacklogScheduled(VIEW_DATE));
+    when(getActiveDeviations.execute(WAREHOUSE_ID_ARTW01, VIEW_DATE)).thenReturn(mockActiveDeviations());
 
-        // WHEN
-        final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
-            .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors/new")
-            .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-            .param("caller.id", String.valueOf(USER_ID))
-            .param("view_date", String.valueOf(VIEW_DATE))
-        );
+    // WHEN
+    final ResultActions result = mockMvc.perform(MockMvcRequestBuilders
+        .get(format(URL, FBM_WMS_INBOUND.getName()) + "/monitors/new")
+        .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+        .param("caller.id", String.valueOf(USER_ID))
+        .param("view_date", String.valueOf(VIEW_DATE))
+    );
 
 
     // THEN

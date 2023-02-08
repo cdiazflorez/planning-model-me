@@ -22,72 +22,74 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
-    private static final String EXCEPTION_ATTRIBUTE = "application.exception";
+  private static final String EXCEPTION_ATTRIBUTE = "application.exception";
 
-    private static final String BAD_REQUEST_ERROR = "bad_request";
+  private static final String BAD_REQUEST_ERROR = "bad_request";
 
-    @ExceptionHandler(UserNotAuthorizedException.class)
-    public ResponseEntity<ErrorResponse> handle(final UserNotAuthorizedException exception,
-                                                final HttpServletRequest request) {
+  @ExceptionHandler(UserNotAuthorizedException.class)
+  public ResponseEntity<ErrorResponse> handle(final UserNotAuthorizedException exception,
+                                              final HttpServletRequest request) {
 
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.FORBIDDEN)
-                .message(exception.getMessage())
-                .error("user_not_authorized_error")
-                .build();
+    final ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.FORBIDDEN)
+        .message(exception.getMessage())
+        .error("user_not_authorized_error")
+        .build();
 
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+    log.error(exception.getMessage(), exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
 
-    @ExceptionHandler(ForecastParsingException.class)
-    public ResponseEntity<ErrorResponse> handleException(
-            Exception exception,
-            HttpServletRequest request) {
+  @ExceptionHandler(ForecastParsingException.class)
+  public ResponseEntity<ErrorResponse> handleException(
+      Exception exception,
+      HttpServletRequest request) {
 
-        log.error(exception.getMessage(), exception);
-        return getBadRequestResponseEntity(exception, request);
-    }
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
 
-    @ExceptionHandler(UnmatchedWarehouseException.class)
-    public ResponseEntity<ErrorResponse> handleUnmatchedWarehouseException(
-            Exception exception,
-            HttpServletRequest request) {
+  @ExceptionHandler(UnmatchedWarehouseException.class)
+  public ResponseEntity<ErrorResponse> handleUnmatchedWarehouseException(
+      Exception exception,
+      HttpServletRequest request) {
 
-        log.error(exception.getMessage(), exception);
-        return getBadRequestResponseEntity(exception, request);
-    }
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
 
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingParameterException(
-            final MissingServletRequestParameterException exception,
-            final HttpServletRequest request) {
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<ErrorResponse> handleMissingParameterException(
+      final MissingServletRequestParameterException exception,
+      final HttpServletRequest request) {
 
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST)
-                .message(exception.getMessage())
-                .error("missing_parameter")
-                .build();
+    final ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.BAD_REQUEST)
+        .message(exception.getMessage())
+        .error("missing_parameter")
+        .build();
 
-        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
-        log.error(exception.getMessage(), exception);
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+    log.error(exception.getMessage(), exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
 
-    @ExceptionHandler(ForecastNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleForecastNotFoundException(
-            final ForecastNotFoundException exception,
-            final HttpServletRequest request) {
+  @ExceptionHandler(ForecastNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleForecastNotFoundException(
+      final ForecastNotFoundException exception,
+      final HttpServletRequest request) {
 
-      final ErrorResponse errorResponse = ErrorResponse.builder()
-          .status(HttpStatus.NOT_FOUND)
-          .message(exception.getMessage())
-          .error("forecast_not_found")
-          .build();
+    final ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.NOT_FOUND)
+        .message(exception.getMessage())
+        .error("forecast_not_found")
+        .build();
 
-      request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
-      log.error(exception.getMessage(), exception);
-      return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+    log.error(exception.getMessage(), exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
@@ -123,87 +125,99 @@ public class ApiExceptionHandler {
     return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
   }
 
-    @ExceptionHandler(NoPlannedDataException.class)
-    public ResponseEntity<ErrorResponse> handleNoPlannedDataException(
-            final NoPlannedDataException exception,
-            final HttpServletRequest request) {
+  @ExceptionHandler(InvalidParamException.class)
+  public ResponseEntity<ErrorResponse> handleInvalidParamException(
+      final InvalidParamException exception,
+      final HttpServletRequest request) {
 
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.NOT_FOUND)
-                .message(exception.getMessage())
-                .error("no_planned_data_forecast_not_found")
-                .build();
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
 
-        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
-        log.error(exception.getMessage(), exception);
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+  @ExceptionHandler(NoPlannedDataException.class)
+  public ResponseEntity<ErrorResponse> handleNoPlannedDataException(
+      final NoPlannedDataException exception,
+      final HttpServletRequest request) {
 
-    @ExceptionHandler(NullValueAtCellException.class)
-    public ResponseEntity<ErrorResponse> handleNullValueAtCellException(
-            NullValueAtCellException exception,
-            HttpServletRequest request) {
+    final ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.NOT_FOUND)
+        .message(exception.getMessage())
+        .error("no_planned_data_forecast_not_found")
+        .build();
 
-        log.error(exception.getMessage(), exception);
-        return getBadRequestResponseEntity(exception, request);
-    }
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+    log.error(exception.getMessage(), exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(
-            final Exception exception,
-            final HttpServletRequest request) {
+  @ExceptionHandler(NullValueAtCellException.class)
+  public ResponseEntity<ErrorResponse> handleNullValueAtCellException(
+      NullValueAtCellException exception,
+      HttpServletRequest request) {
 
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .message(exception.getMessage())
-                .error("unknown_error")
-                .build();
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
 
-        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorResponse> handleGenericException(
+      final Exception exception,
+      final HttpServletRequest request) {
 
-        log.error(exception.getMessage(), exception);
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+    ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .message(exception.getMessage())
+        .error("unknown_error")
+        .build();
 
-    @ExceptionHandler(BacklogNotRespondingException.class)
-    public ResponseEntity<ErrorResponse> handleBacklogNotRespondingException ( final BacklogNotRespondingException exception, HttpServletRequest request) {
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-            .status(HttpStatus.UNPROCESSABLE_ENTITY)
-            .message(exception.getMessage())
-            .error("unprocessable_entity")
-            .build();
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
 
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+    log.error(exception.getMessage(), exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
 
-    @ExceptionHandler(ForecastWorkersInvalidException.class)
-    public ResponseEntity<ErrorResponse> handleForecastWorkersInvalidException(
-        ForecastWorkersInvalidException exception,
-        HttpServletRequest request) {
+  @ExceptionHandler(BacklogNotRespondingException.class)
+  public ResponseEntity<ErrorResponse> handleBacklogNotRespondingException(final BacklogNotRespondingException exception,
+                                                                           HttpServletRequest request) {
+    final ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.UNPROCESSABLE_ENTITY)
+        .message(exception.getMessage())
+        .error("unprocessable_entity")
+        .build();
 
-        log.error(exception.getMessage(), exception);
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+    log.error(exception.getMessage(), exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
 
-        final ErrorResponse errorResponse = ErrorResponse.builder()
-            .status(HttpStatus.BAD_REQUEST)
-            .message(exception.getMessage())
-            .code(exception.getCode())
-            .error(BAD_REQUEST_ERROR)
-            .build();
+  @ExceptionHandler(ForecastWorkersInvalidException.class)
+  public ResponseEntity<ErrorResponse> handleForecastWorkersInvalidException(
+      ForecastWorkersInvalidException exception,
+      HttpServletRequest request) {
 
-        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+    log.error(exception.getMessage(), exception);
 
-    private ResponseEntity<ErrorResponse> getBadRequestResponseEntity(
-            Exception exception,
-            HttpServletRequest request) {
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST)
-                .message(exception.getMessage())
-                .error(BAD_REQUEST_ERROR)
-                .build();
+    final ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.BAD_REQUEST)
+        .message(exception.getMessage())
+        .code(exception.getCode())
+        .error(BAD_REQUEST_ERROR)
+        .build();
 
-        request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
-    }
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
+
+  private ResponseEntity<ErrorResponse> getBadRequestResponseEntity(
+      Exception exception,
+      HttpServletRequest request) {
+    ErrorResponse errorResponse = ErrorResponse.builder()
+        .status(HttpStatus.BAD_REQUEST)
+        .message(exception.getMessage())
+        .error(BAD_REQUEST_ERROR)
+        .build();
+
+    request.setAttribute(EXCEPTION_ATTRIBUTE, exception);
+    return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
+  }
 }

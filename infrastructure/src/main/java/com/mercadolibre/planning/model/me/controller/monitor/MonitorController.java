@@ -5,6 +5,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Wor
 
 import com.mercadolibre.planning.model.me.controller.RequestClock;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
+import com.mercadolibre.planning.model.me.exception.InvalidParamException;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogScheduled;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Indicator;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.ScheduleAdjustment;
@@ -62,6 +63,10 @@ public class MonitorController {
       @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime dateFrom,
       @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime dateTo) {
 
+    if (dateFrom.isAfter(dateTo)) {
+      throw new InvalidParamException("dataFrom cannot be greater than dataTo");
+    }
+
     authorizeUser.execute(new AuthorizeUserDto(callerId, List.of(OUTBOUND_PROJECTION)));
 
     return ResponseEntity.of(Optional.of(getMonitor.execute(
@@ -111,11 +116,13 @@ public class MonitorController {
 
   private Map<String, BacklogScheduled> getMapBacklogScheduled(final InboundBacklogMonitor inboundBacklogMonitor) {
 
+    final int minScheduled = 2;
+
     Map<String, BacklogScheduled> backlogScheduledMap = new ConcurrentHashMap<>();
-    if (!inboundBacklogMonitor.getScheduled().isEmpty() && inboundBacklogMonitor.getScheduled().size() >= 2) {
+    if (!inboundBacklogMonitor.getScheduled().isEmpty() && inboundBacklogMonitor.getScheduled().size() >= minScheduled) {
       BacklogScheduledMetrics inboundMetrics = inboundBacklogMonitor.getScheduled().get(0).getInbound();
       BacklogScheduledMetrics transferMetrics = inboundBacklogMonitor.getScheduled().get(0).getInboundTransfer();
-      BacklogScheduledMetrics totalMetrics = inboundBacklogMonitor.getScheduled().get(1).getTotal();
+      // BacklogScheduledMetrics totalMetrics = inboundBacklogMonitor.getScheduled().get(1).getTotal();
 
       BacklogScheduled backlogInbound = toBacklogScheduled(inboundMetrics);
       BacklogScheduled backlogTransfer = toBacklogScheduled(transferMetrics);
