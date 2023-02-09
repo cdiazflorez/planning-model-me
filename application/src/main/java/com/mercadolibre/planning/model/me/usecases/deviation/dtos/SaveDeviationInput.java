@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.deviation.dtos;
 
 import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.enums.ShipmentType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveDeviationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -30,4 +31,7 @@ public class SaveDeviationInput {
 
   long userId;
 
+  public SaveDeviationRequest toSaveDeviationApiRequest() {
+    return new SaveDeviationRequest(warehouseId, workflow, paths, dateFrom, dateTo, type, value, userId);
+  }
 }

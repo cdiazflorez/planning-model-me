@@ -6,20 +6,16 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import java.time.ZonedDateTime;
 import java.util.List;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Value;
 
 @Value
 public class SaveDeviationRequest {
 
-  @NotEmpty
-  String warehouseId;
-
   @NotNull
   Workflow workflow;
 
-  List<ShipmentType> shipmentTypes;
+  List<ShipmentType> affectedShipmentTypes;
 
   @NotNull
   ZonedDateTime dateFrom;
@@ -30,19 +26,18 @@ public class SaveDeviationRequest {
   @NotNull
   Double value;
 
-  @NotNull
-  long userId;
-
-  public SaveDeviationInput toDeviationInput(final DeviationType type) {
+  public SaveDeviationInput toDeviationInput(final String logisticCenterId,
+                                             final Long callerId,
+                                             final DeviationType type) {
     return new SaveDeviationInput(
-        warehouseId,
+        logisticCenterId,
         workflow,
-        shipmentTypes,
+        affectedShipmentTypes,
         dateFrom,
         dateTo,
         type,
         value,
-        userId
+        callerId
     );
   }
 }

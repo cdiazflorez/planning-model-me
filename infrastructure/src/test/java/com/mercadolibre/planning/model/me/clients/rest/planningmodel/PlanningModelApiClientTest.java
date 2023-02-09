@@ -68,6 +68,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveDeviationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveSimulationsRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -150,25 +151,25 @@ class PlanningModelApiClientTest extends BaseClientTest {
   private static final ZonedDateTime DATE_TO = parse("2021-01-21T17:00Z[UTC]");
 
   private static final List<SaveDeviationInput> DEVIATIONS = List.of(
-      SaveDeviationInput.builder()
-          .warehouseId(WAREHOUSE_ID_ARTW01)
-          .workflow(INBOUND)
-          .paths(List.of(ShipmentType.SPD, ShipmentType.PRIVATE))
-          .dateFrom(DATE_FROM)
-          .dateTo(DATE_TO)
-          .type(DeviationType.UNITS)
-          .value(0.1)
-          .userId(USER_ID)
-          .build(),
-      SaveDeviationInput.builder()
-          .warehouseId(WAREHOUSE_ID_ARTW01)
-          .workflow(INBOUND_TRANSFER)
-          .dateFrom(DATE_FROM)
-          .dateTo(DATE_TO)
-          .type(DeviationType.UNITS)
-          .value(0.1)
-          .userId(USER_ID)
-          .build()
+    SaveDeviationInput.builder()
+        .warehouseId(WAREHOUSE_ID_ARTW01)
+        .workflow(INBOUND)
+        .paths(List.of(ShipmentType.SPD, ShipmentType.PRIVATE))
+        .dateFrom(DATE_FROM)
+        .dateTo(DATE_TO)
+        .type(DeviationType.UNITS)
+        .value(0.1)
+        .userId(USER_ID)
+        .build(),
+    SaveDeviationInput.builder()
+        .warehouseId(WAREHOUSE_ID_ARTW01)
+        .workflow(INBOUND_TRANSFER)
+        .dateFrom(DATE_FROM)
+        .dateTo(DATE_TO)
+        .type(DeviationType.UNITS)
+        .value(0.1)
+        .userId(USER_ID)
+        .build()
   );
 
   private PlanningModelApiClient client;
@@ -1415,7 +1416,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
       final var interceptor = new TestInterceptor();
       MockResponse.builder()
           .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/save/all", FBM_WMS_INBOUND))
+          .withURL(format(BASE_URL + DEVIATION_URL, INBOUND) + "/save/all")
           .withStatusCode(OK.value())
           .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
           .withMockInterceptor(interceptor)
@@ -1428,7 +1429,6 @@ class PlanningModelApiClientTest extends BaseClientTest {
       assertDoesNotThrow(() -> client.save(DEVIATIONS));
       assertEquals(getResourceAsString("save_all_deviations_expected_request.json"), interceptor.getRequestBody());
     }
-
   }
 
   @Nested

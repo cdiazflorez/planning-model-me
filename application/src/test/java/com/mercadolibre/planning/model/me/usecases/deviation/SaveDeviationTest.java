@@ -16,6 +16,7 @@ import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.enums.ShipmentType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.DeviationGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveDeviationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import java.time.ZonedDateTime;
@@ -32,7 +33,7 @@ class SaveDeviationTest {
 
   private static final ZonedDateTime DATE_TO = ZonedDateTime.parse("2021-01-21T17:00Z[UTC]");
 
-  private static final List<SaveDeviationInput> INPUT = List.of(
+  private static final List<SaveDeviationInput> SAVE_DEVIATION_INPUTS = List.of(
       SaveDeviationInput.builder()
           .warehouseId(WAREHOUSE_ID)
           .workflow(INBOUND)
@@ -66,7 +67,7 @@ class SaveDeviationTest {
   @Test
   void testExecuteOkInbound() {
     // GIVEN
-    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, DeviationType.UNITS, 5.9);
+    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, 5.9);
 
     // WHEN
     saveDeviation.execute(saveDeviationInput);
@@ -78,7 +79,7 @@ class SaveDeviationTest {
   @Test
   void testExecuteOkOutbound() {
     // GIVEN
-    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_OUTBOUND, DeviationType.UNITS, 5.9);
+    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_OUTBOUND, 5.9);
 
     // WHEN
     saveDeviation.execute(saveDeviationInput);
@@ -90,7 +91,7 @@ class SaveDeviationTest {
   @Test
   void testExecuteValueGreaterThanRange() {
     // GIVEN
-    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, DeviationType.UNITS, 120.00);
+    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, 120.00);
 
     // WHEN
     final IllegalArgumentException deviationResponse = assertThrows(
@@ -105,7 +106,7 @@ class SaveDeviationTest {
   @Test
   void testExecuteValueLessThanRange() {
     // GIVEN
-    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, DeviationType.UNITS, -120.00);
+    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, -120.00);
 
     // WHEN
     final IllegalArgumentException deviationResponse = assertThrows(
@@ -120,24 +121,23 @@ class SaveDeviationTest {
   @Test
   void testSaveOk() {
     // WHEN
-    saveDeviation.save(INPUT);
+    saveDeviation.save(SAVE_DEVIATION_INPUTS);
 
     // THEN
-    verify(deviationGateway).save(INPUT);
+    verify(deviationGateway).save(SAVE_DEVIATION_INPUTS);
     verifyNoInteractions(planningModelGateway);
   }
 
   private SaveDeviationInput givenSaveDeviationInput(
-      final Workflow warehouse,
-      final DeviationType deviationType,
-      final Double value
+          final Workflow warehouse,
+          final Double value
   ) {
     return SaveDeviationInput.builder()
         .workflow(warehouse)
         .warehouseId(WAREHOUSE_ID)
         .dateFrom(now())
         .dateTo(now().plusDays(1))
-        .type(deviationType)
+        .type(DeviationType.UNITS)
         .value(value)
         .userId(USER_ID)
         .build();

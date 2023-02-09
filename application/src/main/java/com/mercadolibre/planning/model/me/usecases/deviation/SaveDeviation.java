@@ -3,9 +3,11 @@ package com.mercadolibre.planning.model.me.usecases.deviation;
 import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.DeviationGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveDeviationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
 
@@ -25,7 +27,7 @@ public class SaveDeviation {
   }
 
   public void save(final List<SaveDeviationInput> deviations) {
-    deviationGateway.save(deviations);
+      deviationGateway.save(deviations);
   }
 
   private void validateUnitRangeByWorkflow(final DeviationType type, final Workflow workflow, final double value) {
