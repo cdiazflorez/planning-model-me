@@ -1,5 +1,13 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.deviation;
 
+import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
+import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
+import static java.time.ZoneOffset.UTC;
+import static java.time.ZonedDateTime.now;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.util.Map.Entry;
+
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
@@ -15,32 +23,23 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.devi
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationMetric;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnit;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationValues;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
 import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
-import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
-
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.convertToTimeZone;
-import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
-import static java.time.ZoneOffset.UTC;
-import static java.time.ZonedDateTime.now;
-import static java.time.temporal.ChronoUnit.DAYS;
-import static java.util.Map.Entry;
+import javax.inject.Named;
+import lombok.AllArgsConstructor;
 
 @Named
 @AllArgsConstructor
 public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
 
     private static final String UNITS_DEFAULT_STRING = "%d uds.";
-    private static final int DATE_OUT_LIMIT_HOURS = 24;
+    private static final int DATE_OUT_LIMIT_HOURS = 96;
     public static final double HOUR_IN_MINUTES = 60;
 
     private final GetSales getSales;
@@ -49,13 +48,25 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
 
     @Override
     public DeviationData execute(GetDeviationInput input) {
-        final long totalPlanned = getTotalPlannedBacklog(input);
 
-        final int totalSales = getTotalSales(input);
+        final List<PlanningDistributionResponse> forecast = getTotalPlannedBacklog(input);
+
+        final Map<ZonedDateTime, List<PlanningDistributionResponse>> accumulatedByEtd =
+                forecast.stream()
+                        .collect(Collectors.groupingBy(PlanningDistributionResponse::getDateIn));
+
+        final long totalPlanned = accumulatedByEtd.entrySet().stream()
+                .mapToLong(this::getCurrentDateUnits)
+                .sum();
+
+        final List<Backlog> sales = getTotalSales(input);
+        final int totalSales = sales.stream().mapToInt(Backlog::getQuantity).sum();
         final double totalDeviation = getDeviationPercentage(totalPlanned, totalSales);
         final DeviationAppliedData deviationAppliedData = getCurrentDeviation(
                 input.getWarehouseId(),
-                input.getWorkflow());
+                input.getWorkflow(),
+                forecast,
+                sales);
 
         return new DeviationData(DeviationMetric.builder()
                 .deviationPercentage(Metric.builder()
@@ -101,13 +112,13 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
         return totalDeviation > 0 ? "warning" : null;
     }
 
-    private int getTotalSales(GetDeviationInput input) {
+    private List<Backlog> getTotalSales(GetDeviationInput input) {
         final ZonedDateTime dateInFrom = input.getCurrentTime().truncatedTo(DAYS);
         final ZonedDateTime dateInTo = input.getCurrentTime();
         final ZonedDateTime dateOutFrom = input.getCurrentTime();
         final ZonedDateTime dateOutTo = dateOutFrom.plusHours(DATE_OUT_LIMIT_HOURS);
 
-        final List<Backlog> sales = getSales.execute(new GetSalesInputDto(
+        return getSales.execute(new GetSalesInputDto(
                 input.getWorkflow(),
                 input.getWarehouseId(),
                 dateInFrom.withZoneSameInstant(UTC),
@@ -115,17 +126,15 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                 dateOutFrom.withZoneSameInstant(UTC),
                 dateOutTo.withZoneSameInstant(UTC))
         );
-
-        return sales.stream().mapToInt(Backlog::getQuantity).sum();
     }
 
-    private long getTotalPlannedBacklog(GetDeviationInput input) {
+    private List<PlanningDistributionResponse> getTotalPlannedBacklog(GetDeviationInput input) {
         final ZonedDateTime dateInFrom = input.getCurrentTime().truncatedTo(DAYS);
         final ZonedDateTime dateInTo = input.getCurrentTime();
         final ZonedDateTime dateOutFrom = input.getCurrentTime();
         final ZonedDateTime dateOutTo = dateOutFrom.plusHours(DATE_OUT_LIMIT_HOURS);
 
-        List<PlanningDistributionResponse> forecast = planningModelGateway
+        return planningModelGateway
                 .getPlanningDistribution(new PlanningDistributionRequest(
                         input.getWarehouseId(),
                         input.getWorkflow(),
@@ -134,20 +143,14 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                         dateOutFrom.withZoneSameInstant(UTC),
                         dateOutTo.withZoneSameInstant(UTC),
                         true)
-        );
-        final Map<ZonedDateTime, List<PlanningDistributionResponse>> accumulatedByEtd =
-                forecast.stream()
-                        .collect(Collectors.groupingBy(PlanningDistributionResponse::getDateIn));
-        return accumulatedByEtd.entrySet().stream()
-                .mapToLong(this::getCurrentDateUnits)
-                .sum();
+                );
     }
 
     private long getCurrentDateUnits(
             final Entry<ZonedDateTime,
                     List<PlanningDistributionResponse>> planningDistributions) {
         return planningDistributions.getKey().isEqual(getCurrentUtcDate())
-                ? ((Double)(now(UTC).getMinute() / HOUR_IN_MINUTES
+                ? ((Double) (now(UTC).getMinute() / HOUR_IN_MINUTES
                 * sumTotals(planningDistributions.getValue()))).longValue()
                 : sumTotals(planningDistributions.getValue());
     }
@@ -159,13 +162,16 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
     }
 
     private DeviationAppliedData getCurrentDeviation(final String warehouseId,
-                                                     final Workflow workflow) {
+                                                     final Workflow workflow,
+                                                     final List<PlanningDistributionResponse> planned,
+                                                     final List<Backlog> sales) {
         final LogisticCenterConfiguration configuration =
                 logisticCenterGateway.getConfiguration(warehouseId);
 
         DeviationAppliedData deviationAppliedData = null;
 
         try {
+            final int denominator = 100;
             final ZonedDateTime currentDate = now().withZoneSameInstant(UTC);
             final GetDeviationResponse deviationResponse =
                     planningModelGateway.getDeviation(workflow, warehouseId, currentDate);
@@ -177,12 +183,34 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
                 final ZonedDateTime dateTo = convertToTimeZone(configuration.getZoneId(),
                         deviationResponse.getDateTo());
 
+                final Long totalUnitsDiverted = getSalesPlanWeighted(
+                        planned,
+                        sales,
+                        dateFrom,
+                        dateTo
+                );
+
                 final String title = String.format("Se ajustó el forecast %.2f%s de %s a %s",
                         deviationResponse.getValue(), "%",
                         dateFrom.format(HOUR_MINUTES_FORMATTER),
                         dateTo.format(HOUR_MINUTES_FORMATTER)) + getDateCurrent(dateFrom, dateTo);
 
-                deviationAppliedData = new DeviationAppliedData(title, "info");
+                final DeviationValues deviationValues = DeviationValues.builder()
+                        .percentage(deviationResponse.getValue() / denominator)
+                        .units(
+                                (int) Math.floor(
+                                        totalUnitsDiverted * deviationResponse.getValue() / denominator
+                                )
+                        )
+                        .build();
+
+                deviationAppliedData = new DeviationAppliedData(
+                        title,
+                        "info",
+                        deviationValues,
+                        dateFrom.withFixedOffsetZone(),
+                        dateTo.withFixedOffsetZone()
+                );
             }
 
         } catch (Exception e) {
@@ -190,6 +218,31 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
         }
 
         return deviationAppliedData;
+    }
+
+    private Long getSalesPlanWeighted(
+            List<PlanningDistributionResponse> planned,
+            List<Backlog> sales,
+            ZonedDateTime dateFrom,
+            ZonedDateTime dateTo
+    ) {
+
+        final Map<ZonedDateTime, List<PlanningDistributionResponse>> accumulatedByEtd =
+                planned.stream()
+                        .filter(p -> p.getDateOut().isBefore(dateTo))
+                        .collect(Collectors.groupingBy(PlanningDistributionResponse::getDateIn));
+
+        final long totalPlanned = accumulatedByEtd.entrySet().stream()
+                .mapToLong(this::getCurrentDateUnits)
+                .sum();
+
+        final int totalSales = sales.stream()
+                .filter(p -> p.getDate().isAfter(dateFrom))
+                .filter(p -> p.getDate().isBefore(dateTo))
+                .mapToInt(Backlog::getQuantity)
+                .sum();
+
+        return Math.abs(totalPlanned - totalSales);
     }
 
     private String getDateCurrent(final ZonedDateTime dateFrom, final ZonedDateTime dateTo) {
