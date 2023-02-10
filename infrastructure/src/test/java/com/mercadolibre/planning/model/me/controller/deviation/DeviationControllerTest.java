@@ -181,7 +181,9 @@ public class DeviationControllerTest {
     void testSaveDeviationsOk() throws Exception {
       // WHEN
       final var response = mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units/all")
+          .post(format(URL, "INBOUND") + "/save/units/all")
+          .param("caller.id", String.valueOf(USER_ID))
+          .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
           .content(getResourceAsString("post_save_all_deviation_request.json"))
           .contentType(APPLICATION_JSON));
 
@@ -223,7 +225,9 @@ public class DeviationControllerTest {
 
     // WHEN
     final var response = mvc.perform(MockMvcRequestBuilders
-        .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units/all")
+        .post(format(URL, "INBOUND") + "/save/units/all")
+        .param("caller.id", String.valueOf(USER_ID))
+        .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
         .content(getResourceAsString("post_save_all_deviation_request.json"))
         .contentType(APPLICATION_JSON));
 
@@ -238,7 +242,9 @@ public class DeviationControllerTest {
 
       // WHEN
       final var response = mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units/all")
+              .post(format(URL, "INBOUND") + "/save/units/all")
+          .param("caller.id", String.valueOf(USER_ID))
+          .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
           .content("[]")
           .contentType(APPLICATION_JSON));
 

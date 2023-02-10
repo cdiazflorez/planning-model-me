@@ -3,6 +3,7 @@ package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Optional.ofNullable;
@@ -49,6 +50,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveDeviationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveSimulationsRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -81,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -114,7 +117,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private static final String DELIMITER = ",";
 
-  private static final String SAVE_ALL_DEVIATIONS = "/planning/model/workflows/%s/deviations/save/all";
+  //TODO: Remove this when using traffic routes
+  private static final Workflow IGNORABLE_WORKFLOW = INBOUND;
 
   private final ObjectMapper objectMapper;
 
@@ -531,9 +535,13 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   @Trace
   @Override
   public void save(final List<SaveDeviationInput> deviations) {
+    final List<SaveDeviationRequest> deviationRequests = deviations.stream()
+              .map(SaveDeviationInput::toSaveDeviationApiRequest)
+              .collect(Collectors.toList());
+
     final HttpRequest request = HttpRequest.builder()
-        .url(format(SAVE_ALL_DEVIATIONS, FBM_WMS_INBOUND))
-        .POST(requestSupplier(deviations))
+            .url(format(BASE_DEVIATIONS_URL, IGNORABLE_WORKFLOW, "save/all"))
+        .POST(requestSupplier(deviationRequests))
         .acceptedHttpStatuses(Set.of(OK, CREATED, NO_CONTENT))
         .build();
     send(request, response -> response.getData(new TypeReference<>() {

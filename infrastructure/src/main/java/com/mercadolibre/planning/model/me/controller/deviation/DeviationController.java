@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.controller.deviation;
 
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -22,10 +23,10 @@ import com.mercadolibre.planning.model.me.usecases.deviation.DisableDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.SaveDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.SaveOutboundDeviation;
 import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
+import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import com.newrelic.api.agent.Trace;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -43,11 +44,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @Slf4j
 @AllArgsConstructor
 @Validated
 @RestController
+// TODO: Use traffic routes and remove "workflow" from path
 @RequestMapping("/planning/model/middleend/workflows/{workflow}/deviations")
 public class DeviationController {
 
@@ -119,14 +120,21 @@ public class DeviationController {
   @PostMapping("/save/{type}/all")
   public ResponseEntity<Object> save(
       @PathVariable final DeviationType type,
-      @PathVariable final Workflow workflow,
+      @RequestParam final String logisticCenterId,
+      @RequestParam("caller.id") final long callerId,
       @RequestBody @Valid @NotEmpty final List<SaveDeviationRequest> deviations
   ) {
-    final var devs = deviations.stream()
-        .map(deviation -> deviation.toDeviationInput(type))
-        .collect(Collectors.toList());
+    final List<Workflow> workflows = deviations.stream()
+              .map(SaveDeviationRequest::getWorkflow)
+              .collect(toList());
 
-    saveDeviation.save(devs);
+    checkUserPermissions(callerId, workflows);
+
+    final List<SaveDeviationInput> deviationInputs = deviations.stream()
+        .map(deviation -> deviation.toDeviationInput(logisticCenterId, callerId, type))
+        .collect(toList());
+
+    saveDeviation.save(deviationInputs);
 
     return ResponseEntity.noContent().build();
   }
@@ -153,8 +161,8 @@ public class DeviationController {
       @PathVariable final DeviationType type,
       @RequestParam("caller.id") @NotNull final Long callerId
   ) {
-    final var permission = EDIT_PERMISSION_BY_WORKFLOW.get(workflow);
-    authorizeUser.execute(new AuthorizeUserDto(callerId, singletonList(permission)));
+
+    checkUserPermissions(callerId, singletonList(workflow));
 
     disableDeviation.execute(new DisableDeviationInput(logisticCenterId, workflow));
     return ResponseEntity.status(OK).build();
@@ -165,5 +173,13 @@ public class DeviationController {
     dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
     dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
     dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
+  }
+
+  private void checkUserPermissions(final long callerId, final List<Workflow> workflows) {
+    final List<UserPermission> permissions = workflows.stream()
+        .map(EDIT_PERMISSION_BY_WORKFLOW::get)
+        .collect(toList());
+
+    authorizeUser.execute(new AuthorizeUserDto(callerId, permissions));
   }
 }
