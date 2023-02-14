@@ -13,10 +13,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Named;
@@ -68,10 +68,11 @@ public class GetActiveDeviations {
     return (int) (totalUnits * deviation.getValue());
   }
 
-  private static Set<BacklogWorkflow> toBacklogWorkflow(Set<Workflow> workflows) {
+  private static Set<BacklogWorkflow> toBacklogWorkflowInbound(Set<Workflow> workflows) {
     return workflows.stream()
-        .map(Workflow::getBacklogWorkflow)
-        .flatMap(Collection::stream)
+        .map(Workflow::getName)
+        .map(BacklogWorkflow::from)
+        .map(Optional::orElseThrow)
         .collect(Collectors.toUnmodifiableSet());
   }
 
@@ -108,7 +109,7 @@ public class GetActiveDeviations {
         .map(deviation -> new ScheduleAdjustment(
             List.of(deviation.getWorkflow()),
             deviation.getType(),
-            Collections.emptyList(),
+            deviation.getPath(),
             deviation.getValue(),
             getDeviatedUnits(unitsByWorkflowAndDateIn, deviation),
             deviation.getDateFrom(),
@@ -127,7 +128,7 @@ public class GetActiveDeviations {
     final Photo scheduledBacklogByDateIn = backlogApiGateway.getLastPhoto(
         new BacklogLastPhotoRequest(
             logisticCenterId,
-            toBacklogWorkflow(workflows),
+            toBacklogWorkflowInbound(workflows),
             Set.of(Step.SCHEDULED),
             lowerRangeDate,
             upperRangeDate,
