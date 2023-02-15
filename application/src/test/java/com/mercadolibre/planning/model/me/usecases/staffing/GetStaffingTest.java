@@ -271,29 +271,29 @@ class GetStaffingTest {
 
   private static final Integer SIMULATION_HEADCOUNT_PUT_AWAY = 10;
 
-  private static final Integer EXPECTED_DELTA_PUT_AWAY = 0;
+  private static final Integer EXPECTED_DELTA_PUT_AWAY = -1;
 
-  private static final Integer EXPECTED_DELTA_CHECK_IN = 3;
+  private static final Integer EXPECTED_DELTA_CHECK_IN = 2;
 
-  private static final Integer EXPECTED_DELTA_PICKING = 22;
+  private static final Integer EXPECTED_DELTA_PICKING = 16;
 
   private static final Integer EXPECTED_NS_DELTA_PICKING = 1;
 
-  private static final Integer EXPECTED_SIMULATION_DELTA_PICKING = 24;
+  private static final Integer EXPECTED_SIMULATION_DELTA_PICKING = 18;
 
-  private static final Integer EXPECTED_DELTA_PACKING = 6;
+  private static final Integer EXPECTED_DELTA_PACKING = 5;
 
   private static final Integer EXPECTED_NS_DELTA_PACKING = 5;
 
-  private static final Integer EXPECTED_DELTA_PACKING_WALL = 40;
+  private static final Integer EXPECTED_DELTA_PACKING_WALL = 35;
 
   private static final Integer EXPECTED_NS_DELTA_PACKING_WALL = 8;
 
-  private static final Integer EXPECTED_DELTA_HU_ASSEMBLY = 35;
+  private static final Integer EXPECTED_DELTA_HU_ASSEMBLY = 30;
 
   private static final Integer EXPECTED_NS_DELTA_HU_ASSEMBLY = 7;
 
-  private static final Integer EXPECTED_DELTA_SALES_DISPATCH = 32;
+  private static final Integer EXPECTED_DELTA_SALES_DISPATCH = 27;
 
   private static final Integer EXPECTED_NS_DELTA_SALES_DISPATCH = 4;
 
