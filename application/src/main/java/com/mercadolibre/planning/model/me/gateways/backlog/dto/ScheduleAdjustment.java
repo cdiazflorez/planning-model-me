@@ -15,7 +15,7 @@ public class ScheduleAdjustment {
 
   private DeviationType type;
 
-  private List<ShipmentType> affectedShipmentTypes;
+  private ShipmentType affectedShipmentType;
 
   private double value;
 
