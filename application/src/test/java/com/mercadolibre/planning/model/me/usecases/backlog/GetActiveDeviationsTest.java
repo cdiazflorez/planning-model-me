@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
 import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import com.mercadolibre.planning.model.me.enums.DeviationType;
+import com.mercadolibre.planning.model.me.enums.ShipmentType;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogApiGateway;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogLastPhotoRequest;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
@@ -59,7 +60,7 @@ class GetActiveDeviationsTest {
 
     final BacklogLastPhotoRequest request = new BacklogLastPhotoRequest(
         WAREHOUSE_ID,
-        toBacklogWorkflow(),
+        Set.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER),
         Set.of(Step.SCHEDULED),
         VIEW_DATE,
         VIEW_DATE.plus(1, ChronoUnit.DAYS),
@@ -126,18 +127,20 @@ class GetActiveDeviationsTest {
   private List<Deviation> getActiveDeviations() {
     return List.of(
         new Deviation(
-            Workflow.FBM_WMS_INBOUND,
+            Workflow.INBOUND,
             DeviationType.MINUTES,
             VIEW_DATE,
             VIEW_DATE.plus(1, ChronoUnit.DAYS),
-            0.1
+            0.1,
+            ShipmentType.SPD
         ),
         new Deviation(
             Workflow.INBOUND_TRANSFER,
             DeviationType.MINUTES,
             VIEW_DATE,
             VIEW_DATE.plus(1, ChronoUnit.DAYS),
-            0.15
+            0.15,
+            null
         ));
   }
 
@@ -171,9 +174,9 @@ class GetActiveDeviationsTest {
   private List<ScheduleAdjustment> getExpectedResponse() {
     return List.of(
         new ScheduleAdjustment(
-            List.of(Workflow.FBM_WMS_INBOUND),
+            List.of(Workflow.INBOUND),
             DeviationType.MINUTES,
-            Collections.emptyList(),
+            ShipmentType.SPD,
             0.1,
             2000,
             VIEW_DATE,
@@ -182,7 +185,7 @@ class GetActiveDeviationsTest {
         new ScheduleAdjustment(
             List.of(Workflow.INBOUND_TRANSFER),
             DeviationType.MINUTES,
-            Collections.emptyList(),
+            null,
             0.15,
             6000,
             VIEW_DATE,

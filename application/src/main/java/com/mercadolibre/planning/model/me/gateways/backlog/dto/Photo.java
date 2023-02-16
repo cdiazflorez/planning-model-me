@@ -25,7 +25,7 @@ public class Photo {
   public static class Group {
 
     static Map<BacklogWorkflow, Workflow> toWorkflow = Map.of(
-        BacklogWorkflow.INBOUND, Workflow.FBM_WMS_INBOUND,
+        BacklogWorkflow.INBOUND, Workflow.INBOUND,
         BacklogWorkflow.INBOUND_TRANSFER, Workflow.INBOUND_TRANSFER,
         BacklogWorkflow.OUTBOUND_ORDERS, Workflow.FBM_WMS_OUTBOUND
     );
