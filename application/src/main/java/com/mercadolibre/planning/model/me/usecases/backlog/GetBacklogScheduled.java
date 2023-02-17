@@ -245,12 +245,12 @@ public class GetBacklogScheduled {
         .build();
   }
 
-  private double getDeviationPercentage(final int deviation, final int backlogExpected) {
+  private Double getDeviationPercentage(final int deviation, final int backlogExpected) {
     if (backlogExpected != 0) {
       double percentage = ((double) deviation / (double) backlogExpected) * (-1);
       return Precision.round(percentage, SCALE_DECIMAL);
     }
-    return 0;
+    return null;
   }
 
   private List<Photo.Group> getLastPhoto(final String warehouse, final Instant today) {
