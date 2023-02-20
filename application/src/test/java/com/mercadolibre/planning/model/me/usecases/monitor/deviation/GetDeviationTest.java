@@ -1,29 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.deviation;
 
-import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
-import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TimeZone;
-
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.PERCENTAGE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDate;
@@ -36,6 +12,29 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
+
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.services.sales.GetSalesByDateIn;
+import com.mercadolibre.planning.model.me.services.sales.dtos.GetSalesInputDto;
+import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.TimeZone;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class GetDeviationTest {
@@ -51,7 +50,7 @@ public class GetDeviationTest {
     private GetDeviation getDeviation;
 
     @Mock
-    private GetSales getSales;
+    private GetSalesByDateIn getSalesByDateIn;
 
     @Mock
     private PlanningModelGateway planningModelGateway;
@@ -71,7 +70,7 @@ public class GetDeviationTest {
                 .currentTime(A_DATE)
                 .build();
 
-        when(getSales.execute(any(GetSalesInputDto.class)))
+        when(getSalesByDateIn.execute(any(GetSalesInputDto.class)))
                 .thenReturn(mockSales(
                         List.of(CPT_1, CPT_2, CPT_3, CPT_4),
                         new int []{350, 235, 200, 120}));
@@ -150,7 +149,7 @@ public class GetDeviationTest {
                 .currentTime(A_DATE)
                 .build();
 
-        when(getSales.execute(any(GetSalesInputDto.class))
+        when(getSalesByDateIn.execute(any(GetSalesInputDto.class))
         ).thenReturn(mockSales(
                 List.of(CPT_1, CPT_2, CPT_3, CPT_4),
                 new int []{350, 235, 200, 120}));
@@ -187,7 +186,7 @@ public class GetDeviationTest {
                 .currentTime(A_DATE)
                 .build();
 
-        when(getSales.execute(any(GetSalesInputDto.class)))
+        when(getSalesByDateIn.execute(any(GetSalesInputDto.class)))
                 .thenReturn(mockSales(
                         List.of(CPT_1, CPT_2, CPT_3, CPT_4),
                         new int []{350, 235, 200, 120}));
@@ -224,7 +223,7 @@ public class GetDeviationTest {
                 .currentTime(A_DATE)
                 .build();
 
-        when(getSales.execute(any(GetSalesInputDto.class)))
+        when(getSalesByDateIn.execute(any(GetSalesInputDto.class)))
                 .thenReturn(mockSales(
                         List.of(CPT_1, CPT_2, CPT_3, CPT_4),
                         new int []{0, 0, 0, 0}));
@@ -259,7 +258,7 @@ public class GetDeviationTest {
                 .dateTo(getCurrentUtcDate().plusHours(25))
                 .currentTime(A_DATE)
                 .build();
-        when(getSales.execute(any(GetSalesInputDto.class))
+        when(getSalesByDateIn.execute(any(GetSalesInputDto.class))
         ).thenReturn(mockSales(
                 List.of(CPT_1, CPT_2, CPT_3, CPT_4),
                 new int []{350, 235, 200, 120}));
@@ -300,7 +299,7 @@ public class GetDeviationTest {
                 .currentTime(A_DATE)
                 .build();
 
-        when(getSales.execute(any(GetSalesInputDto.class)))
+        when(getSalesByDateIn.execute(any(GetSalesInputDto.class)))
                 .thenReturn(mockSales(
                         List.of(CPT_1, CPT_2, CPT_3, CPT_4, CPT_0),
                         new int []{350, 235, 200, 120, 100}));

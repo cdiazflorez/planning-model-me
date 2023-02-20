@@ -17,10 +17,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDi
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.services.sales.GetSales;
+import com.mercadolibre.planning.model.me.services.sales.dtos.GetSalesInputDto;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;

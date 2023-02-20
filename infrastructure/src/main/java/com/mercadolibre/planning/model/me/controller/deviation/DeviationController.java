@@ -13,6 +13,7 @@ import com.mercadolibre.planning.model.me.controller.editor.ShipmentTypeEditor;
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.enums.DeviationType;
 import com.mercadolibre.planning.model.me.enums.ShipmentType;
+import com.mercadolibre.planning.model.me.exception.InvalidParamException;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -52,134 +53,146 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/planning/model/middleend/workflows/{workflow}/deviations")
 public class DeviationController {
 
-  // TODO: Update Permissions when inbound-edition adoption improves
-  private static final Map<Workflow, UserPermission> EDIT_PERMISSION_BY_WORKFLOW = Map.of(
-      Workflow.FBM_WMS_OUTBOUND, OUTBOUND_SIMULATION,
-      Workflow.FBM_WMS_INBOUND, OUTBOUND_SIMULATION,
-      Workflow.INBOUND, OUTBOUND_SIMULATION,
-      Workflow.INBOUND_TRANSFER, OUTBOUND_SIMULATION
-  );
+    // TODO: Update Permissions when inbound-edition adoption improves
+    private static final Map<Workflow, UserPermission> EDIT_PERMISSION_BY_WORKFLOW = Map.of(
+            Workflow.FBM_WMS_OUTBOUND, OUTBOUND_SIMULATION,
+            Workflow.FBM_WMS_INBOUND, OUTBOUND_SIMULATION,
+            Workflow.INBOUND, OUTBOUND_SIMULATION,
+            Workflow.INBOUND_TRANSFER, OUTBOUND_SIMULATION
+    );
 
-  private final SaveOutboundDeviation saveOutboundDeviation;
+    private final SaveOutboundDeviation saveOutboundDeviation;
 
-  private final SaveDeviation saveDeviation;
+    private final SaveDeviation saveDeviation;
 
-  private final DisableDeviation disableDeviation;
+    private final DisableDeviation disableDeviation;
 
-  private final AuthorizeUser authorizeUser;
+    private final AuthorizeUser authorizeUser;
 
-  private final DatadogMetricService datadogMetricService;
+    private final DatadogMetricService datadogMetricService;
 
-  /**
-   * @deprecated use {@link #save(DeviationType, Workflow, List)}
-   */
-  @Trace
-  @PostMapping("/save")
-  @Deprecated
-  public ResponseEntity<DeviationResponse> save(
-      @PathVariable final Workflow workflow,
-      @RequestBody @Valid final DeviationRequest deviationRequest) {
+    /**
+     * @param workflow         [FBM_WMS_INBOUND, FBM_WMS_OUTBOUND]
+     * @param deviationRequest Request
+     * @return DeviationResponse
+     * @throws InvalidParamException return exception
+     * @deprecated use {@link #save(DeviationType, Workflow, List)}
+     */
+    @Trace
+    @PostMapping("/save")
+    @Deprecated
+    public ResponseEntity<DeviationResponse> save(
+            @PathVariable final Workflow workflow,
+            @RequestBody @Valid final DeviationRequest deviationRequest) {
 
-    authorizeUser.execute(new AuthorizeUserDto(
-        deviationRequest.getUserId(), singletonList(OUTBOUND_SIMULATION)));
+        if (deviationRequest.getDateFrom().isAfter(deviationRequest.getDateTo())) {
+            throw new InvalidParamException("dataFrom cannot be greater than dataTo");
+        }
 
-    datadogMetricService.trackDeviationAdjustment(deviationRequest);
+        authorizeUser.execute(new AuthorizeUserDto(
+                deviationRequest.getUserId(), singletonList(OUTBOUND_SIMULATION)));
 
-    DeviationResponse response;
+        datadogMetricService.trackDeviationAdjustment(deviationRequest);
 
-    try {
-      response = saveOutboundDeviation.execute(deviationRequest.toDeviationInput(workflow, DeviationType.UNITS));
-    } catch (Exception e) {
-      response = new DeviationResponse(INTERNAL_SERVER_ERROR.value(),
-          "Error persisting forecast deviation");
+        DeviationResponse response;
+
+        try {
+            response = saveOutboundDeviation.execute(deviationRequest.toDeviationInput(workflow, DeviationType.UNITS));
+        } catch (Exception e) {
+            response = new DeviationResponse(INTERNAL_SERVER_ERROR.value(),
+                    "Error persisting forecast deviation");
+        }
+
+        return ResponseEntity.status(response.getStatus())
+                .body(response);
     }
 
-    return ResponseEntity.status(response.getStatus())
-        .body(response);
-  }
+    /**
+     * @param type             [UNITS, MINUTES]
+     * @param workflow         [FBM_WMS_INBOUND, FBM_WMS_OUTBOUND]
+     * @param deviationRequest Request
+     * @return HttpStatus
+     * @deprecated use {@link #save(DeviationType, Workflow, List)}
+     */
+    @Trace
+    @PostMapping("/save/{type}")
+    @Deprecated
+    public ResponseEntity<HttpStatus> save(
+            @PathVariable final DeviationType type,
+            @PathVariable final Workflow workflow,
+            @RequestBody @Valid final DeviationRequest deviationRequest) {
 
-  /**
-   * @deprecated use {@link #save(DeviationType, Workflow, List)}
-   */
-  @Trace
-  @PostMapping("/save/{type}")
-  @Deprecated
-  public ResponseEntity<HttpStatus> save(
-      @PathVariable final DeviationType type,
-      @PathVariable final Workflow workflow,
-      @RequestBody @Valid final DeviationRequest deviationRequest) {
+        datadogMetricService.trackDeviationAdjustment(deviationRequest);
 
-    datadogMetricService.trackDeviationAdjustment(deviationRequest);
+        saveDeviation.execute(deviationRequest.toDeviationInput(workflow, type));
 
-    saveDeviation.execute(deviationRequest.toDeviationInput(workflow, type));
+        return new ResponseEntity<>(OK);
+    }
 
-    return new ResponseEntity<>(OK);
-  }
+    @Trace
+    @PostMapping("/save/{type}/all")
+    public ResponseEntity<Object> save(
+            @PathVariable final DeviationType type,
+            @RequestParam final String logisticCenterId,
+            @RequestParam("caller.id") final long callerId,
+            @RequestBody @Valid @NotEmpty final List<SaveDeviationRequest> deviations
+    ) {
+        final List<Workflow> workflows = deviations.stream()
+                .map(SaveDeviationRequest::getWorkflow)
+                .collect(toList());
 
-  @Trace
-  @PostMapping("/save/{type}/all")
-  public ResponseEntity<Object> save(
-      @PathVariable final DeviationType type,
-      @RequestParam final String logisticCenterId,
-      @RequestParam("caller.id") final long callerId,
-      @RequestBody @Valid @NotEmpty final List<SaveDeviationRequest> deviations
-  ) {
-    final List<Workflow> workflows = deviations.stream()
-              .map(SaveDeviationRequest::getWorkflow)
-              .collect(toList());
+        checkUserPermissions(callerId, workflows);
 
-    checkUserPermissions(callerId, workflows);
+        final List<SaveDeviationInput> deviationInputs = deviations.stream()
+                .map(deviation -> deviation.toDeviationInput(logisticCenterId, callerId, type))
+                .collect(toList());
 
-    final List<SaveDeviationInput> deviationInputs = deviations.stream()
-        .map(deviation -> deviation.toDeviationInput(logisticCenterId, callerId, type))
-        .collect(toList());
+        saveDeviation.save(deviationInputs);
 
-    saveDeviation.save(deviationInputs);
+        return ResponseEntity.noContent().build();
+    }
 
-    return ResponseEntity.noContent().build();
-  }
+    @Trace
+    @PostMapping("/disable")
+    public ResponseEntity<Void> disable(
+            @PathVariable final Workflow workflow,
+            @RequestParam final String warehouseId,
+            @RequestParam("caller.id") @NotNull final Long callerId
+    ) {
 
-  @Trace
-  @PostMapping("/disable")
-  public ResponseEntity<Void> disable(
-      @PathVariable final Workflow workflow,
-      @RequestParam final String warehouseId,
-      @RequestParam("caller.id") @NotNull final Long callerId
-  ) {
+        authorizeUser.execute(new AuthorizeUserDto(callerId, singletonList(OUTBOUND_SIMULATION)));
 
-    authorizeUser.execute(new AuthorizeUserDto(callerId, singletonList(OUTBOUND_SIMULATION)));
+        disableDeviation.execute(new DisableDeviationInput(warehouseId, workflow));
+        return ResponseEntity.status(OK).build();
+    }
 
-    disableDeviation.execute(new DisableDeviationInput(warehouseId, workflow));
-    return ResponseEntity.status(OK).build();
-  }
+    @Trace
+    @PostMapping("/disable/{type}")
+    public ResponseEntity<Void> disable(
+            @RequestParam final String logisticCenterId,
+            @PathVariable final Workflow workflow,
+            @PathVariable final DeviationType type,
+            @RequestParam("caller.id") @NotNull final Long callerId
+    ) {
 
-  @Trace
-  @PostMapping("/disable/{type}")
-  public ResponseEntity<Void> disable(
-      @RequestParam final String logisticCenterId,
-      @PathVariable final Workflow workflow,
-      @PathVariable final DeviationType type,
-      @RequestParam("caller.id") @NotNull final Long callerId
-  ) {
+        checkUserPermissions(callerId, singletonList(workflow));
 
-    checkUserPermissions(callerId, singletonList(workflow));
+        disableDeviation.execute(new DisableDeviationInput(logisticCenterId, workflow));
+        return ResponseEntity.status(OK).build();
+    }
 
-    disableDeviation.execute(new DisableDeviationInput(logisticCenterId, workflow));
-    return ResponseEntity.status(OK).build();
-  }
+    @InitBinder
+    public void initBinder(final PropertyEditorRegistry dataBinder) {
+        dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
+        dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
+        dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
+    }
 
-  @InitBinder
-  public void initBinder(final PropertyEditorRegistry dataBinder) {
-    dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
-    dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
-    dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
-  }
+    private void checkUserPermissions(final long callerId, final List<Workflow> workflows) {
+        final List<UserPermission> permissions = workflows.stream()
+                .map(EDIT_PERMISSION_BY_WORKFLOW::get)
+                .collect(toList());
 
-  private void checkUserPermissions(final long callerId, final List<Workflow> workflows) {
-    final List<UserPermission> permissions = workflows.stream()
-        .map(EDIT_PERMISSION_BY_WORKFLOW::get)
-        .collect(toList());
-
-    authorizeUser.execute(new AuthorizeUserDto(callerId, permissions));
-  }
+        authorizeUser.execute(new AuthorizeUserDto(callerId, permissions));
+    }
 }

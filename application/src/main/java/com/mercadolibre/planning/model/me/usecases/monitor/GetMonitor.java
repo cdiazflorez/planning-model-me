@@ -25,53 +25,53 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class GetMonitor implements UseCase<GetMonitorInput, Monitor> {
 
-  private final LogisticCenterGateway logisticCenterGateway;
-  private final GetCurrentStatus getCurrentStatus;
-  private final GetDeviation getDeviation;
+    private final LogisticCenterGateway logisticCenterGateway;
+    private final GetCurrentStatus getCurrentStatus;
+    private final GetDeviation getDeviation;
 
-  @Override
-  public Monitor execute(GetMonitorInput input) {
-    final ZonedDateTime currentTime = getCurrentTime(input.getWarehouseId());
+    @Override
+    public Monitor execute(GetMonitorInput input) {
+        final ZonedDateTime currentTime = getCurrentTime(input.getWarehouseId());
 
-    return Monitor.builder()
-        .title("Modelo de Priorización")
-        .subtitle1("Estado Actual")
-        .subtitle2("Última actualización: Hoy - " + getPrettyTime(currentTime))
-        .monitorData(getMonitorData(input, currentTime))
-        .build();
-  }
+        return Monitor.builder()
+                .title("Modelo de Priorización")
+                .subtitle1("Estado Actual")
+                .subtitle2("Última actualización: Hoy - " + getPrettyTime(currentTime))
+                .monitorData(getMonitorData(input, currentTime))
+                .build();
+    }
 
-  private List<MonitorData> getMonitorData(GetMonitorInput input, ZonedDateTime currentTime) {
-    final DeviationData deviationData = getDeviation.execute(
-        GetDeviationInput.builder()
-            .warehouseId(input.getWarehouseId())
-            .workflow(input.getWorkflow())
-            .dateFrom(input.getDateFrom())
-            .dateTo(input.getDateTo())
-            .currentTime(currentTime)
-            .build());
+    private List<MonitorData> getMonitorData(GetMonitorInput input, ZonedDateTime currentTime) {
+        final DeviationData deviationData = getDeviation.execute(
+                GetDeviationInput.builder()
+                        .warehouseId(input.getWarehouseId())
+                        .workflow(input.getWorkflow())
+                        .dateFrom(input.getDateFrom())
+                        .dateTo(input.getDateTo())
+                        .currentTime(currentTime)
+                        .build());
 
-    final CurrentStatusData currentStatusData = getCurrentStatus.execute(
-        GetCurrentStatusInput.builder()
-            .warehouseId(input.getWarehouseId())
-            .workflow(input.getWorkflow())
-            .dateFrom(input.getDateFrom())
-            .dateTo(input.getDateTo())
-            .groupType("order")
-            .currentTime(currentTime)
-            .build());
+        final CurrentStatusData currentStatusData = getCurrentStatus.execute(
+                GetCurrentStatusInput.builder()
+                        .warehouseId(input.getWarehouseId())
+                        .workflow(input.getWorkflow())
+                        .dateFrom(input.getDateFrom())
+                        .dateTo(input.getDateTo())
+                        .groupType("order")
+                        .currentTime(currentTime)
+                        .build());
 
-    return List.of(deviationData, currentStatusData);
-  }
+        return List.of(deviationData, currentStatusData);
+    }
 
-  private String getPrettyTime(ZonedDateTime date) {
-    return date.format(HOUR_MINUTES_FORMATTER);
-  }
+    private String getPrettyTime(ZonedDateTime date) {
+        return date.format(HOUR_MINUTES_FORMATTER);
+    }
 
-  private ZonedDateTime getCurrentTime(String warehouseId) {
-    final LogisticCenterConfiguration config =
-        logisticCenterGateway.getConfiguration(warehouseId);
+    private ZonedDateTime getCurrentTime(String warehouseId) {
+        final LogisticCenterConfiguration config =
+                logisticCenterGateway.getConfiguration(warehouseId);
 
-    return ZonedDateTime.now().withZoneSameInstant(config.getZoneId());
-  }
+        return ZonedDateTime.now().withZoneSameInstant(config.getZoneId());
+    }
 }
