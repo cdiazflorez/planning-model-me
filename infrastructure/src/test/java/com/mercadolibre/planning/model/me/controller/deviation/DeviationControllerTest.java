@@ -17,6 +17,7 @@ import static org.mockito.BDDMockito.verify;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -54,293 +55,312 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 @WebMvcTest(controllers = DeviationController.class)
 public class DeviationControllerTest {
 
-  private static final String URL = "/planning/model/middleend/workflows/%s/deviations";
+    private static final String URL = "/planning/model/middleend/workflows/%s/deviations";
 
-  @Autowired
-  private MockMvc mvc;
+    @Autowired
+    private MockMvc mvc;
 
-  @MockBean
-  private SaveOutboundDeviation saveOutboundDeviation;
+    @MockBean
+    private SaveOutboundDeviation saveOutboundDeviation;
 
-  @MockBean
-  private SaveDeviation saveDeviation;
+    @MockBean
+    private SaveDeviation saveDeviation;
 
-  @MockBean
-  private DisableDeviation disableDeviation;
+    @MockBean
+    private DisableDeviation disableDeviation;
 
-  @MockBean
-  private AuthorizeUser authorizeUser;
+    @MockBean
+    private AuthorizeUser authorizeUser;
 
-  @MockBean
-  private DatadogMetricService datadogMetricService;
+    @MockBean
+    private DatadogMetricService datadogMetricService;
 
-  private static void thenVerifyStatusAndMessage(
-      final ResultActions result,
-      final HttpStatus status,
-      final String message
-  ) throws Exception {
-    result.andExpect(status == OK ? status().isOk() : status().isInternalServerError())
-        .andExpect(content().json(new JSONObject()
-            .put("status", status.value())
-            .put("message", message)
-            .toString()));
-  }
-
-  @BeforeEach
-  public void setUp() {
-    Mockito.reset(authorizeUser);
-    Mockito.reset(saveOutboundDeviation);
-    Mockito.reset(disableDeviation);
-  }
-
-  @Nested
-  @DisplayName("Test save deviation")
-  class SaveOutboundDeviationController {
-
-    @Test
-    void saveDeviationOk() throws Exception {
-      // GIVEN
-      when(saveOutboundDeviation.execute(any()))
-          .thenReturn(DeviationResponse.builder()
-              .status(OK.value())
-              .message("Forecast deviation saved")
-              .build());
-
-      // WHEN
-      final var result = whenSaveDeviation();
-
-      // THEN
-      verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, singletonList(OUTBOUND_SIMULATION)));
-      thenVerifyStatusAndMessage(result, OK, "Forecast deviation saved");
+    private static void thenVerifyStatusAndMessage(
+            final ResultActions result,
+            final HttpStatus status,
+            final String message
+    ) throws Exception {
+        result.andExpect(status == OK ? status().isOk() : status().isInternalServerError())
+                .andExpect(content().json(new JSONObject()
+                        .put("status", status.value())
+                        .put("message", message)
+                        .toString()));
     }
 
-    @Test
-    void saveDeviationErrorApi() throws Exception {
-      // GIVEN
-      when(saveOutboundDeviation.execute(any(SaveDeviationInput.class)))
-          .thenThrow(RuntimeException.class);
-
-      // WHEN
-      final var result = whenSaveDeviation();
-
-      // THEN
-      verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, singletonList(OUTBOUND_SIMULATION)));
-      thenVerifyStatusAndMessage(result, INTERNAL_SERVER_ERROR, "Error persisting forecast deviation");
+    @BeforeEach
+    public void setUp() {
+        Mockito.reset(authorizeUser);
+        Mockito.reset(saveOutboundDeviation);
+        Mockito.reset(disableDeviation);
     }
 
-    @Test
-    void saveDeviationUserNoAuthorized() throws Exception {
-      // GIVEN
-      when(authorizeUser.execute(any(AuthorizeUserDto.class)))
-          .thenThrow(UserNotAuthorizedException.class);
+    @Nested
+    @DisplayName("Test save deviation")
+    class SaveOutboundDeviationController {
 
-      // WHEN
-      final var result = whenSaveDeviation();
+        @Test
+        void saveDeviationOk() throws Exception {
+            // GIVEN
+            when(saveOutboundDeviation.execute(any()))
+                    .thenReturn(DeviationResponse.builder()
+                            .status(OK.value())
+                            .message("Forecast deviation saved")
+                            .build());
 
-      // THEN
-      result.andExpect(status().isForbidden());
-      verifyNoInteractions(saveOutboundDeviation);
+            // WHEN
+            final var result = whenSaveDeviation();
+
+            // THEN
+            verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, singletonList(OUTBOUND_SIMULATION)));
+            thenVerifyStatusAndMessage(result, OK, "Forecast deviation saved");
+        }
+
+        @Test
+        void saveDeviationDataError() throws Exception {
+            // GIVEN
+            when(saveOutboundDeviation.execute(any()))
+                    .thenReturn(DeviationResponse.builder()
+                            .status(BAD_REQUEST.value())
+                            .message("dataFrom cannot be greater than dataTo")
+                            .build());
+
+            // WHEN
+            final ResultActions result = mvc.perform(MockMvcRequestBuilders
+                    .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/save")
+                    .content(getResourceAsString("post_save_deviation_request_error_data.json"))
+                    .contentType(APPLICATION_JSON));
+
+            // THEN
+            result.andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void saveDeviationErrorApi() throws Exception {
+            // GIVEN
+            when(saveOutboundDeviation.execute(any(SaveDeviationInput.class)))
+                    .thenThrow(RuntimeException.class);
+
+            // WHEN
+            final var result = whenSaveDeviation();
+
+            // THEN
+            verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, singletonList(OUTBOUND_SIMULATION)));
+            thenVerifyStatusAndMessage(result, INTERNAL_SERVER_ERROR, "Error persisting forecast deviation");
+        }
+
+        @Test
+        void saveDeviationUserNoAuthorized() throws Exception {
+            // GIVEN
+            when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                    .thenThrow(UserNotAuthorizedException.class);
+
+            // WHEN
+            final var result = whenSaveDeviation();
+
+            // THEN
+            result.andExpect(status().isForbidden());
+            verifyNoInteractions(saveOutboundDeviation);
+        }
+
+        private ResultActions whenSaveDeviation() throws Exception {
+            return mvc.perform(MockMvcRequestBuilders
+                    .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/save")
+                    .content(getResourceAsString("post_save_deviation_request.json"))
+                    .contentType(APPLICATION_JSON));
+        }
     }
 
-    private ResultActions whenSaveDeviation() throws Exception {
-      return mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/save")
-          .content(getResourceAsString("post_save_deviation_request.json"))
-          .contentType(APPLICATION_JSON));
-    }
-  }
+    @Nested
+    @DisplayName("Test save deviation scheduling")
+    class SaveDeviationShipmentController {
 
-  @Nested
-  @DisplayName("Test save deviation scheduling")
-  class SaveDeviationShipmentController {
+        @Test
+        void saveDeviationShipmentOk() throws Exception {
+            // GIVEN
+            final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
+                    .workflow(FBM_WMS_INBOUND)
+                    .warehouseId(WAREHOUSE_ID_ARTW01)
+                    .dateFrom(ZonedDateTime.parse("2021-01-21T15:00Z[UTC]"))
+                    .dateTo(ZonedDateTime.parse("2021-01-21T17:00Z[UTC]"))
+                    .type(DeviationType.UNITS)
+                    .value(5.9)
+                    .userId(USER_ID)
+                    .build();
 
-    @Test
-    void saveDeviationShipmentOk() throws Exception {
-      // GIVEN
-      final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
-          .workflow(FBM_WMS_INBOUND)
-          .warehouseId(WAREHOUSE_ID_ARTW01)
-          .dateFrom(ZonedDateTime.parse("2021-01-21T15:00Z[UTC]"))
-          .dateTo(ZonedDateTime.parse("2021-01-21T17:00Z[UTC]"))
-          .type(DeviationType.UNITS)
-          .value(5.9)
-          .userId(USER_ID)
-          .build();
+            // WHEN
+            mvc.perform(MockMvcRequestBuilders
+                    .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units")
+                    .content(getResourceAsString("post_save_deviation_request.json"))
+                    .contentType(APPLICATION_JSON));
 
-      // WHEN
-      mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/save/units")
-          .content(getResourceAsString("post_save_deviation_request.json"))
-          .contentType(APPLICATION_JSON));
+            // THEN
+            verify(saveDeviation).execute(saveDeviationInput);
+        }
 
-      // THEN
-      verify(saveDeviation).execute(saveDeviationInput);
-    }
+        @Test
+        void testSaveDeviationsOk() throws Exception {
+            // WHEN
+            final var response = mvc.perform(MockMvcRequestBuilders
+                    .post(format(URL, "INBOUND") + "/save/units/all")
+                    .param("caller.id", String.valueOf(USER_ID))
+                    .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+                    .content(getResourceAsString("post_save_all_deviation_request.json"))
+                    .contentType(APPLICATION_JSON));
 
-    @Test
-    void testSaveDeviationsOk() throws Exception {
-      // WHEN
-      final var response = mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, "INBOUND") + "/save/units/all")
-          .param("caller.id", String.valueOf(USER_ID))
-          .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-          .content(getResourceAsString("post_save_all_deviation_request.json"))
-          .contentType(APPLICATION_JSON));
+            // THEN
+            response.andExpect(status().isNoContent());
 
-      // THEN
-      response.andExpect(status().isNoContent());
+            final var dateFrom = ZonedDateTime.parse("2021-01-21T15:00Z[UTC]");
+            final var dateTo = ZonedDateTime.parse("2021-01-21T17:00Z[UTC]");
 
-      final var dateFrom = ZonedDateTime.parse("2021-01-21T15:00Z[UTC]");
-      final var dateTo = ZonedDateTime.parse("2021-01-21T17:00Z[UTC]");
+            final List<SaveDeviationInput> input = List.of(
+                    SaveDeviationInput.builder()
+                            .warehouseId(WAREHOUSE_ID_ARTW01)
+                            .workflow(INBOUND)
+                            .paths(List.of(ShipmentType.SPD, ShipmentType.PRIVATE))
+                            .dateFrom(dateFrom)
+                            .dateTo(dateTo)
+                            .type(DeviationType.UNITS)
+                            .value(0.1)
+                            .userId(USER_ID)
+                            .build(),
+                    SaveDeviationInput.builder()
+                            .warehouseId(WAREHOUSE_ID_ARTW01)
+                            .workflow(INBOUND_TRANSFER)
+                            .dateFrom(dateFrom)
+                            .dateTo(dateTo)
+                            .type(DeviationType.UNITS)
+                            .value(0.1)
+                            .userId(USER_ID)
+                            .build()
+            );
 
-      final List<SaveDeviationInput> input = List.of(
-          SaveDeviationInput.builder()
-              .warehouseId(WAREHOUSE_ID_ARTW01)
-              .workflow(INBOUND)
-              .paths(List.of(ShipmentType.SPD, ShipmentType.PRIVATE))
-              .dateFrom(dateFrom)
-              .dateTo(dateTo)
-              .type(DeviationType.UNITS)
-              .value(0.1)
-              .userId(USER_ID)
-              .build(),
-          SaveDeviationInput.builder()
-              .warehouseId(WAREHOUSE_ID_ARTW01)
-              .workflow(INBOUND_TRANSFER)
-              .dateFrom(dateFrom)
-              .dateTo(dateTo)
-              .type(DeviationType.UNITS)
-              .value(0.1)
-              .userId(USER_ID)
-              .build()
-      );
+            verify(saveDeviation).save(input);
+        }
 
-      verify(saveDeviation).save(input);
-    }
+        @Test
+        void testSaveDeviationsError() throws Exception {
+            // GIVEN
+            doThrow(RuntimeException.class).when(saveDeviation).save(anyList());
 
-  @Test
-  void testSaveDeviationsError() throws Exception {
-    // GIVEN
-    doThrow(RuntimeException.class).when(saveDeviation).save(anyList());
+            // WHEN
+            final var response = mvc.perform(MockMvcRequestBuilders
+                    .post(format(URL, "INBOUND") + "/save/units/all")
+                    .param("caller.id", String.valueOf(USER_ID))
+                    .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+                    .content(getResourceAsString("post_save_all_deviation_request.json"))
+                    .contentType(APPLICATION_JSON));
 
-    // WHEN
-    final var response = mvc.perform(MockMvcRequestBuilders
-        .post(format(URL, "INBOUND") + "/save/units/all")
-        .param("caller.id", String.valueOf(USER_ID))
-        .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-        .content(getResourceAsString("post_save_all_deviation_request.json"))
-        .contentType(APPLICATION_JSON));
+            // THEN
+            response.andExpect(status().isInternalServerError());
+        }
 
-    // THEN
-    response.andExpect(status().isInternalServerError());
-  }
+        @Test
+        void testSaveDeviationsWithInvalidBody() throws Exception {
+            // GIVEN
+            doThrow(RuntimeException.class).when(saveDeviation).save(anyList());
 
-    @Test
-    void testSaveDeviationsWithInvalidBody() throws Exception {
-      // GIVEN
-      doThrow(RuntimeException.class).when(saveDeviation).save(anyList());
+            // WHEN
+            final var response = mvc.perform(MockMvcRequestBuilders
+                    .post(format(URL, "INBOUND") + "/save/units/all")
+                    .param("caller.id", String.valueOf(USER_ID))
+                    .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+                    .content("[]")
+                    .contentType(APPLICATION_JSON));
 
-      // WHEN
-      final var response = mvc.perform(MockMvcRequestBuilders
-              .post(format(URL, "INBOUND") + "/save/units/all")
-          .param("caller.id", String.valueOf(USER_ID))
-          .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-          .content("[]")
-          .contentType(APPLICATION_JSON));
-
-      // THEN
-      response.andExpect(status().isBadRequest());
-    }
-}
-
-  @Nested
-  @DisplayName("Test disable deviation")
-  class DisableDeviationController {
-    @Test
-    void disableDeviationOk() throws Exception {
-      // WHEN
-      final var result = whenDisableDeviation();
-
-      // THEN
-      verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, singletonList(OUTBOUND_SIMULATION)));
-      verify(disableDeviation).execute(argThat(input -> input.getWorkflow().equals(FBM_WMS_OUTBOUND)));
-      result.andExpect(status().isOk());
+            // THEN
+            response.andExpect(status().isBadRequest());
+        }
     }
 
-    @Test
-    void disableDeviationErrorApi() throws Exception {
-      // GIVEN
-      doThrow(RuntimeException.class).when(disableDeviation).execute(any(DisableDeviationInput.class));
+    @Nested
+    @DisplayName("Test disable deviation")
+    class DisableDeviationController {
+        @Test
+        void disableDeviationOk() throws Exception {
+            // WHEN
+            final var result = whenDisableDeviation();
 
-      // WHEN
-      final var result = whenDisableDeviation();
+            // THEN
+            verify(authorizeUser).execute(new AuthorizeUserDto(USER_ID, singletonList(OUTBOUND_SIMULATION)));
+            verify(disableDeviation).execute(argThat(input -> input.getWorkflow().equals(FBM_WMS_OUTBOUND)));
+            result.andExpect(status().isOk());
+        }
 
-      // THEN
-      result.andExpect(status().isInternalServerError());
+        @Test
+        void disableDeviationErrorApi() throws Exception {
+            // GIVEN
+            doThrow(RuntimeException.class).when(disableDeviation).execute(any(DisableDeviationInput.class));
+
+            // WHEN
+            final var result = whenDisableDeviation();
+
+            // THEN
+            result.andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        void disableDeviationUserNoAuthorized() throws Exception {
+            // GIVEN
+            when(authorizeUser.execute(any(AuthorizeUserDto.class)))
+                    .thenThrow(UserNotAuthorizedException.class);
+
+            // WHEN
+            final var result = whenDisableDeviation();
+
+            // THEN
+            result.andExpect(status().isForbidden());
+            verifyNoInteractions(disableDeviation);
+        }
+
+        private ResultActions whenDisableDeviation() throws Exception {
+            return mvc.perform(MockMvcRequestBuilders
+                    .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/disable")
+                    .param("caller.id", String.valueOf(USER_ID))
+                    .param("warehouse_id", WAREHOUSE_ID_ARTW01)
+                    .contentType(APPLICATION_JSON));
+        }
     }
 
-    @Test
-    void disableDeviationUserNoAuthorized() throws Exception {
-      // GIVEN
-      when(authorizeUser.execute(any(AuthorizeUserDto.class)))
-          .thenThrow(UserNotAuthorizedException.class);
+    @Nested
+    @DisplayName("Test disable deviation Shipment")
+    class DisableDeviationShipmentController {
 
-      // WHEN
-      final var result = whenDisableDeviation();
+        @Test
+        void testDisableDeviationShipmentOk() throws Exception {
+            // WHEN
+            final var result = whenDisableDeviationInboundUnits();
 
-      // THEN
-      result.andExpect(status().isForbidden());
-      verifyNoInteractions(disableDeviation);
+            // THEN
+            result.andExpect(status().isOk());
+
+            verify(disableDeviation).execute(argThat(input -> input.getWorkflow().equals(FBM_WMS_INBOUND)));
+            verify(authorizeUser).execute(
+                    argThat(i -> i.getRequiredPermissions()
+                            .equals(List.of(OUTBOUND_SIMULATION))
+                    )
+            );
+        }
+
+        @Test
+        void testDisableDeviationShipmentOnErrorShouldReturnADeviationResponse() throws Exception {
+            // GIVEN
+            doThrow(RuntimeException.class).when(disableDeviation).execute(new DisableDeviationInput(WAREHOUSE_ID_ARTW01, FBM_WMS_INBOUND));
+
+            // WHEN
+            final var result = whenDisableDeviationInboundUnits();
+
+            // THEN
+            result.andExpect(status().isInternalServerError());
+        }
+
+        private ResultActions whenDisableDeviationInboundUnits() throws Exception {
+            return mvc.perform(MockMvcRequestBuilders
+                    .post(format(URL, FBM_WMS_INBOUND.getName()) + "/disable/units")
+                    .param("caller.id", String.valueOf(USER_ID))
+                    .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+                    .contentType(APPLICATION_JSON));
+        }
     }
-
-    private ResultActions whenDisableDeviation() throws Exception {
-      return mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/disable")
-          .param("caller.id", String.valueOf(USER_ID))
-          .param("warehouse_id", WAREHOUSE_ID_ARTW01)
-          .contentType(APPLICATION_JSON));
-    }
-  }
-
-  @Nested
-  @DisplayName("Test disable deviation Shipment")
-  class DisableDeviationShipmentController {
-
-    @Test
-    void testDisableDeviationShipmentOk() throws Exception {
-      // WHEN
-      final var result = whenDisableDeviationInboundUnits();
-
-      // THEN
-      result.andExpect(status().isOk());
-
-      verify(disableDeviation).execute(argThat(input -> input.getWorkflow().equals(FBM_WMS_INBOUND)));
-      verify(authorizeUser).execute(
-          argThat(i -> i.getRequiredPermissions()
-              .equals(List.of(OUTBOUND_SIMULATION))
-          )
-      );
-    }
-
-    @Test
-    void testDisableDeviationShipmentOnErrorShouldReturnADeviationResponse() throws Exception {
-      // GIVEN
-      doThrow(RuntimeException.class).when(disableDeviation).execute(new DisableDeviationInput(WAREHOUSE_ID_ARTW01, FBM_WMS_INBOUND));
-
-      // WHEN
-      final var result = whenDisableDeviationInboundUnits();
-
-      // THEN
-      result.andExpect(status().isInternalServerError());
-    }
-
-    private ResultActions whenDisableDeviationInboundUnits() throws Exception {
-      return mvc.perform(MockMvcRequestBuilders
-          .post(format(URL, FBM_WMS_INBOUND.getName()) + "/disable/units")
-          .param("caller.id", String.valueOf(USER_ID))
-          .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
-          .contentType(APPLICATION_JSON));
-    }
-  }
 
 }

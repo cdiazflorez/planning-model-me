@@ -15,11 +15,10 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.outboundunit.UnitSearchGateway;
 import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
-import com.mercadolibre.planning.model.me.services.sales.GetSales;
+import com.mercadolibre.planning.model.me.services.sales.GetSalesByDateIn;
 import com.mercadolibre.planning.model.me.services.sales.dtos.GetSalesInputDto;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +31,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class GetSalesTest {
+public class GetSalesInTest {
 
     @InjectMocks
-    private GetSales getSales;
+    private GetSalesByDateIn getSalesByDateIn;
 
     @Mock
     private UnitSearchGateway unitSearchGateway;
@@ -63,7 +62,7 @@ public class GetSalesTest {
         when(unitSearchGateway.getSalesByCpt(any(BacklogFilters.class)))
                 .thenReturn(mockList(currentTime));
         // WHEN
-        final List<Backlog> sales = getSales.execute(input);
+        final List<Backlog> sales = getSalesByDateIn.execute(input);
 
         // THEN
         assertEquals(3, sales.size());
@@ -89,7 +88,7 @@ public class GetSalesTest {
         when(backlogApiGateway.getCurrentBacklog(any(BacklogCurrentRequest.class)))
                 .thenReturn(mockListBa(currentTime));
         // WHEN
-        final List<Backlog> sales = getSales.execute(input);
+        final List<Backlog> sales = getSalesByDateIn.execute(input);
 
         // THEN
         assertEquals(3, sales.size());
@@ -119,7 +118,7 @@ public class GetSalesTest {
         final List<Consolidation> backlogConsolidation = mockListBa(currentTime);
 
         return backlogConsolidation.stream().map(item -> new Backlog(
-                ZonedDateTime.ofInstant(item.getDate(), ZoneOffset.UTC),
+                ZonedDateTime.ofInstant(item.getDate(), UTC),
                 item.getTotal())).collect(Collectors.toList());
     }
 
@@ -129,7 +128,7 @@ public class GetSalesTest {
 
     private Map<String, String> getRequestKeys(final Instant cpt) {
         final Map<String, String> result = new ConcurrentHashMap<>();
-        result.put("date_out", cpt.toString());
+        result.put("date_in", cpt.toString());
         return result;
     }
 }

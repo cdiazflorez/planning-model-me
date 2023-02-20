@@ -1,12 +1,11 @@
-package com.mercadolibre.planning.model.me.usecases.sales.dtos;
+package com.mercadolibre.planning.model.me.services.sales.dtos;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 @Getter
 @AllArgsConstructor

@@ -16,6 +16,8 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviati
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.services.sales.GetSalesByDateIn;
+import com.mercadolibre.planning.model.me.services.sales.dtos.GetSalesInputDto;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.DeviationData;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationActions;
@@ -25,8 +27,6 @@ import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.devi
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationUnitDetail;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationValues;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process.Metric;
-import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
-import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +42,7 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
     private static final int DATE_OUT_LIMIT_HOURS = 96;
     public static final double HOUR_IN_MINUTES = 60;
 
-    private final GetSales getSales;
+    private final GetSalesByDateIn getSalesByDateIn;
     private final PlanningModelGateway planningModelGateway;
     private final LogisticCenterGateway logisticCenterGateway;
 
@@ -118,7 +118,7 @@ public class GetDeviation implements UseCase<GetDeviationInput, DeviationData> {
         final ZonedDateTime dateOutFrom = input.getCurrentTime();
         final ZonedDateTime dateOutTo = dateOutFrom.plusHours(DATE_OUT_LIMIT_HOURS);
 
-        return getSales.execute(new GetSalesInputDto(
+        return getSalesByDateIn.execute(new GetSalesInputDto(
                 input.getWorkflow(),
                 input.getWarehouseId(),
                 dateInFrom.withZoneSameInstant(UTC),

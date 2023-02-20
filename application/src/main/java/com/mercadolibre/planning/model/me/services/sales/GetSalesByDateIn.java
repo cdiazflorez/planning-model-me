@@ -1,4 +1,4 @@
-package com.mercadolibre.planning.model.me.usecases.sales;
+package com.mercadolibre.planning.model.me.services.sales;
 
 import static java.util.Collections.emptyList;
 
@@ -9,8 +9,8 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.BacklogFilters;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.gateways.outboundunit.UnitSearchGateway;
 import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
+import com.mercadolibre.planning.model.me.services.sales.dtos.GetSalesInputDto;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
-import com.mercadolibre.planning.model.me.usecases.sales.dtos.GetSalesInputDto;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -21,9 +21,9 @@ import lombok.AllArgsConstructor;
 
 @Named
 @AllArgsConstructor
-public class GetSales implements UseCase<GetSalesInputDto, List<Backlog>> {
+public class GetSalesByDateIn implements UseCase<GetSalesInputDto, List<Backlog>> {
 
-    private static final String DATE_OUT = "date_out";
+    private static final String DATE_IN = "date_in";
 
     final UnitSearchGateway unitSearchGateway;
 
@@ -42,7 +42,7 @@ public class GetSales implements UseCase<GetSalesInputDto, List<Backlog>> {
                     List.of("outbound-orders"),
                     emptyList(),
                     emptyList(),
-                    List.of(DATE_OUT),
+                    List.of(DATE_IN),
                     input.getDateCreatedFrom().toInstant(),
                     input.getDateCreatedTo().toInstant(),
                     input.getDateOutFrom().toInstant(),
@@ -51,7 +51,7 @@ public class GetSales implements UseCase<GetSalesInputDto, List<Backlog>> {
 
             return backlogConsolidation.stream()
                     .map(item -> new Backlog(
-                            ZonedDateTime.ofInstant(Instant.parse(item.getKeys().get(DATE_OUT)), ZoneOffset.UTC),
+                            ZonedDateTime.ofInstant(Instant.parse(item.getKeys().get(DATE_IN)), ZoneOffset.UTC),
                             item.getTotal()))
                     .collect(Collectors.toList());
         } else {
@@ -68,4 +68,3 @@ public class GetSales implements UseCase<GetSalesInputDto, List<Backlog>> {
         }
     }
 }
-

@@ -38,10 +38,10 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.PackingRatio;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
+import com.mercadolibre.planning.model.me.services.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionDataInput;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.GetProjectionInputDto;
-import com.mercadolibre.planning.model.me.usecases.sales.GetSales;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -254,4 +254,3 @@ public abstract class GetProjectionOutbound extends GetProjection {
             i -> new PackingRatio(1.0, 0.0)));
   }
 }
-

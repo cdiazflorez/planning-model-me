@@ -120,7 +120,7 @@ public class GetBacklogScheduledTest {
     BacklogScheduledMetrics expectedBacklogInboundTransfer = BacklogScheduledMetrics.builder()
         .expected(Indicator.builder().units(0).build())
         .received(Indicator.builder().units(0).build())
-        .deviation(Indicator.builder().units(0).percentage(0.0).build())
+        .deviation(Indicator.builder().units(0).percentage(null).build())
         .build();
 
     //verify
