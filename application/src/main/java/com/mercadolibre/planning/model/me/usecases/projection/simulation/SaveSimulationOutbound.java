@@ -83,8 +83,6 @@ public class SaveSimulationOutbound extends GetProjectionOutbound {
       final var packingRatio = getPackingRatio(
           input.getWarehouseId(),
           config.isPutToWall(),
-          input.getRequestDate(),
-          dateTo.toInstant().plus(2, HOURS),
           dateFrom.toInstant(),
           dateTo.toInstant()
       );

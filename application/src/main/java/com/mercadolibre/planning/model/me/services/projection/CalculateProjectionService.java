@@ -35,10 +35,10 @@ import com.mercadolibre.planning.model.me.entities.projection.chart.ProcessingTi
 import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -251,7 +251,7 @@ public class CalculateProjectionService {
   }
 
   private static Map<Instant, OrderedBacklogByDateRatioSplitter.Distribution<String>> ratiosAsDistributions(
-      final Map<Instant, PackingRatioCalculator.PackingRatio> ratioByHour,
+      final Map<Instant, PackingRatio> ratioByHour,
       final List<Instant> inflectionPoints) {
     final var baseRatios = ratioByHour.entrySet()
         .stream()
@@ -296,9 +296,8 @@ public class CalculateProjectionService {
       final List<Photo.Group> backlogPhoto,
       final List<PlanningDistributionResponse> forecastSales,
       final Map<Instant, ProcessingTime> processingTimeByDateOut,
-      final Map<Instant, PackingRatioCalculator.PackingRatio> ratioByHour
+      final Map<Instant, PackingRatio> ratioByHour
   ) {
-
     final var currentHourRatio = ratioByHour.get(dateTo.truncatedTo(ChronoUnit.HOURS));
     final var currentBacklog = BacklogProjectionGrouper.reduce(backlogPhoto, currentHourRatio);
     final var inflectionPoints = generateInflectionPoints(requestDate, dateTo);
@@ -423,7 +422,7 @@ public class CalculateProjectionService {
 
     private static Stream<ProcessBacklogAtSla> toProcessBacklogAtSla(
         final Photo.Group group,
-        final PackingRatioCalculator.PackingRatio ratio
+        final PackingRatio ratio
     ) {
 
       final boolean isPicked = group.getGroupValue(STEP)
@@ -449,7 +448,7 @@ public class CalculateProjectionService {
 
     private static Map<ProcessName, Map<Instant, Integer>> reduce(
         final List<Photo.Group> photo,
-        final PackingRatioCalculator.PackingRatio ratio
+        final PackingRatio ratio
     ) {
 
       return photo.stream()

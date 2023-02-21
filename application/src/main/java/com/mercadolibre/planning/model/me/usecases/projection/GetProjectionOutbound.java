@@ -30,13 +30,13 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.PackingRatio;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.services.sales.GetSales;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
@@ -207,13 +207,11 @@ public abstract class GetProjectionOutbound extends GetProjection {
 
   protected Map<Instant, PackingRatio> getPackingRatio(final String logisticCenterId,
                                                        final boolean hasWall,
-                                                       final Instant slaDateFrom,
-                                                       final Instant slaDateTo,
                                                        final Instant dateFrom,
                                                        final Instant dateTo) {
 
     if (hasWall) {
-      return ratioService.getPackingRatio(logisticCenterId, slaDateFrom, slaDateTo, dateFrom, dateTo);
+      return ratioService.getPackingRatio(logisticCenterId, dateFrom, dateTo);
     } else {
       return getPickingRatioForTotePacking(dateFrom, dateTo);
     }

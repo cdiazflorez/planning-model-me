@@ -45,14 +45,13 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SlaProperties;
-import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
 import com.mercadolibre.planning.model.me.services.projection.CalculateProjectionService;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.projection.deferral.GetSimpleDeferralProjection;
@@ -101,8 +100,7 @@ public class GetSlaProjectionOutboundTest {
   void testExecute() {
     // Given
     final ZonedDateTime currentUtcDateTime = getCurrentUtcDate();
-    final ZonedDateTime utcDateTimeFrom = currentUtcDateTime;
-    final ZonedDateTime utcDateTimeTo = utcDateTimeFrom.plusDays(4);
+    final ZonedDateTime utcDateTimeTo = currentUtcDateTime.plusDays(4);
 
     final List<Backlog> mockedBacklog = mockBacklog();
 
@@ -110,7 +108,7 @@ public class GetSlaProjectionOutboundTest {
     final GetProjectionInputDto getProjectionInputDto = GetProjectionInputDto.builder()
         .workflow(FBM_WMS_OUTBOUND)
         .warehouseId(WAREHOUSE_ID)
-        .date(utcDateTimeFrom)
+        .date(currentUtcDateTime)
         .requestDate(currentUtcDateTime.toInstant())
         .build();
 
@@ -118,7 +116,7 @@ public class GetSlaProjectionOutboundTest {
     final var logisticCenterConfiguration = new LogisticCenterConfiguration(TIME_ZONE);
     final List<ProjectionResult> projectionResults = mockProjectionResults();
     final List<PlanningDistributionResponse> expectedBacklog = mockExpectedBacklog();
-    final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatioByHour = generateMockPackingRatioByHour(
+    final Map<Instant, PackingRatio> packingRatioByHour = generateMockPackingRatioByHour(
         currentUtcDateTime.toInstant(),
         utcDateTimeTo.toInstant()
     );
@@ -129,7 +127,7 @@ public class GetSlaProjectionOutboundTest {
                 getSteps(FBM_WMS_OUTBOUND),
                 null,
                 null,
-                utcDateTimeFrom.toInstant(),
+                currentUtcDateTime.toInstant(),
                 utcDateTimeTo.toInstant(),
                 Set.of(STEP, DATE_OUT, AREA),
                 utcDateTimeTo.toInstant()
@@ -211,7 +209,7 @@ public class GetSlaProjectionOutboundTest {
     // When
     final List<ProjectionResult> planningView = getSlaProjectionOutbound.getProjection(
         getProjectionInputDto,
-        utcDateTimeFrom,
+        currentUtcDateTime,
         utcDateTimeTo,
         mockedBacklog,
         new LogisticCenterConfiguration(TIME_ZONE)

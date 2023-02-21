@@ -21,9 +21,9 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -142,13 +142,13 @@ public final class OutboundProjectionTestUtils {
     );
   }
 
-  public static Map<Instant, PackingRatioCalculator.PackingRatio> generateMockPackingRatioByHour(
+  public static Map<Instant, PackingRatio> generateMockPackingRatioByHour(
       final Instant currentDate,
       final Instant dateTo
   ) {
     Instant date = currentDate.truncatedTo(HOURS);
-    final HashMap<Instant, PackingRatioCalculator.PackingRatio> ratioByHour = new HashMap<>();
-    final PackingRatioCalculator.PackingRatio packingRatio = new PackingRatioCalculator.PackingRatio(1.0, 0.0);
+    final HashMap<Instant, PackingRatio> ratioByHour = new HashMap<>();
+    final PackingRatio packingRatio = new PackingRatio(1.0, 0.0);
 
     while (date.isBefore(dateTo) || date.equals(dateTo)) {
       ratioByHour.put(date, packingRatio);

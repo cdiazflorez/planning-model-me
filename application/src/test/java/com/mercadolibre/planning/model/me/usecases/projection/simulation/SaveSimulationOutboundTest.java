@@ -22,7 +22,6 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WORKFLOW;
 import static java.time.ZoneOffset.UTC;
 import static java.time.ZonedDateTime.now;
-import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static java.util.stream.Collectors.toList;
@@ -51,6 +50,7 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticC
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
@@ -61,7 +61,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SlaProperties;
 import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator.PackingRatio;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.services.projection.CalculateProjectionService;
 import com.mercadolibre.planning.model.me.services.sales.GetSales;
@@ -419,8 +418,6 @@ class SaveSimulationOutboundTest {
 
     when(ratioService.getPackingRatio(
         input.getWarehouseId(),
-        input.getRequestDate(),
-        dateTo.toInstant().plus(2, HOURS),
         dateFrom.toInstant(),
         dateTo.toInstant()
     )).thenReturn(RATIOS);

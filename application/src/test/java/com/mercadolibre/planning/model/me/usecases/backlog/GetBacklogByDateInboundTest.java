@@ -57,7 +57,7 @@ public class GetBacklogByDateInboundTest {
         slaFrom,
         slaTo,
         groupers,
-        now))).thenReturn(responseGetCurrentBacklog(), null);
+        now))).thenReturn(responseGetCurrentBacklog(), (Photo) null);
 
     List<Backlog> response = getBacklogByDateInbound.execute(new GetBacklogByDateDto(
         Workflow.FBM_WMS_INBOUND, warehouseId, slaFrom, slaTo
