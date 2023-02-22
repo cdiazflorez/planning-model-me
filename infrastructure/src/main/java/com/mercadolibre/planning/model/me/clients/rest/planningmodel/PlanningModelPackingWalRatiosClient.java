@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 
-import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_RATIOS;
+import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.OK;
 
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
@@ -21,22 +22,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class PlanningModelPackingWalRatiosClient extends HttpClient implements PackingWallRatiosGateway {
 
-  private static final String PACKING_RATIOS_URL = "/planning/model/ratios";
+  private static final String PACKING_RATIOS_URL = "/logistic_center/%s/ratios";
 
   protected PlanningModelPackingWalRatiosClient(MeliRestClient client) {
-    super(client, PLANNING_MODEL.name());
+    super(client, PLANNING_MODEL_RATIOS.name());
   }
 
   @Trace
   @Override
   public Map<Instant, PackingRatio> getPackingWallRatios(String logisticCenterId, Instant dateFrom, Instant dateTo) {
     final Map<String, String> params = new ConcurrentHashMap<>();
-    params.put("logistic_center_id", logisticCenterId);
     params.put("date_from", dateFrom.toString());
     params.put("date_to", dateTo.toString());
 
     final HttpRequest request = HttpRequest.builder()
-        .url(PACKING_RATIOS_URL + "/packing_wall")
+        .url(format(PACKING_RATIOS_URL + "/packing_wall", logisticCenterId))
         .GET()
         .queryParams(params)
         .acceptedHttpStatuses(Set.of(OK))

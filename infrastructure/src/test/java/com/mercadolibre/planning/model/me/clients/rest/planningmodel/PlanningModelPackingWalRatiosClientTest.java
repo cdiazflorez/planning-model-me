@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 class PlanningModelPackingWalRatiosClientTest extends BaseClientTest {
 
-  private static final String GET_PACKING_RATIOS_URL = "/planning/model/ratios/packing_wall";
+  private static final String GET_PACKING_RATIOS_URL = "/logistic_center/%s/ratios";
 
   private PlanningModelPackingWalRatiosClient client;
 
@@ -32,6 +32,10 @@ class PlanningModelPackingWalRatiosClientTest extends BaseClientTest {
 
   @Test
   void testGetPackingWallRatios() {
+
+    //GIVEN
+    final String url = String.format(GET_PACKING_RATIOS_URL, "LC123") + "/packing_wall";
+
     // Arrange
     final String logisticCenterId = "LC123";
     final Instant dateFrom = Instant.parse("2022-01-15T10:00:00Z");
@@ -41,7 +45,7 @@ class PlanningModelPackingWalRatiosClientTest extends BaseClientTest {
 
     MockResponse.builder()
         .withMethod(GET)
-        .withURL(BASE_URL + GET_PACKING_RATIOS_URL)
+        .withURL(BASE_URL_MELISYSTEMS + url)
         .withStatusCode(OK.value())
         .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
         .withResponseBody(expectedResult.toString())
