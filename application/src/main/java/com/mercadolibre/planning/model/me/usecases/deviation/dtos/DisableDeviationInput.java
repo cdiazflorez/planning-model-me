@@ -1,13 +1,21 @@
 package com.mercadolibre.planning.model.me.usecases.deviation.dtos;
 
+import com.mercadolibre.planning.model.me.enums.DeviationType;
+import com.mercadolibre.planning.model.me.enums.ShipmentType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import lombok.Value;
+import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
 
-@Value
+@Builder
+@Getter
 public class DisableDeviationInput {
 
-    private String warehouseId;
+  String warehouseId;
 
-    private Workflow workflow;
+  Workflow workflow;
 
+  DeviationType type;
+
+  List<ShipmentType> affectedShipmentTypes;
 }

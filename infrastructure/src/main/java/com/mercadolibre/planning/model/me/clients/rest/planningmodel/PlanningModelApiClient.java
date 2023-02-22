@@ -107,6 +107,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private static final String WAREHOUSE_ID = "warehouse_id";
 
+  private static final String LOGISTIC_CENTER_ID = "logistic_center_id";
+
   private static final String DATE_FROM = "date_from";
 
   private static final String DATE_TO = "date_to";
@@ -290,7 +292,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public Optional<ConfigurationResponse> getConfiguration(
       final ConfigurationRequest configurationRequest) {
     final Map<String, String> params = new LinkedHashMap<>();
-    params.put("logistic_center_id", configurationRequest.getWarehouseId());
+    params.put(LOGISTIC_CENTER_ID, configurationRequest.getWarehouseId());
     params.put("key", configurationRequest.getKey());
     final HttpRequest request = HttpRequest.builder()
         .url(CONFIGURATION_URL)
@@ -536,11 +538,11 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   @Override
   public void save(final List<SaveDeviationInput> deviations) {
     final List<SaveDeviationRequest> deviationRequests = deviations.stream()
-              .map(SaveDeviationInput::toSaveDeviationApiRequest)
-              .collect(Collectors.toList());
+        .map(SaveDeviationInput::toSaveDeviationApiRequest)
+        .collect(Collectors.toList());
 
     final HttpRequest request = HttpRequest.builder()
-            .url(format(BASE_DEVIATIONS_URL, IGNORABLE_WORKFLOW, "save/all"))
+        .url(format(BASE_DEVIATIONS_URL, IGNORABLE_WORKFLOW, "save/all"))
         .POST(requestSupplier(deviationRequests))
         .acceptedHttpStatuses(Set.of(OK, CREATED, NO_CONTENT))
         .build();
@@ -556,6 +558,24 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
             + DEVIATIONS_URL + "/disable")
         .POST(requestSupplier(disableDeviationInput))
         .acceptedHttpStatuses(Set.of(OK, CREATED))
+        .build();
+
+    return send(request, response -> response.getData(new TypeReference<>() {
+    }));
+  }
+
+  @Trace
+  @Override
+  public DeviationResponse disableDeviationAll(final String logisticCenterId, final List<DisableDeviationInput> disableDeviationInput) {
+    final Map<String, String> params = Map.of(
+        LOGISTIC_CENTER_ID, logisticCenterId
+    );
+
+    final HttpRequest request = HttpRequest.builder()
+        .url(format(BASE_DEVIATIONS_URL, IGNORABLE_WORKFLOW, "disable/all"))
+        .POST(requestSupplier(disableDeviationInput))
+        .queryParams(params)
+        .acceptedHttpStatuses(Set.of(OK, CREATED, NO_CONTENT))
         .build();
 
     return send(request, response -> response.getData(new TypeReference<>() {

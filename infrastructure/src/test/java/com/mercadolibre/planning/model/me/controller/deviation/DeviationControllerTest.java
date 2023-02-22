@@ -13,6 +13,7 @@ import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.verify;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -287,17 +288,51 @@ public class DeviationControllerTest {
             result.andExpect(status().isOk());
         }
 
-        @Test
-        void disableDeviationErrorApi() throws Exception {
-            // GIVEN
-            doThrow(RuntimeException.class).when(disableDeviation).execute(any(DisableDeviationInput.class));
+    @Test
+    void testDisableDeviationsOk() throws Exception {
+      // WHEN
+      final var response = mvc.perform(MockMvcRequestBuilders
+          .post(format(URL, "INBOUND") + "/disable/minutes/all")
+          .param("caller.id", String.valueOf(USER_ID))
+          .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+          .content(getResourceAsString("post_disable_all_deviation_request.json"))
+          .contentType(APPLICATION_JSON));
+
+      // THEN
+      response.andExpect(status().isNoContent());
+
+      final List<ShipmentType> affectedShipmentTypes = List.of(ShipmentType.SPD, ShipmentType.PRIVATE);
+
+      verify(disableDeviation).executeAll(eq(WAREHOUSE_ID_ARTW01), Mockito.argThat(res -> compareArguments(affectedShipmentTypes, res)));
+    }
+
+    @Test
+    void disableDeviationErrorApi() throws Exception {
+      // GIVEN
+      doThrow(RuntimeException.class).when(disableDeviation).execute(any(DisableDeviationInput.class));
 
             // WHEN
             final var result = whenDisableDeviation();
 
-            // THEN
-            result.andExpect(status().isInternalServerError());
-        }
+      // THEN
+      result.andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void disableDeviationAllErrorApi() throws Exception {
+      // GIVEN
+      doThrow(RuntimeException.class).when(disableDeviation).executeAll(eq(WAREHOUSE_ID_ARTW01), any(List.class));
+
+      // WHEN
+      final var result = mvc.perform(MockMvcRequestBuilders
+          .post(format(URL, "INBOUND") + "/disable/minutes/all")
+          .param("caller.id", String.valueOf(USER_ID))
+          .param("logistic_center_id", WAREHOUSE_ID_ARTW01)
+          .contentType(APPLICATION_JSON));
+
+      // THEN
+      result.andExpect(status().isInternalServerError());
+    }
 
         @Test
         void disableDeviationUserNoAuthorized() throws Exception {
@@ -313,14 +348,22 @@ public class DeviationControllerTest {
             verifyNoInteractions(disableDeviation);
         }
 
-        private ResultActions whenDisableDeviation() throws Exception {
-            return mvc.perform(MockMvcRequestBuilders
-                    .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/disable")
-                    .param("caller.id", String.valueOf(USER_ID))
-                    .param("warehouse_id", WAREHOUSE_ID_ARTW01)
-                    .contentType(APPLICATION_JSON));
-        }
+    private ResultActions whenDisableDeviation() throws Exception {
+      return mvc.perform(MockMvcRequestBuilders
+          .post(format(URL, FBM_WMS_OUTBOUND.getName()) + "/disable")
+          .param("caller.id", String.valueOf(USER_ID))
+          .param("warehouse_id", WAREHOUSE_ID_ARTW01)
+          .contentType(APPLICATION_JSON));
     }
+
+    private boolean compareArguments(final List<ShipmentType> affectedShipmentTypes, final List<DisableDeviationInput> actual) {
+      return INBOUND.equals(actual.get(0).getWorkflow())
+          && INBOUND_TRANSFER.equals(actual.get(1).getWorkflow())
+          && DeviationType.MINUTES.equals(actual.get(0).getType())
+          && DeviationType.MINUTES.equals(actual.get(1).getType())
+          && affectedShipmentTypes.equals(actual.get(0).getAffectedShipmentTypes());
+    }
+  }
 
     @Nested
     @DisplayName("Test disable deviation Shipment")
@@ -342,10 +385,10 @@ public class DeviationControllerTest {
             );
         }
 
-        @Test
-        void testDisableDeviationShipmentOnErrorShouldReturnADeviationResponse() throws Exception {
-            // GIVEN
-            doThrow(RuntimeException.class).when(disableDeviation).execute(new DisableDeviationInput(WAREHOUSE_ID_ARTW01, FBM_WMS_INBOUND));
+    @Test
+    void testDisableDeviationShipmentOnErrorShouldReturnADeviationResponse() throws Exception {
+      // GIVEN
+      doThrow(RuntimeException.class).when(disableDeviation).execute(any());
 
             // WHEN
             final var result = whenDisableDeviationInboundUnits();

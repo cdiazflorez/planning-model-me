@@ -7,6 +7,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.OK;
 
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
+import com.mercadolibre.planning.model.me.controller.deviation.request.DisableDeviationRequest;
 import com.mercadolibre.planning.model.me.controller.deviation.request.SaveDeviationRequest;
 import com.mercadolibre.planning.model.me.controller.editor.DeviationTypeEditor;
 import com.mercadolibre.planning.model.me.controller.editor.ShipmentTypeEditor;
@@ -152,19 +153,25 @@ public class DeviationController {
         return ResponseEntity.noContent().build();
     }
 
-    @Trace
-    @PostMapping("/disable")
-    public ResponseEntity<Void> disable(
-            @PathVariable final Workflow workflow,
-            @RequestParam final String warehouseId,
-            @RequestParam("caller.id") @NotNull final Long callerId
-    ) {
+  @Deprecated
+  @Trace
+  @PostMapping("/disable")
+  public ResponseEntity<Void> disable(
+      @PathVariable final Workflow workflow,
+      @RequestParam final String warehouseId,
+      @RequestParam("caller.id") @NotNull final Long callerId
+  ) {
 
         authorizeUser.execute(new AuthorizeUserDto(callerId, singletonList(OUTBOUND_SIMULATION)));
 
-        disableDeviation.execute(new DisableDeviationInput(warehouseId, workflow));
-        return ResponseEntity.status(OK).build();
-    }
+    final DisableDeviationInput input = DisableDeviationInput.builder()
+        .warehouseId(warehouseId)
+        .workflow(workflow)
+        .build();
+
+    disableDeviation.execute(input);
+    return ResponseEntity.status(OK).build();
+  }
 
     @Trace
     @PostMapping("/disable/{type}")
@@ -177,16 +184,45 @@ public class DeviationController {
 
         checkUserPermissions(callerId, singletonList(workflow));
 
-        disableDeviation.execute(new DisableDeviationInput(logisticCenterId, workflow));
-        return ResponseEntity.status(OK).build();
-    }
+    final DisableDeviationInput input = DisableDeviationInput.builder()
+        .warehouseId(logisticCenterId)
+        .workflow(workflow)
+        .build();
 
-    @InitBinder
-    public void initBinder(final PropertyEditorRegistry dataBinder) {
-        dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
-        dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
-        dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
-    }
+    disableDeviation.execute(input);
+    return ResponseEntity.status(OK).build();
+  }
+
+  @Trace
+  @PostMapping("/disable/{type}/all")
+  public ResponseEntity<Object> disable(
+      @RequestParam final String logisticCenterId,
+      @RequestParam("caller.id") @NotNull final Long callerId,
+      @PathVariable final DeviationType type,
+      @RequestBody @Valid @NotEmpty final List<DisableDeviationRequest> deviations
+  ) {
+
+    final List<Workflow> workflows = deviations.stream()
+        .map(DisableDeviationRequest::getWorkflow)
+        .collect(toList());
+
+    checkUserPermissions(callerId, workflows);
+
+    final List<DisableDeviationInput> deviationsDisable = deviations.stream()
+        .map(deviation -> deviation.toDeviationInput(type))
+        .collect(toList());
+
+    disableDeviation.executeAll(logisticCenterId, deviationsDisable);
+
+    return ResponseEntity.noContent().build();
+  }
+
+  @InitBinder
+  public void initBinder(final PropertyEditorRegistry dataBinder) {
+    dataBinder.registerCustomEditor(Workflow.class, new WorkflowEditor());
+    dataBinder.registerCustomEditor(ShipmentType.class, new ShipmentTypeEditor());
+    dataBinder.registerCustomEditor(DeviationType.class, new DeviationTypeEditor());
+  }
 
     private void checkUserPermissions(final long callerId, final List<Workflow> workflows) {
         final List<UserPermission> permissions = workflows.stream()
