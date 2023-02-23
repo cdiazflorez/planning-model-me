@@ -9,6 +9,7 @@ import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.entity.EntityGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -17,7 +18,6 @@ import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogAreaDistribution;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.BacklogQuantityAtSla;
 import com.mercadolibre.planning.model.me.gateways.projection.backlog.ProjectedBacklogForAnAreaAndOperatingHour;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.usecases.projection.dtos.BacklogProjectionInput;
 import com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos.GetShareDistributionInput;
@@ -54,11 +54,9 @@ public class ProjectBacklog {
       return Collections.emptyList();
     }
 
-    final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatios = input.isHasWall() && input.getWorkflow() == FBM_WMS_OUTBOUND
+    final Map<Instant, PackingRatio> packingRatios = input.isHasWall() && input.getWorkflow() == FBM_WMS_OUTBOUND
         ? ratioService.getPackingRatio(
             input.getWarehouseId(),
-            input.getSlaDateFrom(),
-            input.getSlaDateTo(),
             input.getDateFrom().toInstant(),
             input.getDateTo().toInstant())
         : emptyMap();

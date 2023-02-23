@@ -47,6 +47,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -55,7 +56,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Simulation
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SlaProperties;
 import com.mercadolibre.planning.model.me.gateways.toogle.FeatureSwitches;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.services.projection.CalculateProjectionService;
 import com.mercadolibre.planning.model.me.services.sales.GetSales;
@@ -310,8 +310,6 @@ public class RunSimulationOutboundTest {
 
     when(ratioService.getPackingRatio(
             WAREHOUSE_ID,
-            Instant.from(UTC_CURRENT_DATE),
-            slaTo.plus(2, HOURS),
             slaFrom,
             slaTo
         )
@@ -523,12 +521,13 @@ public class RunSimulationOutboundTest {
     );
   }
 
-  private Map<Instant, PackingRatioCalculator.PackingRatio> generatePackingRatioByHour(final Instant currentDate, final Instant dateTo) {
+  private Map<Instant, PackingRatio> generatePackingRatioByHour(final Instant currentDate, final Instant dateTo) {
     Instant date = currentDate.truncatedTo(HOURS);
-    final TreeMap<Instant, PackingRatioCalculator.PackingRatio> ratioByHour = new TreeMap<>();
+    final TreeMap<Instant, PackingRatio> ratioByHour = new TreeMap<>();
+    final PackingRatio packingRatio = new PackingRatio(0.5, 0.5);
 
     while (date.isBefore(dateTo) || date.equals(dateTo)) {
-      ratioByHour.put(date, new PackingRatioCalculator.PackingRatio(0.5, 0.5));
+      ratioByHour.put(date, packingRatio);
 
       date = date.plus(1, HOURS);
     }

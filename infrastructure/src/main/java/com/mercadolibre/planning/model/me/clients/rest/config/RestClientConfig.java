@@ -9,6 +9,7 @@ import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OU
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_UNIT_SEARCH;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_FORECAST;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_RATIOS;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.STAFFING;
 
 import com.mercadolibre.restclient.MeliRESTPool;
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
     RestClientConfig.LogisticCenterClientProperties.class,
     RestClientConfig.AuthorizationClientProperties.class,
     RestClientConfig.PlanningModelForecastClientProperties.class,
+    RestClientConfig.PlanningModelMelysistemsClientProperties.class,
     RestClientConfig.OutboundWaveClientProperties.class,
     RestClientConfig.OutboundUnitSearchClientProperties.class,
     RestClientConfig.StaffingClientProperties.class,
@@ -48,6 +50,7 @@ public class RestClientConfig {
   private LogisticCenterClientProperties logisticCenterClientProperties;
   private AuthorizationClientProperties authorizationClientProperties;
   private PlanningModelForecastClientProperties planningModelForecastClientProperties;
+  private PlanningModelMelysistemsClientProperties planningModelMelysistemsClientProperties;
   private OutboundWaveClientProperties outboundWaveClientProperties;
   private OutboundUnitSearchClientProperties outboundUnitSearchClientProperties;
   private StaffingClientProperties staffingClientProperties;
@@ -61,6 +64,7 @@ public class RestClientConfig {
         .builder()
         .withPool(
             restPool(PLANNING_MODEL.name(), planningModelClientProperties),
+            restPool(PLANNING_MODEL_RATIOS.name(), planningModelMelysistemsClientProperties),
             restPool(OUTBOUND_UNIT.name(), outboundUnitProperties),
             restPool(LOGISTIC_CENTER.name(),
                 logisticCenterClientProperties, localCache(
@@ -129,6 +133,10 @@ public class RestClientConfig {
 
   @ConfigurationProperties("restclient.pool.planning-model-forecast")
   public static class PlanningModelForecastClientProperties extends RestClientProperties {
+  }
+
+  @ConfigurationProperties("restclient.pool.planning-model-melisystems")
+  public static class PlanningModelMelysistemsClientProperties extends RestClientProperties {
   }
 
   @ConfigurationProperties("restclient.pool.outbound-wave")

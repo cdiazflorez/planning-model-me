@@ -7,8 +7,8 @@ import static java.util.List.of;
 
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.projection.ProjectionGateway;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import com.mercadolibre.planning.model.me.usecases.backlog.GetBacklogMonitorDetails;
 import java.time.Instant;
@@ -40,8 +40,8 @@ public class DetailsBacklogRatioService extends DetailsBacklogService implements
 
   @Override
   protected Map<Instant, Double> getPackingWallRatios(final BacklogProviderInput input) {
-    final Map<Instant, PackingRatioCalculator.PackingRatio> packingRatios = input.isHasWall()
-        ? ratioService.getPackingRatio(input.getWarehouseId(), input.getSlaFrom(), input.getSlaTo(), input.getDateFrom(), input.getDateTo())
+    final Map<Instant, PackingRatio> packingRatios = input.isHasWall()
+        ? ratioService.getPackingRatio(input.getWarehouseId(), input.getDateFrom(), input.getDateTo())
         : emptyMap();
 
     return packingRatios.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, item -> item.getValue().getPackingWallRatio()));

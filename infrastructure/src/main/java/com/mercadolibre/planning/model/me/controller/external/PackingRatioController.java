@@ -1,6 +1,6 @@
 package com.mercadolibre.planning.model.me.controller.external;
 
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.services.backlog.RatioService;
 import java.time.Instant;
 import java.util.Map;
@@ -22,13 +22,11 @@ public class PackingRatioController {
   private RatioService ratioService;
 
   @GetMapping("/packing_ratio")
-  public ResponseEntity<Map<Instant, PackingRatioCalculator.PackingRatio>> getPackingRatio(
+  public ResponseEntity<Map<Instant, PackingRatio>> getPackingRatio(
       @RequestParam @NotNull @NotBlank final String logisticCenterId,
-      @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final Instant slaDateFrom,
-      @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final Instant slaDateTo,
       @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final Instant dateFrom,
       @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final Instant dateTo) {
 
-    return ResponseEntity.ok(ratioService.getPackingRatio(logisticCenterId, slaDateFrom, slaDateTo, dateFrom, dateTo));
+    return ResponseEntity.ok(ratioService.getPackingRatio(logisticCenterId, dateFrom, dateTo));
   }
 }

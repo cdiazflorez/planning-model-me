@@ -16,10 +16,10 @@ import com.mercadolibre.planning.model.me.entities.workflows.Step;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PackingRatio;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
-import com.mercadolibre.planning.model.me.services.backlog.PackingRatioCalculator;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -149,10 +149,10 @@ public class CalculateProjectionServiceTest {
     }
   }
 
-  private Map<Instant, PackingRatioCalculator.PackingRatio> ratioByHour() {
+  private Map<Instant, PackingRatio> ratioByHour() {
     return Map.of(
-        FIRST_OPERATION_DATE, new PackingRatioCalculator.PackingRatio(0.5, 0.5),
-        SECOND_OPERATION_DATE, new PackingRatioCalculator.PackingRatio(0.5, 0.5)
+        FIRST_OPERATION_DATE, new PackingRatio(0.5, 0.5),
+        SECOND_OPERATION_DATE, new PackingRatio(0.5, 0.5)
     );
   }
 

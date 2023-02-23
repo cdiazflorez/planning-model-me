@@ -4,6 +4,7 @@ import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.AuthorizationClientProperties;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.LogisticCenterClientProperties;
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.PlanningModelClientProperties;
+import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.PlanningModelMelysistemsClientProperties;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
 
@@ -12,12 +13,17 @@ import java.io.IOException;
 public class BaseClientTest {
 
     protected static final String BASE_URL = "http://internal.mercadolibre.com";
+    protected static final String BASE_URL_MELISYSTEMS = "http://fbm-flow.melisystems.com";
 
     protected MeliRestClient getRestTestClient() throws IOException {
 
         final PlanningModelClientProperties planningModelClientProperties =
                 new PlanningModelClientProperties();
         planningModelClientProperties.setBaseUrl(BASE_URL);
+
+        final PlanningModelMelysistemsClientProperties melysistemsClientProperties =
+            new PlanningModelMelysistemsClientProperties();
+        melysistemsClientProperties.setBaseUrl(BASE_URL_MELISYSTEMS);
 
         final RestClientConfig.OutboundUnitRestClientProperties outboundUnitRestClientProperties =
                 new RestClientConfig.OutboundUnitRestClientProperties();
@@ -66,6 +72,7 @@ public class BaseClientTest {
                 logisticCenterClientProperties,
                 authorizationClientProperties,
                 planningModelForecastClientProperties,
+                melysistemsClientProperties,
                 outboundWaveRestClientProperties,
                 unitSearchClientProperties,
                 staffingClientProperties,

@@ -81,8 +81,6 @@ public class ProjectBacklogTest {
     when(ratioService.getPackingRatio(
         WAREHOUSE_ID,
         A_DATE.toInstant(),
-        A_DATE.plusHours(10).toInstant(),
-        A_DATE.toInstant(),
         A_DATE.plusHours(25).toInstant())
     ).thenReturn(emptyMap());
 
@@ -229,7 +227,7 @@ public class ProjectBacklogTest {
     // WHEN
     final List<BacklogProjectionResponse> projections = projectBacklog.execute(input);
     assertEquals(Collections.emptyList(), projections);
-    verify(ratioService, never()).getPackingRatio(anyString(), any(), any(), any(), any());
+    verify(ratioService, never()).getPackingRatio(anyString(), any(), any());
     verify(planningModel, never()).getBacklogProjection(any());
   }
   @Test
