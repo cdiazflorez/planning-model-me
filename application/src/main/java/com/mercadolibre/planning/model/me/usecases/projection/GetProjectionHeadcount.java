@@ -34,6 +34,8 @@ import javax.inject.Named;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
+
 @Named
 @AllArgsConstructor
 @Slf4j
@@ -82,7 +84,7 @@ public class GetProjectionHeadcount {
             .dateTo(ZonedDateTime.ofInstant(dateTo, ZoneOffset.UTC))
             .source(Source.SIMULATION)
             .processName(List.of(ProcessName.PICKING))
-            .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
+            .processingType(List.of(ProcessingType.ACTIVE_WORKERS, EFFECTIVE_WORKERS))
             .workflow(Workflow.FBM_WMS_OUTBOUND)
             .entityType(MagnitudeType.HEADCOUNT)
             .build());
