@@ -499,41 +499,6 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
-  /**
-   * @deprecated use {@link #save(List)}
-   */
-  @Trace
-  @Override
-  @Deprecated
-  public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
-    final HttpRequest request = HttpRequest.builder()
-        .url(format(WORKFLOWS_URL, saveDeviationInput.getWorkflow())
-            + DEVIATIONS_URL + "/save")
-        .POST(requestSupplier(saveDeviationInput))
-        .acceptedHttpStatuses(Set.of(OK, CREATED))
-        .build();
-
-    return send(request, response -> response.getData(new TypeReference<>() {
-    }));
-  }
-
-  /**
-   * @deprecated use {@link #save(List)}
-   */
-  @Trace
-  @Override
-  @Deprecated
-  public DeviationResponse newSaveDeviation(final SaveDeviationInput saveDeviationInput) {
-    final HttpRequest request = HttpRequest.builder()
-        .url(format(BASE_DEVIATIONS_URL, saveDeviationInput.getWorkflow(), SAVE + saveDeviationInput.getType().getName()))
-        .POST(requestSupplier(saveDeviationInput))
-        .acceptedHttpStatuses(Set.of(OK, CREATED))
-        .build();
-
-    return send(request, response -> response.getData(new TypeReference<>() {
-    }));
-  }
-
   @Trace
   @Override
   public void save(final List<SaveDeviationInput> deviations) {
@@ -552,21 +517,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   @Trace
   @Override
-  public DeviationResponse disableDeviation(DisableDeviationInput disableDeviationInput) {
-    final HttpRequest request = HttpRequest.builder()
-        .url(format(WORKFLOWS_URL, disableDeviationInput.getWorkflow())
-            + DEVIATIONS_URL + "/disable")
-        .POST(requestSupplier(disableDeviationInput))
-        .acceptedHttpStatuses(Set.of(OK, CREATED))
-        .build();
-
-    return send(request, response -> response.getData(new TypeReference<>() {
-    }));
-  }
-
-  @Trace
-  @Override
-  public DeviationResponse disableDeviationAll(final String logisticCenterId, final List<DisableDeviationInput> disableDeviationInput) {
+  public DeviationResponse disableDeviation(final String logisticCenterId, final List<DisableDeviationInput> disableDeviationInput) {
     final Map<String, String> params = Map.of(
         LOGISTIC_CENTER_ID, logisticCenterId
     );
