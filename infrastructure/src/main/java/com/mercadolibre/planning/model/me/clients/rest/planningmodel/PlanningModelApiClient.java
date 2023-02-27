@@ -3,7 +3,9 @@ package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND_TRANSFER;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Optional.ofNullable;
@@ -121,6 +123,13 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   //TODO: Remove this when using traffic routes
   private static final Workflow IGNORABLE_WORKFLOW = INBOUND;
+
+  private static final Map<Workflow, String> PARAM_NAME_BY_WORKFLOW = Map.of(
+      FBM_WMS_INBOUND, FBM_WMS_INBOUND.getName(),
+      FBM_WMS_OUTBOUND, FBM_WMS_OUTBOUND.getName(),
+      INBOUND, FBM_WMS_INBOUND.getName(),
+      INBOUND_TRANSFER, FBM_WMS_INBOUND.getName()
+  );
 
   private final ObjectMapper objectMapper;
 
@@ -312,7 +321,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   @Override
   public List<PlanningDistributionResponse> getPlanningDistribution(final PlanningDistributionRequest planningDistributionRequest) {
     final HttpRequest request = HttpRequest.builder()
-        .url(format(WORKFLOWS_URL + "/planning_distributions", planningDistributionRequest.getWorkflow().getName()))
+        .url(format(WORKFLOWS_URL + "/planning_distributions", PARAM_NAME_BY_WORKFLOW.get(planningDistributionRequest.getWorkflow())))
         .GET()
         .queryParams(createPlanningDistributionParams(planningDistributionRequest))
         .acceptedHttpStatuses(Set.of(OK))
@@ -576,6 +585,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     addParameter(params, "date_out_from", request.getDateOutFrom());
     addParameter(params, "date_out_to", request.getDateOutTo());
     addParameter(params, "apply_deviation", Boolean.toString(request.isApplyDeviation()));
+    addParameter(params, "view_date", request.getDateOutTo());
+    addParameter(params, "workflow", request.getWorkflow().getName());
 
     return params;
   }

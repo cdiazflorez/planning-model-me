@@ -2,6 +2,10 @@ package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import static com.mercadolibre.planning.model.me.entities.workflows.Step.CHECK_IN;
 import static com.mercadolibre.planning.model.me.entities.workflows.Step.PUT_AWAY;
+import static com.mercadolibre.planning.model.me.entities.workflows.Step.SCHEDULED;
+import static com.mercadolibre.planning.model.me.entities.workflows.Step.getInboundSteps;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND_TRANSFER;
 import static java.util.List.of;
 
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
@@ -13,12 +17,18 @@ import com.mercadolibre.planning.model.me.gateways.backlog.dto.Photo;
 import com.mercadolibre.planning.model.me.gateways.inboundreports.InboundReportsApiGateway;
 import com.mercadolibre.planning.model.me.gateways.inboundreports.dto.InboundResponse;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.BacklogScheduledMetrics;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.InboundBacklogMonitor;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.InboundBacklogScheduled;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.ProcessMetric;
+import com.mercadolibre.planning.model.me.utils.DateUtils;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -37,11 +47,18 @@ import org.apache.commons.math3.util.Precision;
 public class GetBacklogScheduled {
   private static final Set<BacklogWorkflow> INBOUND_WORKFLOWS = Set.of(BacklogWorkflow.INBOUND, BacklogWorkflow.INBOUND_TRANSFER);
 
+  private static final Set<Step> IB_STEPS_WITHOUT_SCHEDULED = getInboundSteps().stream().filter(step -> !step.equals(SCHEDULED))
+      .collect(Collectors.toSet());
+
   private static final int SCALE_DECIMAL = 2;
 
   private static final int AMOUNT_TO_ADD_DAYS = 1;
 
   private static final int AMOUNT_TO_SUBTRACT_MINUTES = 1;
+
+  private static final String UTC = "UTC";
+
+  private static final long NOT_DEVIATION_APPLIED = 0;
 
   private final LogisticCenterGateway logisticCenterGateway;
 
@@ -49,21 +66,32 @@ public class GetBacklogScheduled {
 
   private final InboundReportsApiGateway inboundReportsApiGateway;
 
+  private final PlanningModelGateway planningModelGateway;
+
   public InboundBacklogMonitor execute(final String logisticCenterId, final Instant requestDate) {
     final Instant firstHourOfDayByLogisticCenter = ZonedDateTime.ofInstant(
             requestDate,
-            logisticCenterGateway.getConfiguration(logisticCenterId).getZoneId()
+           logisticCenterGateway.getConfiguration(logisticCenterId).getZoneId()
         )
         .truncatedTo(ChronoUnit.DAYS)
         .toInstant();
 
     final List<Photo.Group> lastPhoto = getLastPhoto(logisticCenterId, requestDate);
 
+    final List<PlanningDistributionResponse> scheduledBacklogDeviatedSeller = planningModelGateway.getPlanningDistribution(
+        generatePlanningDistributionRequest(logisticCenterId, INBOUND, requestDate)
+    );
+
+    final List<PlanningDistributionResponse> scheduledBacklogDeviatedTransfer = planningModelGateway.getPlanningDistribution(
+        generatePlanningDistributionRequest(logisticCenterId, INBOUND_TRANSFER, requestDate));
+
     final List<InboundBacklogScheduled> scheduledBacklogs = getScheduledBacklog(
         lastPhoto,
         requestDate,
         firstHourOfDayByLogisticCenter,
-        logisticCenterId
+        logisticCenterId,
+        scheduledBacklogDeviatedSeller,
+        scheduledBacklogDeviatedTransfer
     );
 
     return new InboundBacklogMonitor(
@@ -74,11 +102,31 @@ public class GetBacklogScheduled {
     );
   }
 
+  private PlanningDistributionRequest generatePlanningDistributionRequest(
+      final String logisticCenterId, final Workflow workflow, final Instant requestDate) {
+    final var dateInFrom = ZonedDateTime.ofInstant(requestDate, ZoneId.of(UTC));
+    final var dateInTo = dateInFrom.plus(1, ChronoUnit.DAYS);
+    final var dateOutFrom = dateInFrom.plus(1, ChronoUnit.DAYS);
+    final var dateOutTo = dateInTo.plus(3, ChronoUnit.DAYS);
+
+    return new PlanningDistributionRequest(
+        logisticCenterId,
+        workflow,
+        dateInFrom,
+        dateInTo,
+        dateOutFrom,
+        dateOutTo,
+        true
+    );
+  }
+
   private List<InboundBacklogScheduled> getScheduledBacklog(
       final List<Photo.Group> inboundBacklog,
       final Instant requestDate,
       final Instant firstHourOfDayByWarehouse,
-      final String logisticCenterId
+      final String logisticCenterId,
+      final List<PlanningDistributionResponse> scheduledBacklogDeviatedSeller,
+      final List<PlanningDistributionResponse> scheduledBacklogDeviatedTransfer
   ) {
     final Instant lastHourOfDayByWarehouse = firstHourOfDayByWarehouse
         .plus(AMOUNT_TO_ADD_DAYS, ChronoUnit.DAYS)
@@ -100,13 +148,17 @@ public class GetBacklogScheduled {
     final InboundBacklogScheduled scheduledBacklogToday = calculateNextBacklog(
         firstHourOfDayByWarehouse,
         lastHourOfDayByWarehouse,
-        inboundBacklog
+        inboundBacklog,
+        scheduledBacklogDeviatedSeller,
+        scheduledBacklogDeviatedTransfer
     );
 
     final InboundBacklogScheduled scheduledBacklogTomorrow = calculateNextBacklog(
         tomorrow,
         tomorrowLastHour,
-        inboundBacklog
+        inboundBacklog,
+        scheduledBacklogDeviatedSeller,
+        scheduledBacklogDeviatedTransfer
     );
 
     return of(scheduledBacklogToNow, scheduledBacklogToday, scheduledBacklogTomorrow);
@@ -119,7 +171,7 @@ public class GetBacklogScheduled {
       final String logisticCenterId
   ) {
 
-    final var expectedBacklogByWorkflow = getExpectedBacklogByWorkflow(dateFrom, dateTo, inboundBacklogGrouped);
+    final var expectedBacklogByWorkflow = getBacklogByWorkflow(dateFrom, dateTo, inboundBacklogGrouped, getInboundSteps());
     final var receivingBacklogByWorkflow = getReceivedBacklogByWorkflow(dateFrom, dateTo, logisticCenterId);
 
     final BacklogScheduledMetrics inboundBacklog = createBacklogScheduledResponse(
@@ -137,38 +189,49 @@ public class GetBacklogScheduled {
         dateTo.truncatedTo(ChronoUnit.MINUTES),
         inboundBacklog,
         inboundTransferBacklog,
-        totalizeBacklogScheduled(inboundBacklog, inboundTransferBacklog)
+        totalizeBacklogScheduled(inboundBacklog, inboundTransferBacklog),
+        NOT_DEVIATION_APPLIED
     );
   }
 
   private InboundBacklogScheduled calculateNextBacklog(
       final Instant dateFrom,
       final Instant dateTo,
-      final List<Photo.Group> inboundBacklogGrouped) {
+      final List<Photo.Group> inboundBacklogGrouped,
+      final List<PlanningDistributionResponse> scheduledBacklogSeller,
+      final List<PlanningDistributionResponse> scheduledBacklogTransfer) {
 
-    final var expectedBacklogByWorkflow = getExpectedBacklogByWorkflow(dateFrom, dateTo, inboundBacklogGrouped);
+    final var totalScheduledBacklogSeller = totalScheduledBacklogBetweenDate(scheduledBacklogSeller, dateFrom, dateTo);
+    final var totalScheduledBacklogTransfer = totalScheduledBacklogBetweenDate(scheduledBacklogTransfer, dateFrom, dateTo);
 
-    final Integer expectedBacklogInbound = expectedBacklogByWorkflow.get(BacklogWorkflow.INBOUND);
-    final Integer expectedBacklogInboundTransfer = expectedBacklogByWorkflow.get(BacklogWorkflow.INBOUND_TRANSFER);
+    final var backlogReceivedByWorkflow = getBacklogByWorkflow(dateFrom, dateTo, inboundBacklogGrouped, IB_STEPS_WITHOUT_SCHEDULED);
+
+    final Integer totalBacklogInbound = backlogReceivedByWorkflow.get(BacklogWorkflow.INBOUND) + totalScheduledBacklogSeller;
+    final Integer totalBacklogInboundTransfer = backlogReceivedByWorkflow.get(BacklogWorkflow.INBOUND_TRANSFER)
+        + totalScheduledBacklogTransfer;
 
     final BacklogScheduledMetrics inboundBacklog = BacklogScheduledMetrics.builder()
-        .expected(Indicator.builder().units(expectedBacklogInbound).build())
+        .expected(Indicator.builder().units(totalBacklogInbound).build())
         .build();
 
     final BacklogScheduledMetrics inboundTransferBacklog = BacklogScheduledMetrics.builder()
-        .expected(Indicator.builder().units(expectedBacklogInboundTransfer).build())
+        .expected(Indicator.builder().units(totalBacklogInboundTransfer).build())
         .build();
 
     final BacklogScheduledMetrics totalBacklog = BacklogScheduledMetrics.builder()
-        .expected(Indicator.builder().units(expectedBacklogInbound + expectedBacklogInboundTransfer).build())
+        .expected(Indicator.builder().units(totalBacklogInbound + totalBacklogInboundTransfer).build())
         .build();
+
+    final int totalBacklogScheduled = getBacklogByWorkflow(dateFrom, dateTo, inboundBacklogGrouped, Set.of(SCHEDULED))
+        .values().stream().mapToInt(i -> i).sum();
 
     return new InboundBacklogScheduled(
         dateFrom.truncatedTo(ChronoUnit.MINUTES),
         dateTo.truncatedTo(ChronoUnit.MINUTES),
         inboundBacklog,
         inboundTransferBacklog,
-        totalBacklog
+        totalBacklog,
+        Math.abs(totalScheduledBacklogSeller + totalScheduledBacklogTransfer - totalBacklogScheduled)
     );
   }
 
@@ -199,16 +262,18 @@ public class GetBacklogScheduled {
         .orElse(0);
   }
 
-  private Map<BacklogWorkflow, Integer> getExpectedBacklogByWorkflow(
+  private Map<BacklogWorkflow, Integer> getBacklogByWorkflow(
       final Instant dateFrom,
       final Instant dateTo,
-      final List<Photo.Group> inboundBacklogGrouped) {
+      final List<Photo.Group> inboundBacklogGrouped,
+      final Set<Step> steps) {
     return INBOUND_WORKFLOWS.stream()
         .collect(Collectors.toMap(
                 workflow -> workflow,
                 workflow -> inboundBacklogGrouped.stream()
-                    .filter(group -> group.getKey().get(BacklogGrouper.WORKFLOW).equals(workflow.getName())
-                        && isDateBetween(dateFrom, dateTo, Instant.parse(group.getKey().get(BacklogGrouper.DATE_IN))))
+                    .filter(group -> workflow.equals(group.getBacklogWorkflow(BacklogGrouper.WORKFLOW).orElse(null))
+                        && isDateBetween(dateFrom, dateTo, Instant.parse(group.getKey().get(BacklogGrouper.DATE_IN)))
+                        && steps.contains(group.getStep().orElse(null)))
                     .mapToInt(Photo.Group::getTotal).sum()
             )
         );
@@ -232,7 +297,6 @@ public class GetBacklogScheduled {
   private BacklogScheduledMetrics createBacklogScheduledResponse(final int backlogExpected,
                                                                  final int receivedBacklog) {
     final int deviatedBacklog = backlogExpected - receivedBacklog;
-
     final Indicator deviation = Indicator.builder()
         .units(deviatedBacklog)
         .percentage(getDeviationPercentage(deviatedBacklog, backlogExpected))
@@ -288,4 +352,13 @@ public class GetBacklogScheduled {
 
     return new ProcessMetric(Indicator.builder().units(totalBacklog).build(), Indicator.builder().units(immediateBacklog).build());
   }
+
+  private Integer totalScheduledBacklogBetweenDate(final List<PlanningDistributionResponse> scheduledBacklogDeviated,
+                                                   final Instant dateFrom,
+                                                   final Instant dateTo) {
+    return (int) scheduledBacklogDeviated.stream()
+        .filter(scheduled -> DateUtils.isBetweenInclusive(scheduled.getDateIn().toInstant(), dateFrom, dateTo))
+        .mapToLong(PlanningDistributionResponse::getTotal).sum();
+  }
+
 }

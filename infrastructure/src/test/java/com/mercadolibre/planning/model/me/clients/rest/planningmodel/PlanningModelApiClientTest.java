@@ -1329,7 +1329,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
       final var interceptor = new TestInterceptor();
       MockResponse.builder()
           .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL, INBOUND) + "/disable/all")
+          .withURL(format(BASE_URL + DEVIATION_URL,  INBOUND) + "/disable/all")
           .withStatusCode(OK.value())
           .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
           .withMockInterceptor(interceptor)
