@@ -285,7 +285,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Optional<Integer> headcountNonSystemicByProcessingType =
             getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS_NS).isPresent()
                   ? getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS_NS)
-                  : getHeadcountByProcessingType(staffingHeadcount, EFFECTIVE_WORKERS_NS;
+                  : getHeadcountByProcessingType(staffingHeadcount, EFFECTIVE_WORKERS_NS);
 
     return Map.of(
         EFFECTIVE_WORKERS, headcountSystemicByProcessingType,
