@@ -197,7 +197,8 @@ class MonitorControllerTest {
                 BacklogScheduledMetrics.builder()
                     .expected(Indicator.builder().units(500).build())
                     .received(Indicator.builder().units(350).build())
-                    .deviation(Indicator.builder().units(2100).build()).build()
+                    .deviation(Indicator.builder().units(2100).build()).build(),
+                0
             ),
             new InboundBacklogScheduled(
                 now,
@@ -213,7 +214,8 @@ class MonitorControllerTest {
                 BacklogScheduledMetrics.builder()
                     .expected(Indicator.builder().units(400).build())
                     .received(Indicator.builder().units(450).build())
-                    .deviation(Indicator.builder().units(2200).build()).build()
+                    .deviation(Indicator.builder().units(2200).build()).build(),
+                100
             )),
         new ProcessMetric(Indicator.builder().units(10340).build(), Indicator.builder().units(1030).build()),
         new ProcessMetric(Indicator.builder().units(10750).build(), Indicator.builder().units(10490).build())

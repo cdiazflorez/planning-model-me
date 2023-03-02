@@ -3,7 +3,9 @@ package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND_TRANSFER;
 import static java.lang.String.format;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Optional.ofNullable;
@@ -107,6 +109,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   private static final String WAREHOUSE_ID = "warehouse_id";
 
+  private static final String LOGISTIC_CENTER_ID = "logistic_center_id";
+
   private static final String DATE_FROM = "date_from";
 
   private static final String DATE_TO = "date_to";
@@ -119,6 +123,13 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   //TODO: Remove this when using traffic routes
   private static final Workflow IGNORABLE_WORKFLOW = INBOUND;
+
+  private static final Map<Workflow, String> PARAM_NAME_BY_WORKFLOW = Map.of(
+      FBM_WMS_INBOUND, FBM_WMS_INBOUND.getName(),
+      FBM_WMS_OUTBOUND, FBM_WMS_OUTBOUND.getName(),
+      INBOUND, FBM_WMS_INBOUND.getName(),
+      INBOUND_TRANSFER, FBM_WMS_INBOUND.getName()
+  );
 
   private final ObjectMapper objectMapper;
 
@@ -290,7 +301,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   public Optional<ConfigurationResponse> getConfiguration(
       final ConfigurationRequest configurationRequest) {
     final Map<String, String> params = new LinkedHashMap<>();
-    params.put("logistic_center_id", configurationRequest.getWarehouseId());
+    params.put(LOGISTIC_CENTER_ID, configurationRequest.getWarehouseId());
     params.put("key", configurationRequest.getKey());
     final HttpRequest request = HttpRequest.builder()
         .url(CONFIGURATION_URL)
@@ -310,7 +321,7 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
   @Override
   public List<PlanningDistributionResponse> getPlanningDistribution(final PlanningDistributionRequest planningDistributionRequest) {
     final HttpRequest request = HttpRequest.builder()
-        .url(format(WORKFLOWS_URL + "/planning_distributions", planningDistributionRequest.getWorkflow().getName()))
+        .url(format(WORKFLOWS_URL + "/planning_distributions", PARAM_NAME_BY_WORKFLOW.get(planningDistributionRequest.getWorkflow())))
         .GET()
         .queryParams(createPlanningDistributionParams(planningDistributionRequest))
         .acceptedHttpStatuses(Set.of(OK))
@@ -497,50 +508,15 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     }));
   }
 
-  /**
-   * @deprecated use {@link #save(List)}
-   */
-  @Trace
-  @Override
-  @Deprecated
-  public DeviationResponse saveDeviation(final SaveDeviationInput saveDeviationInput) {
-    final HttpRequest request = HttpRequest.builder()
-        .url(format(WORKFLOWS_URL, saveDeviationInput.getWorkflow())
-            + DEVIATIONS_URL + "/save")
-        .POST(requestSupplier(saveDeviationInput))
-        .acceptedHttpStatuses(Set.of(OK, CREATED))
-        .build();
-
-    return send(request, response -> response.getData(new TypeReference<>() {
-    }));
-  }
-
-  /**
-   * @deprecated use {@link #save(List)}
-   */
-  @Trace
-  @Override
-  @Deprecated
-  public DeviationResponse newSaveDeviation(final SaveDeviationInput saveDeviationInput) {
-    final HttpRequest request = HttpRequest.builder()
-        .url(format(BASE_DEVIATIONS_URL, saveDeviationInput.getWorkflow(), SAVE + saveDeviationInput.getType().getName()))
-        .POST(requestSupplier(saveDeviationInput))
-        .acceptedHttpStatuses(Set.of(OK, CREATED))
-        .build();
-
-    return send(request, response -> response.getData(new TypeReference<>() {
-    }));
-  }
-
   @Trace
   @Override
   public void save(final List<SaveDeviationInput> deviations) {
     final List<SaveDeviationRequest> deviationRequests = deviations.stream()
-              .map(SaveDeviationInput::toSaveDeviationApiRequest)
-              .collect(Collectors.toList());
+        .map(SaveDeviationInput::toSaveDeviationApiRequest)
+        .collect(Collectors.toList());
 
     final HttpRequest request = HttpRequest.builder()
-            .url(format(BASE_DEVIATIONS_URL, IGNORABLE_WORKFLOW, "save/all"))
+        .url(format(BASE_DEVIATIONS_URL, IGNORABLE_WORKFLOW, "save/all"))
         .POST(requestSupplier(deviationRequests))
         .acceptedHttpStatuses(Set.of(OK, CREATED, NO_CONTENT))
         .build();
@@ -550,12 +526,16 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
 
   @Trace
   @Override
-  public DeviationResponse disableDeviation(DisableDeviationInput disableDeviationInput) {
+  public DeviationResponse disableDeviation(final String logisticCenterId, final List<DisableDeviationInput> disableDeviationInput) {
+    final Map<String, String> params = Map.of(
+        LOGISTIC_CENTER_ID, logisticCenterId
+    );
+
     final HttpRequest request = HttpRequest.builder()
-        .url(format(WORKFLOWS_URL, disableDeviationInput.getWorkflow())
-            + DEVIATIONS_URL + "/disable")
+        .url(format(BASE_DEVIATIONS_URL, IGNORABLE_WORKFLOW, "disable/all"))
         .POST(requestSupplier(disableDeviationInput))
-        .acceptedHttpStatuses(Set.of(OK, CREATED))
+        .queryParams(params)
+        .acceptedHttpStatuses(Set.of(OK, CREATED, NO_CONTENT))
         .build();
 
     return send(request, response -> response.getData(new TypeReference<>() {
@@ -605,6 +585,8 @@ public class PlanningModelApiClient extends HttpClient implements PlanningModelG
     addParameter(params, "date_out_from", request.getDateOutFrom());
     addParameter(params, "date_out_to", request.getDateOutTo());
     addParameter(params, "apply_deviation", Boolean.toString(request.isApplyDeviation()));
+    addParameter(params, "view_date", request.getDateOutTo());
+    addParameter(params, "workflow", request.getWorkflow().getName());
 
     return params;
   }

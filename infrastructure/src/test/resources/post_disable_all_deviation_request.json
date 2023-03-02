@@ -1,0 +1,9 @@
+[
+  {
+    "workflow": "inbound",
+    "affected_shipment_types": ["spd", "private"]
+  },
+  {
+    "workflow": "inbound-transfer"
+  }
+]

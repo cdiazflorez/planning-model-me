@@ -1,0 +1,1 @@
+[{"affected_shipment_types":["spd","private"],"type":"minutes","warehouse_id":null,"workflow":"inbound"},{"affected_shipment_types":null,"type":"minutes","warehouse_id":null,"workflow":"inbound-transfer"}]

@@ -65,81 +65,12 @@ class SaveDeviationTest {
   private DeviationGateway deviationGateway;
 
   @Test
-  void testExecuteOkInbound() {
-    // GIVEN
-    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, 5.9);
-
-    // WHEN
-    saveDeviation.execute(saveDeviationInput);
-
-    // THEN
-    verify(planningModelGateway).newSaveDeviation(saveDeviationInput);
-  }
-
-  @Test
-  void testExecuteOkOutbound() {
-    // GIVEN
-    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_OUTBOUND, 5.9);
-
-    // WHEN
-    saveDeviation.execute(saveDeviationInput);
-
-    // THEN
-    verify(planningModelGateway).newSaveDeviation(saveDeviationInput);
-  }
-
-  @Test
-  void testExecuteValueGreaterThanRange() {
-    // GIVEN
-    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, 120.00);
-
-    // WHEN
-    final IllegalArgumentException deviationResponse = assertThrows(
-        IllegalArgumentException.class,
-        () -> saveDeviation.execute(saveDeviationInput)
-    );
-
-    // THEN
-    assertEquals("The value must be between -100 to 100", deviationResponse.getMessage());
-  }
-
-  @Test
-  void testExecuteValueLessThanRange() {
-    // GIVEN
-    final SaveDeviationInput saveDeviationInput = givenSaveDeviationInput(FBM_WMS_INBOUND, -120.00);
-
-    // WHEN
-    final IllegalArgumentException deviationResponse = assertThrows(
-        IllegalArgumentException.class,
-        () -> saveDeviation.execute(saveDeviationInput)
-    );
-
-    // THEN
-    assertEquals("The value must be between -100 to 100", deviationResponse.getMessage());
-  }
-
-  @Test
   void testSaveOk() {
     // WHEN
-    saveDeviation.save(SAVE_DEVIATION_INPUTS);
+    saveDeviation.execute(SAVE_DEVIATION_INPUTS);
 
     // THEN
     verify(deviationGateway).save(SAVE_DEVIATION_INPUTS);
     verifyNoInteractions(planningModelGateway);
-  }
-
-  private SaveDeviationInput givenSaveDeviationInput(
-          final Workflow warehouse,
-          final Double value
-  ) {
-    return SaveDeviationInput.builder()
-        .workflow(warehouse)
-        .warehouseId(WAREHOUSE_ID)
-        .dateFrom(now())
-        .dateTo(now().plusDays(1))
-        .type(DeviationType.UNITS)
-        .value(value)
-        .userId(USER_ID)
-        .build();
   }
 }

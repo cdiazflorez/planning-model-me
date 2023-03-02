@@ -68,7 +68,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Projection
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveDeviationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveSimulationsRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SaveUnitsResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.SearchTrajectoriesRequest;
@@ -151,25 +150,25 @@ class PlanningModelApiClientTest extends BaseClientTest {
   private static final ZonedDateTime DATE_TO = parse("2021-01-21T17:00Z[UTC]");
 
   private static final List<SaveDeviationInput> DEVIATIONS = List.of(
-    SaveDeviationInput.builder()
-        .warehouseId(WAREHOUSE_ID_ARTW01)
-        .workflow(INBOUND)
-        .paths(List.of(ShipmentType.SPD, ShipmentType.PRIVATE))
-        .dateFrom(DATE_FROM)
-        .dateTo(DATE_TO)
-        .type(DeviationType.UNITS)
-        .value(0.1)
-        .userId(USER_ID)
-        .build(),
-    SaveDeviationInput.builder()
-        .warehouseId(WAREHOUSE_ID_ARTW01)
-        .workflow(INBOUND_TRANSFER)
-        .dateFrom(DATE_FROM)
-        .dateTo(DATE_TO)
-        .type(DeviationType.UNITS)
-        .value(0.1)
-        .userId(USER_ID)
-        .build()
+      SaveDeviationInput.builder()
+          .warehouseId(WAREHOUSE_ID_ARTW01)
+          .workflow(INBOUND)
+          .paths(List.of(ShipmentType.SPD, ShipmentType.PRIVATE))
+          .dateFrom(DATE_FROM)
+          .dateTo(DATE_TO)
+          .type(DeviationType.UNITS)
+          .value(0.1)
+          .userId(USER_ID)
+          .build(),
+      SaveDeviationInput.builder()
+          .warehouseId(WAREHOUSE_ID_ARTW01)
+          .workflow(INBOUND_TRANSFER)
+          .dateFrom(DATE_FROM)
+          .dateTo(DATE_TO)
+          .type(DeviationType.UNITS)
+          .value(0.1)
+          .userId(USER_ID)
+          .build()
   );
 
   private PlanningModelApiClient client;
@@ -1282,134 +1281,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
   @Nested
   @DisplayName("Test save deviation")
-  class SaveOutboundDeviationTest {
-
-    @Test
-    void testSaveDeviationOk() throws Exception {
-      // Given
-      final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
-          .workflow(FBM_WMS_OUTBOUND)
-          .warehouseId(WAREHOUSE_ID_ARTW01)
-          .dateFrom(now())
-          .dateTo(now().plusDays(1))
-          .value(5.9)
-          .userId(USER_ID)
-          .build();
-
-      MockResponse.builder()
-          .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/save", FBM_WMS_OUTBOUND))
-          .withStatusCode(OK.value())
-          .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-          .withResponseBody(new JSONObject()
-              .put("status", OK.value())
-              .toString())
-          .build();
-
-      // When
-      final DeviationResponse deviationResponse = client.saveDeviation(saveDeviationInput);
-
-      // Then
-      assertNotNull(deviationResponse);
-      assertEquals(200, deviationResponse.getStatus());
-    }
-
-    @Test
-    void testSaveDeviationError() throws Exception {
-      // Given
-      final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
-          .workflow(FBM_WMS_OUTBOUND)
-          .warehouseId(WAREHOUSE_ID_ARTW01)
-          .dateFrom(now())
-          .dateTo(now().plusDays(1))
-          .value(5.9)
-          .userId(USER_ID)
-          .build();
-
-      MockResponse.builder()
-          .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/save", FBM_WMS_OUTBOUND))
-          .withStatusCode(OK.value())
-          .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-          .withResponseBody(new JSONObject()
-              .put("status", BAD_REQUEST.value())
-              .toString())
-          .build();
-
-      // When
-      final DeviationResponse deviationResponse = client.saveDeviation(saveDeviationInput);
-
-      // Then
-      assertNotNull(deviationResponse);
-      assertEquals(400, deviationResponse.getStatus());
-    }
-  }
-
-  @Nested
-  @DisplayName("Save deviations test")
   class SaveDeviationsTest {
-    @Test
-    void testNewSaveDeviationOk() throws Exception {
-      // Given
-      final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
-          .workflow(FBM_WMS_INBOUND)
-          .warehouseId(WAREHOUSE_ID_ARTW01)
-          .dateFrom(now())
-          .dateTo(now().plusDays(1))
-          .type(DeviationType.UNITS)
-          .value(5.9)
-          .userId(USER_ID)
-          .build();
-
-      MockResponse.builder()
-          .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/save/" + DeviationType.UNITS.getName(), FBM_WMS_INBOUND))
-          .withStatusCode(OK.value())
-          .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-          .withResponseBody(new JSONObject()
-              .put("status", OK.value())
-              .toString())
-          .build();
-
-      // When
-      final DeviationResponse deviationResponse = client.newSaveDeviation(saveDeviationInput);
-
-      // Then
-      assertNotNull(deviationResponse);
-      assertEquals(200, deviationResponse.getStatus());
-    }
-
-    @Test
-    void testNewSaveDeviationError() throws Exception {
-      // Given
-      final SaveDeviationInput saveDeviationInput = SaveDeviationInput.builder()
-          .workflow(FBM_WMS_INBOUND)
-          .warehouseId(WAREHOUSE_ID_ARTW01)
-          .dateFrom(now())
-          .dateTo(now().plusDays(1))
-          .type(DeviationType.UNITS)
-          .value(5.9)
-          .userId(USER_ID)
-          .build();
-
-      MockResponse.builder()
-          .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/save/" + DeviationType.UNITS.getName(), FBM_WMS_INBOUND))
-          .withStatusCode(OK.value())
-          .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
-          .withResponseBody(new JSONObject()
-              .put("status", BAD_REQUEST.value())
-              .toString())
-          .build();
-
-      // When
-      final DeviationResponse deviationResponse = client.newSaveDeviation(saveDeviationInput);
-
-      // Then
-      assertNotNull(deviationResponse);
-      assertEquals(400, deviationResponse.getStatus());
-    }
-
     @Test
     void testSaveDeviationsOk() throws Exception {
       // GIVEN
@@ -1434,26 +1306,41 @@ class PlanningModelApiClientTest extends BaseClientTest {
   @Nested
   @DisplayName("Test disable deviation")
   class DisableDeviationTest {
-
     @Test
     void testDisableDeviationOk() throws Exception {
-      // Given
-      final DisableDeviationInput disableDeviationInput =
-          new DisableDeviationInput(WAREHOUSE_ID_ARTW01, FBM_WMS_OUTBOUND);
+      // GIVEN
+      final List<ShipmentType> affectedShipmentTypes = List.of(
+          ShipmentType.SPD,
+          ShipmentType.PRIVATE
+      );
 
+      final List<DisableDeviationInput> disableDeviationInput = List.of(
+          DisableDeviationInput.builder()
+              .workflow(INBOUND)
+              .type(DeviationType.MINUTES)
+              .affectedShipmentTypes(affectedShipmentTypes)
+              .build(),
+          DisableDeviationInput.builder()
+              .workflow(INBOUND_TRANSFER)
+              .type(DeviationType.MINUTES)
+              .build()
+      );
+
+      final var interceptor = new TestInterceptor();
       MockResponse.builder()
           .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/disable", FBM_WMS_OUTBOUND))
+          .withURL(format(BASE_URL + DEVIATION_URL,  INBOUND) + "/disable/all")
           .withStatusCode(OK.value())
           .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
+          .withMockInterceptor(interceptor)
           .withResponseBody(new JSONObject()
               .put("status", OK.value())
               .toString())
           .build();
 
-      // When
-      final DeviationResponse deviationResponse =
-          client.disableDeviation(disableDeviationInput);
+      // WHEN
+
+      final DeviationResponse deviationResponse = client.disableDeviation(WAREHOUSE_ID_ARTW01, disableDeviationInput);
 
       // Then
       assertNotNull(deviationResponse);
@@ -1463,12 +1350,26 @@ class PlanningModelApiClientTest extends BaseClientTest {
     @Test
     void testDisableDeviationError() throws Exception {
       // Given
-      final DisableDeviationInput disableDeviationInput =
-          new DisableDeviationInput(WAREHOUSE_ID_ARTW01, FBM_WMS_OUTBOUND);
+      final List<ShipmentType> affectedShipmentTypes = List.of(
+          ShipmentType.SPD,
+          ShipmentType.PRIVATE
+      );
+
+      final List<DisableDeviationInput> disableDeviationInput = List.of(
+          DisableDeviationInput.builder()
+              .workflow(INBOUND)
+              .type(DeviationType.MINUTES)
+              .affectedShipmentTypes(affectedShipmentTypes)
+              .build(),
+          DisableDeviationInput.builder()
+              .workflow(INBOUND_TRANSFER)
+              .type(DeviationType.MINUTES)
+              .build()
+      );
 
       MockResponse.builder()
           .withMethod(POST)
-          .withURL(format(BASE_URL + DEVIATION_URL + "/disable", FBM_WMS_OUTBOUND))
+          .withURL(format(BASE_URL + DEVIATION_URL + "/disable/all", INBOUND))
           .withStatusCode(OK.value())
           .withResponseHeader(HEADER_NAME, APPLICATION_JSON.toString())
           .withResponseBody(new JSONObject()
@@ -1478,7 +1379,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
 
       // When
       final DeviationResponse deviationResponse =
-          client.disableDeviation(disableDeviationInput);
+          client.disableDeviation(WAREHOUSE_ID_ARTW01, disableDeviationInput);
 
       // Then
       assertNotNull(deviationResponse);

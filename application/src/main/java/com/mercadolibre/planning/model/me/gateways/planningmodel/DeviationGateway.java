@@ -15,6 +15,5 @@ public interface DeviationGateway {
 
   void save(List<SaveDeviationInput> deviations);
 
-  DeviationResponse disableDeviation(DisableDeviationInput saveDeviationInput);
-
+  DeviationResponse disableDeviation(String logisticCenterId, List<DisableDeviationInput> disableDeviationInput);
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 public enum Step {
   CANCELLED,
@@ -42,6 +43,21 @@ public enum Step {
   @JsonCreator
   public static Optional<Step> from(final String value) {
     return Optional.of(Step.valueOf(value.toUpperCase(Locale.ENGLISH)));
+  }
+
+  /**
+   * Obtain inbound steps.
+   *
+   * @return a set of inbound steps.
+   **/
+  public static Set<Step> getInboundSteps() {
+    return Set.of(
+        SCHEDULED,
+        CHECK_IN,
+        PUT_AWAY,
+        PUTAWAY_PS,
+        FINISHED
+    );
   }
 
   @JsonValue
