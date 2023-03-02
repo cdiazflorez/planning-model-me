@@ -12,6 +12,7 @@ import java.util.function.Function;
 public enum ShipmentType {
   SPD,
   FTL,
+  FTLP,
   PRIVATE,
   COLLECT,
   TRANSFER_SHIPMENT;
