@@ -9,6 +9,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.PERCENTAGE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.INBOUND;
@@ -195,7 +196,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .dateTo(now().plusDays(1))
                 .source(Source.FORECAST)
                 .processName(List.of(PICKING, PACKING))
-                .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
+                .processingType(List.of(ProcessingType.ACTIVE_WORKERS, EFFECTIVE_WORKERS))
                 .build()
         )
     );

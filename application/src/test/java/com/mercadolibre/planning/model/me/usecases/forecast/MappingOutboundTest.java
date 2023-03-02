@@ -17,7 +17,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_PRODUCTIVITY_PP;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.HEADCOUNT_RATIO;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.EFFECTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.WORKERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -496,7 +496,7 @@ class MappingOutboundTest {
 
   private List<ProcessingDistribution> expectedProcessingDistribution() {
     return List.of(
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             GLOBAL,
@@ -507,7 +507,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PACKING.getName(),
             GLOBAL,
@@ -518,7 +518,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             TOT_MONO,
@@ -529,7 +529,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             TOT_MULTI_BATCH,
@@ -540,7 +540,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             TOT_MULTI_ORDER,
@@ -551,7 +551,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             NON_TOT_MONO,
@@ -562,7 +562,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             NON_TOT_MULTI_ORDER,
@@ -573,7 +573,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             NON_TOT_MULTI_BATCH,
@@ -584,7 +584,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             PP_DEFAULT_MONO,
@@ -595,7 +595,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             PP_DEFAULT_MULTI,
@@ -611,7 +611,7 @@ class MappingOutboundTest {
 
   private List<ProcessingDistribution> processingDistributions() {
     return List.of(
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             GLOBAL,
@@ -622,7 +622,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PACKING.getName(),
             GLOBAL,
@@ -638,7 +638,7 @@ class MappingOutboundTest {
 
   private List<ProcessingDistribution> processingDistributionsWithInvalidWorkers() {
     return List.of(
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PICKING.getName(),
             GLOBAL,
@@ -649,7 +649,7 @@ class MappingOutboundTest {
                 )
             )
         ),
-        new ProcessingDistribution(ACTIVE_WORKERS.toString(),
+        new ProcessingDistribution(EFFECTIVE_WORKERS.toString(),
             MetricUnit.UNITS_PER_HOUR.getName(),
             PACKING.getName(),
             GLOBAL,
