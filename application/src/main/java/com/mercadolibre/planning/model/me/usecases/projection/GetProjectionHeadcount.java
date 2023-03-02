@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
+
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.outboundsettings.SettingsGateway;
 import com.mercadolibre.planning.model.me.gateways.outboundsettings.dtos.AreaConfiguration;
@@ -33,8 +35,6 @@ import java.util.stream.Collectors;
 import javax.inject.Named;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
 
 @Named
 @AllArgsConstructor
