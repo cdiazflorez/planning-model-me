@@ -16,4 +16,6 @@ public class InboundBacklogScheduled {
 
   BacklogScheduledMetrics total;
 
+  long deviationAdjustment;
+
 }

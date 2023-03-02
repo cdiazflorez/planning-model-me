@@ -3,7 +3,6 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ConfigurationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.CycleTimeRequest;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.DeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastMetadataRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.GetDeviationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
@@ -22,8 +21,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Trajectori
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.request.BacklogProjectionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
-import com.mercadolibre.planning.model.me.usecases.deviation.dtos.DisableDeviationInput;
-import com.mercadolibre.planning.model.me.usecases.deviation.dtos.SaveDeviationInput;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -61,12 +58,6 @@ public interface PlanningModelGateway {
   Optional<ConfigurationResponse> getConfiguration(ConfigurationRequest request);
 
   List<PlanningDistributionResponse> getPlanningDistribution(PlanningDistributionRequest request);
-
-  DeviationResponse saveDeviation(SaveDeviationInput saveDeviationInput);
-
-  DeviationResponse newSaveDeviation(SaveDeviationInput saveDeviationInput);
-
-  DeviationResponse disableDeviation(DisableDeviationInput saveDeviationInput);
 
   GetDeviationResponse getDeviation(Workflow workflow, String warehouseId, ZonedDateTime date);
 

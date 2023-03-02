@@ -14,11 +14,18 @@ import com.mercadolibre.planning.model.me.gateways.inboundreports.InboundReports
 import com.mercadolibre.planning.model.me.gateways.inboundreports.dto.InboundResponse;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenterGateway;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.BacklogScheduledMetrics;
 import com.mercadolibre.planning.model.me.usecases.backlog.entities.InboundBacklogMonitor;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -35,6 +42,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class GetBacklogScheduledTest {
 
   private static final int QUANTITY_BACKLOG_CURRENT = 200;
+  private static final int QUANTITY_BACKLOG_ADJUSTMENT = 300;
   private static final String IB = "inbound";
   private static final String IB_TRANSFER = "INBOUND-TRANSFER";
   private static final String TOTAL_SHIPPED = "total_shipped_quantity";
@@ -42,6 +50,7 @@ public class GetBacklogScheduledTest {
   private static final Instant NOW = Instant.parse("2022-12-27T08:00:00Z");
   private static final Instant TODAY = Instant.parse("2022-12-27T00:00:00Z");
   private static final Instant TOMORROW = Instant.parse("2022-12-28T00:00:00Z");
+  private static final ZoneId ZONEID_UTC = ZoneId.of("UTC");
 
   @InjectMocks
   private GetBacklogScheduled getBacklogScheduled;
@@ -54,6 +63,9 @@ public class GetBacklogScheduledTest {
 
   @Mock
   private InboundReportsApiGateway inboundReportsApiGateway;
+
+  @Mock
+  private PlanningModelGateway planningModelGateway;
 
   @Test
   public void backlogScheduledTest() {
@@ -68,32 +80,62 @@ public class GetBacklogScheduledTest {
     when(inboundReportsApiGateway.getUnitsReceived(WAREHOUSE_ID, INITIAL, NOW, "transfer"))
         .thenReturn(new InboundResponse(List.of(new InboundResponse.Aggregation(TOTAL_SHIPPED, 800))));
 
+    when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)))
+        .thenReturn(
+            List.of(
+                new PlanningDistributionResponse(
+                    ZonedDateTime.ofInstant(TODAY, ZONEID_UTC),
+                    ZonedDateTime.ofInstant(TODAY.plus(1, ChronoUnit.DAYS), ZONEID_UTC),
+                    MetricUnit.UNITS,
+                    QUANTITY_BACKLOG_ADJUSTMENT
+                ),
+                new PlanningDistributionResponse(
+                    ZonedDateTime.ofInstant(NOW, ZONEID_UTC),
+                    ZonedDateTime.ofInstant(NOW.plus(1, ChronoUnit.DAYS), ZONEID_UTC),
+                    MetricUnit.UNITS,
+                    QUANTITY_BACKLOG_ADJUSTMENT
+                ),
+                new PlanningDistributionResponse(
+                    ZonedDateTime.ofInstant(TOMORROW, ZONEID_UTC),
+                    ZonedDateTime.ofInstant(TOMORROW.plus(1, ChronoUnit.DAYS), ZONEID_UTC),
+                    MetricUnit.UNITS,
+                    QUANTITY_BACKLOG_ADJUSTMENT
+                )
+            )
+        );
+
     final InboundBacklogMonitor response = getBacklogScheduled.execute(WAREHOUSE_ID, NOW);
 
     //expected
-    BacklogScheduledMetrics expectedBacklogInbound = BacklogScheduledMetrics.builder()
+    BacklogScheduledMetrics expectedBacklogInboundNow = BacklogScheduledMetrics.builder()
         .expected(Indicator.builder().units(1200).build())
         .received(Indicator.builder().units(800).build())
         .deviation(Indicator.builder().units(400).percentage(-0.33).build())
         .build();
 
-    BacklogScheduledMetrics expectedBacklogInboundTransfer = BacklogScheduledMetrics.builder()
+    BacklogScheduledMetrics expectedBacklogInboundTransferNow = BacklogScheduledMetrics.builder()
         .expected(Indicator.builder().units(1200).build())
         .received(Indicator.builder().units(800).build())
         .deviation(Indicator.builder().units(400).percentage(-0.33).build())
         .build();
 
-    BacklogScheduledMetrics expectedTotalBacklog = BacklogScheduledMetrics.builder()
+    BacklogScheduledMetrics expectedTotalBacklogNow = BacklogScheduledMetrics.builder()
         .expected(Indicator.builder().units(2400).build())
         .received(Indicator.builder().units(1600).build())
         .deviation(Indicator.builder().units(800).percentage(-0.33).build())
         .build();
 
-    //verify
     Assertions.assertEquals(3, response.getScheduled().size());
-    Assertions.assertEquals(expectedBacklogInbound, response.getScheduled().get(0).getInbound());
-    Assertions.assertEquals(expectedBacklogInboundTransfer, response.getScheduled().get(0).getInboundTransfer());
-    Assertions.assertEquals(expectedTotalBacklog, response.getScheduled().get(0).getTotal());
+    //current
+    Assertions.assertEquals(expectedBacklogInboundNow, response.getScheduled().get(0).getInbound());
+    Assertions.assertEquals(expectedBacklogInboundTransferNow, response.getScheduled().get(0).getInboundTransfer());
+    Assertions.assertEquals(expectedTotalBacklogNow, response.getScheduled().get(0).getTotal());
+    Assertions.assertEquals(response.getScheduled().get(0).getDeviationAdjustment(), 0);
+    //tomorrow expected
+    Assertions.assertEquals(1400, response.getScheduled().get(1).getInbound().getExpected().getUnits());
+    Assertions.assertEquals(1400, response.getScheduled().get(1).getInboundTransfer().getExpected().getUnits());
+    Assertions.assertEquals(2800, response.getScheduled().get(1).getTotal().getExpected().getUnits());
+    Assertions.assertEquals(400, response.getScheduled().get(1).getDeviationAdjustment());
   }
 
   @Test
@@ -107,6 +149,30 @@ public class GetBacklogScheduledTest {
         .thenReturn(new InboundResponse(List.of(new InboundResponse.Aggregation(TOTAL_SHIPPED, 800))));
     when(inboundReportsApiGateway.getUnitsReceived(WAREHOUSE_ID, INITIAL, NOW, "transfer"))
         .thenReturn(new InboundResponse(List.of()));
+
+    when(planningModelGateway.getPlanningDistribution(any(PlanningDistributionRequest.class)))
+        .thenReturn(
+            List.of(
+                new PlanningDistributionResponse(
+                    ZonedDateTime.ofInstant(TODAY, ZONEID_UTC),
+                    ZonedDateTime.ofInstant(TODAY.plus(1, ChronoUnit.DAYS), ZONEID_UTC),
+                    MetricUnit.UNITS,
+                    QUANTITY_BACKLOG_CURRENT
+                ),
+                new PlanningDistributionResponse(
+                    ZonedDateTime.ofInstant(NOW, ZONEID_UTC),
+                    ZonedDateTime.ofInstant(NOW.plus(1, ChronoUnit.DAYS), ZONEID_UTC),
+                    MetricUnit.UNITS,
+                    QUANTITY_BACKLOG_CURRENT
+                ),
+                new PlanningDistributionResponse(
+                    ZonedDateTime.ofInstant(TOMORROW, ZONEID_UTC),
+                    ZonedDateTime.ofInstant(TOMORROW.plus(1, ChronoUnit.DAYS), ZONEID_UTC),
+                    MetricUnit.UNITS,
+                    QUANTITY_BACKLOG_CURRENT
+                )
+            )
+        ).thenReturn(Collections.emptyList());
 
     final InboundBacklogMonitor response = getBacklogScheduled.execute(WAREHOUSE_ID, NOW);
 

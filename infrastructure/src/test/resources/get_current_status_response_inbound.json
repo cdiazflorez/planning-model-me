@@ -51,7 +51,8 @@
         "deviation": {
           "units": 2100
         }
-      }
+      },
+      "deviation_adjustment": 0
     },
     {
       "date_from": "2023-01-17T10:00:00Z",
@@ -91,7 +92,8 @@
         "deviation": {
           "units": 2200
         }
-      }
+      },
+      "deviation_adjustment": 100
     }
   ],
   "check_in": {

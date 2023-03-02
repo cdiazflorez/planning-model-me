@@ -12,14 +12,7 @@ public class DisableDeviation {
 
   private final DeviationGateway planningModelGateway;
 
-  public void execute(final DisableDeviationInput input) {
-    planningModelGateway.disableDeviation(input);
-  }
-
-  /*
-   * There are two execute method, but it is temporal because in the future only we will use "executeAll" as "execute"
-   */
-  public void executeAll(final String logisticCenterId, final List<DisableDeviationInput> input) {
-    planningModelGateway.disableDeviationAll(logisticCenterId, input);
+  public void execute(final String logisticCenterId, final List<DisableDeviationInput> input) {
+    planningModelGateway.disableDeviation(logisticCenterId, input);
   }
 }
