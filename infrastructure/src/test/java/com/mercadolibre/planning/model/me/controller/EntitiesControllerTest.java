@@ -126,7 +126,7 @@ public class EntitiesControllerTest {
                                         )
                                 )
                         ),
-                        new Data(PRODUCTIVITY.getName(), "Productividad regular", true,
+                        new Data(PRODUCTIVITY.getName(), "Productividad efectiva", true,
                                 List.of(
                                         Map.of(
                                                 "column_1", new Content("Picking",

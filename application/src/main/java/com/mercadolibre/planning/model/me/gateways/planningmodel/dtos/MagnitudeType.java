@@ -8,7 +8,7 @@ import lombok.Getter;
 @Getter
 public enum MagnitudeType {
     ORDER_UNITS(null),
-    PRODUCTIVITY("Productividad regular"),
+    PRODUCTIVITY("Productividad efectiva"),
     HEADCOUNT("Headcount"),
     THROUGHPUT("Throughput"),
     MAX_CAPACITY("Throughput"),
