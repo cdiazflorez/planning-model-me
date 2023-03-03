@@ -1,11 +1,11 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model;
 
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.EFFECTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.EFFECTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.MAX_CAPACITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.PERFORMED_PROCESSING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.REMAINING_PROCESSING;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion.INITIAL_VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion.SECOND_VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SheetVersion.mapping;
