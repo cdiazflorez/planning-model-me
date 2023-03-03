@@ -62,7 +62,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeT
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistributionResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Productivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProductivityRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionRequest;
@@ -185,6 +184,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .dateTo(now().plusDays(1))
                 .source(Source.FORECAST)
                 .processName(List.of(PICKING, PACKING))
+                .processingType(List.of(EFFECTIVE_WORKERS))
                 .build()
         ),
         of(
@@ -196,7 +196,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
                 .dateTo(now().plusDays(1))
                 .source(Source.FORECAST)
                 .processName(List.of(PICKING, PACKING))
-                .processingType(List.of(ProcessingType.ACTIVE_WORKERS, EFFECTIVE_WORKERS))
+                .processingType(List.of(EFFECTIVE_WORKERS))
                 .build()
         )
     );
@@ -229,7 +229,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateFrom().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "picking")
-            .put(TYPE_FIELD, "active_workers")
+            .put(TYPE_FIELD, "effective_workers")
             .put(VALUE_FIELD, "30")
             .put("source", "forecast")
             .put("metric_unit", "minutes")
@@ -238,7 +238,7 @@ class PlanningModelApiClientTest extends BaseClientTest {
             .put("date", request.getDateTo().format(ISO_OFFSET_DATE_TIME))
             .put("workflow", "fbm-wms-outbound")
             .put("process_name", "packing")
-            .put(TYPE_FIELD, "active_workers")
+            .put(TYPE_FIELD, "effective_workers")
             .put(VALUE_FIELD, "20")
             .put("source", "simulation")
             .put("metric_unit", "percentage")

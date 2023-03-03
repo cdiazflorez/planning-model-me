@@ -11,7 +11,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -149,7 +148,7 @@ public class GetProjectionHeadcountTest {
         .dateTo(ZonedDateTime.ofInstant(TO, ZoneOffset.UTC))
         .source(Source.SIMULATION)
         .processName(List.of(ProcessName.PICKING))
-        .processingType(List.of(ProcessingType.ACTIVE_WORKERS, EFFECTIVE_WORKERS))
+        .processingType(List.of(EFFECTIVE_WORKERS))
         .workflow(Workflow.FBM_WMS_OUTBOUND)
         .entityType(MagnitudeType.HEADCOUNT)
         .build())

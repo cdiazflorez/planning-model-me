@@ -6,7 +6,6 @@ import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.HOUR_MINUTES_FORMATTER;
@@ -69,10 +68,7 @@ public class GetPlannedHeadcount implements UseCase<GetPlannedHeadcountInput, Pl
               .entityFilters(Map.of(
                   HEADCOUNT, Map.of(
                       PROCESSING_TYPE.toJson(),
-                      List.of(
-                              ACTIVE_WORKERS.getName(),
-                              EFFECTIVE_WORKERS.getName()
-                      )
+                      List.of(EFFECTIVE_WORKERS.getName())
                   )
               ))
               .build()

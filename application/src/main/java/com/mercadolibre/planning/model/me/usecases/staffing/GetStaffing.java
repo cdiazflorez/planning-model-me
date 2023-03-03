@@ -2,8 +2,6 @@ package com.mercadolibre.planning.model.me.usecases.staffing;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.utils.DateUtils.getCurrentUtcDateTime;
@@ -280,19 +278,9 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
             .filter(entity -> entity.getProcessName().equals(ProcessName.from(process)))
             .collect(toList());
 
-    final Optional<Integer> headcountSystemicByProcessingType =
-            getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS).isPresent()
-                    ? getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS)
-                    : getHeadcountByProcessingType(staffingHeadcount, EFFECTIVE_WORKERS);
-
-    final Optional<Integer> headcountNonSystemicByProcessingType =
-            getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS_NS).isPresent()
-                  ? getHeadcountByProcessingType(staffingHeadcount, ACTIVE_WORKERS_NS)
-                  : getHeadcountByProcessingType(staffingHeadcount, EFFECTIVE_WORKERS_NS);
-
     return Map.of(
-        EFFECTIVE_WORKERS, headcountSystemicByProcessingType,
-        EFFECTIVE_WORKERS_NS, headcountNonSystemicByProcessingType);
+        EFFECTIVE_WORKERS, getHeadcountByProcessingType(staffingHeadcount, EFFECTIVE_WORKERS),
+        EFFECTIVE_WORKERS_NS, getHeadcountByProcessingType(staffingHeadcount, EFFECTIVE_WORKERS_NS));
   }
 
   private Optional<Integer> getHeadcountByProcessingType(
