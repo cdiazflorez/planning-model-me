@@ -4,6 +4,8 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Ent
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_MZ1;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_RKL;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.BATCH_SORTER_PROCESS;
@@ -1023,8 +1025,14 @@ class GetStaffingTest {
                 .entityFilters(
                     Map.of(
                         HEADCOUNT,
-                        Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
-                .build()))
+                        Map.of(
+                                PROCESSING_TYPE.toJson(), List.of(
+                                        ACTIVE_WORKERS.getName(),
+                                        EFFECTIVE_WORKERS.getName()
+                                )
+                        )
+                    )
+                ).build()))
         .thenThrow(MockitoException.class);
 
     when(planningModelGateway.searchTrajectories(
@@ -1037,10 +1045,16 @@ class GetStaffingTest {
                 .processName(
                     List.of(ProcessName.RECEIVING, ProcessName.CHECK_IN, ProcessName.PUT_AWAY))
                 .entityFilters(
-                    Map.of(
-                        HEADCOUNT,
-                        Map.of(PROCESSING_TYPE.toJson(), List.of(ACTIVE_WORKERS.getName()))))
-                .build()))
+                        Map.of(
+                                HEADCOUNT,
+                                Map.of(
+                                        PROCESSING_TYPE.toJson(), List.of(
+                                                ACTIVE_WORKERS.getName(),
+                                                EFFECTIVE_WORKERS.getName()
+                                        )
+                                )
+                        )
+                ).build()))
         .thenThrow(MockitoException.class);
   }
 
@@ -1075,8 +1089,15 @@ class GetStaffingTest {
                         HEADCOUNT,
                         Map.of(
                             PROCESSING_TYPE.toJson(),
-                            List.of(ACTIVE_WORKERS.getName(), ACTIVE_WORKERS_NS.getName()))))
-                .build()))
+                            List.of(
+                                    ACTIVE_WORKERS.getName(),
+                                    ACTIVE_WORKERS_NS.getName(),
+                                    EFFECTIVE_WORKERS.getName(),
+                                    EFFECTIVE_WORKERS_NS.getName()
+                            )
+                        )
+                    )
+                ).build()))
         .thenReturn(obHeadcountForecastEntities);
 
     when(planningModelGateway.searchTrajectories(
@@ -1094,8 +1115,15 @@ class GetStaffingTest {
                         HEADCOUNT,
                         Map.of(
                             PROCESSING_TYPE.toJson(),
-                            List.of(ACTIVE_WORKERS.getName(), ACTIVE_WORKERS_NS.getName()))))
-                .build()))
+                            List.of(
+                                    ACTIVE_WORKERS.getName(),
+                                    ACTIVE_WORKERS_NS.getName(),
+                                    EFFECTIVE_WORKERS.getName(),
+                                    EFFECTIVE_WORKERS_NS.getName()
+                            )
+                        )
+                    )
+                ).build()))
         .thenReturn(ibHeadcountForecastEntities);
   }
 
@@ -1108,18 +1136,18 @@ class GetStaffingTest {
                     .processName(ProcessName.CHECK_IN)
                     .value(FORECAST_HEADCOUNT_CHECK_IN)
                     .source(Source.FORECAST)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PUT_AWAY)
                     .source(Source.FORECAST)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .value(FORECAST_HEADCOUNT_PUT_AWAY)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PUT_AWAY)
                     .source(Source.SIMULATION)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .value(SIMULATION_HEADCOUNT_PUT_AWAY)
                     .build())),
         Map.of(
@@ -1128,25 +1156,25 @@ class GetStaffingTest {
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PICKING)
                     .value(FORECAST_HEADCOUNT_PICKING)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING_WALL)
                     .value(FORECAST_HEADCOUNT_PACKING_WALL)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING)
                     .value(FORECAST_HEADCOUNT_PACKING)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.BATCH_SORTER)
                     .value(FORECAST_HEADCOUNT_BATCH_SORTER)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build())),
         Map.of(
@@ -1155,79 +1183,79 @@ class GetStaffingTest {
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PICKING)
                     .value(FORECAST_HEADCOUNT_PICKING)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PICKING)
                     .value(SIMULATION_HEADCOUNT_PICKING)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.SIMULATION)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PICKING)
                     .value(FORECAST_HEADCOUNT_NS_PICKING)
-                    .type(ACTIVE_WORKERS_NS)
+                    .type(EFFECTIVE_WORKERS_NS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING_WALL)
                     .value(FORECAST_HEADCOUNT_PACKING_WALL)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING_WALL)
                     .value(FORECAST_HEADCOUNT_NS_PACKING_WALL)
-                    .type(ACTIVE_WORKERS_NS)
+                    .type(EFFECTIVE_WORKERS_NS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING)
                     .value(FORECAST_HEADCOUNT_PACKING)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.PACKING)
                     .value(FORECAST_HEADCOUNT_NS_PACKING)
-                    .type(ACTIVE_WORKERS_NS)
+                    .type(EFFECTIVE_WORKERS_NS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.BATCH_SORTER)
                     .value(FORECAST_HEADCOUNT_BATCH_SORTER)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.BATCH_SORTER)
                     .value(FORECAST_HEADCOUNT_NS_BATCH_SORTER)
-                    .type(ACTIVE_WORKERS_NS)
+                    .type(EFFECTIVE_WORKERS_NS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.HU_ASSEMBLY)
                     .value(FORECAST_HEADCOUNT_HU_ASSEMBLY)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.HU_ASSEMBLY)
                     .value(FORECAST_HEADCOUNT_NS_HU_ASSEMBLY)
-                    .type(ACTIVE_WORKERS_NS)
+                    .type(EFFECTIVE_WORKERS_NS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.SALES_DISPATCH)
                     .value(FORECAST_HEADCOUNT_SALES_DISPATCH)
-                    .type(ACTIVE_WORKERS)
+                    .type(EFFECTIVE_WORKERS)
                     .source(Source.FORECAST)
                     .build(),
                 MagnitudePhoto.builder()
                     .processName(ProcessName.SALES_DISPATCH)
                     .value(FORECAST_HEADCOUNT_NS_SALES_DISPATCH)
-                    .type(ACTIVE_WORKERS_NS)
+                    .type(EFFECTIVE_WORKERS_NS)
                     .source(Source.FORECAST)
                     .build())));
   }

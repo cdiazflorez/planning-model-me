@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.WORKERS_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.ForecastParserHelper.adaptWeekFormat;
@@ -92,8 +92,8 @@ public interface ParseInboundForecastFromFile {
             .filter(
                 distribution ->
                     (distribution.getType().equals(WORKERS.toString())
-                            || distribution.getType().equals(ACTIVE_WORKERS.toString())
-                            || distribution.getType().equals(ACTIVE_WORKERS_NS.toString())
+                            || distribution.getType().equals(EFFECTIVE_WORKERS.toString())
+                            || distribution.getType().equals(EFFECTIVE_WORKERS_NS.toString())
                             || distribution.getType().equals(WORKERS_NS.toString()))
                         && distribution.getData().stream()
                             .anyMatch(data -> data.getQuantity() < 0.0))

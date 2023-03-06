@@ -5,6 +5,8 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS_NS;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType;
@@ -25,7 +27,15 @@ public enum EntityFilter {
           HEADCOUNT,
           Map.of(
               PROCESSING_TYPE.toJson(),
-              List.of(ACTIVE_WORKERS.getName(), ACTIVE_WORKERS_NS.getName()))));
+              List.of(
+                      ACTIVE_WORKERS.getName(),
+                      ACTIVE_WORKERS_NS.getName(),
+                      EFFECTIVE_WORKERS.getName(),
+                      EFFECTIVE_WORKERS_NS.getName()
+              )
+          )
+      )
+  );
 
   private final MagnitudeType magnitudeType;
 

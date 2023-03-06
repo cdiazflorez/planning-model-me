@@ -1,5 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
 import static org.mockito.Mockito.when;
 
 import com.mercadolibre.planning.model.me.enums.ProcessName;
@@ -148,7 +149,7 @@ public class GetProjectionHeadcountTest {
         .dateTo(ZonedDateTime.ofInstant(TO, ZoneOffset.UTC))
         .source(Source.SIMULATION)
         .processName(List.of(ProcessName.PICKING))
-        .processingType(List.of(ProcessingType.ACTIVE_WORKERS))
+        .processingType(List.of(ProcessingType.ACTIVE_WORKERS, EFFECTIVE_WORKERS))
         .workflow(Workflow.FBM_WMS_OUTBOUND)
         .entityType(MagnitudeType.HEADCOUNT)
         .build())
