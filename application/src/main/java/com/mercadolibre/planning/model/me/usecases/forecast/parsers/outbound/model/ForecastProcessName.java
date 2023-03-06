@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model;
 
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS_NS;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.EFFECTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.EFFECTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.MAX_CAPACITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.PERFORMED_PROCESSING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.REMAINING_PROCESSING;
@@ -38,43 +38,43 @@ public enum ForecastProcessName {
           new ForecastProcessName.ColumnByVersion(
               INITIAL_VERSION,
               5,
-              List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS)),
+              List.of(REMAINING_PROCESSING, WORKERS, EFFECTIVE_WORKERS)),
           new ForecastProcessName.ColumnByVersion(
               SECOND_VERSION,
               5,
-              List.of(REMAINING_PROCESSING, WORKERS, ACTIVE_WORKERS, ACTIVE_WORKERS_NS)))),
+              List.of(REMAINING_PROCESSING, WORKERS, EFFECTIVE_WORKERS, EFFECTIVE_WORKERS_NS)))),
   PACKING(
       mapping(
           new ForecastProcessName.ColumnByVersion(
-              INITIAL_VERSION, 10, List.of(WORKERS, ACTIVE_WORKERS)),
+              INITIAL_VERSION, 10, List.of(WORKERS, EFFECTIVE_WORKERS)),
           new ForecastProcessName.ColumnByVersion(
               SECOND_VERSION,
               11,
-              List.of(WORKERS, ACTIVE_WORKERS, ACTIVE_WORKERS_NS)))),
+              List.of(WORKERS, EFFECTIVE_WORKERS, EFFECTIVE_WORKERS_NS)))),
   BATCH_SORTER(
       mapping(
           new ForecastProcessName.ColumnByVersion(
-              INITIAL_VERSION, 15, List.of(WORKERS, ACTIVE_WORKERS)),
+              INITIAL_VERSION, 15, List.of(WORKERS, EFFECTIVE_WORKERS)),
           new ForecastProcessName.ColumnByVersion(
               SECOND_VERSION,
               17,
-              List.of(WORKERS, ACTIVE_WORKERS, ACTIVE_WORKERS_NS)))),
+              List.of(WORKERS, EFFECTIVE_WORKERS, EFFECTIVE_WORKERS_NS)))),
   WALL_IN(
       mapping(
           new ForecastProcessName.ColumnByVersion(
-              INITIAL_VERSION, 20, List.of(WORKERS, ACTIVE_WORKERS)),
+              INITIAL_VERSION, 20, List.of(WORKERS, EFFECTIVE_WORKERS)),
           new ForecastProcessName.ColumnByVersion(
               SECOND_VERSION,
               23,
-              List.of(WORKERS, ACTIVE_WORKERS, ACTIVE_WORKERS_NS)))),
+              List.of(WORKERS, EFFECTIVE_WORKERS, EFFECTIVE_WORKERS_NS)))),
   PACKING_WALL(
       mapping(
           new ForecastProcessName.ColumnByVersion(
-              INITIAL_VERSION, 25, List.of(WORKERS, ACTIVE_WORKERS)),
+              INITIAL_VERSION, 25, List.of(WORKERS, EFFECTIVE_WORKERS)),
           new ForecastProcessName.ColumnByVersion(
               SECOND_VERSION,
               29,
-              List.of(WORKERS, ACTIVE_WORKERS, ACTIVE_WORKERS_NS)))),
+              List.of(WORKERS, EFFECTIVE_WORKERS, EFFECTIVE_WORKERS_NS)))),
   HU_ASSEMBLY(
       mapping(
           new ForecastProcessName.ColumnByVersion(
@@ -82,7 +82,7 @@ public enum ForecastProcessName {
           new ForecastProcessName.ColumnByVersion(
               SECOND_VERSION,
               35,
-              List.of(WORKERS, ACTIVE_WORKERS, ACTIVE_WORKERS_NS)))),
+              List.of(WORKERS, EFFECTIVE_WORKERS, EFFECTIVE_WORKERS_NS)))),
   SALES_DISPATCH(
       mapping(
           new ForecastProcessName.ColumnByVersion(
@@ -90,7 +90,7 @@ public enum ForecastProcessName {
           new ForecastProcessName.ColumnByVersion(
               SECOND_VERSION,
               41,
-              List.of(WORKERS, ACTIVE_WORKERS, ACTIVE_WORKERS_NS)))),
+              List.of(WORKERS, EFFECTIVE_WORKERS, EFFECTIVE_WORKERS_NS)))),
   GLOBAL(
       mapping(
           new ForecastProcessName.ColumnByVersion(

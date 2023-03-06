@@ -13,6 +13,7 @@ import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Mag
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.SIMULATION;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
@@ -117,7 +118,7 @@ public class GetEntities implements UseCase<GetProjectionInputDto, ComplexTable>
                 .entityFilters(Map.of(
                     HEADCOUNT, Map.of(
                         PROCESSING_TYPE.toJson(),
-                        List.of(ACTIVE_WORKERS.getName())
+                        List.of(ACTIVE_WORKERS.getName(), EFFECTIVE_WORKERS.getName())
                     ),
                     PRODUCTIVITY, Map.of(
                         ABILITY_LEVEL.toJson(),

@@ -3,10 +3,10 @@ package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.mod
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.WORKERS;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.BACKLOG_LOWER_LIMIT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.BACKLOG_UPPER_LIMIT;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.PERFORMED_PROCESSING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.THROUGHPUT;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.WORKERS_NS;
@@ -30,12 +30,12 @@ public enum ProcessingDistributionColumn {
     CHECK_IN_TARGET(mapping(3, 3), THROUGHPUT, CHECK_IN, UNITS_PER_HOUR, RepsRow::getCheckInWorkload),
     PUT_AWAY_TARGET(mapping(4, 4), THROUGHPUT, PUT_AWAY, UNITS_PER_HOUR, RepsRow::getPutAwayWorkload),
     STAGE_IN_TARGET(mapping(5, 5), PERFORMED_PROCESSING, STAGE_IN, UNITS_PER_HOUR, RepsRow::getStageInWorkload),
-    ACTIVE_RECEIVING(mapping(-1, 7), ACTIVE_WORKERS, RECEIVING, WORKERS, RepsRow::getActiveRepsReceiving),
-    ACTIVE_RECEIVING_NS(mapping(7, 8), ACTIVE_WORKERS_NS, RECEIVING, WORKERS, RepsRow::getActiveNsRepsReceiving),
-    ACTIVE_CHECK_IN(mapping(8, 9), ACTIVE_WORKERS, CHECK_IN, WORKERS, RepsRow::getActiveRepsCheckIn),
-    ACTIVE_CHECK_IN_NS(mapping(9, 10), ACTIVE_WORKERS_NS, CHECK_IN, WORKERS, RepsRow::getActiveNsRepsCheckIn),
-    ACTIVE_PUT_AWAY(mapping(10, 11), ACTIVE_WORKERS, PUT_AWAY, WORKERS, RepsRow::getActiveRepsPutAway),
-    ACTIVE_PUT_AWAY_NS(mapping(11, 12), ACTIVE_WORKERS_NS, PUT_AWAY, WORKERS, RepsRow::getActiveNsRepsPutAway),
+    ACTIVE_RECEIVING(mapping(-1, 7), EFFECTIVE_WORKERS, RECEIVING, WORKERS, RepsRow::getActiveRepsReceiving),
+    ACTIVE_RECEIVING_NS(mapping(7, 8), EFFECTIVE_WORKERS_NS, RECEIVING, WORKERS, RepsRow::getActiveNsRepsReceiving),
+    ACTIVE_CHECK_IN(mapping(8, 9), EFFECTIVE_WORKERS, CHECK_IN, WORKERS, RepsRow::getActiveRepsCheckIn),
+    ACTIVE_CHECK_IN_NS(mapping(9, 10), EFFECTIVE_WORKERS_NS, CHECK_IN, WORKERS, RepsRow::getActiveNsRepsCheckIn),
+    ACTIVE_PUT_AWAY(mapping(10, 11), EFFECTIVE_WORKERS, PUT_AWAY, WORKERS, RepsRow::getActiveRepsPutAway),
+    ACTIVE_PUT_AWAY_NS(mapping(11, 12), EFFECTIVE_WORKERS_NS, PUT_AWAY, WORKERS, RepsRow::getActiveNsRepsPutAway),
     PRESENT_RECEIVING(mapping(-1, 13), ProcessingType.WORKERS, RECEIVING, WORKERS, RepsRow::getPresentRepsReceiving),
     PRESENT_RECEIVING_NS(mapping(12, 14), WORKERS_NS, RECEIVING, WORKERS, RepsRow::getPresentNsRepsReceiving),
     PRESENT_CHECK_IN(mapping(13, 15), ProcessingType.WORKERS, CHECK_IN, WORKERS, RepsRow::getPresentRepsCheckIn),
