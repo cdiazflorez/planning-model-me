@@ -16,8 +16,8 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.EFFECTIVE_WORKERS;
-import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.WORKERS;
 
 import com.mercadolibre.planning.model.me.enums.CodeError;
 import com.mercadolibre.planning.model.me.enums.ProcessPath;
@@ -200,7 +200,7 @@ final class MappingOutbound {
         processingDistribution.stream()
             .filter(
                 distribution ->
-                    (distribution.getType().equals(WORKERS.toString())
+                    (distribution.getType().equals(ACTIVE_WORKERS.toString())
                             || distribution.getType().equals(EFFECTIVE_WORKERS.toString()))
                         && distribution.getData().stream().anyMatch(qty -> qty.getQuantity() < 0.0))
             .map(workers -> workers.getProcessName() + "-" + workers.getType())

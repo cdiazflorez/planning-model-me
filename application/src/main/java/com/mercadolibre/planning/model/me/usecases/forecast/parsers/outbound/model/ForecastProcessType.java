@@ -20,8 +20,7 @@ import lombok.Getter;
 public enum ForecastProcessType {
   PERFORMED_PROCESSING(SheetVersion.mapping(0, 0), UNITS),
   REMAINING_PROCESSING(SheetVersion.mapping(-2, -2), MINUTES),
-  //TODO: Cambiar WORKERS a ACTIVE_WORKERS
-  WORKERS(SheetVersion.mapping(1, 1), MetricUnit.WORKERS),
+  ACTIVE_WORKERS(SheetVersion.mapping(1, 1), MetricUnit.WORKERS),
   EFFECTIVE_WORKERS(SheetVersion.mapping(2, 2), MetricUnit.WORKERS),
   EFFECTIVE_WORKERS_NS(SheetVersion.mapping(-99, 3), MetricUnit.WORKERS),
   HEADCOUNT_PRODUCTIVITY(SheetVersion.mapping(3, 4), UNITS_PER_HOUR),

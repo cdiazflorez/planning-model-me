@@ -2,8 +2,6 @@ package com.mercadolibre.planning.model.me.usecases.staffing;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.EntityFilters.PROCESSING_TYPE;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudeType.HEADCOUNT;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS;
-import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.ACTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProcessingType.EFFECTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.AREA_MZ1;
@@ -1026,10 +1024,7 @@ class GetStaffingTest {
                     Map.of(
                         HEADCOUNT,
                         Map.of(
-                                PROCESSING_TYPE.toJson(), List.of(
-                                        ACTIVE_WORKERS.getName(),
-                                        EFFECTIVE_WORKERS.getName()
-                                )
+                                PROCESSING_TYPE.toJson(), List.of(EFFECTIVE_WORKERS.getName())
                         )
                     )
                 ).build()))
@@ -1048,10 +1043,7 @@ class GetStaffingTest {
                         Map.of(
                                 HEADCOUNT,
                                 Map.of(
-                                        PROCESSING_TYPE.toJson(), List.of(
-                                                ACTIVE_WORKERS.getName(),
-                                                EFFECTIVE_WORKERS.getName()
-                                        )
+                                        PROCESSING_TYPE.toJson(), List.of(EFFECTIVE_WORKERS.getName())
                                 )
                         )
                 ).build()))
@@ -1090,8 +1082,6 @@ class GetStaffingTest {
                         Map.of(
                             PROCESSING_TYPE.toJson(),
                             List.of(
-                                    ACTIVE_WORKERS.getName(),
-                                    ACTIVE_WORKERS_NS.getName(),
                                     EFFECTIVE_WORKERS.getName(),
                                     EFFECTIVE_WORKERS_NS.getName()
                             )
@@ -1116,8 +1106,6 @@ class GetStaffingTest {
                         Map.of(
                             PROCESSING_TYPE.toJson(),
                             List.of(
-                                    ACTIVE_WORKERS.getName(),
-                                    ACTIVE_WORKERS_NS.getName(),
                                     EFFECTIVE_WORKERS.getName(),
                                     EFFECTIVE_WORKERS_NS.getName()
                             )
