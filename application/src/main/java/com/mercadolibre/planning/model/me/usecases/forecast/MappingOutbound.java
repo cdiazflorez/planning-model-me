@@ -14,6 +14,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_PICKING_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.UNITS_PER_ORDER_RATIO;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.ACTIVE_WORKERS;
@@ -44,7 +45,8 @@ final class MappingOutbound {
   private static final String INVALID_DATES_ERROR_MESSAGE =
       "`Reps` sheet dates must match `PP - Staffing` sheet dates";
 
-  private MappingOutbound() {}
+  private MappingOutbound() {
+  }
 
   static List<HeadcountProductivity> buildHeadcountProductivity(
       final Map<ForecastColumn, Object> parsedValues) {
@@ -155,6 +157,7 @@ final class MappingOutbound {
     final String monoOrder = String.valueOf(parsedValues.get(MONO_ORDER_DISTRIBUTION));
     final String multiOrder = String.valueOf(parsedValues.get(MULTI_ORDER_DISTRIBUTION));
     final String multiBatch = String.valueOf(parsedValues.get(MULTI_BATCH_DISTRIBUTION));
+    final String unitsPerOrderRatio = String.valueOf(parsedValues.get(UNITS_PER_ORDER_RATIO));
     final String pickingPolyvalence =
         String.valueOf(parsedValues.get(OUTBOUND_PICKING_PRODUCTIVITY));
     final String batchPolyvalence =
@@ -173,6 +176,7 @@ final class MappingOutbound {
         new Metadata(MONO_ORDER_DISTRIBUTION.getName(), monoOrder),
         new Metadata(MULTI_ORDER_DISTRIBUTION.getName(), multiOrder),
         new Metadata(MULTI_BATCH_DISTRIBUTION.getName(), multiBatch),
+        new Metadata(UNITS_PER_ORDER_RATIO.getName(), unitsPerOrderRatio),
         new Metadata(OUTBOUND_PICKING_PRODUCTIVITY.getName(), pickingPolyvalence),
         new Metadata(OUTBOUND_BATCH_SORTER_PRODUCTIVITY.getName(), batchPolyvalence),
         new Metadata(OUTBOUND_WALL_IN_PRODUCTIVITY.getName(), wallInPolivalence),
@@ -201,7 +205,7 @@ final class MappingOutbound {
             .filter(
                 distribution ->
                     (distribution.getType().equals(ACTIVE_WORKERS.toString())
-                            || distribution.getType().equals(EFFECTIVE_WORKERS.toString()))
+                        || distribution.getType().equals(EFFECTIVE_WORKERS.toString()))
                         && distribution.getData().stream().anyMatch(qty -> qty.getQuantity() < 0.0))
             .map(workers -> workers.getProcessName() + "-" + workers.getType())
             .collect(Collectors.toList());

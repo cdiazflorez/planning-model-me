@@ -16,6 +16,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.OUTBOUND_WALL_IN_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.POLYVALENT_PRODUCTIVITY;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.PROCESSING_DISTRIBUTION;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.UNITS_PER_ORDER_RATIO;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.VERSION;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.NON_EXISTENT_COLUMN_IN_VERSION;
@@ -67,6 +68,8 @@ public class RepsForecastSheetParser implements SheetParser {
 
   private static final int MULTI_ORDER_COLUMN = 7;
 
+  private static final int UNITS_PER_ORDER_RATIO_COLUMN = 10;
+
   private static final int PROCESSING_DISTRIBUTION_STARTING_ROW = 7;
 
   private static final int HOURS_PER_FORECAST_PERIOD = 168;
@@ -116,6 +119,9 @@ public class RepsForecastSheetParser implements SheetParser {
             Map.entry(
                 MULTI_ORDER_DISTRIBUTION,
                 getDoubleValueAt(sheet, WAREHOUSE_ID_ROW, MULTI_ORDER_COLUMN)),
+            Map.entry(
+                UNITS_PER_ORDER_RATIO,
+                getDoubleValueAt(sheet, WAREHOUSE_ID_ROW, UNITS_PER_ORDER_RATIO_COLUMN)),
             Map.entry(
                 OUTBOUND_PICKING_PRODUCTIVITY,
                 productivityPolyvalenceByProcessName.get(
@@ -213,7 +219,7 @@ public class RepsForecastSheetParser implements SheetParser {
           headcountProductivity -> {
             final int columnIndex =
                 ForecastProcessName.from(headcountProductivity.getProcessName())
-                        .getStartingColumn(version)
+                    .getStartingColumn(version)
                     + HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET.get(version);
             headcountProductivity
                 .getData()
@@ -239,14 +245,14 @@ public class RepsForecastSheetParser implements SheetParser {
 
   private boolean isRemainingProcessing(ProcessingDistribution processingDistribution) {
     return ForecastProcessType.REMAINING_PROCESSING
-            == ForecastProcessType.from(processingDistribution.getType())
+        == ForecastProcessType.from(processingDistribution.getType())
         && MetricUnit.MINUTES == MetricUnit.from(processingDistribution.getQuantityMetricUnit());
   }
 
   private int getColumnIndex(
       final ProcessingDistribution processingDistribution, final SheetVersion version) {
     return ForecastProcessName.from(processingDistribution.getProcessName())
-            .getStartingColumn(version)
+        .getStartingColumn(version)
         + ForecastProcessType.from(processingDistribution.getType()).getColumnOrder(version);
   }
 
