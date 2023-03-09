@@ -365,7 +365,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         inbound.getProcesses().get(0),
         RECEIVING_PROCESS,
-            EXPECTED_RECEIVING_EFF_PRODUCTIVITY,
+        EXPECTED_RECEIVING_EFF_PRODUCTIVITY,
         null,
         0,
         RECEIVING_SYS_WORKERS,
@@ -376,7 +376,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         inbound.getProcesses().get(1),
         CHECK_IN_PROCESS,
-            EXPECTED_CHECK_IN_EFF_PRODUCTIVITY,
+        EXPECTED_CHECK_IN_EFF_PRODUCTIVITY,
         null,
         1,
         CHECK_IN_SYS_WORKERS,
@@ -387,7 +387,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         putAway,
         PUT_AWAY_PROCESS,
-            EXPECTED_PUT_AWAY_EFF_PRODUCTIVITY,
+        EXPECTED_PUT_AWAY_EFF_PRODUCTIVITY,
         null,
         1,
         PUT_AWAY_SYS_WORKERS,
@@ -419,7 +419,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         picking,
         PICKING_PROCESS,
-            EXPECTED_OUTBOUND_PICKING_EFF_PRODUCTIVITY,
+        EXPECTED_OUTBOUND_PICKING_EFF_PRODUCTIVITY,
         FORECAST_PICKING,
         OUTBOUND_PICKING_IDLE_WORKERS,
         OUTBOUND_PICKING_SYS_WORKERS,
@@ -455,7 +455,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         outbound.getProcesses().get(INDEX_PACKING_PROCESS),
         PACKING_PROCESS,
-            EXPECTED_OUTBOUND_PACKING_EFF_PRODUCTIVITY,
+        EXPECTED_OUTBOUND_PACKING_EFF_PRODUCTIVITY,
         FORECAST_PACKING,
         1,
         OUTBOUND_PACKING_SYS_WORKERS,
@@ -466,7 +466,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         outbound.getProcesses().get(INDEX_PACKING_WALL_PROCESS),
         PACKING_WALL_PROCESS,
-            EXPECTED_OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY,
+        EXPECTED_OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY,
         null,
         OUTBOUND_PACKING_WALL_IDLE_WORKERS,
         OUTBOUND_PACKING_WALL_SYS_WORKERS,
@@ -488,7 +488,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         pickingWithdrawals,
         PICKING_PROCESS,
-            EXPECTED_WITHDRAWALS_PICKING_EFF_PRODUCTIVITY,
+        EXPECTED_WITHDRAWALS_PICKING_EFF_PRODUCTIVITY,
         null,
         WITHDRAWALS_PICKING_IDLE_WORKERS,
         WITHDRAWALS_PICKING_SYS_WORKERS,
@@ -510,7 +510,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         withdrawals.getProcesses().get(1),
         PACKING_PROCESS,
-            EXPECTED_WITHDRAWALS_PACKING_EFF_PRODUCTIVITY,
+        EXPECTED_WITHDRAWALS_PACKING_EFF_PRODUCTIVITY,
         null,
         WITHDRAWALS_PACKING_IDLE_WORKERS,
         WITHDRAWALS_PACKING_SYS_WORKERS,
@@ -569,7 +569,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         stock.getProcesses().get(2),
         STOCK_AUDIT_PROCESS,
-            EXPECTED_STOCK_STOCK_AUDIT_EFF_PRODUCTIVITY,
+        EXPECTED_STOCK_STOCK_AUDIT_EFF_PRODUCTIVITY,
         null,
         STOCK_STOCK_AUDIT_IDLE_WORKERS,
         STOCK_STOCK_AUDIT_SYS_WORKERS,
@@ -957,7 +957,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         pickingTransfer,
         PICKING_PROCESS,
-            EXPECTED_TRANSFER_PICKING_EFF_PRODUCTIVITY,
+        EXPECTED_TRANSFER_PICKING_EFF_PRODUCTIVITY,
         null,
         TRANSFER_PICKING_IDLE_WORKERS,
         TRANSFER_PICKING_SYS_WORKERS,
