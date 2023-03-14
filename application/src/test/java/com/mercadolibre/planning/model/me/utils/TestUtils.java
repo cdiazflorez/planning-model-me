@@ -116,6 +116,8 @@ public class TestUtils {
 
   public static final Double RECEIVING_NET_PRODUCTIVITY = 25.40;
 
+  public static final Double RECEIVING_EFF_PRODUCTIVITY = 28.60;
+
   public static final int RECEIVING_SYS_WORKERS = 3;
 
   public static final Double RECEIVING_THROUGHPUT = 1.10;
@@ -124,11 +126,15 @@ public class TestUtils {
 
   public static final Double CHECK_IN_NET_PRODUCTIVITY = 35.50;
 
+  public static final Double CHECK_IN_EFF_PRODUCTIVITY = 39.10;
+
   public static final Double CHECK_IN_THROUGHPUT = 11.10;
 
   public static final int PUT_AWAY_SYS_WORKERS = 9;
 
   public static final Double PUT_AWAY_NET_PRODUCTIVITY = 15.32;
+
+  public static final Double PUT_AWAY_EFF_PRODUCTIVITY = 16.90;
 
   public static final Double PUT_AWAY_THROUGHPUT = 21.10;
 
@@ -151,6 +157,8 @@ public class TestUtils {
   public static final int OUTBOUND_PICKING_NON_SYS_WORKERS = 5;
 
   public static final Double OUTBOUND_PICKING_NET_PRODUCTIVITY = 45.71;
+
+  public static final Double OUTBOUND_PICKING_EFF_PRODUCTIVITY = 47.70;
 
   public static final Double OUTBOUND_PICKING_THROUGHPUT = 2700.0;
 
@@ -196,6 +204,8 @@ public class TestUtils {
 
   public static final Double OUTBOUND_HU_ASSEMBLY_NET_PRODUCTIVITY = 32.4;
 
+  public static final Double OUTBOUND_HU_ASSEMBLY_EFF_PRODUCTIVITY = 37.8;
+
   public static final Double OUTBOUND_HU_ASSEMBLY_THROUGHPUT = 11.10;
 
   public static final int OUTBOUND_SALES_DISPATCH_IDLE_WORKERS = 5;
@@ -206,6 +216,8 @@ public class TestUtils {
 
   public static final Double OUTBOUND_SALES_DISPATCH_NET_PRODUCTIVITY = 32.4;
 
+  public static final Double OUTBOUND_SALES_DISPATCH_EFF_PRODUCTIVITY = 30.6;
+
   public static final Double OUTBOUND_SALES_DISPATCH_THROUGHPUT = 11.10;
 
   public static final int WITHDRAWALS_PICKING_IDLE_WORKERS = 3;
@@ -215,6 +227,8 @@ public class TestUtils {
   public static final int WITHDRAWALS_PICKING_NON_SYS_WORKERS = 7;
 
   public static final Double WITHDRAWALS_PICKING_NET_PRODUCTIVITY = 71.45;
+
+  public static final Double WITHDRAWALS_PICKING_EFF_PRODUCTIVITY = 70.0;
 
   public static final Double WITHDRAWALS_PICKING_THROUGHPUT = 270.0;
 
@@ -242,6 +256,8 @@ public class TestUtils {
 
   public static final Double TRANSFER_PICKING_NET_PRODUCTIVITY = 35.5;
 
+  public static final Double TRANSFER_PICKING_EFF_PRODUCTIVITY = 40.5;
+
   public static final Double TRANSFER_PICKING_THROUGHPUT = 135.0;
 
   public static final int TRANSFER_PICKING_RKL_IDLE_WORKERS = 6;
@@ -261,6 +277,8 @@ public class TestUtils {
 
   public static final Double STOCK_CYCLE_COUNT_NET_PRODUCTIVITY = 565.95;
 
+  public static final Double STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY = 786.94;
+
   public static final Double STOCK_CYCLE_COUNT_THROUGHPUT = 1585.0;
 
   public static final int STOCK_CYCLE_COUNT_MZ1_IDLE_WORKERS = 1;
@@ -275,6 +293,8 @@ public class TestUtils {
 
   public static final Double STOCK_INBOUND_AUDIT_NET_PRODUCTIVITY = 1200.73;
 
+  public static final Double STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY = 1839.67;
+
   public static final Double STOCK_INBOUND_AUDIT_THROUGHPUT = 225.0;
 
   public static final int STOCK_INBOUND_AUDIT_RKL_SYS_WORKERS = 2;
@@ -288,6 +308,8 @@ public class TestUtils {
   public static final int STOCK_STOCK_AUDIT_SYS_WORKERS = 4;
 
   public static final Double STOCK_STOCK_AUDIT_NET_PRODUCTIVITY = 594.84;
+
+  public static final Double STOCK_STOCK_AUDIT_EFF_PRODUCTIVITY = 600.45;
 
   public static final Double STOCK_STOCK_AUDIT_THROUGHPUT = 2615.0;
 
@@ -417,19 +439,29 @@ public class TestUtils {
                 0,
                 RECEIVING_SYS_WORKERS,
                 RECEIVING_NET_PRODUCTIVITY,
-                null,
+                RECEIVING_EFF_PRODUCTIVITY,
                 RECEIVING_THROUGHPUT,
                 0),
             emptyList()),
         new StaffingProcess(
             CHECK_IN_PROCESS,
             new ProcessTotals(
-                1, CHECK_IN_SYS_WORKERS, CHECK_IN_NET_PRODUCTIVITY, null, CHECK_IN_THROUGHPUT, 0),
+                1,
+                    CHECK_IN_SYS_WORKERS,
+                    CHECK_IN_NET_PRODUCTIVITY,
+                    CHECK_IN_EFF_PRODUCTIVITY,
+                    CHECK_IN_THROUGHPUT,
+                    0),
             emptyList()),
         new StaffingProcess(
             PUT_AWAY_PROCESS,
             new ProcessTotals(
-                1, PUT_AWAY_SYS_WORKERS, PUT_AWAY_NET_PRODUCTIVITY, null, PUT_AWAY_THROUGHPUT, 0),
+                1,
+                    PUT_AWAY_SYS_WORKERS,
+                    PUT_AWAY_NET_PRODUCTIVITY,
+                    PUT_AWAY_EFF_PRODUCTIVITY,
+                    PUT_AWAY_THROUGHPUT,
+                    0),
             List.of(
                 new Area(
                     AREA_MZ1,
@@ -460,7 +492,7 @@ public class TestUtils {
                 OUTBOUND_PICKING_IDLE_WORKERS,
                 OUTBOUND_PICKING_SYS_WORKERS,
                 OUTBOUND_PICKING_NET_PRODUCTIVITY,
-                null,
+                OUTBOUND_PICKING_EFF_PRODUCTIVITY,
                 OUTBOUND_PICKING_THROUGHPUT,
                 OUTBOUND_PICKING_NON_SYS_WORKERS),
             List.of(
@@ -483,7 +515,7 @@ public class TestUtils {
             new ProcessTotals(null, null, null, null, null, null),
             emptyList()),
         new StaffingProcess(
-            WALL_IN_PROCESS, new ProcessTotals(0, 0, 0.0, null, 0.0, 0), emptyList()),
+            WALL_IN_PROCESS, new ProcessTotals(0, 0, 0.0, 0.0, 0.0, 0), emptyList()),
         new StaffingProcess(
             PACKING_PROCESS,
             new ProcessTotals(
@@ -510,7 +542,7 @@ public class TestUtils {
                 OUTBOUND_HU_ASSEMBLY_IDLE_WORKERS,
                 OUTBOUND_HU_ASSEMBLY_SYS_WORKERS,
                 OUTBOUND_HU_ASSEMBLY_NET_PRODUCTIVITY,
-                null,
+                OUTBOUND_HU_ASSEMBLY_EFF_PRODUCTIVITY,
                 OUTBOUND_HU_ASSEMBLY_THROUGHPUT,
                 OUTBOUND_HU_ASSEMBLY_NON_SYS_WORKERS),
             emptyList()),
@@ -520,7 +552,7 @@ public class TestUtils {
                 OUTBOUND_SALES_DISPATCH_IDLE_WORKERS,
                 OUTBOUND_SALES_DISPATCH_SYS_WORKERS,
                 OUTBOUND_SALES_DISPATCH_NET_PRODUCTIVITY,
-                null,
+                OUTBOUND_SALES_DISPATCH_EFF_PRODUCTIVITY,
                 OUTBOUND_SALES_DISPATCH_THROUGHPUT,
                 OUTBOUND_SALES_DISPATCH_NON_SYS_WORKERS),
             emptyList()));
@@ -539,7 +571,7 @@ public class TestUtils {
                 WITHDRAWALS_PICKING_IDLE_WORKERS,
                 WITHDRAWALS_PICKING_SYS_WORKERS,
                 WITHDRAWALS_PICKING_NET_PRODUCTIVITY,
-                null,
+                WITHDRAWALS_PICKING_EFF_PRODUCTIVITY,
                 WITHDRAWALS_PICKING_THROUGHPUT,
                 WITHDRAWALS_PICKING_NON_SYS_WORKERS),
             List.of(
@@ -575,7 +607,7 @@ public class TestUtils {
                 TRANSFER_PICKING_IDLE_WORKERS,
                 TRANSFER_PICKING_SYS_WORKERS,
                 TRANSFER_PICKING_NET_PRODUCTIVITY,
-                null,
+                TRANSFER_PICKING_EFF_PRODUCTIVITY,
                 TRANSFER_PICKING_THROUGHPUT,
                 0),
             List.of(
@@ -601,7 +633,7 @@ public class TestUtils {
                 STOCK_CYCLE_COUNT_IDLE_WORKERS,
                 STOCK_CYCLE_COUNT_SYS_WORKERS,
                 STOCK_CYCLE_COUNT_NET_PRODUCTIVITY,
-                null,
+                STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY,
                 STOCK_CYCLE_COUNT_THROUGHPUT,
                 STOCK_CYCLE_COUNT_NON_SYS_WORKERS),
             List.of(
@@ -618,7 +650,7 @@ public class TestUtils {
                 0,
                 STOCK_INBOUND_AUDIT_SYS_WORKERS,
                 STOCK_INBOUND_AUDIT_NET_PRODUCTIVITY,
-                null,
+                STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY,
                 STOCK_INBOUND_AUDIT_THROUGHPUT,
                 0),
             List.of(
@@ -635,7 +667,7 @@ public class TestUtils {
                 STOCK_STOCK_AUDIT_IDLE_WORKERS,
                 STOCK_STOCK_AUDIT_SYS_WORKERS,
                 STOCK_STOCK_AUDIT_NET_PRODUCTIVITY,
-                null,
+                STOCK_STOCK_AUDIT_EFF_PRODUCTIVITY,
                 STOCK_STOCK_AUDIT_THROUGHPUT,
                 0),
             emptyList()));

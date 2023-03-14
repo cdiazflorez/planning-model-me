@@ -135,15 +135,15 @@ class GetStaffingTest {
 
   private static final int INDEX_PACKING_WALL_PROCESS = 4;
 
-  private static final Integer EXPECTED_RECEIVING_NET_PRODUCTIVITY = 25;
+  private static final Integer EXPECTED_RECEIVING_EFF_PRODUCTIVITY = 28;
 
   private static final Integer EXPECTED_RECEIVING_THROUGHPUT = 1;
 
-  private static final Integer EXPECTED_CHECK_IN_NET_PRODUCTIVITY = 35;
+  private static final Integer EXPECTED_CHECK_IN_EFF_PRODUCTIVITY = 39;
 
   private static final Integer EXPECTED_CHECK_IN_THROUGHPUT = 11;
 
-  private static final Integer EXPECTED_PUT_AWAY_NET_PRODUCTIVITY = 15;
+  private static final Integer EXPECTED_PUT_AWAY_EFF_PRODUCTIVITY = 16;
 
   private static final Integer EXPECTED_PUT_AWAY_THROUGHPUT = 21;
 
@@ -157,7 +157,7 @@ class GetStaffingTest {
 
   private static final int TOTAL_OUTBOUND_WORKERS = 207;
 
-  private static final Integer EXPECTED_OUTBOUND_PICKING_NET_PRODUCTIVITY = 45;
+  private static final Integer EXPECTED_OUTBOUND_PICKING_EFF_PRODUCTIVITY = 47;
 
   private static final Integer EXPECTED_OUTBOUND_PICKING_THROUGHPUT = 2700;
 
@@ -167,11 +167,11 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_OUTBOUND_PICKING_RKL_NET_PRODUCTIVITY = 75;
 
-  private static final Integer EXPECTED_OUTBOUND_PACKING_NET_PRODUCTIVITY = 34;
+  private static final Integer EXPECTED_OUTBOUND_PACKING_EFF_PRODUCTIVITY = 34;
 
   private static final Integer EXPECTED_OUTBOUND_PACKING_THROUGHPUT = 1350;
 
-  private static final Integer EXPECTED_OUTBOUND_PACKING_WALL_NET_PRODUCTIVITY = 32;
+  private static final Integer EXPECTED_OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY = 32;
 
   private static final Integer EXPECTED_OUTBOUND_PACKING_WALL_THROUGHPUT = 11;
 
@@ -179,7 +179,7 @@ class GetStaffingTest {
 
   private static final int TOTAL_WITHDRAWALS_WORKERS = 54;
 
-  private static final Integer EXPECTED_WITHDRAWALS_PICKING_NET_PRODUCTIVITY = 71;
+  private static final Integer EXPECTED_WITHDRAWALS_PICKING_EFF_PRODUCTIVITY = 70;
 
   private static final Integer EXPECTED_WITHDRAWALS_PICKING_THROUGHPUT = 270;
 
@@ -187,7 +187,7 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_WITHDRAWALS_PICKING_RKL_NET_PRODUCTIVITY = 71;
 
-  private static final Integer EXPECTED_WITHDRAWALS_PACKING_NET_PRODUCTIVITY = 54;
+  private static final Integer EXPECTED_WITHDRAWALS_PACKING_EFF_PRODUCTIVITY = 54;
 
   private static final Integer EXPECTED_WITHDRAWALS_PACKING_THROUGHPUT = 350;
 
@@ -195,7 +195,7 @@ class GetStaffingTest {
 
   private static final int TOTAL_TRANSFER_WORKERS = 27;
 
-  private static final Integer EXPECTED_TRANSFER_PICKING_NET_PRODUCTIVITY = 35;
+  private static final Integer EXPECTED_TRANSFER_PICKING_EFF_PRODUCTIVITY = 40;
 
   private static final Integer EXPECTED_TRANSFER_PICKING_THROUGHPUT = 135;
 
@@ -207,7 +207,7 @@ class GetStaffingTest {
 
   private static final int TOTAL_STOCK_WORKERS = 20;
 
-  private static final Integer EXPECTED_STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY = 565;
+  private static final Integer EXPECTED_STOCK_CYCLE_COUNT_EFF_PRODUCTIVITY = 786;
 
   private static final Integer EXPECTED_STOCK_STOCK_CYCLE_COUNT_THROUGHPUT = 1585;
 
@@ -215,7 +215,7 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_STOCK_CYCLE_COUNT_MZ1_EFF_PRODUCTIVITY = 565;
 
-  private static final Integer EXPECTED_STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY = 1200;
+  private static final Integer EXPECTED_STOCK_INBOUND_AUDIT_EFF_PRODUCTIVITY = 1839;
 
   private static final Integer EXPECTED_STOCK_STOCK_INBOUND_AUDIT_THROUGHPUT = 225;
 
@@ -223,7 +223,7 @@ class GetStaffingTest {
 
   private static final Integer EXPECTED_STOCK_INBOUND_AUDIT_RKL_EFF_PRODUCTIVITY = 1200;
 
-  private static final Integer EXPECTED_STOCK_STOCK_AUDIT_NET_PRODUCTIVITY = 594;
+  private static final Integer EXPECTED_STOCK_STOCK_AUDIT_EFF_PRODUCTIVITY = 600;
 
   private static final Integer EXPECTED_STOCK_STOCK_AUDIT_THROUGHPUT = 2615;
 
@@ -271,29 +271,29 @@ class GetStaffingTest {
 
   private static final Integer SIMULATION_HEADCOUNT_PUT_AWAY = 10;
 
-  private static final Integer EXPECTED_DELTA_PUT_AWAY = 0;
+  private static final Integer EXPECTED_DELTA_PUT_AWAY = -1;
 
-  private static final Integer EXPECTED_DELTA_CHECK_IN = 3;
+  private static final Integer EXPECTED_DELTA_CHECK_IN = 2;
 
-  private static final Integer EXPECTED_DELTA_PICKING = 22;
+  private static final Integer EXPECTED_DELTA_PICKING = 16;
 
   private static final Integer EXPECTED_NS_DELTA_PICKING = 1;
 
-  private static final Integer EXPECTED_SIMULATION_DELTA_PICKING = 24;
+  private static final Integer EXPECTED_SIMULATION_DELTA_PICKING = 18;
 
-  private static final Integer EXPECTED_DELTA_PACKING = 6;
+  private static final Integer EXPECTED_DELTA_PACKING = 5;
 
   private static final Integer EXPECTED_NS_DELTA_PACKING = 5;
 
-  private static final Integer EXPECTED_DELTA_PACKING_WALL = 40;
+  private static final Integer EXPECTED_DELTA_PACKING_WALL = 35;
 
   private static final Integer EXPECTED_NS_DELTA_PACKING_WALL = 8;
 
-  private static final Integer EXPECTED_DELTA_HU_ASSEMBLY = 35;
+  private static final Integer EXPECTED_DELTA_HU_ASSEMBLY = 30;
 
   private static final Integer EXPECTED_NS_DELTA_HU_ASSEMBLY = 7;
 
-  private static final Integer EXPECTED_DELTA_SALES_DISPATCH = 32;
+  private static final Integer EXPECTED_DELTA_SALES_DISPATCH = 27;
 
   private static final Integer EXPECTED_NS_DELTA_SALES_DISPATCH = 4;
 
@@ -365,7 +365,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         inbound.getProcesses().get(0),
         RECEIVING_PROCESS,
-        EXPECTED_RECEIVING_NET_PRODUCTIVITY,
+        EXPECTED_RECEIVING_EFF_PRODUCTIVITY,
         null,
         0,
         RECEIVING_SYS_WORKERS,
@@ -376,7 +376,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         inbound.getProcesses().get(1),
         CHECK_IN_PROCESS,
-        EXPECTED_CHECK_IN_NET_PRODUCTIVITY,
+        EXPECTED_CHECK_IN_EFF_PRODUCTIVITY,
         null,
         1,
         CHECK_IN_SYS_WORKERS,
@@ -387,7 +387,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         putAway,
         PUT_AWAY_PROCESS,
-        EXPECTED_PUT_AWAY_NET_PRODUCTIVITY,
+        EXPECTED_PUT_AWAY_EFF_PRODUCTIVITY,
         null,
         1,
         PUT_AWAY_SYS_WORKERS,
@@ -419,7 +419,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         picking,
         PICKING_PROCESS,
-        EXPECTED_OUTBOUND_PICKING_NET_PRODUCTIVITY,
+        EXPECTED_OUTBOUND_PICKING_EFF_PRODUCTIVITY,
         FORECAST_PICKING,
         OUTBOUND_PICKING_IDLE_WORKERS,
         OUTBOUND_PICKING_SYS_WORKERS,
@@ -455,7 +455,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         outbound.getProcesses().get(INDEX_PACKING_PROCESS),
         PACKING_PROCESS,
-        EXPECTED_OUTBOUND_PACKING_NET_PRODUCTIVITY,
+        EXPECTED_OUTBOUND_PACKING_EFF_PRODUCTIVITY,
         FORECAST_PACKING,
         1,
         OUTBOUND_PACKING_SYS_WORKERS,
@@ -466,7 +466,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         outbound.getProcesses().get(INDEX_PACKING_WALL_PROCESS),
         PACKING_WALL_PROCESS,
-        EXPECTED_OUTBOUND_PACKING_WALL_NET_PRODUCTIVITY,
+        EXPECTED_OUTBOUND_PACKING_WALL_EFF_PRODUCTIVITY,
         null,
         OUTBOUND_PACKING_WALL_IDLE_WORKERS,
         OUTBOUND_PACKING_WALL_SYS_WORKERS,
@@ -488,7 +488,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         pickingWithdrawals,
         PICKING_PROCESS,
-        EXPECTED_WITHDRAWALS_PICKING_NET_PRODUCTIVITY,
+        EXPECTED_WITHDRAWALS_PICKING_EFF_PRODUCTIVITY,
         null,
         WITHDRAWALS_PICKING_IDLE_WORKERS,
         WITHDRAWALS_PICKING_SYS_WORKERS,
@@ -510,7 +510,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         withdrawals.getProcesses().get(1),
         PACKING_PROCESS,
-        EXPECTED_WITHDRAWALS_PACKING_NET_PRODUCTIVITY,
+        EXPECTED_WITHDRAWALS_PACKING_EFF_PRODUCTIVITY,
         null,
         WITHDRAWALS_PACKING_IDLE_WORKERS,
         WITHDRAWALS_PACKING_SYS_WORKERS,
@@ -569,7 +569,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         stock.getProcesses().get(2),
         STOCK_AUDIT_PROCESS,
-        EXPECTED_STOCK_STOCK_AUDIT_NET_PRODUCTIVITY,
+        EXPECTED_STOCK_STOCK_AUDIT_EFF_PRODUCTIVITY,
         null,
         STOCK_STOCK_AUDIT_IDLE_WORKERS,
         STOCK_STOCK_AUDIT_SYS_WORKERS,
@@ -816,7 +816,7 @@ class GetStaffingTest {
   private void assertEqualsProcess(
       final Process process,
       final String name,
-      final int netProductivity,
+      final int effProductivity,
       final Integer targetProductivity,
       final int idleWorkers,
       final int busyWorkers,
@@ -825,7 +825,7 @@ class GetStaffingTest {
       final int areasSize) {
 
     assertEquals(name, process.getProcess());
-    assertEquals(netProductivity, process.getNetProductivity());
+    assertEquals(effProductivity, process.getNetProductivity());
     assertEquals(targetProductivity, process.getTargetProductivity());
     assertEquals(busyWorkers, process.getWorkers().getBusy());
     assertEquals(idleWorkers, process.getWorkers().getIdle());
@@ -957,7 +957,7 @@ class GetStaffingTest {
     assertEqualsProcess(
         pickingTransfer,
         PICKING_PROCESS,
-        EXPECTED_TRANSFER_PICKING_NET_PRODUCTIVITY,
+        EXPECTED_TRANSFER_PICKING_EFF_PRODUCTIVITY,
         null,
         TRANSFER_PICKING_IDLE_WORKERS,
         TRANSFER_PICKING_SYS_WORKERS,
