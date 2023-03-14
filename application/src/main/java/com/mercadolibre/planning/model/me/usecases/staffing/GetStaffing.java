@@ -54,9 +54,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
 
-  private static final List<String> EFFECTIVE_PROCESSES =
-      List.of(ProcessName.PACKING.getName(), ProcessName.PACKING_WALL.getName());
-
   private final PlanningModelGateway planningModelGateway;
 
   private final StaffingGateway staffingGateway;
@@ -151,14 +148,6 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     return validValues.isEmpty() ? null : validValues.stream().mapToInt(i -> i).sum();
   }
 
-  private Double getProductivity(final String process, final ProcessTotals totals) {
-    if (EFFECTIVE_PROCESSES.contains(process)) {
-      return totals.getEffProductivity();
-    }
-
-    return totals.getNetProductivity();
-  }
-
   private Integer calculateHeadcountDelta(
       final Integer working, final Integer effective) {
     return effective == null || working == null ? null : working - effective;
@@ -189,7 +178,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Integer nonSystemicDelta =
         calculateNonSystemicHeadcountDelta(nonSystemicWorkers, nonSystemicWorkersPlanned);
 
-    final Double productivity = getProductivity(process, totals);
+    final Double productivity = totals.getEffProductivity();
     final Integer realProductivity = productivity == null ? null : productivity.intValue();
     final Double throughput = totals.getThroughput();
     final Integer realThroughput = throughput == null ? null : throughput.intValue();
