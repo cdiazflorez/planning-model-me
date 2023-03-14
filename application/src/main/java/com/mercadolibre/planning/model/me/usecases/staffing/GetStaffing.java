@@ -160,8 +160,8 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
   }
 
   private Integer calculateHeadcountDelta(
-      final Integer working, final Integer idle, final Integer planned) {
-    return planned == null || working == null || idle == null ? null : (working + idle) - planned;
+      final Integer working, final Integer effective) {
+    return effective == null || working == null ? null : working - effective;
   }
 
   private Integer calculateNonSystemicHeadcountDelta(
@@ -185,7 +185,7 @@ public class GetStaffing implements UseCase<GetStaffingInput, Staffing> {
     final Integer idle = totals.getIdle();
     final Integer working = totals.getWorkingSystemic();
     final Integer nonSystemicWorkers = totals.getWorkingNonSystemic();
-    final Integer delta = calculateHeadcountDelta(working, idle, systemicWorkersPlanned);
+    final Integer delta = calculateHeadcountDelta(working, systemicWorkersPlanned);
     final Integer nonSystemicDelta =
         calculateNonSystemicHeadcountDelta(nonSystemicWorkers, nonSystemicWorkersPlanned);
 
