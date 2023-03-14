@@ -10,8 +10,8 @@ import lombok.Value;
 @Value
 public class StaffingRow {
   CellValue<ZonedDateTime> date;
-  Map<ForecastStaffingProductivityColumnName, CellValue<Integer>> productivities;
-  Map<ForecastStaffingRatioColumnName, CellValue<Double>> ratios;
+  Map<ForecastStaffingColumnName, CellValue<Integer>> productivities;
+  Map<ForecastStaffingColumnName, CellValue<Double>> ratios;
 
   /**
    * GetInvalidCells.

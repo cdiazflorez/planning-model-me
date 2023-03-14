@@ -31,6 +31,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class StaffingSheetParserTest {
   private static final String VALID_FILE_PATH = "MVP1-outbound-test.xlsx";
 
+  private static final String VALID_FILE_PATH_FOR_ARBA = "ARBA-outbound-test.xlsx";
+
+  private static final String AR_WAREHOUSE_ID = "ARBA01";
+
   private static final String ERRONEOUS_FILE_PATH = "MVP1-outbound-ratio-error.xlsx";
 
   private static final String SHEET = "PP - Staffing";
@@ -67,6 +71,14 @@ class StaffingSheetParserTest {
       ProcessPath.NON_TOT_MULTI_BATCH, 0.80
   );
 
+  private static final Map<ProcessPath, Double> RATIO_BY_PROCESS_ARBA01 = Map.of(
+      ProcessPath.TOT_MONO, 0.2,
+      ProcessPath.TOT_MULTI_BATCH, 0.2,
+      ProcessPath.TOT_MULTI_ORDER, 0.2,
+      ProcessPath.NON_TOT_MONO, 0.2,
+      ProcessPath.NON_TOT_MULTI_ORDER, 0.2
+  );
+
   private final StaffingSheetParser staffingSheetParser = new StaffingSheetParser();
 
   @Test
@@ -82,6 +94,21 @@ class StaffingSheetParserTest {
     // THEN
     assertNotNull(forecastSheetDto);
     assertValues(forecastSheetDto);
+  }
+
+  @Test
+  @DisplayName("Excel Parsed Ok")
+  void arba01ParseOk() {
+    // GIVEN
+    // a valid sheet
+    final var sheet = getMeliSheetFrom(staffingSheetParser.name(), VALID_FILE_PATH_FOR_ARBA);
+
+    // WHEN
+    final ForecastSheetDto forecastSheetDto = staffingSheetParser.parse(AR_WAREHOUSE_ID, sheet, CONF);
+
+    // THEN
+    assertNotNull(forecastSheetDto);
+    assertValuesArba01(forecastSheetDto);
   }
 
   @Test
@@ -104,7 +131,7 @@ class StaffingSheetParserTest {
 
     // WHEN
     final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
-        () -> staffingSheetParser.parse("ARBA01", sheet, CONF));
+        () -> staffingSheetParser.parse("ARTW01", sheet, CONF));
 
     // THEN
     assertNotNull(exception.getMessage());
@@ -125,8 +152,34 @@ class StaffingSheetParserTest {
     assertHeadcountRatio((List<HeadcountRatio>) values.get(HEADCOUNT_RATIO));
   }
 
+  private void assertValuesArba01(final ForecastSheetDto forecastSheetDto) {
+    assertTrue(SHEET.equalsIgnoreCase(forecastSheetDto.getSheetName()));
+    assertEquals(2, forecastSheetDto.getValues().values().size());
+
+    final var values = forecastSheetDto.getValues();
+    assertTrue(values.containsKey(HEADCOUNT_PRODUCTIVITY_PP));
+    assertHeadcountProductivityArba01((List<HeadcountProductivity>) values.get(HEADCOUNT_PRODUCTIVITY_PP));
+
+    assertTrue(values.containsKey(HEADCOUNT_RATIO));
+    assertHeadcountRatioARBA01((List<HeadcountRatio>) values.get(HEADCOUNT_RATIO));
+  }
+
   private void assertHeadcountProductivity(List<HeadcountProductivity> hcProductivity) {
     assertEquals(6, hcProductivity.size());
+
+    hcProductivity.forEach(hc -> {
+          hc.getData().sort(Comparator.comparing(HeadcountProductivityData::getProductivity));
+          IntStream.range(0, hc.getData().size())
+              .forEach(i -> {
+                long expectedProductivity = getProductivityByProcessAndIndex(hc.getProcessPath(), i);
+                assertEquals(expectedProductivity, hc.getData().get(i).getProductivity());
+              });
+        }
+    );
+  }
+
+  private void assertHeadcountProductivityArba01(List<HeadcountProductivity> hcProductivity) {
+    assertEquals(5, hcProductivity.size());
 
     hcProductivity.forEach(hc -> {
           hc.getData().sort(Comparator.comparing(HeadcountProductivityData::getProductivity));
@@ -143,6 +196,17 @@ class StaffingSheetParserTest {
     return INIT_PRODUCTIVITY_BY_PROCESS.get(processPath) + index;
   }
 
+  private void assertHeadcountRatioARBA01(final List<HeadcountRatio> hcRatio) {
+    assertEquals(5, hcRatio.size());
+
+    hcRatio.forEach(hc -> IntStream.range(0, hc.getData().size())
+        .forEach(i -> {
+          Double expectedRatio = getRatioByProcessAndIndexForArbaTest(hc.getProcessPath().getName());
+          assertEquals(expectedRatio, hc.getData().get(i).getRatio());
+        })
+    );
+  }
+
   private void assertHeadcountRatio(final List<HeadcountRatio> hcRatio) {
     assertEquals(6, hcRatio.size());
 
@@ -157,6 +221,7 @@ class StaffingSheetParserTest {
     );
   }
 
+
   private Double getRatioByProcessAndIndex(final String processPath, final int index) {
     final ProcessPath pp = ProcessPath.from(processPath);
     if (index == 0) {
@@ -164,5 +229,10 @@ class StaffingSheetParserTest {
     } else {
       return RATIO_BY_PROCESS.get(pp);
     }
+  }
+
+  private Double getRatioByProcessAndIndexForArbaTest(final String processPath) {
+    final ProcessPath pp = ProcessPath.from(processPath);
+      return RATIO_BY_PROCESS_ARBA01.get(pp);
   }
 }

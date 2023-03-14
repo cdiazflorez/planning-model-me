@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum ForecastStaffingRatioColumnName {
+public enum ExtendedForecastStaffingRatioColumnName implements ForecastStaffingColumnName {
   TOT_MONO(7, ProcessPath.TOT_MONO),
   TOT_MULTI_BATCH(8, ProcessPath.TOT_MULTI_BATCH),
   TOT_MULTI_ORDER(9, ProcessPath.TOT_MULTI_ORDER),

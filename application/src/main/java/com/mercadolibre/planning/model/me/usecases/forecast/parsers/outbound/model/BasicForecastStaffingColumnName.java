@@ -6,13 +6,12 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum ForecastStaffingProductivityColumnName {
+public enum BasicForecastStaffingColumnName implements ForecastStaffingColumnName {
   TOT_MONO(1, ProcessPath.TOT_MONO),
   TOT_MULTI_BATCH(2, ProcessPath.TOT_MULTI_BATCH),
   TOT_MULTI_ORDER(3, ProcessPath.TOT_MULTI_ORDER),
   NON_TOT_MONO(4, ProcessPath.NON_TOT_MONO),
-  NON_TOT_MULTI_ORDER(5, ProcessPath.NON_TOT_MULTI_ORDER),
-  NON_TOT_MULTI_BATCH(6, ProcessPath.NON_TOT_MULTI_BATCH);
+  NON_TOT_MULTI_ORDER(5, ProcessPath.NON_TOT_MULTI_ORDER);
 
   private final int columnIndex;
 
