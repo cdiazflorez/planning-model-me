@@ -79,11 +79,11 @@ public class GetBacklogScheduled {
     final List<Photo.Group> lastPhoto = getLastPhoto(logisticCenterId, requestDate);
 
     final List<PlanningDistributionResponse> scheduledBacklogDeviatedSeller = planningModelGateway.getPlanningDistribution(
-        generatePlanningDistributionRequest(logisticCenterId, INBOUND, requestDate)
+        generatePlanningDistributionRequest(logisticCenterId, INBOUND, firstHourOfDayByLogisticCenter)
     );
 
     final List<PlanningDistributionResponse> scheduledBacklogDeviatedTransfer = planningModelGateway.getPlanningDistribution(
-        generatePlanningDistributionRequest(logisticCenterId, INBOUND_TRANSFER, requestDate));
+        generatePlanningDistributionRequest(logisticCenterId, INBOUND_TRANSFER, firstHourOfDayByLogisticCenter));
 
     final List<InboundBacklogScheduled> scheduledBacklogs = getScheduledBacklog(
         lastPhoto,
@@ -103,9 +103,9 @@ public class GetBacklogScheduled {
   }
 
   private PlanningDistributionRequest generatePlanningDistributionRequest(
-      final String logisticCenterId, final Workflow workflow, final Instant requestDate) {
-    final var dateInFrom = ZonedDateTime.ofInstant(requestDate, ZoneId.of(UTC));
-    final var dateInTo = dateInFrom.plus(1, ChronoUnit.DAYS);
+      final String logisticCenterId, final Workflow workflow, final Instant firstHourOfDayByLogisticCenter) {
+    final var dateInFrom = ZonedDateTime.ofInstant(firstHourOfDayByLogisticCenter, ZoneId.of(UTC));
+    final var dateInTo = dateInFrom.plus(2, ChronoUnit.DAYS);
     final var dateOutFrom = dateInFrom.plus(1, ChronoUnit.DAYS);
     final var dateOutTo = dateInTo.plus(3, ChronoUnit.DAYS);
 
