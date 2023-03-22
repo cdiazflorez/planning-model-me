@@ -104,16 +104,14 @@ public class GetBacklogScheduled {
 
   private PlanningDistributionRequest generatePlanningDistributionRequest(
       final String logisticCenterId, final Workflow workflow, final Instant firstHourOfDayByLogisticCenter) {
-    final var dateInFrom = ZonedDateTime.ofInstant(firstHourOfDayByLogisticCenter, ZoneId.of(UTC));
-    final var dateInTo = dateInFrom.plus(2, ChronoUnit.DAYS);
-    final var dateOutFrom = dateInFrom.plus(1, ChronoUnit.DAYS);
-    final var dateOutTo = dateInTo.plus(3, ChronoUnit.DAYS);
+    final var dateOutFrom = ZonedDateTime.ofInstant(firstHourOfDayByLogisticCenter, ZoneId.of(UTC));
+    final var dateOutTo = dateOutFrom.plus(8, ChronoUnit.DAYS);
 
     return new PlanningDistributionRequest(
         logisticCenterId,
         workflow,
-        dateInFrom,
-        dateInTo,
+        null,
+        null,
         dateOutFrom,
         dateOutTo,
         true
