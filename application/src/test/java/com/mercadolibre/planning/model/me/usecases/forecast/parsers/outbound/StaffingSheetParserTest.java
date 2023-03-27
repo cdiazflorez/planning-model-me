@@ -33,6 +33,8 @@ class StaffingSheetParserTest {
 
   private static final String VALID_FILE_PATH_FOR_ARBA = "ARBA-outbound-test.xlsx";
 
+  private static final String VALID_FILE_PATH_DISORDER_FOR_ARBA = "ARBA-outbound-disorder-test.xlsx";
+
   private static final String AR_WAREHOUSE_ID = "ARBA01";
 
   private static final String ERRONEOUS_FILE_PATH = "MVP1-outbound-ratio-error.xlsx";
@@ -102,6 +104,21 @@ class StaffingSheetParserTest {
     // GIVEN
     // a valid sheet
     final var sheet = getMeliSheetFrom(staffingSheetParser.name(), VALID_FILE_PATH_FOR_ARBA);
+
+    // WHEN
+    final ForecastSheetDto forecastSheetDto = staffingSheetParser.parse(AR_WAREHOUSE_ID, sheet, CONF);
+
+    // THEN
+    assertNotNull(forecastSheetDto);
+    assertValuesArba01(forecastSheetDto);
+  }
+
+  @Test
+  @DisplayName("Excel with pp in disorder Parsed Ok ")
+  void arba01ParseOkDisorder() {
+    // GIVEN
+    // a valid sheet
+    final var sheet = getMeliSheetFrom(staffingSheetParser.name(), VALID_FILE_PATH_DISORDER_FOR_ARBA);
 
     // WHEN
     final ForecastSheetDto forecastSheetDto = staffingSheetParser.parse(AR_WAREHOUSE_ID, sheet, CONF);
@@ -233,6 +250,6 @@ class StaffingSheetParserTest {
 
   private Double getRatioByProcessAndIndexForArbaTest(final String processPath) {
     final ProcessPath pp = ProcessPath.from(processPath);
-      return RATIO_BY_PROCESS_ARBA01.get(pp);
+    return RATIO_BY_PROCESS_ARBA01.get(pp);
   }
 }

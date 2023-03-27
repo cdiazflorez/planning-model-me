@@ -13,6 +13,7 @@ import com.mercadolibre.spreadsheet.MeliDocument;
 import com.mercadolibre.spreadsheet.MeliRow;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import com.mercadolibre.spreadsheet.implementations.poi.PoiDocument;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.Duration;
@@ -286,5 +287,31 @@ public final class SpreadsheetUtils {
         }
     }
 
+  /**
+   * To process path name.
+   *
+   * <p>it becomes cellValue to process path name
+   *
+   * @param cellValue cell value of forecast header
+   * @return process path name
+   */
+  public static String toProcessPathName(final String cellValue) {
+    return cellValue.replace(" ", "_");
+  }
+
+  /**
+   * Sum value.
+   *
+   * <p>Takes two double values, adds them and truncates them to two decimal places.
+   *
+   * @param value1 first value
+   * @param value2 second value
+   * @return sum of value1 and value2 truncate
+   */
+  public static double sumValue(final double value1, final double value2) {
+    final DecimalFormat df = new DecimalFormat("#.##");
+
+    return Double.parseDouble(df.format(value1 + value2));
+  }
 }
 
