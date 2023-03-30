@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +31,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class StaffingSheetParserTest {
   private static final String VALID_FILE_PATH = "MVP1-outbound-test.xlsx";
+
+  private static final String VALID_FILE_PATH2 = "Planning tools & Cap5 _ BRBA01 MVP 1  W13_23.xlsx";
 
   private static final String VALID_FILE_PATH_FOR_ARBA = "ARBA-outbound-test.xlsx";
 
@@ -96,6 +99,20 @@ class StaffingSheetParserTest {
     // THEN
     assertNotNull(forecastSheetDto);
     assertValues(forecastSheetDto);
+  }
+
+  @Test
+  @DisplayName("Excel Parsed Ok excel prod of brba01")
+  void parseOk2() {
+    // GIVEN
+    // a valid sheet
+    final var sheet = getMeliSheetFrom(staffingSheetParser.name(), VALID_FILE_PATH2);
+
+    // WHEN
+    final ForecastSheetDto forecastSheetDto = staffingSheetParser.parse("BRBA01", sheet, CONF);
+
+    // THEN
+    assertNotNull(forecastSheetDto);
   }
 
   @Test

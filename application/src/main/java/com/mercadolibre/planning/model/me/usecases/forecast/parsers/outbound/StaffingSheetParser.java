@@ -22,8 +22,8 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.mod
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastStaffingColumnName;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.HeadcountRatio;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.StaffingRow;
-import com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils;
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
+import com.mercadolibre.spreadsheet.MeliCell;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -48,9 +48,9 @@ public class StaffingSheetParser implements SheetParser {
 
   private static final int PP_HEADER_ROW = 1;
 
-  private static final int PICKING_PRODUCTIVITY_COLUMN = 1;
+  private static final String PICKING_PRODUCTIVITY_COLUMN = "Productividad Picking [SI/HH]";
 
-  private static final int PICKING_RATIO_COLUMN = 2;
+  private static final String PICKING_RATIO_COLUMN = "Ratio Picking";
 
   private static final int DATE_COLUMN = 0;
 
@@ -108,11 +108,22 @@ public class StaffingSheetParser implements SheetParser {
 
   private List<StaffingRow> getRows(final MeliSheet sheet, final ZoneId zoneId) {
     final var listCells = sheet.getRows().get(HEADER_ROW).getCells();
-    final var initIndexColumnProductivity = listCells.get(PICKING_PRODUCTIVITY_COLUMN).getColumnIndex();
-    final var initIndexColumnRatio = listCells.get(PICKING_RATIO_COLUMN).getColumnIndex();
+
+    final int initIndexColumnProductivity = listCells.stream()
+        .filter(cellValue -> PICKING_PRODUCTIVITY_COLUMN.equalsIgnoreCase(cellValue.getValue()))
+        .map(MeliCell::getColumnIndex)
+        .findAny().orElseThrow();
+
+    final int initIndexColumnRatio = listCells.stream()
+        .filter(cellValue -> PICKING_RATIO_COLUMN.equalsIgnoreCase(cellValue.getValue()))
+        .map(MeliCell::getColumnIndex)
+        .findAny().orElseThrow();
 
     final int finishIndexColumnProductivity = initIndexColumnRatio - 1;
-    final int finishIndexColumnRatio = initIndexColumnRatio + (initIndexColumnRatio - initIndexColumnProductivity - 1);
+
+    final int uploadedProcessPathsCount = finishIndexColumnProductivity - initIndexColumnProductivity;
+
+    final int finishIndexColumnRatio = initIndexColumnRatio + uploadedProcessPathsCount;
 
     final var productivityColumnNames = obtainColumnNamePerRange(sheet, initIndexColumnProductivity, finishIndexColumnProductivity);
 
@@ -153,7 +164,7 @@ public class StaffingSheetParser implements SheetParser {
         .collect(Collectors.toMap(
                 HeadcountRatio.HeadcountRatioData::getDate,
                 HeadcountRatio.HeadcountRatioData::getRatio,
-                SpreadsheetUtils::sumValue
+                Double::sum
             )
         )
         .entrySet()
