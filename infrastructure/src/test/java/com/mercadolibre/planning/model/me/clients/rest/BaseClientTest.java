@@ -66,6 +66,9 @@ public class BaseClientTest {
             new RestClientConfig.InboundReportsClientProperties();
         inboundReportsClientProperties.setBaseUrl(BASE_URL);
 
+        final RestClientConfig.ConfigProperties configProperties = new RestClientConfig.ConfigProperties();
+        configProperties.setBaseUrl(BASE_URL);
+
         return new RestClientConfig(
                 planningModelClientProperties,
                 outboundUnitRestClientProperties,
@@ -78,7 +81,9 @@ public class BaseClientTest {
                 staffingClientProperties,
                 backlogClientProperties,
                 outboundSettingsClientProperties,
-                inboundReportsClientProperties
+                inboundReportsClientProperties,
+                configProperties
+
         ).restClient();
     }
 

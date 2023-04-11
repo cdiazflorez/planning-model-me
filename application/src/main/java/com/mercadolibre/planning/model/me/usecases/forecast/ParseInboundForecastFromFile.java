@@ -92,11 +92,11 @@ public interface ParseInboundForecastFromFile {
             .filter(
                 distribution ->
                     (distribution.getType().equals(ACTIVE_WORKERS.toString())
-                            || distribution.getType().equals(EFFECTIVE_WORKERS.toString())
-                            || distribution.getType().equals(EFFECTIVE_WORKERS_NS.toString())
-                            || distribution.getType().equals(ACTIVE_WORKERS_NS.toString()))
+                        || distribution.getType().equals(EFFECTIVE_WORKERS.toString())
+                        || distribution.getType().equals(EFFECTIVE_WORKERS_NS.toString())
+                        || distribution.getType().equals(ACTIVE_WORKERS_NS.toString()))
                         && distribution.getData().stream()
-                            .anyMatch(data -> data.getQuantity() < 0.0))
+                        .anyMatch(data -> data.getQuantity() < 0.0))
             .map(workers -> workers.getProcessName() + "-" + workers.getType())
             .collect(Collectors.toList());
 

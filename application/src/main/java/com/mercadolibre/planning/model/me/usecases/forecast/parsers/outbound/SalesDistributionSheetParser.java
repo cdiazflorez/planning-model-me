@@ -29,29 +29,14 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import lombok.Setter;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.math3.util.Precision;
 
+@Setter
 public class SalesDistributionSheetParser implements SheetParser {
 
   private static final int PLANNING_DISTRIBUTION_STARTING_ROW = 3;
-
-  @Override
-  public String name() {
-    return "Distribucion ventas";
-  }
-
-  @Override
-  public ForecastSheetDto parse(
-      final String logisticCenterId,
-      final MeliSheet sheet,
-      final LogisticCenterConfiguration config
-  ) {
-    return new ForecastSheetDto(
-        sheet.getSheetName(),
-        Map.of(PLANNING_DISTRIBUTION, parsePlanningDistributionRows(sheet, config))
-    );
-  }
 
   private static List<PlanningDistribution> parsePlanningDistributionRows(
       final MeliSheet sheet,
@@ -97,5 +82,21 @@ public class SalesDistributionSheetParser implements SheetParser {
         .quantityMetricUnit(MetricUnit.UNITS.getName())
         .metadata(List.of())
         .build();
+  }
+
+  @Override
+  public String name() {
+    return "Distribucion ventas";
+  }
+
+  @Override
+  public ForecastSheetDto parse(
+      final String logisticCenterId,
+      final MeliSheet sheet,
+      final LogisticCenterConfiguration config) {
+    return new ForecastSheetDto(
+        sheet.getSheetName(),
+        Map.of(PLANNING_DISTRIBUTION, parsePlanningDistributionRows(sheet, config))
+    );
   }
 }

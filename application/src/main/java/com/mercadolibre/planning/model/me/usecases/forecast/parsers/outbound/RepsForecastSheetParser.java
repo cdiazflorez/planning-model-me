@@ -88,8 +88,10 @@ public class RepsForecastSheetParser implements SheetParser {
 
   @Override
   public ForecastSheetDto parse(
-      final String warehouseId, final MeliSheet sheet, final LogisticCenterConfiguration config
-  ) {
+      final String warehouseId,
+      final MeliSheet sheet,
+      final LogisticCenterConfiguration config) {
+
     final String week = getStringValueAt(sheet, 2, 2);
     final SheetVersion version = SheetVersion.getSheetVersion(sheet, FBM_WMS_OUTBOUND);
     validateIfWarehouseIdIsCorrect(warehouseId, sheet);

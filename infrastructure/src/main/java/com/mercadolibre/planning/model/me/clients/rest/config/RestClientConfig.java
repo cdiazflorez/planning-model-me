@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.clients.rest.config;
 
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.AUTHORIZATION;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.BACKLOG;
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.CONFIG;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.INBOUND_REPORTS;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.LOGISTIC_CENTER;
 import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.OUTBOUND_SETTING;
@@ -39,7 +40,8 @@ import org.springframework.context.annotation.Configuration;
     RestClientConfig.StaffingClientProperties.class,
     RestClientConfig.BacklogClientProperties.class,
     RestClientConfig.OutboundSettingsClientProperties.class,
-    RestClientConfig.InboundReportsClientProperties.class
+    RestClientConfig.InboundReportsClientProperties.class,
+    RestClientConfig.ConfigProperties.class
 })
 public class RestClientConfig {
   private static final int LOCAL_CACHE_LOGISTIC_CENTER = 30;
@@ -57,6 +59,7 @@ public class RestClientConfig {
   private BacklogClientProperties backlogClientProperties;
   private OutboundSettingsClientProperties outboundSettingsClientProperties;
   private InboundReportsClientProperties inboundReportsClientProperties;
+  private ConfigProperties configProperties;
 
   @Bean
   public MeliRestClient restClient() throws IOException {
@@ -80,7 +83,8 @@ public class RestClientConfig {
                 "staffing", LOCAL_CACHE_STAFFING)),
             restPool(BACKLOG.name(), backlogClientProperties),
             restPool(OUTBOUND_SETTING.name(), outboundSettingsClientProperties),
-            restPool(INBOUND_REPORTS.name(), inboundReportsClientProperties)
+            restPool(INBOUND_REPORTS.name(), inboundReportsClientProperties),
+            restPool(CONFIG.name(), configProperties)
         )
         .build();
   }
@@ -161,5 +165,9 @@ public class RestClientConfig {
 
   @ConfigurationProperties("restclient.pool.inbound-reports")
   public static class InboundReportsClientProperties extends RestClientProperties {
+  }
+
+  @ConfigurationProperties("restclient.pool.config-wms")
+  public static class ConfigProperties extends RestClientProperties {
   }
 }

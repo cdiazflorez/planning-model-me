@@ -56,6 +56,13 @@ class InboundRepsForecastSheetParserTest {
 
   private final InboundRepsForecastSheetParser parser = new InboundRepsForecastSheetParser();
 
+  private static Stream<Arguments> provideFileForParsing() {
+    return Stream.of(
+        Arguments.of(VALID_FILE_PATH, false),
+        Arguments.of(VALID_FILE_PATH_V2, true)
+    );
+  }
+
   @DisplayName("Excel Parsed Ok")
   @ParameterizedTest
   @MethodSource("provideFileForParsing")
@@ -97,13 +104,6 @@ class InboundRepsForecastSheetParserTest {
     assertTrue(exceptionWarehouse.getMessage().contains("Warehouse id ARTW01 is different from warehouse id ARBA01 from file.\n"));
   }
 
-  private static Stream<Arguments> provideFileForParsing() {
-      return Stream.of(
-              Arguments.of(VALID_FILE_PATH, false),
-              Arguments.of(VALID_FILE_PATH_V2, true)
-      );
-  }
-
   private void assertSuccessResults(final ForecastSheetDto result, final boolean isLastVersion) {
     assertNotNull(result);
     assertEquals("Plan de staffing", result.getSheetName());
@@ -112,7 +112,7 @@ class InboundRepsForecastSheetParserTest {
 
     // PROCESSING DISTRIBUTIONS
     final var processingDistributions = (List<ProcessingDistribution>) result.getValues()
-            .get(PROCESSING_DISTRIBUTION);
+        .get(PROCESSING_DISTRIBUTION);
 
     assertNotNull(processingDistributions);
 
@@ -126,66 +126,66 @@ class InboundRepsForecastSheetParserTest {
 
     // PRODUCTIVITY
     final var productivities = (List<HeadcountProductivity>) result.getValues()
-              .get(HEADCOUNT_PRODUCTIVITY);
+        .get(HEADCOUNT_PRODUCTIVITY);
 
     assertNotNull(productivities);
 
     if (isLastVersion) {
 
-        assertEquals(SECOND_VERSION, version);
+      assertEquals(SECOND_VERSION, version);
 
-        assertEquals(20, processingDistributions.size());
+      assertEquals(20, processingDistributions.size());
 
-        assertEquals(3, productivities.size());
+      assertEquals(3, productivities.size());
 
-        final var receivingProductivities = productivities.get(0);
-        assertEquals(RECEIVING_PROCESS, receivingProductivities.getProcessName());
-        assertEquals(168, receivingProductivities.getData().size());
+      final var receivingProductivities = productivities.get(0);
+      assertEquals(RECEIVING_PROCESS, receivingProductivities.getProcessName());
+      assertEquals(168, receivingProductivities.getData().size());
 
-        final var receivingProductivity = receivingProductivities.getData().get(23);
-        assertEquals(FIRST_DATE_FOR_RECEIVING, receivingProductivity.getDayTime());
-        assertEquals(278, receivingProductivity.getProductivity());
+      final var receivingProductivity = receivingProductivities.getData().get(23);
+      assertEquals(FIRST_DATE_FOR_RECEIVING, receivingProductivity.getDayTime());
+      assertEquals(278, receivingProductivity.getProductivity());
 
-        final var checkInProductivities = productivities.get(1);
-        assertEquals(CHECK_IN_PROCESS, checkInProductivities.getProcessName());
-        assertEquals(168, checkInProductivities.getData().size());
+      final var checkInProductivities = productivities.get(1);
+      assertEquals(CHECK_IN_PROCESS, checkInProductivities.getProcessName());
+      assertEquals(168, checkInProductivities.getData().size());
 
-        final var checkInProductivity = checkInProductivities.getData().get(0);
-        assertEquals(FIRST_DATE, checkInProductivity.getDayTime());
-        assertEquals(244, checkInProductivity.getProductivity());
+      final var checkInProductivity = checkInProductivities.getData().get(0);
+      assertEquals(FIRST_DATE, checkInProductivity.getDayTime());
+      assertEquals(244, checkInProductivity.getProductivity());
 
-        final var putAwayProductivities = productivities.get(2);
-        assertEquals(PUT_AWAY_PROCESS, putAwayProductivities.getProcessName());
-        assertEquals(168, putAwayProductivities.getData().size());
+      final var putAwayProductivities = productivities.get(2);
+      assertEquals(PUT_AWAY_PROCESS, putAwayProductivities.getProcessName());
+      assertEquals(168, putAwayProductivities.getData().size());
 
-        final var putAwayProductivity = putAwayProductivities.getData().get(0);
-        assertEquals(FIRST_DATE, putAwayProductivity.getDayTime());
-        assertEquals(313, putAwayProductivity.getProductivity());
+      final var putAwayProductivity = putAwayProductivities.getData().get(0);
+      assertEquals(FIRST_DATE, putAwayProductivity.getDayTime());
+      assertEquals(313, putAwayProductivity.getProductivity());
 
     } else {
 
-        assertEquals(FIRST_VERSION, version);
+      assertEquals(FIRST_VERSION, version);
 
-        assertEquals(18, processingDistributions.size());
+      assertEquals(18, processingDistributions.size());
 
-        assertEquals(2, productivities.size());
+      assertEquals(2, productivities.size());
 
-        final var checkInProductivities = productivities.get(0);
-        assertEquals(CHECK_IN_PROCESS, checkInProductivities.getProcessName());
-        assertEquals(168, checkInProductivities.getData().size());
+      final var checkInProductivities = productivities.get(0);
+      assertEquals(CHECK_IN_PROCESS, checkInProductivities.getProcessName());
+      assertEquals(168, checkInProductivities.getData().size());
 
-        final var checkInProductivity = checkInProductivities.getData().get(0);
-        assertEquals(FIRST_DATE, checkInProductivity.getDayTime());
-        assertEquals(244, checkInProductivity.getProductivity());
+      final var checkInProductivity = checkInProductivities.getData().get(0);
+      assertEquals(FIRST_DATE, checkInProductivity.getDayTime());
+      assertEquals(244, checkInProductivity.getProductivity());
 
 
-        final var putAwayProductivities = productivities.get(1);
-        assertEquals(PUT_AWAY_PROCESS, putAwayProductivities.getProcessName());
-        assertEquals(168, putAwayProductivities.getData().size());
+      final var putAwayProductivities = productivities.get(1);
+      assertEquals(PUT_AWAY_PROCESS, putAwayProductivities.getProcessName());
+      assertEquals(168, putAwayProductivities.getData().size());
 
-        final var putAwayProductivity = putAwayProductivities.getData().get(0);
-        assertEquals(FIRST_DATE, putAwayProductivity.getDayTime());
-        assertEquals(313, putAwayProductivity.getProductivity());
+      final var putAwayProductivity = putAwayProductivities.getData().get(0);
+      assertEquals(FIRST_DATE, putAwayProductivity.getDayTime());
+      assertEquals(313, putAwayProductivity.getProductivity());
 
     }
 

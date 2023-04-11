@@ -72,6 +72,8 @@ class RepsForecastSheetParserTest {
   private static final LogisticCenterConfiguration CONF =
       new LogisticCenterConfiguration(TimeZone.getDefault());
 
+  private static final String LOGISTIC_CENTER = "ARBA01";
+
   private final RepsForecastSheetParser repsForecastSheetParser = new RepsForecastSheetParser();
 
   @Test
@@ -82,7 +84,7 @@ class RepsForecastSheetParserTest {
     final var sheet = getMeliSheetFrom(WORKERS.getName(), VALID_FILE_PATH);
 
     // WHEN
-    final var forecastSheetDto = repsForecastSheetParser.parse("ARBA01", sheet, CONF);
+    final var forecastSheetDto = repsForecastSheetParser.parse(LOGISTIC_CENTER, sheet, CONF);
 
     // THEN
     thenForecastSheetDtoIsNotNull(forecastSheetDto);
@@ -193,7 +195,7 @@ class RepsForecastSheetParserTest {
     final var exception =
         assertThrows(
             ForecastParsingException.class,
-            () -> repsForecastSheetParser.parse("ARBA01", sheet, CONF));
+            () -> repsForecastSheetParser.parse(LOGISTIC_CENTER, sheet, CONF));
 
     // THEN
     final var message = exception.getMessage();
@@ -211,7 +213,7 @@ class RepsForecastSheetParserTest {
     final var exception =
         assertThrows(
             ForecastParsingException.class,
-            () -> repsForecastSheetParser.parse("ARBA01", sheet, CONF));
+            () -> repsForecastSheetParser.parse(LOGISTIC_CENTER, sheet, CONF));
 
     // THEN
     final var message = exception.getMessage();
@@ -227,7 +229,7 @@ class RepsForecastSheetParserTest {
     final var sheet = getMeliSheetFrom(WORKERS.getName(), VALID_NON_SYSTEMIC_FILE_PATH);
 
     // WHEN
-    final var forecastSheetDto = repsForecastSheetParser.parse("ARBA01", sheet, CONF);
+    final var forecastSheetDto = repsForecastSheetParser.parse(LOGISTIC_CENTER, sheet, CONF);
 
     // THEN
     final List<ProcessingDistribution> processingDistributions =
@@ -250,7 +252,7 @@ class RepsForecastSheetParserTest {
     final var sheet = getMeliSheetFrom(WORKERS.getName(), VALID_NON_SYSTEMIC_FILE_PATH);
 
     // WHEN
-    final var forecastSheetDto = repsForecastSheetParser.parse("ARBA01", sheet, CONF);
+    final var forecastSheetDto = repsForecastSheetParser.parse(LOGISTIC_CENTER, sheet, CONF);
 
     // THEN
     final List<ProcessingDistribution> processingDistributions =

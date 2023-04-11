@@ -73,8 +73,7 @@ public class InboundRepsForecastSheetParser implements SheetParser {
   public ForecastSheetDto parse(
       final String requestWarehouseId,
       final MeliSheet sheet,
-      final LogisticCenterConfiguration config
-  ) {
+      final LogisticCenterConfiguration config) {
     final ZoneId zoneId = config.getZoneId();
 
     final String week = getStringValueAt(

@@ -1,0 +1,62 @@
+{
+  "operation_type": "outbound",
+  "warehouse_id": "artw01",
+  "process_paths": [
+    {
+      "process_path_code": "PP_TRANSFER",
+      "name": "Transfer",
+      "description": "Transfer",
+      "processing_time": 0,
+      "cost": 0,
+      "status": "ACTIVE",
+      "replacements": [],
+      "configurations": []
+    },
+    {
+      "process_path_code": "PP_DEFAULT_MULTI",
+      "name": "PP Default Multi",
+      "description": "PP Default Multi",
+      "processing_time": 86400,
+      "cost": 1100,
+      "status": "INACTIVE",
+      "replacements": [],
+      "configurations": []
+    },
+    {
+      "process_path_code": "NON_TOT_MONO",
+      "name": "Non Totable Mono",
+      "description": "Non Totable Mono",
+      "processing_time": 210,
+      "cost": 20,
+      "status": "ACTIVE",
+      "replacements": [],
+      "configurations": [
+        {
+          "name": "default",
+          "attributes": [
+            {
+              "name": "algorithm_type",
+              "type": "fixed",
+              "value": "FREE"
+            },
+            {
+              "name": "max_cycle_time",
+              "type": "fixed",
+              "value": "1440"
+            },
+            {
+              "name": "min_cycle_time",
+              "type": "fixed",
+              "value": "40"
+            },
+            {
+              "name": "normal_cycle_time",
+              "type": "fixed",
+              "value": "180"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

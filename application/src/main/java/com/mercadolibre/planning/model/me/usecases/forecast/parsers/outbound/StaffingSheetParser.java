@@ -86,7 +86,10 @@ public class StaffingSheetParser implements SheetParser {
   }
 
   @Override
-  public ForecastSheetDto parse(final String warehouseId, final MeliSheet sheet, final LogisticCenterConfiguration config) {
+  public ForecastSheetDto parse(
+      final String warehouseId,
+      final MeliSheet sheet,
+      final LogisticCenterConfiguration config) {
 
     validateSheet(sheet);
 
