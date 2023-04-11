@@ -3,9 +3,9 @@ package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound;
 import com.mercadolibre.planning.model.me.enums.ProcessPath;
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.OutboundForecast;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PlanningDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.usecases.forecast.ParseOutboundForecastFromFile;
 import java.beans.JavaBean;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -24,7 +24,7 @@ public class ProcessPathValidator implements Consumer<Forecast> {
 
   @Override
   public void accept(final Forecast forecast) {
-    final var outboundForecast = (OutboundForecast) forecast;
+    final var outboundForecast = (ParseOutboundForecastFromFile.PreOutboundForecast) forecast;
 
     if (!workflow.equals(Workflow.FBM_WMS_OUTBOUND)
         || outboundForecast.getSheets().stream().noneMatch(sheet -> STAFFING_SHEET.equals(sheet.name()))) {

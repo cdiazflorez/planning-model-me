@@ -12,7 +12,6 @@ import java.util.List;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class OutboundForecast extends Forecast {
-    private Set<SheetParser> sheets;
     private List<ProcessingDistribution> processingDistributions;
     private List<HeadcountDistribution> headcountDistributions;
     private List<PolyvalentProductivity> polyvalentProductivities;
