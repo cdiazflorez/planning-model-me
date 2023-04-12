@@ -2,6 +2,7 @@ package com.mercadolibre.planning.model.me.usecases.forecast;
 
 import static com.mercadolibre.planning.model.me.enums.ProcessPath.TOT_MONO;
 import static com.mercadolibre.planning.model.me.enums.ProcessPath.TOT_MULTI_BATCH;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,6 +34,8 @@ public class UploadForecastTest {
 
   private static final String INVALID_FILE = "forecast-brba01-error-pp.xlsx";
 
+  private static final String VALID_FILE_INBOUND = "Inbound - Template Staffing.xlsx";
+
   private static final LogisticCenterConfiguration CONFIG =
       new LogisticCenterConfiguration(TimeZone.getDefault());
 
@@ -49,7 +52,7 @@ public class UploadForecastTest {
   private UploadForecast.ProcessPathGateway processPathGateway;
 
   @Test
-  void testUploadOk() {
+  void testUploadOkOutbound() {
     // GIVEN
     final byte[] bytes = TestUtils.getResource(VALID_FILE_PATH);
     var expectedResponse = new ForecastCreationResponse("ok");
@@ -69,6 +72,29 @@ public class UploadForecastTest {
 
     // VERIFY
     assertEquals(expectedResponse, response);
+  }
+
+  @Test
+  void testUploadOkInbound() {
+    // GIVEN
+    final byte[] bytes = TestUtils.getResource(VALID_FILE_INBOUND);
+    var expectedResponse = new ForecastCreationResponse("ok");
+
+    when(logisticCenterGateway.getConfiguration(anyString())).thenReturn(CONFIG);
+
+    when(createForecast.execute(any(ForecastDto.class))).thenReturn(expectedResponse);
+
+    // WHEN
+    var response = uploadForecast.upload(
+        "COCU01",
+        FBM_WMS_INBOUND,
+        Target.FBM_WMS_INBOUND.forecastParser,
+        bytes,
+        1234L
+    );
+
+    // VERIFY
+    assertNotNull(response);
   }
 
   @Test
