@@ -21,6 +21,11 @@ import com.mercadolibre.spreadsheet.MeliDocument;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.util.List;
 import java.util.Set;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 public final class ParseOutboundForecastFromFile {
 
@@ -40,7 +45,7 @@ public final class ParseOutboundForecastFromFile {
     final var sheets = selectParsers(document);
     final var parsedValues = parseSheets(document, sheets.stream(), warehouseId, config);
 
-    return OutboundForecast.builder()
+    return PreOutboundForecast.builder()
         .sheets(sheets)
         .metadata(MappingOutbound.buildForecastMetadata(warehouseId, parsedValues))
         .processingDistributions(
@@ -66,5 +71,12 @@ public final class ParseOutboundForecastFromFile {
     } else {
       return Set.of(REPS_FORECAST_SHEET_PARSER, SALES_DISTRIBUTION_SHEET_PARSER);
     }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  @SuperBuilder
+  public static class PreOutboundForecast extends OutboundForecast {
+    Set<SheetParser> sheets;
   }
 }
