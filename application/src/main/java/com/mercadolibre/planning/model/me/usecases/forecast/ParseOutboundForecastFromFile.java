@@ -20,26 +20,28 @@ import com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.Sta
 import com.mercadolibre.spreadsheet.MeliDocument;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.Set;
 
 public final class ParseOutboundForecastFromFile {
 
-  private static final StaffingSheetParser STAFFING_SHEET_PARSER = new StaffingSheetParser();
   private static final RepsForecastSheetParser REPS_FORECAST_SHEET_PARSER =
       new RepsForecastSheetParser();
+
   private static final SalesDistributionSheetParser SALES_DISTRIBUTION_SHEET_PARSER =
       new SalesDistributionSheetParser();
 
-  private ParseOutboundForecastFromFile() {}
+  private static final StaffingSheetParser STAFFING_SHEET_PARSER = new StaffingSheetParser();
 
   public static Forecast parse(
       final String warehouseId,
       final MeliDocument document,
       final long userId,
       final LogisticCenterConfiguration config) {
-    final var parsedValues = parseSheets(document, selectParsers(document), warehouseId, config);
+    final var sheets = selectParsers(document);
+    final var parsedValues = parseSheets(document, sheets.stream(), warehouseId, config);
 
     return OutboundForecast.builder()
+        .sheets(sheets)
         .metadata(MappingOutbound.buildForecastMetadata(warehouseId, parsedValues))
         .processingDistributions(
             MappingOutbound.buildProcessingDistribution(parsedValues))
@@ -54,15 +56,15 @@ public final class ParseOutboundForecastFromFile {
         .build();
   }
 
-  private static Stream<SheetParser> selectParsers(final MeliDocument document) {
+  private static Set<SheetParser> selectParsers(final MeliDocument document) {
     final MeliSheet processPathStaffingSheet =
         document.getSheetByName(STAFFING_SHEET_PARSER.name());
 
     if (processPathStaffingSheet != null) {
-      return Stream.of(
+      return Set.of(
           REPS_FORECAST_SHEET_PARSER, SALES_DISTRIBUTION_SHEET_PARSER, STAFFING_SHEET_PARSER);
     } else {
-      return Stream.of(REPS_FORECAST_SHEET_PARSER, SALES_DISTRIBUTION_SHEET_PARSER);
+      return Set.of(REPS_FORECAST_SHEET_PARSER, SALES_DISTRIBUTION_SHEET_PARSER);
     }
   }
 }

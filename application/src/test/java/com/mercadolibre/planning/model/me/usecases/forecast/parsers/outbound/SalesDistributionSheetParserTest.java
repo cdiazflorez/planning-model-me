@@ -45,7 +45,8 @@ public class SalesDistributionSheetParserTest {
     assert repsSheet != null;
 
     // WHEN
-    final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser.parse("ARBA01", repsSheet, CONF);
+    final ForecastSheetDto forecastSheetDto = salesDistributionSheetParser
+        .parse("ARBA01", repsSheet, CONF);
 
     // THEN
     assertNotNull(forecastSheetDto);
@@ -88,7 +89,8 @@ public class SalesDistributionSheetParserTest {
     // not a test, only a check
     assert ordersSheet != null;
 
-    assertThrows(ForecastParsingException.class, () -> salesDistributionSheetParser.parse("ARBA01", ordersSheet, CONF));
+    assertThrows(ForecastParsingException.class,
+        () -> salesDistributionSheetParser.parse("ARBA01", ordersSheet, CONF));
   }
 
   @Test
