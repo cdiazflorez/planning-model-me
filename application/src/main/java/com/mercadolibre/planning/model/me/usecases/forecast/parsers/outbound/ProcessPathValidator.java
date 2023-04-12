@@ -24,10 +24,14 @@ public class ProcessPathValidator implements Consumer<Forecast> {
 
   @Override
   public void accept(final Forecast forecast) {
+
+    if (!workflow.equals(Workflow.FBM_WMS_OUTBOUND)) {
+      return;
+    }
+
     final var outboundForecast = (ParseOutboundForecastFromFile.PreOutboundForecast) forecast;
 
-    if (!workflow.equals(Workflow.FBM_WMS_OUTBOUND)
-        || outboundForecast.getSheets().stream().noneMatch(sheet -> STAFFING_SHEET.equals(sheet.name()))) {
+    if (outboundForecast.getSheets().stream().noneMatch(sheet -> STAFFING_SHEET.equals(sheet.name()))) {
       return;
     }
 
