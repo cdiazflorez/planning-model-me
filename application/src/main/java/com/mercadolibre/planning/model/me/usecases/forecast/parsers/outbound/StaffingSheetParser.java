@@ -62,7 +62,11 @@ public class StaffingSheetParser implements SheetParser {
 
   private static final double RATIO_LIMIT_DOWN = 0.99;
 
+  private static final double RATIO_ZERO = 0.00;
+
   private static final String RATIO_OUT_OF_RANGE_ERROR_MESSAGE = "Ratio out range = %s for date = %s, expected ratio from %s to %s";
+
+  private static final String NOT_FOUND_EXCEPTION = "Header '%s' not found";
 
   private static List<ForecastStaffingColumnName> obtainColumnNamePerRange(
       final MeliSheet sheet, final int initIndexColumn, final int finishIndexColumn) {
@@ -115,12 +119,12 @@ public class StaffingSheetParser implements SheetParser {
     final int initIndexColumnProductivity = listCells.stream()
         .filter(cellValue -> PICKING_PRODUCTIVITY_COLUMN.equalsIgnoreCase(cellValue.getValue()))
         .map(MeliCell::getColumnIndex)
-        .findAny().orElseThrow();
+        .findAny().orElseThrow(() -> new ForecastParsingException(String.format(NOT_FOUND_EXCEPTION, PICKING_PRODUCTIVITY_COLUMN)));
 
     final int initIndexColumnRatio = listCells.stream()
         .filter(cellValue -> PICKING_RATIO_COLUMN.equalsIgnoreCase(cellValue.getValue()))
         .map(MeliCell::getColumnIndex)
-        .findAny().orElseThrow();
+        .findAny().orElseThrow(() -> new ForecastParsingException(String.format(NOT_FOUND_EXCEPTION, PICKING_RATIO_COLUMN)));
 
     final int finishIndexColumnProductivity = initIndexColumnRatio - 1;
 
@@ -157,8 +161,8 @@ public class StaffingSheetParser implements SheetParser {
   private void validateTotalRatio(final List<HeadcountRatio> hcRatios, final ZoneId zoneId) {
     final BiFunction<ZonedDateTime, Double, String> messageBuilder = (date, ratio) -> String.format(
         RATIO_OUT_OF_RANGE_ERROR_MESSAGE,
-        date.withZoneSameInstant(zoneId).format(ISO_LOCAL_DATE_TIME),
         ratio,
+        date.withZoneSameInstant(zoneId).format(ISO_LOCAL_DATE_TIME),
         RATIO_LIMIT_DOWN, RATIO_LIMIT_UP
     );
 
@@ -172,7 +176,7 @@ public class StaffingSheetParser implements SheetParser {
         )
         .entrySet()
         .stream()
-        .filter(entry -> entry.getValue() > RATIO_LIMIT_UP || entry.getValue() < RATIO_LIMIT_DOWN)
+        .filter(entry -> ratioError(entry.getValue()))
         .map(entry -> messageBuilder.apply(entry.getKey(), entry.getValue()))
         .collect(Collectors.toList());
 
@@ -182,6 +186,14 @@ public class StaffingSheetParser implements SheetParser {
       final String message = String.join(DELIMITER, errorMessages.get().toString());
       throw new ForecastParsingException(message);
     }
+  }
+
+  private boolean ratioError(final Double ratio) {
+    if (ratio > RATIO_LIMIT_UP) {
+      return true;
+    }
+
+    return ratio < RATIO_LIMIT_DOWN && ratio != RATIO_ZERO;
   }
 
   private List<HeadcountProductivity> buildHeadcountProductivity(final List<StaffingRow> rows) {

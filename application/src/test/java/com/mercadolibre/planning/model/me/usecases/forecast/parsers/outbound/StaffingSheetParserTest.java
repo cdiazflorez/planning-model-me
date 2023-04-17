@@ -33,6 +33,8 @@ class StaffingSheetParserTest {
 
   private static final String VALID_FILE_PATH2 = "Planning tools & Cap5 _ BRBA01 MVP 1  W13_23.xlsx";
 
+  private static final String VALID_FILE_PATH_RATIO_ZERO = "ratiozero-artw01.xlsx";
+
   private static final String VALID_FILE_PATH_FOR_ARBA = "ARBA-outbound-test.xlsx";
 
   private static final String VALID_FILE_PATH_DISORDER_FOR_ARBA = "ARBA-outbound-disorder-test.xlsx";
@@ -41,7 +43,21 @@ class StaffingSheetParserTest {
 
   private static final String ERRONEOUS_FILE_PATH = "MVP1-outbound-ratio-error.xlsx";
 
+  private static final String ERRONEOUS_FILE_PATH_LOWER_LIMIT = "ratiolowerlimits-artw01.xlsx";
+
+  private static final String FORECAST_HEADER_ERROR_PRODUCTIVITY_FILE_PATH = "Forecast-header-Productivity-Error-BRBA01.xlsx";
+
+  private static final String FORECAST_HEADER_ERROR_RATIO_FILE_PATH = "Forecast-Header-Ratio-Error-BRBA01.xlsx";
+
+  private static final String FORECAST_EMPTY_PP = "forecast-brba01-empty-pp.xlsx";
+
   private static final String SHEET = "PP - Staffing";
+
+  private static final String LOGISTIC_CENTER_ID = "ARTW01";
+
+  private static final String PICKING_PRODUCTIVITY_COLUMN = "Productividad Picking [SI/HH]";
+
+  private static final String PICKING_RATIO_COLUMN = "Ratio Picking";
 
   private static final LogisticCenterConfiguration CONF =
       new LogisticCenterConfiguration(TimeZone.getTimeZone("America/Argentina/Buenos_Aires"));
@@ -157,8 +173,8 @@ class StaffingSheetParserTest {
   }
 
   @Test
-  @DisplayName("Excel With Errors")
-  void errorsRatio() {
+  @DisplayName("Excel With ratio upper limits Errors")
+  void errorsRatioUpperLimit() {
     // GIVEN
     final var sheet = getMeliSheetFrom(staffingSheetParser.name(), ERRONEOUS_FILE_PATH);
 
@@ -168,9 +184,86 @@ class StaffingSheetParserTest {
 
     // THEN
     assertNotNull(exception.getMessage());
-    final String expectedMessage = "Ratio out range = 2021-01-24T00:00:00 for date = 1.04, expected ratio from 0.99 to 1.01";
+    final String expectedMessage = "Ratio out range = 1.04 for date = 2021-01-24T00:00:00, expected ratio from 0.99 to 1.01";
 
     assertEquals(expectedMessage, exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("Excel With ratio lower limits Errors")
+  void errorsRatioLowerLimit() {
+    // GIVEN
+    final var sheet = getMeliSheetFrom(staffingSheetParser.name(), ERRONEOUS_FILE_PATH_LOWER_LIMIT);
+
+    // WHEN
+    final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
+        () -> staffingSheetParser.parse("ARTW01", sheet, CONF));
+
+    // THEN
+    assertNotNull(exception.getMessage());
+    final String expectedMessage = "Ratio out range = 0.002 for date = 2022-11-13T00:00:00, expected ratio from 0.99 to 1.01";
+
+    assertEquals(expectedMessage, exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("Excel With header productivity error")
+  void headerProductivityError() {
+    // GIVEN
+    final var sheet = getMeliSheetFrom(staffingSheetParser.name(), FORECAST_HEADER_ERROR_PRODUCTIVITY_FILE_PATH);
+
+    // WHEN
+    final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
+        () -> staffingSheetParser.parse(LOGISTIC_CENTER_ID, sheet, CONF));
+
+    // THEN
+    assertNotNull(exception.getMessage());
+    final String expectedMessage = String.format("Header '%s' not found", PICKING_PRODUCTIVITY_COLUMN);
+
+    assertEquals(expectedMessage, exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("Excel With header ratio error")
+  void headerRatioError() {
+    // GIVEN
+    final var sheet = getMeliSheetFrom(staffingSheetParser.name(), FORECAST_HEADER_ERROR_RATIO_FILE_PATH);
+
+    // WHEN
+    final ForecastParsingException exception = assertThrows(ForecastParsingException.class,
+        () -> staffingSheetParser.parse(LOGISTIC_CENTER_ID, sheet, CONF));
+
+    // THEN
+    assertNotNull(exception.getMessage());
+    final String expectedMessage = String.format("Header '%s' not found", PICKING_RATIO_COLUMN);
+
+    assertEquals(expectedMessage, exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("Excel With ratio 0")
+  void ratioZeroOk() {
+    // GIVEN
+    // a valid sheet
+    final var sheet = getMeliSheetFrom(staffingSheetParser.name(), VALID_FILE_PATH_RATIO_ZERO);
+
+    // WHEN
+    final ForecastSheetDto forecastSheetDto = staffingSheetParser.parse(WAREHOUSE_ID, sheet, CONF);
+
+    // THEN
+    assertNotNull(forecastSheetDto);
+  }
+
+  @Test
+  @DisplayName("Excel Parsed error BRBA01 empty staffing pp")
+  void brba01ParseError() {
+    // GIVEN
+    // a valid sheet
+    final var sheet = getMeliSheetFrom(staffingSheetParser.name(), FORECAST_EMPTY_PP);
+
+    // WHEN //THEN
+    assertThrows(ForecastParsingException.class,
+        () -> staffingSheetParser.parse("BRBA01", sheet, CONF));
   }
 
   private void assertValues(final ForecastSheetDto forecastSheetDto) {
