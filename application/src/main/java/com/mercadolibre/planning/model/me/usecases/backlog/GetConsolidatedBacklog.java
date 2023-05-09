@@ -161,8 +161,6 @@ public abstract class GetConsolidatedBacklog {
         .date(date)
         .current(description.getTotal())
         .historical(description.getHistorical())
-        .minLimit(description.getMinLimit())
-        .maxLimit(description.getMaxLimit())
         .build();
   }
 

@@ -22,12 +22,4 @@ public class VariablesPhoto {
      * The backlog at the same instant of the previous week.
      */
     private UnitMeasure historical;
-    /**
-     * The maximum value the backlog should not break through at the instant.
-     */
-    private UnitMeasure maxLimit;
-    /**
-     * The minimum value the backlog should not break through at the instant.
-     */
-    private UnitMeasure minLimit;
 }

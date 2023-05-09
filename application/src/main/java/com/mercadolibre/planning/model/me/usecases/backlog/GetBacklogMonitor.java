@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
-import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_INBOUND;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.services.backlog.BacklogGrouper.AREA;
@@ -22,9 +21,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.BacklogProjectionResponse;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
 import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
@@ -68,16 +65,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
   private final GetProcessThroughput getProcessThroughput;
 
   private final GetHistoricalBacklog getHistoricalBacklog;
-
-  private final GetBacklogLimits getBacklogLimits;
-
-  private static int getTphAveragePerHour(final UnitMeasure backlogMeasuredInHour) {
-    final int seconds = 60;
-
-    double avgByHour = (double) backlogMeasuredInHour.getMinutes() / seconds;
-
-    return avgByHour > 0 ? (int) ((double) backlogMeasuredInHour.getUnits() / avgByHour) : 0;
-  }
 
   /**
    * Get backlog monitor
@@ -123,7 +110,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
 
     final Map<ProcessName, List<BacklogPhoto>> projectedBacklog = getProjectedBacklog(workflow, input, backlogPhotoByProcess);
     final Map<ProcessName, HistoricalBacklog> historicalBacklog = getHistoricalBacklog(input);
-    final Map<ProcessName, Map<Instant, BacklogLimit>> backlogLimits = getBacklogLimits(input);
 
     final GetThroughputResult throughput = getThroughput(input);
 
@@ -133,8 +119,7 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
             backlogPhotoByProcess.getOrDefault(processName, emptyList()),
             projectedBacklog.getOrDefault(processName, emptyList()),
             historicalBacklog.getOrDefault(processName, emptyBacklog()),
-            throughput.find(ProcessName.from(processName.getName())).orElse(emptyMap()),
-            backlogLimits.getOrDefault(ProcessName.from(processName.getName()), emptyMap())
+            throughput.find(ProcessName.from(processName.getName())).orElse(emptyMap())
         ))
         .collect(Collectors.toList());
   }
@@ -234,23 +219,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     }
   }
 
-  private Map<ProcessName, Map<Instant, BacklogLimit>> getBacklogLimits(final GetBacklogMonitorInputDto input) {
-    try {
-      return getBacklogLimits.execute(
-          GetBacklogLimitsInput.builder()
-              .warehouseId(input.getWarehouseId())
-              .workflow(input.getWorkflow())
-              .processes(input.getProcesses())
-              .dateFrom(input.getDateFrom())
-              .dateTo(input.getDateTo())
-              .build());
-
-    } catch (Exception e) {
-      log.error(e.getMessage());
-    }
-    return emptyMap();
-  }
-
   private List<ProcessDetail> buildProcesses(
      final List<ProcessData> data,
      final Instant currentDateTime,
@@ -269,7 +237,6 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
   private List<BacklogStatsByDate> toProcessDescription(final ProcessData data) {
     final Map<Instant, Integer> throughput = data.getThroughputByDate();
     final HistoricalBacklog historical = data.getHistoricalBacklog();
-    final Map<Instant, BacklogLimit> limits = data.getBacklogLimits();
 
     final Map<Instant, UnitMeasure> currentBacklogMeasuredInHours =
         convertBacklogTrajectoryFromUnitToTime(emptyList(), data.getCurrentBacklog(), throughput);
@@ -277,39 +244,27 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
         convertBacklogTrajectoryFromUnitToTime(emptyList(), data.getProjectedBacklog(), throughput);
 
     return Stream.concat(
-        toBacklogStatsByDate(data.getCurrentBacklog(), throughput, historical, limits, currentBacklogMeasuredInHours),
-        toBacklogStatsByDate(data.getProjectedBacklog(), throughput, historical, limits, projectedBacklogMeasuredInHours)
+        toBacklogStatsByDate(data.getCurrentBacklog(), historical, currentBacklogMeasuredInHours),
+        toBacklogStatsByDate(data.getProjectedBacklog(), historical, projectedBacklogMeasuredInHours)
     ).collect(Collectors.toList());
   }
 
   private Stream<BacklogStatsByDate> toBacklogStatsByDate(
       final List<BacklogPhoto> backlogPhotos,
-      final Map<Instant, Integer> throughputByHour,
       final HistoricalBacklog historical,
-      final Map<Instant, BacklogLimit> limits,
       final Map<Instant, UnitMeasure> backlogMeasuredInHours
   ) {
     return backlogPhotos.stream()
         .map(photo -> {
           final Instant truncatedDateOfPhoto = photo.getTakenOn().truncatedTo(ChronoUnit.HOURS);
-          final int tphDefault = throughputByHour.getOrDefault(truncatedDateOfPhoto, 0);
           final UnitMeasure total = backlogMeasuredInHours.getOrDefault(photo.getTakenOn(), emptyMeasure());
-          final BacklogLimit limit = limits.get(truncatedDateOfPhoto);
-
-          final int tphAverage = getTphAveragePerHour(total);
-          final int tph = tphAverage == 0 ? tphDefault : tphAverage;
-
-          final UnitMeasure min = limit == null || limit.getMin() < 0 ? emptyMeasure() : fromMinutes(limit.getMin(), tph);
-          final UnitMeasure max = limit == null || limit.getMax() < 0 ? emptyMeasure() : fromMinutes(limit.getMax(), tph);
 
           final UnitMeasure average = historical.getOr(truncatedDateOfPhoto, UnitMeasure::emptyMeasure);
 
           return new BacklogStatsByDate(
               photo.getTakenOn(),
               total,
-              average,
-              min,
-              max
+              average
           );
         });
   }
@@ -341,7 +296,5 @@ public class GetBacklogMonitor extends GetConsolidatedBacklog {
     HistoricalBacklog historicalBacklog;
 
     Map<Instant, Integer> throughputByDate;
-
-    Map<Instant, BacklogLimit> backlogLimits;
   }
 }

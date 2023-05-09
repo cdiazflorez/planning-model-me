@@ -34,8 +34,6 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.back
 import com.mercadolibre.planning.model.me.gateways.planningmodel.projection.backlog.response.ProjectionValue;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
 import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorInputDto;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
@@ -110,9 +108,6 @@ class GetBacklogMonitorTest {
   private GetHistoricalBacklog getHistoricalBacklog;
 
   @Mock
-  private GetBacklogLimits getBacklogLimits;
-
-  @Mock
   private ProjectBacklog backlogProjection;
 
   private MockedStatic<DateUtils> mockDt;
@@ -143,7 +138,6 @@ class GetBacklogMonitorTest {
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
     mockHistoricalBacklog(input);
     mockThroughput(input);
-    mockBacklogLimits(input);
 
     // WHEN
     final WorkflowBacklogDetail orders = getBacklogMonitor.execute(input(FBM_WMS_OUTBOUND, 1));
@@ -203,7 +197,7 @@ class GetBacklogMonitorTest {
   @MethodSource("mockParameterizedConfiguration")
   void testGetProjectedBacklogError(final Workflow workflow) {
     // GIVEN
-    var input = input(workflow, 1);
+    var input = input(workflow, 2);
     mockDateUtils(mockDt);
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(workflow == FBM_WMS_OUTBOUND));
     mockHistoricalBacklog(input);
@@ -228,7 +222,6 @@ class GetBacklogMonitorTest {
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
     mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
     mockThroughput(input);
-    mockBacklogLimits(input);
 
     final var request = new GetHistoricalBacklogInput(
         DATE_CURRENT.toInstant(),
@@ -265,9 +258,8 @@ class GetBacklogMonitorTest {
     var input = input(FBM_WMS_OUTBOUND, 1);
     mockDateUtils(mockDt);
     mockBacklogPhotoApiResponse(input, buildBacklogPhotoApiResponse(true));
-    mockProjectedBacklog(input, 2, buildBacklogPhotoApiResponse(true));
+    mockProjectedBacklog(input, 1, buildBacklogPhotoApiResponse(true));
     mockHistoricalBacklog(input);
-    mockBacklogLimits(input);
 
     final GetThroughputInput request = GetThroughputInput.builder()
         .warehouseId(WAREHOUSE_ID)
@@ -334,8 +326,6 @@ class GetBacklogMonitorTest {
   }
 
   private void mockBacklogPhotoApiResponse(final GetBacklogMonitorInputDto input, final Map<ProcessName, List<BacklogPhoto>> response) {
-
-    final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
 
     when(backlogPhotoApiAdapter.getTotalBacklogPerProcessAndInstantDate(
              new BacklogRequest(
@@ -525,55 +515,6 @@ class GetBacklogMonitorTest {
                     DATES.get(1), 1,
                     DATES.get(2), 4,
                     DATES.get(3), 5))));
-  }
-
-  private void mockBacklogLimits(final GetBacklogMonitorInputDto input) {
-    final var request = GetBacklogLimitsInput.builder()
-        .warehouseId(input.getWarehouseId())
-        .workflow(input.getWorkflow())
-        .processes(PROCESS_BY_WORKFLOW.get(input.getWorkflow()).stream().map(x -> ProcessName.from(x.getName()))
-            .collect(Collectors.toList()))
-        .dateFrom(input.getDateFrom())
-        .dateTo(input.getDateTo())
-        .build();
-
-    final boolean isOutbound = input.getWorkflow() == FBM_WMS_OUTBOUND;
-
-    when(getBacklogLimits.execute(request)).thenReturn(isOutbound
-        ? Map.of(
-        WAVING, Map.of(
-            DATES.get(0).toInstant(), new BacklogLimit(5, 15),
-            DATES.get(1).toInstant(), new BacklogLimit(7, 21),
-            DATES.get(2).toInstant(), new BacklogLimit(3, 21),
-            DATES.get(3).toInstant(), new BacklogLimit(6, 19),
-            DATES.get(5).toInstant(), new BacklogLimit(3, 30),
-            DATES.get(6).toInstant(), new BacklogLimit(4, 40)),
-        PICKING, Map.of(
-            DATES.get(0).toInstant(), new BacklogLimit(-1, -1),
-            DATES.get(1).toInstant(), new BacklogLimit(-1, -1),
-            DATES.get(2).toInstant(), new BacklogLimit(-1, -1),
-            DATES.get(3).toInstant(), new BacklogLimit(-1, -1),
-            DATES.get(5).toInstant(), new BacklogLimit(3, 30),
-            DATES.get(6).toInstant(), new BacklogLimit(4, 40)),
-        PACKING, Map.of(
-            DATES.get(0).toInstant(), new BacklogLimit(0, 20),
-            DATES.get(1).toInstant(), new BacklogLimit(0, 15),
-            DATES.get(2).toInstant(), new BacklogLimit(0, 10),
-            DATES.get(3).toInstant(), new BacklogLimit(0, 10),
-            DATES.get(5).toInstant(), new BacklogLimit(3, 30),
-            DATES.get(6).toInstant(), new BacklogLimit(4, 40)))
-        : Map.of(
-        CHECK_IN, Map.of(
-            DATES.get(0).toInstant(), new BacklogLimit(5, 15),
-            DATES.get(1).toInstant(), new BacklogLimit(7, 21),
-            DATES.get(2).toInstant(), new BacklogLimit(3, 21),
-            DATES.get(3).toInstant(), new BacklogLimit(0, -1)),
-        PUT_AWAY, Map.of(
-            DATES.get(0).toInstant(), new BacklogLimit(-1, -1),
-            DATES.get(1).toInstant(), new BacklogLimit(-1, -1),
-            DATES.get(2).toInstant(), new BacklogLimit(-1, -1),
-            DATES.get(3).toInstant(), new BacklogLimit(-1, -1))
-    ));
   }
 
   private void mockDateUtils(MockedStatic<DateUtils> mockDt) {

@@ -11,6 +11,4 @@ public class BacklogStatsByDate {
     Instant date;
     UnitMeasure total;
     UnitMeasure historical;
-    UnitMeasure minLimit;
-    UnitMeasure maxLimit;
 }
