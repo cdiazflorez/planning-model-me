@@ -5,13 +5,12 @@ import com.mercadolibre.resilience.breaker.CircuitBreakers;
 import com.mercadolibre.resilience.breaker.DummyCircuitBreaker;
 import com.mercadolibre.resilience.breaker.control.CircuitControl;
 import com.mercadolibre.resilience.breaker.control.FixedWeightsControl;
+import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.concurrent.TimeUnit;
 
 @AllArgsConstructor
 @Configuration

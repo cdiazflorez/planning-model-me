@@ -1,18 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.utils;
 
-import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
-import com.mercadolibre.spreadsheet.MeliDocument;
-import com.mercadolibre.spreadsheet.MeliRow;
-import com.mercadolibre.spreadsheet.MeliSheet;
-
-import org.junit.jupiter.api.Test;
-
-import java.time.Duration;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
-import java.util.List;
-
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastSheet.WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.createMeliDocument;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.createMeliDocumentAsByteArray;
@@ -20,6 +7,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
+import com.mercadolibre.spreadsheet.MeliDocument;
+import com.mercadolibre.spreadsheet.MeliRow;
+import com.mercadolibre.spreadsheet.MeliSheet;
+import java.time.Duration;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 public class SpreadsheetUtilsTest {
     private static final String HOUR_MINUTE_FORMAT_PATTERN = "^([0]?[0-9]|[0-9][0-9]):[0-5][0-9]$";

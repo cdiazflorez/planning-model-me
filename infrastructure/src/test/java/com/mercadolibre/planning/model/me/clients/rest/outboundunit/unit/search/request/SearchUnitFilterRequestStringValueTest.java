@@ -1,8 +1,8 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class SearchUnitFilterRequestStringValueTest {
 

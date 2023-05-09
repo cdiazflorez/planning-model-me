@@ -1,9 +1,9 @@
 package com.mercadolibre.planning.model.me.metric;
 
+import static com.mercadolibre.metrics.Metrics.INSTANCE;
+
 import com.mercadolibre.metrics.MetricCollector;
 import org.springframework.stereotype.Component;
-
-import static com.mercadolibre.metrics.Metrics.INSTANCE;
 
 @Component
 public class DatadogWrapper {

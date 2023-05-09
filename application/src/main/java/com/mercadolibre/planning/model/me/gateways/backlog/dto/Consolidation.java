@@ -2,10 +2,9 @@ package com.mercadolibre.planning.model.me.gateways.backlog.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.mercadolibre.planning.model.me.utils.CustomInstantDeserializer;
-import lombok.Value;
-
 import java.time.Instant;
 import java.util.Map;
+import lombok.Value;
 
 /** The consolidation of a group of cells of a backlog photo. */
 @Value

@@ -1,18 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases;
 
-import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGateway;
-import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
-import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
-import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
-import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_PROJECTION;
 import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_SIMULATION;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.USER_ID;
@@ -20,6 +7,18 @@ import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+
+import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGateway;
+import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
+import com.mercadolibre.planning.model.me.usecases.authorization.AuthorizeUser;
+import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
+import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthorizeUserTest {

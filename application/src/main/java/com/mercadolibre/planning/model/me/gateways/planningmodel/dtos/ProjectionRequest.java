@@ -1,7 +1,7 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
-import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
+import com.mercadolibre.planning.model.me.enums.ProcessName;
 import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.Builder;

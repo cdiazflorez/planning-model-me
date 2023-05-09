@@ -1,11 +1,10 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
 import com.mercadolibre.planning.model.me.enums.ProcessPath;
-import lombok.Builder;
-import lombok.Data;
-
 import java.time.ZonedDateTime;
 import java.util.List;
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder

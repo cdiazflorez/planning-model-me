@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import com.mercadolibre.planning.model.me.gateways.clock.RequestClockGateway;
+import java.time.Instant;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
-
-import java.time.Instant;
 
 /**
  * A frozen clock that is created for each request.

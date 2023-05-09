@@ -1,19 +1,18 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers;
 
+import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
+
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastColumn;
 import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastSheetDto;
 import com.mercadolibre.spreadsheet.MeliDocument;
 import com.mercadolibre.spreadsheet.MeliSheet;
-
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
 
 public final class ForecastParserHelper {
 

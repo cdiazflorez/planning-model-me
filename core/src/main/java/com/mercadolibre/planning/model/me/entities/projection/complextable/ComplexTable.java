@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.entities.projection.complextable;
 
 import com.mercadolibre.planning.model.me.entities.projection.ColumnHeader;
-import lombok.Value;
-
 import java.util.List;
+import lombok.Value;
 
 @Value
 public class ComplexTable {

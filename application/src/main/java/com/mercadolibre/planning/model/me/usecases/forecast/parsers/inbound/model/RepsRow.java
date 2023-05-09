@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model;
 
 import com.mercadolibre.planning.model.me.usecases.forecast.utils.excel.CellValue;
+import java.time.ZonedDateTime;
 import lombok.Builder;
 import lombok.Value;
-
-import java.time.ZonedDateTime;
 
 @Value
 @Builder

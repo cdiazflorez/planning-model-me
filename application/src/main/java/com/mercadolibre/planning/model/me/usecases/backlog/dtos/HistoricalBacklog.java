@@ -1,14 +1,13 @@
 package com.mercadolibre.planning.model.me.usecases.backlog.dtos;
 
+import static java.util.Collections.emptyMap;
+
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.utils.DateUtils;
-import lombok.Value;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
-
-import static java.util.Collections.emptyMap;
+import lombok.Value;
 
 @Value
 public class HistoricalBacklog {

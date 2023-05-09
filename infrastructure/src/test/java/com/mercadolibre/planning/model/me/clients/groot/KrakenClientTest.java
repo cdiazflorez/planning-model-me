@@ -1,22 +1,21 @@
 package com.mercadolibre.planning.model.me.clients.groot;
 
-import com.mercadolibre.kraken.client.clients.KrakenAttributesClient;
-import com.mercadolibre.kraken.client.clients.KrakenUserClient;
-import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGateway;
-import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
-import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
-import com.mercadolibre.restclient.util.MeliContext;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.mercadolibre.kraken.client.clients.KrakenAttributesClient;
+import com.mercadolibre.kraken.client.clients.KrakenUserClient;
+import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGateway;
+import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
+import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
+import com.mercadolibre.restclient.util.MeliContext;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 public class KrakenClientTest {
 

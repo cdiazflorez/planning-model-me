@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.entities.monitor;
 
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Value;
-
-import java.time.Instant;
 
 /**
  * Remembers the value that some backlog related variables have at some instant.

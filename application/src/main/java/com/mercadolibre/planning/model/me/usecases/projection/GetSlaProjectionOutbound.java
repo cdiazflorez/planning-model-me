@@ -1,6 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.projection;
 
-import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;

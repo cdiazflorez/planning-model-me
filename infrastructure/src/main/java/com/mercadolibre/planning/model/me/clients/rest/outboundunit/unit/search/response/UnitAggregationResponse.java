@@ -1,8 +1,7 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response;
 
-import lombok.Value;
-
 import java.util.List;
+import lombok.Value;
 
 @Value
 public class UnitAggregationResponse {

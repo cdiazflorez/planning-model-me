@@ -2,12 +2,10 @@ package com.mercadolibre.planning.model.me.gateways.backlog.strategy;
 
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import lombok.AllArgsConstructor;
-
-import javax.inject.Named;
-
 import java.util.Optional;
 import java.util.Set;
+import javax.inject.Named;
+import lombok.AllArgsConstructor;
 
 @Named
 @AllArgsConstructor

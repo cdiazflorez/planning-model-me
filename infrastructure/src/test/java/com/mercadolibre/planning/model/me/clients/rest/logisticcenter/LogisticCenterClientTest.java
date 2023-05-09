@@ -1,17 +1,5 @@
 package com.mercadolibre.planning.model.me.clients.rest.logisticcenter;
 
-import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
-import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
-import com.mercadolibre.restclient.MockResponse;
-import com.mercadolibre.restclient.mock.RequestMockHolder;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
 import static com.mercadolibre.restclient.http.HttpMethod.GET;
@@ -19,6 +7,17 @@ import static java.lang.String.format;
 import static java.util.TimeZone.getTimeZone;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
+import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
+import com.mercadolibre.restclient.MockResponse;
+import com.mercadolibre.restclient.mock.RequestMockHolder;
+import java.io.IOException;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 public class LogisticCenterClientTest extends BaseClientTest {
 

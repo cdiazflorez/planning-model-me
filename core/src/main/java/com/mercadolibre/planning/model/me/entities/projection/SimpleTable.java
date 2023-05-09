@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.entities.projection;
 
-import lombok.Value;
-
 import java.util.List;
 import java.util.Map;
+import lombok.Value;
 
 @Value
 public class SimpleTable {

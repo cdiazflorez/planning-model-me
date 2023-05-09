@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.clients.rest.logisticcenter;
 
+import static java.util.Objects.nonNull;
+
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpRequest;
 import com.mercadolibre.json.type.TypeReference;
@@ -9,13 +11,10 @@ import com.mercadolibre.planning.model.me.gateways.logisticcenter.LogisticCenter
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.newrelic.api.agent.Trace;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-
 import java.util.Set;
 import java.util.TimeZone;
-
-import static java.util.Objects.nonNull;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 
 @Component
 public class LogisticCenterClient extends HttpClient implements LogisticCenterGateway {

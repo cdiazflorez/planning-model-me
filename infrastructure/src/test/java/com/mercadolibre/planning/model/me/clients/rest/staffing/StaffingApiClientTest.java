@@ -1,17 +1,5 @@
 package com.mercadolibre.planning.model.me.clients.rest.staffing;
 
-import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
-import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Area;
-import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingProcess;
-import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingResponse;
-import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingWorkflowResponse;
-import com.mercadolibre.restclient.MockResponse;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.json.JsonTest;
-
-import java.io.IOException;
-
 import static com.mercadolibre.planning.model.me.utils.TestUtils.getResourceAsString;
 import static com.mercadolibre.restclient.http.ContentType.APPLICATION_JSON;
 import static com.mercadolibre.restclient.http.ContentType.HEADER_NAME;
@@ -20,6 +8,17 @@ import static java.lang.String.format;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import com.mercadolibre.planning.model.me.clients.rest.BaseClientTest;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.Area;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingProcess;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingResponse;
+import com.mercadolibre.planning.model.me.gateways.staffing.dtos.response.StaffingWorkflowResponse;
+import com.mercadolibre.restclient.MockResponse;
+import java.io.IOException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.json.JsonTest;
 
 @JsonTest
 class StaffingApiClientTest extends BaseClientTest {

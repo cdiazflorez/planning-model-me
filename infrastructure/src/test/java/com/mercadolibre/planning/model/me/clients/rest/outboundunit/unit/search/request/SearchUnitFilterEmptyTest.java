@@ -1,12 +1,11 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 public class SearchUnitFilterEmptyTest {
 

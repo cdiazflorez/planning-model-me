@@ -1,15 +1,14 @@
 package com.mercadolibre.planning.model.me.entities.projection.chart;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Value;
+import static java.time.format.DateTimeFormatter.ofPattern;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-
-import static java.time.format.DateTimeFormatter.ofPattern;
+import lombok.Builder;
+import lombok.Value;
 
 @Value
 @Builder

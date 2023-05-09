@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.inbound.model;
 
+import java.util.function.Function;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.util.function.Function;
 
 @Getter
 @AllArgsConstructor

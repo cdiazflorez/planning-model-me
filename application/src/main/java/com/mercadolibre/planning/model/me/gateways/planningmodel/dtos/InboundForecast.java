@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @Value
 @SuperBuilder

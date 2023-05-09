@@ -2,12 +2,11 @@ package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.GetMonitorInput;
-import lombok.Data;
-import lombok.experimental.SuperBuilder;
-
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data

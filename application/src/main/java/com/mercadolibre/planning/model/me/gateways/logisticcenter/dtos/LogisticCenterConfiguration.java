@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos;
 
-import lombok.AllArgsConstructor;
-import lombok.Value;
-
 import java.time.ZoneId;
 import java.util.TimeZone;
+import lombok.AllArgsConstructor;
+import lombok.Value;
 
 @Value
 @AllArgsConstructor

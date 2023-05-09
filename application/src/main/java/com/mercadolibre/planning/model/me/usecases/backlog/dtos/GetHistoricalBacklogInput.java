@@ -2,10 +2,9 @@ package com.mercadolibre.planning.model.me.usecases.backlog.dtos;
 
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import lombok.Value;
-
 import java.time.Instant;
 import java.util.List;
+import lombok.Value;
 
 @Value
 public class GetHistoricalBacklogInput {

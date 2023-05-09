@@ -1,20 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.forecast;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelForecastGateway;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastCreationResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PostForecastResponse;
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastDto;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastColumnName.WEEK;
 import static java.lang.String.format;
@@ -23,6 +8,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelForecastGateway;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Forecast;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastCreationResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Metadata;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.PostForecastResponse;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import com.mercadolibre.planning.model.me.usecases.forecast.dto.ForecastDto;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateForecastTest {

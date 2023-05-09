@@ -1,5 +1,8 @@
 package com.mercadolibre.planning.model.me.clients.rest.planningmodel;
 
+import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_FORECAST;
+import static java.lang.String.format;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercadolibre.fbm.wms.outbound.commons.rest.HttpClient;
@@ -13,13 +16,9 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.exception.ParseException;
 import com.newrelic.api.agent.Trace;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-
-import java.util.Set;
-
-import static com.mercadolibre.planning.model.me.clients.rest.config.RestPool.PLANNING_MODEL_FORECAST;
-import static java.lang.String.format;
 
 @Component
 public class PlanningModelForecastClient extends HttpClient

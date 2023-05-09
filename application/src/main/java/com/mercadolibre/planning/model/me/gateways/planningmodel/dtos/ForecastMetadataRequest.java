@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import java.time.ZonedDateTime;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
-
-import java.time.ZonedDateTime;
 
 @Getter
 @SuperBuilder

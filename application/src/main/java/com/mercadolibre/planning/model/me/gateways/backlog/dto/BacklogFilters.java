@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.gateways.backlog.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import lombok.Builder;
+import lombok.Getter;
 
 @Builder
 @Getter

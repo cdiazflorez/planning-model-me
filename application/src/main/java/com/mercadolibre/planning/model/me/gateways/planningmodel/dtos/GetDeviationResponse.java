@@ -2,10 +2,9 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.mercadolibre.planning.model.me.utils.CustomDateZoneDeserializer;
+import java.time.ZonedDateTime;
 import lombok.Builder;
 import lombok.Value;
-
-import java.time.ZonedDateTime;
 
 @Value
 @Builder(toBuilder = true)

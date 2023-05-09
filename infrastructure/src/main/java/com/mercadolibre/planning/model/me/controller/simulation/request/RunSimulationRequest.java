@@ -1,14 +1,12 @@
 package com.mercadolibre.planning.model.me.controller.simulation.request;
 
 import java.time.ZonedDateTime;
-import lombok.Builder;
-import lombok.Value;
-
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-
-import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
 @Builder
 @Value

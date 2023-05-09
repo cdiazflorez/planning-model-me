@@ -2,11 +2,10 @@ package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search
 
 import com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.Paging;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import lombok.Value;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Value;
 
 @Value
 public class UnitReportAggregationResponse {

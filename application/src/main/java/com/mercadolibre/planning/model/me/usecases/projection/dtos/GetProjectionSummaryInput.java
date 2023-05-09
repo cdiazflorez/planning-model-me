@@ -3,11 +3,10 @@ package com.mercadolibre.planning.model.me.usecases.projection.dtos;
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ProjectionResult;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import lombok.Builder;
-import lombok.Value;
-
 import java.time.ZonedDateTime;
 import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
 @Value
 @Builder

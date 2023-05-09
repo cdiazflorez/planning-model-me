@@ -1,15 +1,14 @@
 package com.mercadolibre.planning.model.me.usecases.authorization;
 
+import static java.lang.String.format;
+
 import com.mercadolibre.planning.model.me.gateways.authorization.AuthorizationGateway;
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserAuthorization;
 import com.mercadolibre.planning.model.me.usecases.UseCase;
 import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeUserDto;
 import com.mercadolibre.planning.model.me.usecases.authorization.exceptions.UserNotAuthorizedException;
-import lombok.AllArgsConstructor;
-
 import javax.inject.Named;
-
-import static java.lang.String.format;
+import lombok.AllArgsConstructor;
 
 @Named
 @AllArgsConstructor

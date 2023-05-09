@@ -1,12 +1,11 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.response;
 
-import com.mercadolibre.planning.model.me.entities.projection.Backlog;
-import lombok.Value;
+import static java.time.ZoneOffset.UTC;
 
+import com.mercadolibre.planning.model.me.entities.projection.Backlog;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-
-import static java.time.ZoneOffset.UTC;
+import lombok.Value;
 
 @Value
 public class AggregationTotal {

@@ -1,17 +1,15 @@
 package com.mercadolibre.planning.model.me.controller;
 
 import com.mercadolibre.planning.model.me.enums.ProcessName;
+import java.time.ZonedDateTime;
+import java.util.List;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
-import java.time.ZonedDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
