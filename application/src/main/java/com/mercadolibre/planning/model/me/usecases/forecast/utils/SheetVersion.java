@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.spreadsheet.MeliCell;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -71,7 +72,7 @@ public enum SheetVersion {
     return meliSheet.getRowAt(PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW).getCells().stream()
         .map(MeliCell::getValue)
         .filter(Objects::nonNull)
-        .filter(s -> s.toLowerCase().contains(NON_SYSTEMIC_COLUMN_NAME))
+        .filter(s -> s.toLowerCase(Locale.getDefault()).contains(NON_SYSTEMIC_COLUMN_NAME))
         .count();
   }
 

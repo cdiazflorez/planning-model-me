@@ -77,6 +77,8 @@ public class RepsForecastSheetParser implements SheetParser {
 
   private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 188;
 
+  private static final int MINIMUM_VERSION = 2;
+
   private static final Map<SheetVersion, Integer> HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET =
       SheetVersion.mapping(3, 4);
 
@@ -172,8 +174,8 @@ public class RepsForecastSheetParser implements SheetParser {
   }
 
   private void validateSheetVersion(final SheetVersion sheetVersion) {
-    if (sheetVersion.getVersion() < 2) {
-      throw new InvalidSheetVersionException(String.format("Version '%s' is not valid", sheetVersion.getVersion()));
+    if (sheetVersion.getVersion() < MINIMUM_VERSION) {
+      throw new InvalidSheetVersionException(String.format("Version [%s] is not valid", String.valueOf(sheetVersion.getVersion())));
     }
   }
 
