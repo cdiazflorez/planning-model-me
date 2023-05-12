@@ -1,14 +1,12 @@
 package com.mercadolibre.planning.model.me.usecases.backlog;
 
 import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.emptyMeasure;
-import static com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure.fromMinutes;
 import static com.mercadolibre.planning.model.me.enums.ProcessName.PICKING;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Source.FORECAST;
 import static com.mercadolibre.planning.model.me.usecases.backlog.entities.NumberOfUnitsInAnArea.NumberOfUnitsInASubarea;
 import static java.lang.Math.max;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
 import static java.util.List.of;
 
@@ -23,9 +21,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGa
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.TrajectoriesRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogStatsByDate;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsResponse;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
@@ -64,8 +60,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   private final GetProcessThroughput getProcessThroughput;
 
   private final GetHistoricalBacklog getHistoricalBacklog;
-
-  private final GetBacklogLimits getBacklogLimits;
 
   private final List<BacklogProvider> backlogProviders;
 
@@ -142,8 +136,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
   private List<VariablesPhoto> getData(final GetBacklogMonitorDetailsInput input) {
     final GetThroughputResult throughput = getThroughput(input);
     final Map<Instant, Integer> throughputByDate = getProcessThroughputByDate(throughput, input.getProcess());
-
-    final Map<Instant, BacklogLimit> limits = getBacklogLimits(input);
     final Map<Instant, Integer> targetBacklog = getTargetBacklog(input);
 
     final Map<Instant, List<NumberOfUnitsInAnArea>> backlog = getBacklog(input, throughput);
@@ -163,7 +155,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                  targetBacklog,
                  historicalBacklog,
                  throughputByDate,
-                 limits,
                  backlogMeasuredInHours
              )
         )
@@ -176,7 +167,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
                                         final Map<Instant, Integer> targetBacklog,
                                         final HistoricalBacklog historicalBacklog,
                                         final Map<Instant, Integer> throughput,
-                                        final Map<Instant, BacklogLimit> limits,
                                         final Map<Instant, UnitMeasure> backlogMeasuredInHours) {
 
     final UnitMeasure total = backlogMeasuredInHours.getOrDefault(date, emptyMeasure());
@@ -189,11 +179,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
     final UnitMeasure target = Optional.ofNullable(targetBacklog.get(truncatedDate))
         .map(t -> UnitMeasure.fromUnits(t, throughputValue))
         .orElse(null);
-
-    final BacklogLimit limit = limits.get(truncatedDate);
-
-    final UnitMeasure min = limit == null || limit.getMin() < 0 ? emptyMeasure() : fromMinutes(limit.getMin(), throughputValue);
-    final UnitMeasure max = limit == null || limit.getMax() < 0 ? emptyMeasure() : fromMinutes(limit.getMax(), throughputValue);
 
     final Map<String, Integer> unitsByArea = areas.stream()
         .collect(
@@ -217,8 +202,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
         date,
         total,
         target,
-        min,
-        max,
         throughputValue,
         historicalBacklog.getOr(truncatedDate, UnitMeasure::emptyMeasure),
         unitsByArea,
@@ -285,25 +268,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
             input.getDateTo())).get(input.getProcess());
   }
 
-  private Map<Instant, BacklogLimit> getBacklogLimits(final GetBacklogMonitorDetailsInput input) {
-    try {
-      return getBacklogLimits.execute(
-              GetBacklogLimitsInput.builder()
-                  .warehouseId(input.getWarehouseId())
-                  .workflow(input.getWorkflow())
-                  .processes(of(input.getProcess()))
-                  .dateFrom(input.getDateFrom())
-                  .dateTo(input.getDateTo())
-                  .build()
-          )
-          .getOrDefault(input.getProcess(), emptyMap());
-
-    } catch (Exception e) {
-      log.error(e.getMessage());
-    }
-    return emptyMap();
-  }
-
   private List<DetailedBacklogPhoto> getBacklogDetails(
      final List<VariablesPhoto> backlog,
      final List<AreaName> areas,
@@ -329,9 +293,7 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
             .map(current -> new BacklogStatsByDate(
                 current.getDate(),
                 current.getTotal(),
-                current.getHistorical(),
-                current.getMinLimit(),
-                current.getMaxLimit())).collect(Collectors.toList()),
+                current.getHistorical())).collect(Collectors.toList()),
                 dateFrom);
   }
 
@@ -482,16 +444,6 @@ public class GetBacklogMonitorDetails extends GetConsolidatedBacklog {
      * The desired backlog.
      */
     UnitMeasure target;
-
-    /**
-     * The minimum value the backlog should not break through at that instant.
-     */
-    UnitMeasure minLimit;
-
-    /**
-     * The maximum value the backlog should not break through at that instant.
-     */
-    UnitMeasure maxLimit;
 
     /**
      * The number of units processed per hour at that instant.

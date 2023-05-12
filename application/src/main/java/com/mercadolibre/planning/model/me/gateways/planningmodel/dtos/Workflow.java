@@ -1,5 +1,7 @@
 package com.mercadolibre.planning.model.me.gateways.planningmodel.dtos;
 
+import static java.util.stream.Collectors.toMap;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.mercadolibre.planning.model.me.entities.workflows.BacklogWorkflow;
@@ -10,8 +12,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import static java.util.stream.Collectors.toMap;
 
 @Getter
 @AllArgsConstructor

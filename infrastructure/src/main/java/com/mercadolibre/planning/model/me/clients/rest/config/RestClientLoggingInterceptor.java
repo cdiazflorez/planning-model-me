@@ -1,15 +1,14 @@
 package com.mercadolibre.planning.model.me.clients.rest.config;
 
+import static java.lang.String.format;
+
 import com.mercadolibre.restclient.Request;
 import com.mercadolibre.restclient.Response;
 import com.mercadolibre.restclient.exception.RestException;
 import com.mercadolibre.restclient.interceptor.RequestResponseInterceptor;
+import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-
-import java.nio.charset.StandardCharsets;
-
-import static java.lang.String.format;
 
 @Slf4j
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")

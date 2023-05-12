@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.entities.workflows;
 
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -11,7 +11,6 @@ import static java.util.Collections.emptyMap;
 import com.mercadolibre.planning.model.me.entities.monitor.UnitMeasure;
 import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.backlog.BacklogPhotoApiGateway;
-import com.mercadolibre.planning.model.me.gateways.backlog.dto.Consolidation;
 import com.mercadolibre.planning.model.me.services.backlog.BacklogRequest;
 import com.mercadolibre.planning.model.me.usecases.BacklogPhoto;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;

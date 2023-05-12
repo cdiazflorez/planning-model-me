@@ -1,9 +1,9 @@
 package com.mercadolibre.planning.model.me.exception;
 
+import static java.lang.String.format;
+
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import lombok.Builder;
-
-import static java.lang.String.format;
 
 public class BacklogGatewayNotSupportedException extends RuntimeException {
 

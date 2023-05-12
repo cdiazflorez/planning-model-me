@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.projection.simulation;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow.FBM_WMS_OUTBOUND;
-import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.stream.Collectors.toList;
 
 import com.mercadolibre.planning.model.me.entities.projection.Backlog;

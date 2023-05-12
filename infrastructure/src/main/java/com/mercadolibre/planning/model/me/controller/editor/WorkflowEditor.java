@@ -1,12 +1,11 @@
 package com.mercadolibre.planning.model.me.controller.editor;
 
-import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-
-import java.beans.PropertyEditorSupport;
-import java.util.Arrays;
-
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
+import java.beans.PropertyEditorSupport;
+import java.util.Arrays;
 
 public class WorkflowEditor extends PropertyEditorSupport {
 

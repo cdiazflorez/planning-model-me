@@ -1,12 +1,11 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request;
 
+import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
-import java.util.Map;
 
 @AllArgsConstructor
 @NoArgsConstructor

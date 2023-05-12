@@ -1,11 +1,11 @@
 package com.mercadolibre.planning.model.me.gateways.backlog.dto;
+
+import java.time.Instant;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-
-import java.time.Instant;
-import java.util.List;
 
 @EqualsAndHashCode
 @Builder

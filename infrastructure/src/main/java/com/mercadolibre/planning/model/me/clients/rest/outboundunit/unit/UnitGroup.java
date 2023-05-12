@@ -1,11 +1,10 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit;
 
+import java.time.ZonedDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.ZonedDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor

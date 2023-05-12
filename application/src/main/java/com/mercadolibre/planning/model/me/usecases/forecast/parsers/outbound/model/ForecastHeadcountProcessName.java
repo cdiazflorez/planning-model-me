@@ -1,10 +1,5 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-import java.util.List;
-
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastHeadcountArea.BL;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastHeadcountArea.CPG;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastHeadcountArea.ESTANDAR;
@@ -15,6 +10,10 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastHeadcountArea.RK_L;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastHeadcountArea.RS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastHeadcountArea.VOLUMINOSO;
+
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 @Getter
 @AllArgsConstructor

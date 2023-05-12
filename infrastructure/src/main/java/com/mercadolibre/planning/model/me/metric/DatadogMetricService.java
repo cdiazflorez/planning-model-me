@@ -1,5 +1,8 @@
 package com.mercadolibre.planning.model.me.metric;
 
+import static com.mercadolibre.metrics.MetricCollector.Tags;
+import static com.mercadolibre.planning.model.me.config.EnvironmentUtil.getScope;
+
 import com.mercadolibre.planning.model.me.controller.deviation.request.DeviationRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.EntityRequest;
 import com.mercadolibre.planning.model.me.controller.simulation.request.RunSimulationRequest;
@@ -7,16 +10,12 @@ import com.mercadolibre.planning.model.me.controller.simulation.request.SaveSimu
 import com.mercadolibre.planning.model.me.controller.simulation.request.SimulationRequest;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.planning.model.me.utils.MetricsService;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.mercadolibre.metrics.MetricCollector.Tags;
-import static com.mercadolibre.planning.model.me.config.EnvironmentUtil.getScope;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 
 @Component

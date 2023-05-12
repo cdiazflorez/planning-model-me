@@ -1,8 +1,7 @@
 package com.mercadolibre.planning.model.me.entities.staffing;
 
-import lombok.Value;
-
 import java.util.Map;
+import lombok.Value;
 
 @Value
 public class BusyWorker {

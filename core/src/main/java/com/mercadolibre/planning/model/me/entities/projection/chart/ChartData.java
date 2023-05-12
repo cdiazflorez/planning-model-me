@@ -1,15 +1,13 @@
 package com.mercadolibre.planning.model.me.entities.projection.chart;
 
-import lombok.Builder;
-import lombok.Value;
-
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-
 import static com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip.createChartTooltip;
 import static com.mercadolibre.planning.model.me.entities.projection.chart.ChartTooltip.createChartTooltipInbound;
 import static java.time.format.DateTimeFormatter.ofPattern;
+
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import lombok.Builder;
+import lombok.Value;
 
 @Value
 @Builder

@@ -1,16 +1,14 @@
 package com.mercadolibre.planning.model.me.logging;
 
 import com.mercadolibre.fbm.wms.outbound.commons.web.filter.LoggingFilter;
+import java.util.Set;
+import java.util.function.Function;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.util.Set;
-import java.util.function.Function;
 
 @Slf4j
 @Component

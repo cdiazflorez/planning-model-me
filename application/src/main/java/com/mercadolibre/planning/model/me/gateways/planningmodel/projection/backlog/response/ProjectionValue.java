@@ -3,11 +3,10 @@ package com.mercadolibre.planning.model.me.gateways.planningmodel.projection.bac
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.utils.CustomDateZoneDeserializer;
+import java.time.ZonedDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.ZonedDateTime;
 
 @Data
 @Builder

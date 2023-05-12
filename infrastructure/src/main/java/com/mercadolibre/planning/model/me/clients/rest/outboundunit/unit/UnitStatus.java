@@ -1,13 +1,12 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-
-import java.util.Map;
-import java.util.function.Function;
-
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Map;
+import java.util.function.Function;
 
 public enum UnitStatus {
 

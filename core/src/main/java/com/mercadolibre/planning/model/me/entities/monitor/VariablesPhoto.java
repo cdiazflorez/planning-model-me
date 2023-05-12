@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.entities.monitor;
 
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Value;
-
-import java.time.Instant;
 
 /**
  * Remembers the value that some backlog related variables have at some instant.
@@ -23,12 +22,4 @@ public class VariablesPhoto {
      * The backlog at the same instant of the previous week.
      */
     private UnitMeasure historical;
-    /**
-     * The maximum value the backlog should not break through at the instant.
-     */
-    private UnitMeasure maxLimit;
-    /**
-     * The minimum value the backlog should not break through at the instant.
-     */
-    private UnitMeasure minLimit;
 }

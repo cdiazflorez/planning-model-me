@@ -1,5 +1,8 @@
 package com.mercadolibre.planning.model.me.controller;
 
+import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_FORECAST;
+import static org.springframework.http.ResponseEntity.ok;
+
 import com.mercadolibre.planning.model.me.controller.editor.WorkflowEditor;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.ForecastCreationResponse;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
@@ -9,6 +12,10 @@ import com.mercadolibre.planning.model.me.usecases.authorization.dtos.AuthorizeU
 import com.mercadolibre.planning.model.me.usecases.forecast.UploadForecast;
 import com.mercadolibre.planning.model.me.usecases.forecast.parsers.Target;
 import com.newrelic.api.agent.Trace;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.PropertyEditorRegistry;
@@ -23,15 +30,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
-import javax.validation.constraints.NotNull;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-
-import static com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission.OUTBOUND_FORECAST;
-import static org.springframework.http.ResponseEntity.ok;
 
 @Slf4j
 @AllArgsConstructor

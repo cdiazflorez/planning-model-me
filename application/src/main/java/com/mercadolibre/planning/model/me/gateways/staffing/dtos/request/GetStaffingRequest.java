@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.gateways.staffing.dtos.request;
 
-import lombok.Value;
-
 import java.time.ZonedDateTime;
 import java.util.List;
+import lombok.Value;
 
 @Value
 public class GetStaffingRequest {

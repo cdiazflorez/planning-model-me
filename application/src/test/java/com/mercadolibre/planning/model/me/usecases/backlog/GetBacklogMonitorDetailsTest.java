@@ -25,8 +25,6 @@ import com.mercadolibre.planning.model.me.enums.ProcessName;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.PlanningModelGateway;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MagnitudePhoto;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.BacklogLimit;
-import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogLimitsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetBacklogMonitorDetailsInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.GetHistoricalBacklogInput;
 import com.mercadolibre.planning.model.me.usecases.backlog.dtos.HistoricalBacklog;
@@ -82,9 +80,6 @@ class GetBacklogMonitorDetailsTest {
   private GetHistoricalBacklog getHistoricalBacklog;
 
   @Mock
-  private GetBacklogLimits getBacklogLimits;
-
-  @Mock
   private List<GetBacklogMonitorDetails.BacklogProvider> backlogProviders;
 
   @Mock
@@ -127,7 +122,6 @@ class GetBacklogMonitorDetailsTest {
     mockPickingBacklog(input);
     mockThroughput(FBM_WMS_OUTBOUND, of(WAVING, PICKING));
     mockHistoricalBacklog(FBM_WMS_OUTBOUND, PICKING);
-    mockBacklogLimits(FBM_WMS_OUTBOUND, PICKING);
 
     // WHEN
     final var result = getBacklogMonitor.execute(input);
@@ -170,10 +164,9 @@ class GetBacklogMonitorDetailsTest {
 
     GetBacklogMonitorDetailsInput input = input(PACKING);
 
-    mockBacklogWithoutAreas(input);
+    mockBacklogWithoutAreas();
     mockThroughput(FBM_WMS_OUTBOUND, of(PACKING));
     mockHistoricalBacklog(FBM_WMS_OUTBOUND, PACKING);
-    mockBacklogLimits(FBM_WMS_OUTBOUND, PACKING);
 
     // WHEN
     var response = getBacklogMonitor.execute(input);
@@ -192,11 +185,10 @@ class GetBacklogMonitorDetailsTest {
 
     final GetBacklogMonitorDetailsInput input = input(WAVING);
 
-    mockBacklogWithoutAreas(input);
+    mockBacklogWithoutAreas();
     mockTargetBacklog();
     mockThroughput(FBM_WMS_OUTBOUND, of(WAVING));
     mockHistoricalBacklog(FBM_WMS_OUTBOUND, WAVING);
-    mockBacklogLimits(FBM_WMS_OUTBOUND, WAVING);
 
     // WHEN
     final var response = getBacklogMonitor.execute(input);
@@ -292,7 +284,7 @@ class GetBacklogMonitorDetailsTest {
         );
   }
 
-  private void mockBacklogWithoutAreas(final GetBacklogMonitorDetailsInput input) {
+  private void mockBacklogWithoutAreas() {
     when(backlogProvider.getMonitorBacklog(Mockito.any()))
         .thenReturn(
             Map.of(
@@ -416,25 +408,6 @@ class GetBacklogMonitorDetailsTest {
 
     when(getHistoricalBacklog.execute(input))
         .thenReturn(workflow == FBM_WMS_INBOUND ? inboundResults : outboundResults);
-  }
-
-  private void mockBacklogLimits(final Workflow workflow, final ProcessName process) {
-    final var input = GetBacklogLimitsInput.builder()
-        .warehouseId(WAREHOUSE_ID)
-        .workflow(workflow)
-        .processes(of(process))
-        .dateFrom(DATE_FROM.toInstant())
-        .dateTo(DATE_TO.toInstant())
-        .build();
-
-    final var result = Map.of(
-        DATES.get(0).toInstant(), new BacklogLimit(5, 15),
-        DATES.get(1).toInstant(), new BacklogLimit(7, 21),
-        DATES.get(2).toInstant(), new BacklogLimit(3, 21),
-        DATES.get(3).toInstant(), new BacklogLimit(0, -1)
-    );
-
-    when(getBacklogLimits.execute(input)).thenReturn(Map.of(process, result));
   }
 
 }

@@ -2,7 +2,6 @@ package com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata;
 
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationActions;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.deviation.DeviationMetric;
-
 import lombok.Getter;
 
 @Getter

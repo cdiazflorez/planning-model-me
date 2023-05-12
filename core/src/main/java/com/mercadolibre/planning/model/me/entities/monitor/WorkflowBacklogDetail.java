@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.entities.monitor;
 
-import lombok.Value;
-
 import java.time.Instant;
 import java.util.List;
+import lombok.Value;
 
 @Value
 public class WorkflowBacklogDetail {

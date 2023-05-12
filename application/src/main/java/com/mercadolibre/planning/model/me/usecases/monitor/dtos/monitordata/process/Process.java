@@ -1,11 +1,10 @@
 package com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.process;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-
-import java.util.List;
 
 @Builder
 @AllArgsConstructor

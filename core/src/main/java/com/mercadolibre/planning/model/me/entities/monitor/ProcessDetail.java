@@ -1,8 +1,7 @@
 package com.mercadolibre.planning.model.me.entities.monitor;
 
-import lombok.Value;
-
 import java.util.List;
+import lombok.Value;
 
 /** Backlog-related information of a process. */
 @Value

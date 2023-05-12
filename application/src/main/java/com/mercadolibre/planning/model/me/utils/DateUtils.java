@@ -1,17 +1,5 @@
 package com.mercadolibre.planning.model.me.utils;
 
-import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
-import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
-
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.WeekFields;
-import java.util.stream.IntStream;
-
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
 import static java.time.ZoneOffset.UTC;
@@ -20,6 +8,17 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.TemporalAdjusters.previous;
 import static java.time.temporal.WeekFields.SUNDAY_START;
+
+import com.mercadolibre.planning.model.me.entities.projection.dateselector.Date;
+import com.mercadolibre.planning.model.me.entities.projection.dateselector.DateSelector;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
+import java.util.stream.IntStream;
 
 public class DateUtils {
 

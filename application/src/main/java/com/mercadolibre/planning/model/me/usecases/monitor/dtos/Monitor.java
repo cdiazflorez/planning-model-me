@@ -2,10 +2,9 @@ package com.mercadolibre.planning.model.me.usecases.monitor.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mercadolibre.planning.model.me.usecases.monitor.dtos.monitordata.MonitorData;
+import java.util.List;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @Getter
 @SuperBuilder

@@ -1,7 +1,6 @@
 package com.mercadolibre.planning.model.me.usecases.sharedistribution.dtos;
 
 import java.time.ZonedDateTime;
-import lombok.AllArgsConstructor;
 import lombok.Value;
 
 /** Contains query parameters of ShareDistribution. */

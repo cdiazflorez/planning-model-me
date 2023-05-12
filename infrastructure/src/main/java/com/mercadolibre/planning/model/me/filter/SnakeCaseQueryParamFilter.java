@@ -1,21 +1,19 @@
 package com.mercadolibre.planning.model.me.filter;
 
-import com.google.common.base.CaseFormat;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import static java.util.stream.Collectors.toConcurrentMap;
 
+import com.google.common.base.CaseFormat;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-
-import static java.util.stream.Collectors.toConcurrentMap;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class SnakeCaseQueryParamFilter extends OncePerRequestFilter {

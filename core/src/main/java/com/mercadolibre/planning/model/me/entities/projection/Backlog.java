@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.entities.projection;
 
+import java.time.ZonedDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.time.ZonedDateTime;
 
 /**
  * Knows for each flow step, the length of the queue of units waiting to be processed.

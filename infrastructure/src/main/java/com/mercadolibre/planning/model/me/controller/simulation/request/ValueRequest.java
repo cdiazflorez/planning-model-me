@@ -1,11 +1,9 @@
 package com.mercadolibre.planning.model.me.controller.simulation.request;
 
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.QuantityByDate;
-import lombok.Value;
-
-import javax.validation.constraints.NotNull;
-
 import java.time.ZonedDateTime;
+import javax.validation.constraints.NotNull;
+import lombok.Value;
 
 @Value
 public class ValueRequest {

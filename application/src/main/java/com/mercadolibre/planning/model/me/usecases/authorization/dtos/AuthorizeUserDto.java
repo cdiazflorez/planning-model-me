@@ -1,10 +1,9 @@
 package com.mercadolibre.planning.model.me.usecases.authorization.dtos;
 
 import com.mercadolibre.planning.model.me.gateways.authorization.dtos.UserPermission;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 @AllArgsConstructor

@@ -7,7 +7,6 @@ import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.P
 import com.mercadolibre.planning.model.me.clients.rest.config.RestClientConfig.PlanningModelMelysistemsClientProperties;
 import com.mercadolibre.restclient.MeliRestClient;
 import com.mercadolibre.restclient.mock.RequestMockHolder;
-
 import java.io.IOException;
 
 public class BaseClientTest {

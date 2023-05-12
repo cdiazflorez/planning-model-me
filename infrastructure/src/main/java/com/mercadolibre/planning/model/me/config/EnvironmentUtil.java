@@ -1,9 +1,8 @@
 package com.mercadolibre.planning.model.me.config;
 
+import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.AbstractEnvironment;
-
-import java.util.TimeZone;
 
 @Slf4j
 public final class EnvironmentUtil {

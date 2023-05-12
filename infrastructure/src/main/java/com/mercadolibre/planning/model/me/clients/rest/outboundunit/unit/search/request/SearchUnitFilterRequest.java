@@ -1,10 +1,10 @@
 package com.mercadolibre.planning.model.me.clients.rest.outboundunit.unit.search.request;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.stream.Collectors.toList;
 
 public interface SearchUnitFilterRequest {
     Map<String, Object> toMap();
