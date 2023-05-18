@@ -7,6 +7,7 @@ import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.Workflow;
 import com.mercadolibre.spreadsheet.MeliCell;
 import com.mercadolibre.spreadsheet.MeliSheet;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -19,14 +20,14 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public enum SheetVersion {
   INITIAL_VERSION(
-          "1.0",
+          1,
           Map.of(
                   FBM_WMS_OUTBOUND, validateOutboundInitialVersion(),
                   FBM_WMS_INBOUND, validateInboundInitialVersion()
           )
   ),
   SECOND_VERSION(
-          "2.0",
+          2,
           Map.of(
                   FBM_WMS_OUTBOUND, validateNonSystemicVersion(),
                   FBM_WMS_INBOUND, validateSystemicReceivingVersion()
@@ -37,13 +38,13 @@ public enum SheetVersion {
 
   public static final int NON_SYSTEMIC_COLUMN_COUNT = 7;
 
-  public static final String NON_SYSTEMIC_COLUMN_NAME = "No Sistemicos";
+  public static final String NON_SYSTEMIC_COLUMN_NAME = "no sistemicos";
 
   public static final String SYSTEMIC_RECEIVING_COLUMN_NAME = "Receiving S";
 
   public static final int SYSTEMIC_RECEIVING_COLUMN_COUNT = 2;
 
-  private final String version;
+  private final int version;
 
   private final Map<Workflow, Predicate<MeliSheet>> validateVersionByWorkflow;
 
@@ -71,7 +72,7 @@ public enum SheetVersion {
     return meliSheet.getRowAt(PROCESSING_DISTRIBUTION_COLUMN_NAME_ROW).getCells().stream()
         .map(MeliCell::getValue)
         .filter(Objects::nonNull)
-        .filter(s -> s.contains(NON_SYSTEMIC_COLUMN_NAME))
+        .filter(s -> s.toLowerCase(Locale.getDefault()).contains(NON_SYSTEMIC_COLUMN_NAME))
         .count();
   }
 

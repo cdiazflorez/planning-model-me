@@ -43,9 +43,9 @@ class InboundRepsForecastSheetParserTest {
 
   private static final String ERRONEOUS_FILE_PATH = "inbound_planning_with_errors.xlsx";
 
-  private static final String FIRST_VERSION = "1.0";
+  private static final int FIRST_VERSION = 1;
 
-  private static final String SECOND_VERSION = "2.0";
+  private static final int SECOND_VERSION = 2;
 
   private static final LogisticCenterConfiguration CONF =
       new LogisticCenterConfiguration(TimeZone.getTimeZone("UTC"));
@@ -108,7 +108,7 @@ class InboundRepsForecastSheetParserTest {
     assertNotNull(result);
     assertEquals("Plan de staffing", result.getSheetName());
     assertEquals(8, result.getValues().size());
-    final String version = (String) result.getValues().get(VERSION);
+    final int version = (int) result.getValues().get(VERSION);
 
     // PROCESSING DISTRIBUTIONS
     final var processingDistributions = (List<ProcessingDistribution>) result.getValues()

@@ -240,6 +240,21 @@ class ApiExceptionHandlerTest {
     thenThrow(exception, expectedResponse);
   }
 
+  @Test
+  @DisplayName("Handle InvalidSheetVersionException")
+  void handleInvalidSheetVersionException() {
+    // GIVEN
+    final InvalidSheetVersionException exception = new InvalidSheetVersionException("test error");
+    final ErrorResponse expectedResponse = ErrorResponse.builder()
+        .error("bad_request")
+        .message("test error")
+        .status(HttpStatus.BAD_REQUEST).build();
+    // WHEN
+    response = apiExceptionHandler.handleInvalidSheetVersionException(exception, request);
+    // THEN
+    thenThrow(exception, expectedResponse);
+  }
+
   private void thenThrow(Exception exception, ErrorResponse expectedResponse) {
     verify(request).setAttribute(EXCEPTION_ATTRIBUTE, exception);
 

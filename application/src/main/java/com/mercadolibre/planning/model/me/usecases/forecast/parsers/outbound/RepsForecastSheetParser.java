@@ -27,6 +27,7 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 import static com.mercadolibre.planning.model.me.usecases.forecast.utils.SpreadsheetUtils.getStringValueAt;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
+import com.mercadolibre.planning.model.me.exception.InvalidSheetVersionException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.AreaDistribution;
@@ -76,6 +77,8 @@ public class RepsForecastSheetParser implements SheetParser {
 
   private static final int POLYVALENT_PRODUCTIVITY_STARTING_ROW = 188;
 
+  private static final int MINIMUM_VERSION = 2;
+
   private static final Map<SheetVersion, Integer> HEADCOUNT_PRODUCTIVITY_COLUMN_OFFSET =
       SheetVersion.mapping(3, 4);
 
@@ -94,6 +97,8 @@ public class RepsForecastSheetParser implements SheetParser {
 
     final String week = getStringValueAt(sheet, 2, 2);
     final SheetVersion version = SheetVersion.getSheetVersion(sheet, FBM_WMS_OUTBOUND);
+
+    validateSheetVersion(version);
     validateIfWarehouseIdIsCorrect(warehouseId, sheet);
     validateIfWeekIsCorrect(week);
 
@@ -165,6 +170,12 @@ public class RepsForecastSheetParser implements SheetParser {
     if (!week.matches(WEEK_FORMAT_REGEX)) {
       throw new ForecastParsingException(
           String.format("Week format should be ww-yyyy instead of: %s ", week));
+    }
+  }
+
+  private void validateSheetVersion(final SheetVersion sheetVersion) {
+    if (sheetVersion.getVersion() < MINIMUM_VERSION) {
+      throw new InvalidSheetVersionException(String.format("Version [%s] is not valid", String.valueOf(sheetVersion.getVersion())));
     }
   }
 

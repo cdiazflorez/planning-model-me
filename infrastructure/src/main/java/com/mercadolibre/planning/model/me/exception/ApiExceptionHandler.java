@@ -208,6 +208,15 @@ public class ApiExceptionHandler {
     return new ResponseEntity<>(errorResponse, new HttpHeaders(), errorResponse.getStatus());
   }
 
+  @ExceptionHandler(InvalidSheetVersionException.class)
+  public ResponseEntity<ErrorResponse> handleInvalidSheetVersionException(
+      final InvalidSheetVersionException exception,
+      final HttpServletRequest request) {
+
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
+
   private ResponseEntity<ErrorResponse> getBadRequestResponseEntity(
       Exception exception,
       HttpServletRequest request) {

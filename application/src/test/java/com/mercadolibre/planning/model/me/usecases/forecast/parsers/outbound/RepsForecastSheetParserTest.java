@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
+import com.mercadolibre.planning.model.me.exception.InvalidSheetVersionException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
@@ -62,6 +63,8 @@ class RepsForecastSheetParserTest {
   private static final String INVALID_DATE_PATH = "outbound_forecast_invalid_date.xlsx";
 
   private static final String INVALID_WEEK_PATH = "outbound_forecast_invalid_week.xlsx";
+
+  private static final String INVALID_VERSION = "outbound_forecast_invalid_version.xlsx";
 
   private static final String LIMITS_OUT_OF_BOUND_PATH =
       "outbound_forecast_backlog_limits_out_of_bound.xlsx";
@@ -304,5 +307,23 @@ class RepsForecastSheetParserTest {
         backlogLimits.stream()
             .filter(distribution -> SALES_DISPATCH.equals(distribution.getProcessName()))
             .count());
+  }
+
+  @Test
+  @DisplayName("Excel parsed with an invalid sheet version")
+  void parseFileWithInvalidVersion() {
+    // GIVEN
+    final var sheet = getMeliSheetFrom(WORKERS.getName(), INVALID_VERSION);
+
+    // WHEN - THEN
+    final var exception =
+        assertThrows(
+            InvalidSheetVersionException.class,
+            () -> repsForecastSheetParser.parse(LOGISTIC_CENTER, sheet, CONF));
+
+    // THEN
+    final var message = exception.getMessage();
+    assertNotNull(exception.getMessage());
+    assertTrue(message.contains("Version"));
   }
 }
