@@ -19,7 +19,9 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbo
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.WALL_IN;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessName.WAVING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_LOWER_LIMIT;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_LOWER_LIMIT_SHIPPING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_UPPER_LIMIT;
+import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.BACKLOG_UPPER_LIMIT_SHIPPING;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastProcessType.EFFECTIVE_WORKERS_NS;
 import static com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model.ForecastSheet.WORKERS;
 import static com.mercadolibre.planning.model.me.utils.TestUtils.WAREHOUSE_ID;
@@ -53,7 +55,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class RepsForecastSheetParserTest {
 
-  private static final String INCORRECT_WAREHOUSE_ID = "ERRONEO";
+  private static final String INCORRECT_WAREHOUSE_ID = "ERROR";
 
   private static final String VALID_FILE_PATH = "outbound_forecast.xlsx";
 
@@ -142,6 +144,12 @@ class RepsForecastSheetParserTest {
 
     assertBacklogLimitValues(limits.get(10), BACKLOG_LOWER_LIMIT, PACKING_WALL, 192);
     assertBacklogLimitValues(limits.get(11), BACKLOG_UPPER_LIMIT, PACKING_WALL, -1);
+
+    assertBacklogLimitValues(limits.get(12), BACKLOG_LOWER_LIMIT_SHIPPING, HU_ASSEMBLY, 60);
+    assertBacklogLimitValues(limits.get(13), BACKLOG_UPPER_LIMIT_SHIPPING, HU_ASSEMBLY, 71);
+
+    assertBacklogLimitValues(limits.get(14), BACKLOG_LOWER_LIMIT_SHIPPING, SALES_DISPATCH, 20);
+    assertBacklogLimitValues(limits.get(15), BACKLOG_UPPER_LIMIT_SHIPPING, SALES_DISPATCH, 33);
   }
 
   private void assertBacklogLimitValues(
@@ -152,6 +160,7 @@ class RepsForecastSheetParserTest {
 
     assertEquals(type, limit.getType());
     assertEquals(process, limit.getProcessName());
+    assertEquals(type.getMetricUnit(), limit.getQuantityMetricUnit());
     limit.getData().forEach(data -> assertEquals(quantity, data.getQuantity()));
   }
 
@@ -176,7 +185,7 @@ class RepsForecastSheetParserTest {
 
   @Test
   @DisplayName("Excel parsed with unmatched warehouse error")
-  void parseWhenUnmatchWarehouseId() {
+  void parseWhenUnmatchedWarehouseId() {
     // GIVEN
     // a valid sheet
     final var sheet = getMeliSheetFrom(WORKERS.getName(), VALID_FILE_PATH);
@@ -264,7 +273,7 @@ class RepsForecastSheetParserTest {
     final List<HeadcountProductivity> headcountProductivity =
         (List<HeadcountProductivity>)
             forecastSheetDto.getValues().get(ForecastColumnName.HEADCOUNT_PRODUCTIVITY);
-    final List<PolyvalentProductivity> plivalentProductivity =
+    final List<PolyvalentProductivity> polyvalenceProductivity =
         (List<PolyvalentProductivity>)
             forecastSheetDto.getValues().get(ForecastColumnName.POLYVALENT_PRODUCTIVITY);
     final List<BacklogLimit> backlogLimits =
@@ -286,13 +295,13 @@ class RepsForecastSheetParserTest {
         headcountProductivity.stream()
             .anyMatch(distribution -> SALES_DISPATCH.name().equals(distribution.getProcessName())));
     assertTrue(
-        plivalentProductivity.stream()
+        polyvalenceProductivity.stream()
             .anyMatch(
                 distribution ->
                     HU_ASSEMBLY.toString().equals(distribution.getProcessName())
                         && distribution.getProductivity() == 0.0));
     assertTrue(
-        plivalentProductivity.stream()
+        polyvalenceProductivity.stream()
             .anyMatch(
                 distribution ->
                     SALES_DISPATCH.toString().equals(distribution.getProcessName())
