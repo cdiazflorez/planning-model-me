@@ -50,6 +50,24 @@ public class ApiExceptionHandler {
     return getBadRequestResponseEntity(exception, request);
   }
 
+  @ExceptionHandler(UnitsPerOrderRatioException.class)
+  public ResponseEntity<ErrorResponse> handleUnitsPerOrderRatioException(
+      Exception exception,
+      HttpServletRequest request) {
+
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
+
+  @ExceptionHandler(LowerAndUpperLimitsException.class)
+  public ResponseEntity<ErrorResponse> handleLowerAndUpperLimitsException(
+      Exception exception,
+      HttpServletRequest request) {
+
+    log.error(exception.getMessage(), exception);
+    return getBadRequestResponseEntity(exception, request);
+  }
+
   @ExceptionHandler(UnmatchedWarehouseException.class)
   public ResponseEntity<ErrorResponse> handleUnmatchedWarehouseException(
       Exception exception,

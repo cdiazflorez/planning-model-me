@@ -33,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.exception.InvalidSheetVersionException;
+import com.mercadolibre.planning.model.me.exception.LowerAndUpperLimitsException;
+import com.mercadolibre.planning.model.me.exception.UnitsPerOrderRatioException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
@@ -73,6 +75,10 @@ class RepsForecastSheetParserTest {
 
   private static final String VALID_NON_SYSTEMIC_FILE_PATH =
       "outbound_forecast_non_systemic_workers.xlsx";
+
+  private static final String INVALID_RATIO = "outbound_forecast_invalid_ratio.xlsx";
+
+  private static final String INVALID_LIMITS = "outbound_forecast_invalid_limits.xlsx";
 
   private static final LogisticCenterConfiguration CONF =
       new LogisticCenterConfiguration(TimeZone.getDefault());
@@ -143,7 +149,7 @@ class RepsForecastSheetParserTest {
     assertBacklogLimitValues(limits.get(9), BACKLOG_UPPER_LIMIT, WALL_IN, 180);
 
     assertBacklogLimitValues(limits.get(10), BACKLOG_LOWER_LIMIT, PACKING_WALL, 192);
-    assertBacklogLimitValues(limits.get(11), BACKLOG_UPPER_LIMIT, PACKING_WALL, -1);
+    assertBacklogLimitValues(limits.get(11), BACKLOG_UPPER_LIMIT, PACKING_WALL, 200);
 
     assertBacklogLimitValues(limits.get(12), BACKLOG_LOWER_LIMIT_SHIPPING, HU_ASSEMBLY, 60);
     assertBacklogLimitValues(limits.get(13), BACKLOG_UPPER_LIMIT_SHIPPING, HU_ASSEMBLY, 71);
@@ -181,6 +187,42 @@ class RepsForecastSheetParserTest {
     final var message = exception.getMessage();
     assertNotNull(message);
     assertTrue(message.contains("F12"));
+  }
+
+  @Test
+  @DisplayName("Invalid ratio")
+  void parseUnitsPerOrderRatioException() {
+    // GIVEN
+    final var sheet = getMeliSheetFrom(WORKERS.getName(), INVALID_RATIO);
+
+    // WHEN
+    final var exception =
+        assertThrows(
+            UnitsPerOrderRatioException.class,
+            () -> repsForecastSheetParser.parse(WAREHOUSE_ID, sheet, CONF));
+
+    // THEN
+    final var message = exception.getMessage();
+    assertNotNull(message);
+    assertTrue(message.contains("the value obtained from excel is"));
+  }
+
+  @Test
+  @DisplayName("Invalid limits")
+  void parseLowerAndUpperException() {
+    // GIVEN
+    final var sheet = getMeliSheetFrom(WORKERS.getName(), INVALID_LIMITS);
+
+    // WHEN
+    final var exception =
+        assertThrows(
+            LowerAndUpperLimitsException.class,
+            () -> repsForecastSheetParser.parse(WAREHOUSE_ID, sheet, CONF));
+
+    // THEN
+    final var message = exception.getMessage();
+    assertNotNull(message);
+    assertTrue(message.contains("greater than"));
   }
 
   @Test

@@ -28,9 +28,13 @@ import static com.mercadolibre.planning.model.me.usecases.forecast.utils.Spreads
 
 import com.mercadolibre.planning.model.me.exception.ForecastParsingException;
 import com.mercadolibre.planning.model.me.exception.InvalidSheetVersionException;
+import com.mercadolibre.planning.model.me.exception.LowerAndUpperLimitsException;
+import com.mercadolibre.planning.model.me.exception.UnitsPerOrderRatioException;
 import com.mercadolibre.planning.model.me.exception.UnmatchedWarehouseException;
 import com.mercadolibre.planning.model.me.gateways.logisticcenter.dtos.LogisticCenterConfiguration;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.AreaDistribution;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimit;
+import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.BacklogLimitData;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountDistribution;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivity;
 import com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.HeadcountProductivityData;
@@ -71,6 +75,8 @@ public class RepsForecastSheetParser implements SheetParser {
 
   private static final int UNITS_PER_ORDER_RATIO_COLUMN = 10;
 
+  private static final int MIN_VALUE_FOR_UNITS_PER_ORDER_RATIO = 1;
+
   private static final int PROCESSING_DISTRIBUTION_STARTING_ROW = 7;
 
   private static final int HOURS_PER_FORECAST_PERIOD = 168;
@@ -97,10 +103,14 @@ public class RepsForecastSheetParser implements SheetParser {
 
     final String week = getStringValueAt(sheet, 2, 2);
     final SheetVersion version = SheetVersion.getSheetVersion(sheet, FBM_WMS_OUTBOUND);
+    final double unitsPerOrderRatio = getDoubleValueAt(sheet, WAREHOUSE_ID_ROW, UNITS_PER_ORDER_RATIO_COLUMN);
+    final List<BacklogLimit> backlogLimits = GenerateBacklogLimitUtil.generateBacklogLimitBody(config, sheet, version);
 
     validateSheetVersion(version);
     validateIfWarehouseIdIsCorrect(warehouseId, sheet);
     validateIfWeekIsCorrect(week);
+    validateIfUnitPerOrderRatioIsCorrect(unitsPerOrderRatio);
+    validateIfLowerAndUpperAreCorrect(backlogLimits);
 
     final RepsDistributionDto repsDistributionDto =
         getProcessingDistribution(config, sheet, version);
@@ -127,8 +137,7 @@ public class RepsForecastSheetParser implements SheetParser {
                 MULTI_ORDER_DISTRIBUTION,
                 getDoubleValueAt(sheet, WAREHOUSE_ID_ROW, MULTI_ORDER_COLUMN)),
             Map.entry(
-                UNITS_PER_ORDER_RATIO,
-                getDoubleValueAt(sheet, WAREHOUSE_ID_ROW, UNITS_PER_ORDER_RATIO_COLUMN)),
+                UNITS_PER_ORDER_RATIO, getDoubleValueAt(sheet, WAREHOUSE_ID_ROW, UNITS_PER_ORDER_RATIO_COLUMN)),
             Map.entry(
                 OUTBOUND_PICKING_PRODUCTIVITY,
                 productivityPolyvalenceByProcessName.get(
@@ -153,9 +162,7 @@ public class RepsForecastSheetParser implements SheetParser {
             Map.entry(HEADCOUNT_DISTRIBUTION, getHeadcountDistribution(sheet)),
             Map.entry(POLYVALENT_PRODUCTIVITY, getPolyvalentProductivity(sheet, version)),
             Map.entry(HEADCOUNT_PRODUCTIVITY, repsDistributionDto.getHeadcountProductivities()),
-            Map.entry(
-                BACKLOG_LIMITS,
-                GenerateBacklogLimitUtil.generateBacklogLimitBody(config, sheet, version))));
+            Map.entry(BACKLOG_LIMITS, backlogLimits)));
   }
 
   private void validateIfWarehouseIdIsCorrect(String warehouseId, MeliSheet sheet) {
@@ -171,6 +178,39 @@ public class RepsForecastSheetParser implements SheetParser {
       throw new ForecastParsingException(
           String.format("Week format should be ww-yyyy instead of: %s ", week));
     }
+  }
+
+  private void validateIfUnitPerOrderRatioIsCorrect(final double unitsPerOrderRatio) {
+    if (unitsPerOrderRatio < MIN_VALUE_FOR_UNITS_PER_ORDER_RATIO) {
+      throw new UnitsPerOrderRatioException(
+          String.format("The value of the ratio must be greater or equal to 1, the value obtained from excel is %s.", unitsPerOrderRatio)
+      );
+    }
+  }
+
+  private void validateIfLowerAndUpperAreCorrect(final List<BacklogLimit> backlogLimits) {
+    final String lowerLimitsString = "backlog_lower_limit";
+    final String upperLimitsString = "backlog_upper_limit";
+
+    final Map<ForecastProcessName, List<BacklogLimitData>> lowerLimits = backlogLimits.stream()
+        .filter(backlogLimit -> backlogLimit.getType().toString().contains(lowerLimitsString))
+        .collect(Collectors.toMap(BacklogLimit::getProcessName, BacklogLimit::getData));
+
+    final Map<ForecastProcessName, List<BacklogLimitData>> upperLimits = backlogLimits.stream()
+        .filter(backlogLimit -> backlogLimit.getType().toString().contains(upperLimitsString))
+        .collect(Collectors.toMap(BacklogLimit::getProcessName, BacklogLimit::getData));
+
+    lowerLimits.forEach((key, value) -> {
+      final List<BacklogLimitData> upperLimit = upperLimits.get(key);
+
+      value
+          .forEach(lowerData -> upperLimit.stream()
+              .filter(upperData -> lowerData.getDate().equals(upperData.getDate()))
+              .filter(upperData -> lowerData.getQuantity() <= upperData.getQuantity())
+              .findFirst()
+              .orElseThrow(() -> new LowerAndUpperLimitsException("The lower cannot be greater than the upper"))
+          );
+    });
   }
 
   private void validateSheetVersion(final SheetVersion sheetVersion) {
