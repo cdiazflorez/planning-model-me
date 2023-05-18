@@ -46,6 +46,21 @@ class ApiExceptionHandlerTest {
   }
 
   @Test
+  @DisplayName("Handle UnitsPerOrderRatioException")
+  void handleUnitsPerOrderRatioException() {
+    // GIVEN
+    final UnitsPerOrderRatioException exception = new UnitsPerOrderRatioException("test error");
+    final ErrorResponse expectedResponse = ErrorResponse.builder()
+        .error("bad_request")
+        .message("test error")
+        .status(HttpStatus.BAD_REQUEST).build();
+    // WHEN
+    response = apiExceptionHandler.handleException(exception, request);
+    // THEN
+    thenThrow(exception, expectedResponse);
+  }
+
+  @Test
   @DisplayName("Handle InvalidParamException")
   void handleInvalidParamException() {
     // GIVEN
@@ -112,6 +127,42 @@ class ApiExceptionHandlerTest {
 
     // WHEN
     response = apiExceptionHandler.handleUnmatchedWarehouseException(exception, request);
+
+    // THEN
+    thenThrow(exception, expectedResponse);
+  }
+
+  @Test
+  @DisplayName("Handle unitsPerOrderRatio")
+  void handleUnitPerOrderRatioException() {
+    // GIVEN
+    final UnitsPerOrderRatioException exception =
+        new UnitsPerOrderRatioException("The value of the ratio must be greater or equal to 1, the value obtained from excel is 0.");
+    final ErrorResponse expectedResponse = ErrorResponse.builder()
+        .error("bad_request")
+        .message("The value of the ratio must be greater or equal to 1, the value obtained from excel is 0.")
+        .status(HttpStatus.BAD_REQUEST).build();
+
+    // WHEN
+    response = apiExceptionHandler.handleUnitsPerOrderRatioException(exception, request);
+
+    // THEN
+    thenThrow(exception, expectedResponse);
+  }
+
+  @Test
+  @DisplayName("Handle lower and upper limits")
+  void handleLowerAndUpperException() {
+    // GIVEN
+    final LowerAndUpperLimitsException exception =
+        new LowerAndUpperLimitsException("The lower cannot be greater than the upper");
+    final ErrorResponse expectedResponse = ErrorResponse.builder()
+        .error("bad_request")
+        .message("The lower cannot be greater than the upper")
+        .status(HttpStatus.BAD_REQUEST).build();
+
+    // WHEN
+    response = apiExceptionHandler.handleLowerAndUpperLimitsException(exception, request);
 
     // THEN
     thenThrow(exception, expectedResponse);
@@ -236,6 +287,21 @@ class ApiExceptionHandlerTest {
         .status(HttpStatus.BAD_REQUEST).build();
     // WHEN
     response = apiExceptionHandler.handleForecastWorkersInvalidException(exception, request);
+    // THEN
+    thenThrow(exception, expectedResponse);
+  }
+
+  @Test
+  @DisplayName("Handle InvalidSheetVersionException")
+  void handleInvalidSheetVersionException() {
+    // GIVEN
+    final InvalidSheetVersionException exception = new InvalidSheetVersionException("test error");
+    final ErrorResponse expectedResponse = ErrorResponse.builder()
+        .error("bad_request")
+        .message("test error")
+        .status(HttpStatus.BAD_REQUEST).build();
+    // WHEN
+    response = apiExceptionHandler.handleInvalidSheetVersionException(exception, request);
     // THEN
     thenThrow(exception, expectedResponse);
   }

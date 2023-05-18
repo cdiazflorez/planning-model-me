@@ -7,7 +7,8 @@ public enum MetricUnit {
     UNITS_PER_HOUR,
     PERCENTAGE,
     MINUTES,
-    WORKERS;
+    WORKERS,
+    ORDERS;
 
     @JsonCreator
     public static MetricUnit from(final String value) {

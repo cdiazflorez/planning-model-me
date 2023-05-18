@@ -1,6 +1,7 @@
 package com.mercadolibre.planning.model.me.usecases.forecast.parsers.outbound.model;
 
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.MINUTES;
+import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.ORDERS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS;
 import static com.mercadolibre.planning.model.me.gateways.planningmodel.dtos.MetricUnit.UNITS_PER_HOUR;
 import static java.util.stream.Collectors.toMap;
@@ -25,8 +26,10 @@ public enum ForecastProcessType {
   EFFECTIVE_WORKERS_NS(SheetVersion.mapping(-99, 3), MetricUnit.WORKERS),
   HEADCOUNT_PRODUCTIVITY(SheetVersion.mapping(3, 4), UNITS_PER_HOUR),
   MAX_CAPACITY(SheetVersion.mapping(0, 0), UNITS_PER_HOUR),
-  BACKLOG_LOWER_LIMIT(SheetVersion.mapping(20, 20), MINUTES),
-  BACKLOG_UPPER_LIMIT(SheetVersion.mapping(21, 21), MINUTES);
+  BACKLOG_LOWER_LIMIT(SheetVersion.mapping(20, 20), UNITS),
+  BACKLOG_UPPER_LIMIT(SheetVersion.mapping(21, 21), UNITS),
+  BACKLOG_LOWER_LIMIT_SHIPPING(SheetVersion.mapping(20, 20), ORDERS),
+  BACKLOG_UPPER_LIMIT_SHIPPING(SheetVersion.mapping(21, 21), ORDERS);
 
   private static final Map<String, ForecastProcessType> LOOKUP =
       Arrays.stream(values()).collect(toMap(ForecastProcessType::toString, Function.identity()));

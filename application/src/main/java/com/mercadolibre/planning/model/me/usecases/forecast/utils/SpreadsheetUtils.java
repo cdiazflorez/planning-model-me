@@ -168,6 +168,23 @@ public final class SpreadsheetUtils {
     }
   }
 
+  public static int getIntValueOrFail(final MeliSheet sheet,
+                                            final int row,
+                                            final int column) {
+    final MeliCell cell = getCellAt(sheet, row, column);
+    try {
+      if (cell.getValue() == null || cell.getValue().isEmpty()) {
+        throw new NullValueAtCellException(getCellAddress(column, row));
+      } else {
+        String value = cell.getValue().replace(POINT, COMMA);
+        return NUMBER_FORMATTER.parse(value).intValue();
+      }
+
+    } catch (ParseException | NullPointerException e) {
+      throw new ForecastParsingException(format(PARSE_ERROR_MESSAGE, cell.getAddress(), sheet.getSheetName()), e);
+    }
+  }
+
   private static String validateNumberValueOrFail(final MeliSheet sheet, final MeliCell cell) {
     if (cell.getValue() == null || cell.getValue().isEmpty()) {
       throw new EmptyExcelCellException(format(PARSE_ERROR_MESSAGE, cell.getAddress(), sheet.getSheetName()));
