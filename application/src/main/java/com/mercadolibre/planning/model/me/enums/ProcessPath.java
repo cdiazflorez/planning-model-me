@@ -17,14 +17,13 @@ public enum ProcessPath {
   NON_TOT_MONO,
   NON_TOT_MULTI_ORDER,
   NON_TOT_MULTI_BATCH,
-  CONV_MULTI_BATCH,
-  CONV_MONO,
   BULKY,
   PP_DEFAULT_MONO,
   PP_DEFAULT_MULTI,
   SIOC,
   AMBIENT,
-  REFRIGERATED;
+  REFRIGERATED,
+  TOT_SINGLE_SKU;
 
   @JsonCreator
   public static ProcessPath from(final String value) {
