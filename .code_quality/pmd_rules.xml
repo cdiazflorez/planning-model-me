@@ -85,6 +85,10 @@
             <property
                 name="violationSuppressXPath"
                 value="./ancestor::ClassOrInterfaceDeclaration[matches(@BinaryName, 'com.mercadolibre.Main')]" />
+            <property name="ignoredAnnotations" value="io.quarkus.runtime.annotations.QuarkusMain"/>
+            <property
+                name="violationSuppressXPath"
+                value="./ancestor::ClassOrInterfaceDeclaration[matches(@BinaryName, 'com.mercadolibre.Main')]" />    
         </properties>
     </rule>
     <rule ref="category/java/errorprone.xml/AssignmentInOperand"/>
